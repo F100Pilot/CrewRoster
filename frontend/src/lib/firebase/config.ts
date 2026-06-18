@@ -3,12 +3,12 @@ import { getAuth, connectAuthEmulator } from 'firebase/auth';
 import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBfI9GJxHfN3Y0M2qW8VtA7KpL6dR1cE4n",
+  apiKey: "AIzaSyAkLxKWeiQOH-LS-9cQqhlF14pqldt-D6U",
   authDomain: "crewroster-app.firebaseapp.com",
   projectId: "crewroster-app",
-  storageBucket: "crewroster-app.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abc123def456"
+  storageBucket: "crewroster-app.firebasestorage.app",
+  messagingSenderId: "109261258857",
+  appId: "1:109261258857:web:30703f24ccdaeb700f62f8"
 };
 
 // NOTE: Replace the config above with your actual Firebase Web App config
