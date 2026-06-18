@@ -1,20 +1,19 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import api from '../services/api';
-
-interface User {
-  id: string;
-  crewCode: string;
-  fullName: string;
-  base: string;
-  role: string;
-}
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import {
+  loginWithCrewCode,
+  logoutUser,
+  registerUser,
+  onAuthChange,
+  CrewUser,
+} from '../lib/firebase/auth';
 
 interface AuthContextType {
-  user: User | null;
+  user: CrewUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
   login: (crewCode: string, password: string) => Promise<void>;
-  logout: () => void;
+  register: (crewCode: string, password: string, fullName: string, base: string, role: string, email?: string) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -22,54 +21,36 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   isAuthenticated: false,
   login: async () => {},
-  logout: () => {},
+  register: async () => {},
+  logout: async () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<CrewUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    const token = localStorage.getItem('accessToken');
-
-    if (storedUser && token) {
-      setUser(JSON.parse(storedUser));
-      // Validate token is still valid
-      api.get('/auth/me')
-        .then((res) => {
-          setUser(res.data);
-          localStorage.setItem('user', JSON.stringify(res.data));
-        })
-        .catch(() => {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          localStorage.removeItem('user');
-          setUser(null);
-        })
-        .finally(() => setIsLoading(false));
-    } else {
+    const unsubscribe = onAuthChange((crewUser) => {
+      setUser(crewUser);
       setIsLoading(false);
-    }
+    });
+    return unsubscribe;
   }, []);
 
-  const login = useCallback(async (crewCode: string, password: string) => {
-    const response = await api.post('/auth/login', { crewCode, password });
-    const { accessToken, refreshToken, user: userData } = response.data;
-    localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
-    localStorage.setItem('user', JSON.stringify(userData));
-    setUser(userData);
-  }, []);
+  const login = async (crewCode: string, password: string) => {
+    const crewUser = await loginWithCrewCode(crewCode, password);
+    setUser(crewUser);
+  };
 
-  const logout = useCallback(() => {
-    const refreshToken = localStorage.getItem('refreshToken');
-    api.post('/auth/logout', { refreshToken }).catch(() => {});
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('user');
+  const register = async (crewCode: string, password: string, fullName: string, base: string, role: string, email?: string) => {
+    const crewUser = await registerUser(crewCode, password, fullName, base, role, email);
+    setUser(crewUser);
+  };
+
+  const logout = async () => {
+    await logoutUser();
     setUser(null);
-  }, []);
+  };
 
   return (
     <AuthContext.Provider
@@ -78,6 +59,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         isAuthenticated: !!user,
         login,
+        register,
         logout,
       }}
     >

@@ -11,6 +11,9 @@ import {
   InputAdornment,
   IconButton,
   CircularProgress,
+  Tabs,
+  Tab,
+  MenuItem,
 } from '@mui/material';
 import {
   Visibility,
@@ -19,15 +22,25 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 
+const BASES = ['LIS', 'OPO', 'FAO', 'PDL', 'FNC', 'TER'];
+const ROLES = ['Captain', 'First Officer', 'Senior Cabin Crew', 'Cabin Crew'];
+
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, register } = useAuth();
 
+  const [tab, setTab] = useState(0);
   const [crewCode, setCrewCode] = useState('');
   const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [base, setBase] = useState('LIS');
+  const [role, setRole] = useState('First Officer');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const isLogin = tab === 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,12 +51,28 @@ export default function LoginPage() {
       return;
     }
 
+    if (!isLogin && !fullName.trim()) {
+      setError('Please enter your full name.');
+      return;
+    }
+
     setLoading(true);
     try {
-      await login(crewCode, password);
+      if (isLogin) {
+        await login(crewCode, password);
+      } else {
+        await register(crewCode, password, fullName, base, role, email || undefined);
+      }
       navigate('/');
     } catch (err: any) {
-      setError(err.response?.data?.error || 'Login failed. Please check your credentials.');
+      const msg = err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found'
+        ? 'Invalid CREW CODE or password.'
+        : err.code === 'auth/email-already-in-use'
+        ? 'This CREW CODE is already registered.'
+        : err.code === 'auth/weak-password'
+        ? 'Password must be at least 6 characters.'
+        : err.message || 'Authentication failed. Please try again.';
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -71,13 +100,17 @@ export default function LoginPage() {
         </Typography>
       </Box>
 
-      <Card sx={{ width: '100%', maxWidth: 400 }}>
+      <Card sx={{ width: '100%', maxWidth: 440 }}>
+        <Tabs value={tab} onChange={(_, v) => { setTab(v); setError(''); }} variant="fullWidth">
+          <Tab label="Sign In" />
+          <Tab label="Register" />
+        </Tabs>
+
         <CardContent sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom fontWeight={600}>
-            Sign In
-          </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Login with your CREW CODE and password.
+            {isLogin
+              ? 'Login with your CREW CODE and password.'
+              : 'Create your account with your crew details.'}
           </Typography>
 
           {error && (
@@ -95,7 +128,20 @@ export default function LoginPage() {
               margin="normal"
               autoFocus
               disabled={loading}
+              helperText={isLogin ? '' : 'Your airline crew code (e.g. PT12345)'}
             />
+
+            {!isLogin && (
+              <TextField
+                label="Full Name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                fullWidth
+                margin="normal"
+                disabled={loading}
+              />
+            )}
+
             <TextField
               label="Password"
               type={showPassword ? 'text' : 'password'}
@@ -107,16 +153,53 @@ export default function LoginPage() {
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton
-                      onClick={() => setShowPassword(!showPassword)}
-                      edge="end"
-                    >
+                    <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
                       {showPassword ? <VisibilityOff /> : <Visibility />}
                     </IconButton>
                   </InputAdornment>
                 ),
               }}
             />
+
+            {!isLogin && (
+              <>
+                <TextField
+                  label="Email (optional)"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  fullWidth
+                  margin="normal"
+                  disabled={loading}
+                />
+                <TextField
+                  select
+                  label="Base"
+                  value={base}
+                  onChange={(e) => setBase(e.target.value)}
+                  fullWidth
+                  margin="normal"
+                  disabled={loading}
+                >
+                  {BASES.map((b) => (
+                    <MenuItem key={b} value={b}>{b}</MenuItem>
+                  ))}
+                </TextField>
+                <TextField
+                  select
+                  label="Role"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  fullWidth
+                  margin="normal"
+                  disabled={loading}
+                >
+                  {ROLES.map((r) => (
+                    <MenuItem key={r} value={r}>{r}</MenuItem>
+                  ))}
+                </TextField>
+              </>
+            )}
 
             <Button
               type="submit"
@@ -126,7 +209,7 @@ export default function LoginPage() {
               disabled={loading}
               sx={{ mt: 3, py: 1.5 }}
             >
-              {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
+              {loading ? <CircularProgress size={24} color="inherit" /> : isLogin ? 'Sign In' : 'Register'}
             </Button>
           </form>
         </CardContent>

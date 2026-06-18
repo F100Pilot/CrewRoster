@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { getFirestore } from '../config/firebase';
 import bcrypt from 'bcrypt';
 

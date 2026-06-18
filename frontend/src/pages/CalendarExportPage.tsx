@@ -8,8 +8,6 @@ import {
   Skeleton,
   Alert,
   Divider,
-  TextField,
-  IconButton,
   Snackbar,
   Chip,
 } from '@mui/material';
@@ -18,38 +16,78 @@ import {
   Google,
   Apple,
   ContentCopy,
-  Link as LinkIcon,
-  Refresh,
-  CheckCircle,
+  Download,
   OpenInNew,
 } from '@mui/icons-material';
-import api from '../services/api';
+import { useAuth } from '../contexts/AuthContext';
+import { exportCalendarToken, fetchMonthlyRoster, DutyData } from '../lib/firebase/db';
 
-interface CalendarExport {
-  icsToken: string;
-  icsUrl: string;
-  webcalUrl: string;
-  googleCalendarUrl: string;
+// Generate ICS file content from duties
+function generateICS(duties: DutyData[], crewName: string): string {
+  const lines: string[] = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//CrewRoster//PT',
+    `X-WR-CALNAME:CrewRoster - ${crewName}`,
+    'X-WR-CALDESC:Crew roster schedule',
+  ];
+
+  duties.forEach((duty) => {
+    if (duty.dutyCode === 'OFF' || duty.dutyType === 'Day Off') return;
+
+    const dt = new Date(duty.date + 'T00:00:00Z');
+    const dateStr = `${dt.getUTCFullYear()}${String(dt.getUTCMonth() + 1).padStart(2, '0')}${String(dt.getUTCDate()).padStart(2, '0')}`;
+    const summary = duty.flight
+      ? `${duty.dutyCode} ${duty.flight.flightNumber} ${duty.flight.departureAirport}-${duty.flight.arrivalAirport}`
+      : `${duty.dutyCode} ${duty.dutyType}`;
+
+    lines.push(
+      'BEGIN:VEVENT',
+      `DTSTART;VALUE=DATE:${dateStr}`,
+      `DTEND;VALUE=DATE:${dateStr}`,
+      `SUMMARY:${summary}`,
+      `DESCRIPTION:${duty.dutyType}${duty.reportingTime ? `\\nReport: ${duty.reportingTime}` : ''}`,
+      'END:VEVENT'
+    );
+  });
+
+  lines.push('END:VCALENDAR');
+  return lines.join('\r\n');
 }
 
 export default function CalendarExportPage() {
-  const [exportData, setExportData] = useState<CalendarExport | null>(null);
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [snackbar, setSnackbar] = useState('');
 
   useEffect(() => {
-    loadExport();
-  }, []);
-
-  async function loadExport() {
-    try {
-      const res = await api.get('/calendar/export');
-      setExportData(res.data);
-    } catch (err) {
-      setError('Failed to load calendar export settings.');
-    } finally {
+    // Just trigger token creation
+    if (user) {
+      exportCalendarToken(user.uid).catch(console.error);
       setLoading(false);
+    }
+  }, [user]);
+
+  async function handleExportICS() {
+    if (!user) return;
+    try {
+      const now = new Date();
+      const duties = await fetchMonthlyRoster(user.uid, now.getFullYear(), now.getMonth() + 1);
+      const icsContent = generateICS(duties, user.fullName);
+
+      const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `crewroster-${user.crewCode}-${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}.ics`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setSnackbar('ICS file downloaded! Import it into your calendar app.');
+    } catch (err) {
+      setSnackbar('Failed to generate ICS file.');
     }
   }
 
@@ -58,136 +96,75 @@ export default function CalendarExportPage() {
       await navigator.clipboard.writeText(text);
       setSnackbar('Copied to clipboard!');
     } catch {
-      setSnackbar('Failed to copy. Please select and copy manually.');
+      setSnackbar('Failed to copy.');
     }
   }
 
+  const googleCalUrl = 'https://calendar.google.com/calendar/r/settings/addbyurl';
+
   return (
     <Box sx={{ p: 2 }}>
-      <Typography variant="h5" fontWeight={700} sx={{ mb: 2 }}>
-        Calendar Export
-      </Typography>
+      <Typography variant="h5" fontWeight={700} sx={{ mb: 2 }}>Calendar Export</Typography>
 
       {loading ? (
         <Skeleton variant="rounded" height={400} />
       ) : error ? (
         <Alert severity="error">{error}</Alert>
-      ) : exportData ? (
+      ) : (
         <>
-          {/* ICS Feed Subscription — Primary Feature */}
           <Card sx={{ mb: 2 }}>
             <CardContent sx={{ p: 3 }}>
               <Box display="flex" alignItems="center" gap={1} mb={2}>
                 <CalendarMonth color="primary" />
-                <Typography variant="h6" fontWeight={600}>
-                  ICS Feed Subscription
-                </Typography>
-                <Chip label="Recommended" color="success" size="small" />
+                <Typography variant="h6" fontWeight={600}>Export Roster to Calendar</Typography>
               </Box>
 
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Subscribe once and your roster updates automatically in Google Calendar, Apple Calendar, Outlook, or Thunderbird.
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Download your roster as an ICS file and import it into Google Calendar, Apple Calendar, Outlook, or any calendar app.
               </Typography>
 
-              {/* ICS URL */}
-              <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5, display: 'block' }}>
-                Your permanent ICS feed URL:
-              </Typography>
-              <TextField
-                value={exportData.icsUrl}
-                fullWidth
-                size="small"
-                InputProps={{
-                  readOnly: true,
-                  endAdornment: (
-                    <IconButton onClick={() => handleCopy(exportData.icsUrl)}>
-                      <ContentCopy />
-                    </IconButton>
-                  ),
-                }}
-                sx={{ mb: 2, '& input': { fontSize: '0.8rem', fontFamily: 'monospace' } }}
-              />
+              <Button variant="contained" size="large" startIcon={<Download />} onClick={handleExportICS} fullWidth sx={{ mb: 2 }}>
+                Download ICS File (This Month)
+              </Button>
 
               <Divider sx={{ my: 2 }} />
 
-              {/* Platform-specific instructions */}
               <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>
-                Subscribe in your calendar app:
+                How to import:
               </Typography>
 
               <Box display="flex" flexDirection="column" gap={1}>
-                <Button
-                  variant="outlined"
-                  startIcon={<Google />}
-                  href={exportData.googleCalendarUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  fullWidth
-                >
-                  Add to Google Calendar
+                <Button variant="outlined" startIcon={<Google />} onClick={() => { handleCopy(googleCalUrl); window.open(googleCalUrl, '_blank'); }} fullWidth>
+                  <Box component="span" sx={{ mr: 'auto' }}>Open Google Calendar Import</Box>
+                  <OpenInNew />
                 </Button>
+                <Typography variant="caption" color="text.secondary" sx={{ mb: 1 }}>
+                  1. Download the ICS file above<br />
+                  2. Go to Google Calendar → Settings → Import & Export<br />
+                  3. Select the downloaded .ics file and import
+                </Typography>
 
-                <Button
-                  variant="outlined"
-                  startIcon={<Apple />}
-                  onClick={() => handleCopy(exportData.webcalUrl)}
-                  fullWidth
-                >
-                  <Box component="span" sx={{ mr: 'auto' }}>
-                    Subscribe in Apple Calendar
-                  </Box>
-                  <ContentCopy />
-                </Button>
-
-                <Button
-                  variant="outlined"
-                  startIcon={<CalendarMonth />}
-                  onClick={() => handleCopy(exportData.icsUrl)}
-                  fullWidth
-                >
-                  <Box component="span" sx={{ mr: 'auto' }}>
-                    Copy for Outlook / Thunderbird
-                  </Box>
-                  <ContentCopy />
-                </Button>
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+                  <strong>Apple Calendar / Outlook:</strong> Download the ICS file, then double-click it to import automatically.
+                </Typography>
               </Box>
             </CardContent>
           </Card>
 
-          {/* How it works */}
           <Card>
             <CardContent>
-              <Typography variant="h6" fontWeight={600} sx={{ mb: 1 }}>
-                How it works
+              <Typography variant="h6" fontWeight={600} sx={{ mb: 1 }}>Important</Typography>
+              <Typography variant="body2" color="text.secondary">
+                Since CrewRoster runs completely on the free Firebase plan (no server), ICS subscription URLs are not available.
+                Instead, <strong>download the ICS file</strong> each month after you import your roster, and re-import it into your calendar.
+                Your calendar will update with any changes when you import a new file.
               </Typography>
-              <Box component="ol" sx={{ pl: 2, m: 0 }}>
-                <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                  <strong>Copy your ICS feed URL</strong> — Each user has a unique, permanent URL.
-                </Typography>
-                <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                  <strong>Subscribe in your calendar</strong> — Add the URL as a subscription in your preferred calendar app.
-                </Typography>
-                <Typography component="li" variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                  <strong>Automatic updates</strong> — When you import a new roster, events are updated everywhere.
-                </Typography>
-              </Box>
-
-              <Alert severity="info" sx={{ mt: 2 }}>
-                <Typography variant="body2">
-                  <strong>Compatible with:</strong> Google Calendar, Apple Calendar, Microsoft Outlook, Mozilla Thunderbird, and any calendar app that supports iCalendar (.ics) subscriptions.
-                </Typography>
-              </Alert>
             </CardContent>
           </Card>
         </>
-      ) : null}
+      )}
 
-      <Snackbar
-        open={!!snackbar}
-        autoHideDuration={3000}
-        onClose={() => setSnackbar('')}
-        message={snackbar}
-      />
+      <Snackbar open={!!snackbar} autoHideDuration={4000} onClose={() => setSnackbar('')} message={snackbar} />
     </Box>
   );
 }
