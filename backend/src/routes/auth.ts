@@ -31,6 +31,72 @@ function generateTokens(userId: string, crewCode: string) {
   return { accessToken, refreshToken };
 }
 
+// POST /api/auth/register
+router.post('/register', async (req: Request, res: Response) => {
+  try {
+    const { crewCode, password, fullName, base, role, email, registrationSecret } = req.body;
+
+    // Require a setup secret to prevent public registration
+    const requiredSecret = process.env.REGISTRATION_SECRET;
+    if (!requiredSecret) {
+      res.status(500).json({ error: 'Registration is not configured. Set REGISTRATION_SECRET env var.' });
+      return;
+    }
+    if (registrationSecret !== requiredSecret) {
+      res.status(403).json({ error: 'Invalid registration secret.' });
+      return;
+    }
+
+    const validationError = validateCredentials(crewCode, password);
+    if (validationError) {
+      res.status(400).json({ error: validationError });
+      return;
+    }
+
+    if (!fullName || typeof fullName !== 'string' || fullName.trim().length < 2) {
+      res.status(400).json({ error: 'Full name is required.' });
+      return;
+    }
+
+    // Check if crewCode already exists
+    const existing = await db.collection('users')
+      .where('crewCode', '==', crewCode)
+      .limit(1)
+      .get();
+
+    if (!existing.empty) {
+      res.status(409).json({ error: 'A user with this CREW CODE already exists.' });
+      return;
+    }
+
+    const passwordHash = await bcrypt.hash(password, 12);
+    const docRef = db.collection('users').doc();
+
+    await docRef.set({
+      crewCode,
+      passwordHash,
+      fullName: fullName.trim(),
+      base: base || null,
+      role: role || null,
+      email: email || null,
+      phone: null,
+      medicalValidity: null,
+      lpcValidity: null,
+      refreshToken: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    res.status(201).json({
+      message: 'User registered successfully. You can now log in.',
+      user: { id: docRef.id, crewCode, fullName, base, role },
+    });
+  } catch (err) {
+    console.error('Register error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // POST /api/auth/login
 router.post('/login', async (req: Request, res: Response) => {
   try {

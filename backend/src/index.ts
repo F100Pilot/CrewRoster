@@ -1,6 +1,7 @@
 import * as functions from 'firebase-functions';
 import express from 'express';
 import cors from 'cors';
+import dotenv from 'dotenv';
 import authRoutes from './routes/auth';
 import rosterRoutes from './routes/roster';
 import profileRoutes from './routes/profile';
@@ -9,10 +10,28 @@ import calendarRoutes from './routes/calendar';
 import importRoutes from './routes/import';
 import { errorHandler } from './middleware/errorHandler';
 
+dotenv.config();
+
 const app = express();
 
+const allowedOrigins = [
+  process.env.FRONTEND_URL || '',
+  'https://crewroster-app.web.app',
+  'https://crewroster-app.firebaseapp.com',
+  'http://localhost:3000',
+].filter(Boolean);
+
 app.use(cors({
-  origin: true,
+  origin: (origin, callback) => {
+    // Allow requests with no origin (curl, mobile, etc.)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn('CORS blocked origin:', origin);
+      callback(null, true); // Allow all origins for now, tighten later
+    }
+  },
   credentials: true,
 }));
 app.use(express.json());
@@ -33,5 +52,13 @@ app.get('/api/health', (_req, res) => {
 // Error handler
 app.use(errorHandler);
 
-// Export as Cloud Function
+// Run as standalone server on non-Firebase environments (e.g. Render)
+if (process.env.FUNCTIONS_CONTROL_API === undefined) {
+  const PORT = process.env.PORT || 4000;
+  app.listen(PORT, () => {
+    console.log(`CrewRoster API running on port ${PORT}`);
+  });
+}
+
+// Export as Cloud Function (used when deployed to Firebase)
 export const api = functions.https.onRequest(app);

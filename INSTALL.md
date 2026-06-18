@@ -1,12 +1,21 @@
-# CrewRoster — Installation Guide (Firebase)
+# CrewRoster — Installation Guide (Firebase + Render)
 
-CrewRoster is a web application for Portugália Airlines crew members to consult their personal roster. Built with React, Firebase Cloud Functions, and Firestore.
+CrewRoster is a web application for Portugália Airlines crew members to consult their personal roster. Built with React (Firebase Hosting), Express API (Render), and Firestore.
+
+## Architecture
+
+| Component | Platform | URL |
+|-----------|----------|-----|
+| Frontend | Firebase Hosting | `https://crewroster-app.web.app` |
+| Backend API | Render (free tier) | `https://crewroster-api.onrender.com` |
+| Database | Firebase Firestore | `(default)` |
 
 ## Prerequisites
 
 - **Node.js 20+** and **npm**
 - **Firebase CLI**: `npm install -g firebase-tools`
-- A **Firebase project** (free Spark plan works)
+- A **Firebase project** (free Spark plan)
+- A **Render account** (free at [render.com](https://render.com))
 
 ---
 
@@ -19,40 +28,41 @@ cd backend && npm install
 cd ../frontend && npm install
 ```
 
-### 2. Login to Firebase
+### 2. Configure environment
 
 ```bash
-firebase login
-firebase use --add   # Select or create your Firebase project
+cp backend/.env.example backend/.env
 ```
 
-### 3. Configure environment
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env` and set secure values for:
+Edit `backend/.env` and set secure values for:
 - `JWT_SECRET` — Random string (generate: `openssl rand -hex 64`)
 - `JWT_REFRESH_SECRET` — Another random string
-- `APP_URL` — Your deployed Cloud Function URL
+- `REGISTRATION_SECRET` — Secret for user registration endpoint
+- `GOOGLE_APPLICATION_CREDENTIALS` — Path to Firebase service account key
 
-### 4. Start Firebase Emulators
+### 3. Start Firebase Emulators (for Firestore)
 
 ```bash
-firebase emulators:start
+firebase emulators:start --only firestore
 ```
 
-This starts:
-- Firestore Emulator (port 8080)
-- Cloud Functions (port 5001)
-- Hosting (port 5000)
-
-### 5. Seed demo data
+### 4. Start backend
 
 ```bash
 cd backend
-npx ts-node src/db/seed.ts
+npm run dev
+```
+
+### 5. Seed demo data OR register your user
+
+```bash
+# Option A: Seed demo data
+cd backend && npx ts-node src/db/seed.ts
+
+# Option B: Register via API
+curl -X POST http://localhost:4000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"crewCode":"PT12345","password":"demo123","fullName":"João Silva","base":"LIS","role":"First Officer","registrationSecret":"<your-secret>"}'
 ```
 
 ### 6. Start frontend
@@ -63,59 +73,89 @@ npm start
 ```
 
 - **Frontend**: http://localhost:3000
-- **API (emulator)**: http://localhost:5001/crewroster-app/us-central1/api
+- **API**: http://localhost:4000
 - **Demo login**: CREW CODE `PT12345` / Password `demo123`
 
 ---
 
-## Firebase Deployment
+## Production Deployment
 
-### 1. Deploy Firestore indexes
+### Step 1: Deploy Firestore rules & indexes
 
 ```bash
+firebase deploy --only firestore:rules
 firebase deploy --only firestore:indexes
 ```
 
-Wait for indexes to complete building (check Firebase Console → Firestore → Indexes).
+### Step 2: Deploy backend to Render
 
-### 2. Deploy Cloud Functions
+1. Push the repo to GitHub
+2. Go to [render.com](https://render.com) → New → Web Service
+3. Connect your GitHub repo (`F100Pilot/CrewRoster`)
+4. Configure:
+   - **Name**: `crewroster-api`
+   - **Root Directory**: `backend`
+   - **Build Command**: `npm install && npm run build`
+   - **Start Command**: `npm start`
+   - **Free tier**: Yes
+5. Add environment variables:
+   - `JWT_SECRET` — a long random string
+   - `JWT_REFRESH_SECRET` — another long random string
+   - `REGISTRATION_SECRET` — secret for user registration
+   - `FRONTEND_URL` — `https://crewroster-app.web.app`
+   - `GOOGLE_APPLICATION_CREDENTIALS` — content of your Firebase service account key (base64)
+6. Click "Create Web Service"
+7. Copy your Render URL (e.g., `https://crewroster-api.onrender.com`)
 
-```bash
-npm run deploy   # from backend/
-# or:
-cd backend && npm run build && firebase deploy --only functions
+### Step 3: Configure frontend to point to Render
+
+Edit `frontend/.env.production`:
+```
+REACT_APP_API_URL=https://crewroster-api.onrender.com
 ```
 
-### 3. Deploy Hosting
+### Step 4: Deploy frontend to Firebase Hosting
 
 ```bash
-cd frontend && npm run build
+cd frontend
+npm run build
+cd ..
 firebase deploy --only hosting
 ```
 
-### 4. Full deploy
+### Step 5: Create your user account
 
 ```bash
-cd frontend && npm run build
-firebase deploy
+curl -X POST https://crewroster-api.onrender.com/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"crewCode":"<YOUR-CREW-CODE>","password":"<YOUR-PASSWORD>","fullName":"<YOUR-NAME>","base":"LIS","role":"First Officer","registrationSecret":"<REGISTRATION_SECRET>"}'
 ```
 
-### 5. Set environment variables in Firebase
-
-```bash
-firebase functions:config:set jwt.secret="your-jwt-secret" jwt.refresh_secret="your-refresh-secret"
-```
+You can now log in at `https://crewroster-app.web.app` with your real credentials.
 
 ---
 
 ## Creating Users
 
-Use Firebase Console → Firestore → `users` collection, or run the seed script:
+### Via API (recommended)
+
+```
+POST /api/auth/register
+Body: { crewCode, password, fullName, base?, role?, email?, registrationSecret }
+```
+
+Requires `REGISTRATION_SECRET` to match the server's env var.
+
+### Via seed script
 
 ```bash
 cd backend
 npx ts-node src/db/seed.ts
 ```
+
+### Via Firebase Console
+
+Go to Firestore → `users` collection → Add document.
 
 Each user document needs:
 
@@ -247,6 +287,7 @@ CrewRoster/
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
+| POST | /api/auth/register | No | Register (needs secret) |
 | POST | /api/auth/login | No | Login |
 | POST | /api/auth/refresh | No | Refresh token |
 | POST | /api/auth/logout | Yes | Logout |
