@@ -79,7 +79,7 @@ const DUTY_COLORS: Record<string, string> = {
   'Positioning': '#546e7a',
 };
 
-const DUTY_ICONS: Record<string, React.ReactNode> = {
+const DUTY_ICONS: Record<string, React.ReactElement> = {
   'Flight Duty': <FlightTakeoff sx={{ fontSize: 12 }} />,
   'Standby Airport': <AirplanemodeActive sx={{ fontSize: 12 }} />,
   'Standby Home': <Home sx={{ fontSize: 12 }} />,
