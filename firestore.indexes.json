@@ -44,32 +44,11 @@
       ]
     },
     {
-      "collectionGroup": "users",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "employeeNumber", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "calendarExports",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "icsToken", "order": "ASCENDING" }
-      ]
-    },
-    {
       "collectionGroup": "calendarExports",
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "userId", "order": "ASCENDING" },
         { "fieldPath": "exportType", "order": "ASCENDING" }
-      ]
-    },
-    {
-      "collectionGroup": "flights",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "flightNumber", "order": "ASCENDING" }
       ]
     }
   ]
