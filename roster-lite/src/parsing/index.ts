@@ -4,6 +4,7 @@ import { parseIcs } from './ics/parseIcs';
 import { extractPdf } from './pdf/extractText';
 import { reconstructLines } from './pdf/reconstructLines';
 import { interpret } from './pdf/interpret';
+import { interpretPgaGrid } from './pdf/pgaGrid';
 
 function sortByDate(duties: ParseResult['duties']): ParseResult['duties'] {
   return [...duties].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
@@ -17,6 +18,14 @@ export async function parseRosterFile(file: File): Promise<ParseResult> {
   if (ext === 'pdf') {
     const buf = await file.arrayBuffer();
     const extracted = await extractPdf(buf);
+
+    // Primary: the PGA "Individual duty plan" grid parser.
+    const pgaDuties = interpretPgaGrid(extracted.tokens);
+    if (pgaDuties.length > 0) {
+      return { sourceType: 'pdf', duties: sortByDate(pgaDuties), rawText: extracted.rawText, warnings: [] };
+    }
+
+    // Fallback: generic line-based interpreter (other/unknown PDF layouts).
     const lines = reconstructLines(extracted.tokens);
     const { duties, warnings } = interpret(lines);
     return { sourceType: 'pdf', duties: sortByDate(duties), rawText: extracted.rawText, warnings };
