@@ -19,7 +19,7 @@ function validateCredentials(crewCode: string, password: string): string | null 
   if (!crewCode || typeof crewCode !== 'string') return 'CREW CODE is required.';
   if (crewCode.trim().length < 3) return 'CREW CODE must be at least 3 characters.';
   if (crewCode.length > 20) return 'CREW CODE must be 20 characters or fewer.';
-  if (!/^[A-Za-z0-9]+$/.test(crewCode)) return 'CREW CODE must contain only letters and numbers.';
+  if (!/^[A-Za-z0-9 .-]+$/.test(crewCode)) return 'CREW CODE must contain only letters, numbers, spaces, dots, and hyphens.';
   if (!password || typeof password !== 'string') return 'Password is required.';
   if (password.length < 4) return 'Password must be at least 4 characters.';
   return null;
@@ -55,6 +55,22 @@ router.post('/register', async (req: Request, res: Response) => {
 
     if (!fullName || typeof fullName !== 'string' || fullName.trim().length < 2) {
       res.status(400).json({ error: 'Full name is required.' });
+      return;
+    }
+    if (fullName.trim().length > 100) {
+      res.status(400).json({ error: 'Full name is too long (max 100 characters).' });
+      return;
+    }
+    if (base && base.length > 10) {
+      res.status(400).json({ error: 'Base code is too long (max 10 characters).' });
+      return;
+    }
+    if (role && role.length > 50) {
+      res.status(400).json({ error: 'Role is too long (max 50 characters).' });
+      return;
+    }
+    if (email && (typeof email !== 'string' || email.length > 100 || !email.includes('@'))) {
+      res.status(400).json({ error: 'Invalid email address.' });
       return;
     }
 

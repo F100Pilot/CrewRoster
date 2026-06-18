@@ -1,7 +1,7 @@
+import 'dotenv/config';
 import * as functions from 'firebase-functions';
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import authRoutes from './routes/auth';
 import rosterRoutes from './routes/roster';
 import profileRoutes from './routes/profile';
@@ -9,8 +9,6 @@ import notificationsRoutes from './routes/notifications';
 import calendarRoutes from './routes/calendar';
 import importRoutes from './routes/import';
 import { errorHandler } from './middleware/errorHandler';
-
-dotenv.config();
 
 const app = express();
 
