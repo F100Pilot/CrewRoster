@@ -23,7 +23,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
 
-  const [employeeNumber, setEmployeeNumber] = useState('');
+  const [crewCode, setCrewCode] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -33,14 +33,14 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
 
-    if (!employeeNumber.trim() || !password.trim()) {
-      setError('Please enter your employee number and password.');
+    if (!crewCode.trim() || !password.trim()) {
+      setError('Please enter your CREW CODE and password.');
       return;
     }
 
     setLoading(true);
     try {
-      await login(employeeNumber, password);
+      await login(crewCode, password);
       navigate('/');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Login failed. Please check your credentials.');
@@ -77,7 +77,7 @@ export default function LoginPage() {
             Sign In
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Login with your employee number and password.
+            Login with your CREW CODE and password.
           </Typography>
 
           {error && (
@@ -88,9 +88,9 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit}>
             <TextField
-              label="Employee Number"
-              value={employeeNumber}
-              onChange={(e) => setEmployeeNumber(e.target.value)}
+              label="CREW CODE"
+              value={crewCode}
+              onChange={(e) => setCrewCode(e.target.value)}
               fullWidth
               margin="normal"
               autoFocus

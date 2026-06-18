@@ -40,7 +40,7 @@ import api from '../services/api';
 
 interface Profile {
   id: string;
-  employeeNumber: string;
+  crewCode: string;
   fullName: string;
   base: string;
   role: string;
@@ -151,8 +151,8 @@ export default function ProfilePage() {
               <ListItem>
                 <ListItemIcon><Badge /></ListItemIcon>
                 <ListItemText
-                  primary="Employee Number"
-                  secondary={profile.employeeNumber}
+                  primary="CREW CODE"
+                  secondary={profile.crewCode}
                   primaryTypographyProps={{ variant: 'caption', color: 'text.secondary' }}
                   secondaryTypographyProps={{ variant: 'body1', fontWeight: 600 }}
                 />

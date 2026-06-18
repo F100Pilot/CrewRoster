@@ -18,7 +18,7 @@ router.get('/', authenticate, async (req: AuthRequest, res: Response) => {
     const u = doc.data()!;
     res.json({
       id: doc.id,
-      employeeNumber: u.employeeNumber,
+      crewCode: u.crewCode,
       fullName: u.fullName,
       base: u.base,
       role: u.role,

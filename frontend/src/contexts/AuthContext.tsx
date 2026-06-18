@@ -3,7 +3,7 @@ import api from '../services/api';
 
 interface User {
   id: string;
-  employeeNumber: string;
+  crewCode: string;
   fullName: string;
   base: string;
   role: string;
@@ -13,7 +13,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (employeeNumber: string, password: string) => Promise<void>;
+  login: (crewCode: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -53,8 +53,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const login = useCallback(async (employeeNumber: string, password: string) => {
-    const response = await api.post('/auth/login', { employeeNumber, password });
+  const login = useCallback(async (crewCode: string, password: string) => {
+    const response = await api.post('/auth/login', { crewCode, password });
     const { accessToken, refreshToken, user: userData } = response.data;
     localStorage.setItem('accessToken', accessToken);
     localStorage.setItem('refreshToken', refreshToken);

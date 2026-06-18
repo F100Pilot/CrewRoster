@@ -15,35 +15,35 @@ if (!JWT_SECRET || !JWT_REFRESH_SECRET) {
   console.error('CRITICAL: JWT_SECRET and JWT_REFRESH_SECRET must be set!');
 }
 
-function validateCredentials(employeeNumber: string, password: string): string | null {
-  if (!employeeNumber || typeof employeeNumber !== 'string') return 'Employee number is required.';
-  if (employeeNumber.trim().length < 3) return 'Employee number must be at least 3 characters.';
-  if (employeeNumber.length > 20) return 'Employee number must be 20 characters or fewer.';
-  if (!/^[A-Za-z0-9]+$/.test(employeeNumber)) return 'Employee number must contain only letters and numbers.';
+function validateCredentials(crewCode: string, password: string): string | null {
+  if (!crewCode || typeof crewCode !== 'string') return 'CREW CODE is required.';
+  if (crewCode.trim().length < 3) return 'CREW CODE must be at least 3 characters.';
+  if (crewCode.length > 20) return 'CREW CODE must be 20 characters or fewer.';
+  if (!/^[A-Za-z0-9]+$/.test(crewCode)) return 'CREW CODE must contain only letters and numbers.';
   if (!password || typeof password !== 'string') return 'Password is required.';
   if (password.length < 4) return 'Password must be at least 4 characters.';
   return null;
 }
 
-function generateTokens(userId: string, employeeNumber: string) {
-  const accessToken = jwt.sign({ userId, employeeNumber }, JWT_SECRET, { expiresIn: JWT_EXPIRY });
-  const refreshToken = jwt.sign({ userId, employeeNumber }, JWT_REFRESH_SECRET, { expiresIn: JWT_REFRESH_EXPIRY });
+function generateTokens(userId: string, crewCode: string) {
+  const accessToken = jwt.sign({ userId, crewCode }, JWT_SECRET, { expiresIn: JWT_EXPIRY });
+  const refreshToken = jwt.sign({ userId, crewCode }, JWT_REFRESH_SECRET, { expiresIn: JWT_REFRESH_EXPIRY });
   return { accessToken, refreshToken };
 }
 
 // POST /api/auth/login
 router.post('/login', async (req: Request, res: Response) => {
   try {
-    const { employeeNumber, password } = req.body;
+    const { crewCode, password } = req.body;
 
-    const validationError = validateCredentials(employeeNumber, password);
+    const validationError = validateCredentials(crewCode, password);
     if (validationError) {
       res.status(400).json({ error: validationError });
       return;
     }
 
     const snapshot = await db.collection('users')
-      .where('employeeNumber', '==', employeeNumber)
+      .where('crewCode', '==', crewCode)
       .limit(1)
       .get();
 
@@ -61,7 +61,7 @@ router.post('/login', async (req: Request, res: Response) => {
       return;
     }
 
-    const { accessToken, refreshToken } = generateTokens(user.id, user.employeeNumber);
+    const { accessToken, refreshToken } = generateTokens(user.id, user.crewCode);
 
     await doc.ref.update({ refreshToken });
 
@@ -70,7 +70,7 @@ router.post('/login', async (req: Request, res: Response) => {
       refreshToken,
       user: {
         id: user.id,
-        employeeNumber: user.employeeNumber,
+        crewCode: user.crewCode,
         fullName: user.fullName,
         base: user.base,
         role: user.role,
@@ -92,9 +92,9 @@ router.post('/refresh', async (req: Request, res: Response) => {
       return;
     }
 
-    let decoded: { userId: string; employeeNumber: string };
+    let decoded: { userId: string; crewCode: string };
     try {
-      decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET) as { userId: string; employeeNumber: string };
+      decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET) as { userId: string; crewCode: string };
     } catch {
       res.status(401).json({ error: 'Invalid refresh token' });
       return;
@@ -113,7 +113,7 @@ router.post('/refresh', async (req: Request, res: Response) => {
       return;
     }
 
-    const tokens = generateTokens(decoded.userId, decoded.employeeNumber);
+    const tokens = generateTokens(decoded.userId, decoded.crewCode);
     await doc.ref.update({ refreshToken: tokens.refreshToken });
 
     res.json(tokens);
@@ -147,7 +147,7 @@ router.get('/me', authenticate, async (req: AuthRequest, res: Response) => {
     const user = doc.data()!;
     res.json({
       id: doc.id,
-      employeeNumber: user.employeeNumber,
+      crewCode: user.crewCode,
       fullName: user.fullName,
       base: user.base,
       role: user.role,

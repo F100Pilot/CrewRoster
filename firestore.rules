@@ -15,7 +15,7 @@ service cloud.firestore {
     // ──────────────────────────────────────────────
 
     // ── USERS ────────────────────────────────────
-    // Fields: employeeNumber, passwordHash, fullName,
+    // Fields: crewCode, passwordHash, fullName,
     //         base, role, email, phone,
     //         medicalValidity, lpcValidity,
     //         refreshToken, createdAt, updatedAt

@@ -8,7 +8,7 @@ async function seed() {
   const passwordHash = await bcrypt.hash('demo123', 12);
 
   const usersSnap = await db.collection('users')
-    .where('employeeNumber', '==', 'PT12345')
+    .where('crewCode', '==', 'PT12345')
     .limit(1)
     .get();
 
@@ -32,7 +32,7 @@ async function seed() {
     const docRef = db.collection('users').doc();
     userId = docRef.id;
     await docRef.set({
-      employeeNumber: 'PT12345',
+      crewCode: 'PT12345',
       passwordHash,
       fullName: 'João Silva',
       base: 'LIS',
@@ -137,7 +137,7 @@ async function seed() {
   await batch.commit();
 
   console.log('Seed data created successfully!');
-  console.log('Login with: Employee Number: PT12345, Password: demo123');
+  console.log('Login with: CREW CODE: PT12345, Password: demo123');
 }
 
 seed().catch((err) => {

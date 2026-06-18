@@ -13,7 +13,7 @@ if (!JWT_SECRET) {
 
 export interface AuthRequest extends Request {
   userId?: string;
-  employeeNumber?: string;
+  crewCode?: string;
 }
 
 export function authenticate(req: AuthRequest, res: Response, next: NextFunction): void {
@@ -29,10 +29,10 @@ export function authenticate(req: AuthRequest, res: Response, next: NextFunction
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as {
       userId: string;
-      employeeNumber: string;
+      crewCode: string;
     };
     req.userId = decoded.userId;
-    req.employeeNumber = decoded.employeeNumber;
+    req.crewCode = decoded.crewCode;
     next();
   } catch {
     res.status(401).json({ error: 'Invalid or expired token' });

@@ -47,7 +47,7 @@ router.get('/ics-feed/:token', async (req, res: Response) => {
 
     const cal = ical({
       name: `CrewRoster - ${user.fullName}`,
-      description: `Roster for ${user.fullName} (${user.employeeNumber})`,
+      description: `Roster for ${user.fullName} (${user.crewCode})`,
       method: ICalCalendarMethod.PUBLISH,
       prodId: { company: 'CrewRoster', product: 'ICS Feed', language: 'EN' },
       timezone: 'Europe/Lisbon',
@@ -102,7 +102,7 @@ router.get('/ics-feed/:token', async (req, res: Response) => {
     await exportDoc.ref.update({ lastExportedAt: new Date() });
 
     res.setHeader('Content-Type', 'text/calendar; charset=utf-8');
-    res.setHeader('Content-Disposition', `inline; filename="crewroster-${user.employeeNumber}.ics"`);
+    res.setHeader('Content-Disposition', `inline; filename="crewroster-${user.crewCode}.ics"`);
     res.setHeader('Cache-Control', 'no-cache, must-revalidate');
     res.send(cal.toString());
   } catch (err) {

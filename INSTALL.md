@@ -64,7 +64,7 @@ npm start
 
 - **Frontend**: http://localhost:3000
 - **API (emulator)**: http://localhost:5001/crewroster-app/us-central1/api
-- **Demo login**: Employee `PT12345` / Password `demo123`
+- **Demo login**: CREW CODE `PT12345` / Password `demo123`
 
 ---
 
@@ -121,7 +121,7 @@ Each user document needs:
 
 ```
 users/{auto-id}
-  employeeNumber: "PT12345"        (string)
+  crewCode: "PT12345"              (string)
   passwordHash: "<bcrypt hash>"    (string)
   fullName: "João Silva"           (string)
   base: "LIS"                      (string)
