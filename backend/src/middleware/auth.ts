@@ -1,0 +1,40 @@
+import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+
+const JWT_SECRET = process.env.JWT_SECRET || '';
+
+// Validate required secret on startup
+if (!JWT_SECRET) {
+  console.error('CRITICAL: JWT_SECRET must be set in environment variables!');
+  if (process.env.NODE_ENV === 'production') {
+    process.exit(1);
+  }
+}
+
+export interface AuthRequest extends Request {
+  userId?: string;
+  employeeNumber?: string;
+}
+
+export function authenticate(req: AuthRequest, res: Response, next: NextFunction): void {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    res.status(401).json({ error: 'Authentication required' });
+    return;
+  }
+
+  const token = authHeader.split(' ')[1];
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as {
+      userId: string;
+      employeeNumber: string;
+    };
+    req.userId = decoded.userId;
+    req.employeeNumber = decoded.employeeNumber;
+    next();
+  } catch {
+    res.status(401).json({ error: 'Invalid or expired token' });
+  }
+}
