@@ -1,0 +1,101 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ──────────────────────────────────────────────
+    // CrewRoster Security Rules
+    // 
+    // All access goes through Cloud Functions
+    // (Admin SDK), which bypasses these rules.
+    // Direct client SDK access is blocked entirely
+    // since the app uses custom JWT (not Firebase Auth).
+    //
+    // These rules will take effect if Firebase Auth
+    // is integrated in the future.
+    // ──────────────────────────────────────────────
+
+    // ── USERS ────────────────────────────────────
+    // Fields: employeeNumber, passwordHash, fullName,
+    //         base, role, email, phone,
+    //         medicalValidity, lpcValidity,
+    //         refreshToken, createdAt, updatedAt
+    //
+    // Password hash MUST never be readable by anyone.
+    // Refresh token is sensitive.
+    match /users/{userId} {
+      // Owner can read their own profile
+      allow get: if request.auth != null
+                  && request.auth.uid == userId;
+
+      // Never expose the full user document directly.
+      // Cloud Functions strips sensitive fields before
+      // sending to the client.
+      allow list: if false;
+
+      // Only Admin SDK (Cloud Functions) can write
+      allow write: if false;
+    }
+
+    // ── DUTIES ───────────────────────────────────
+    // Fields: userId, date, dutyCode, dutyType,
+    //         reportingTime, departureTime, 
+    //         arrivalTime, dutyTime, blockTime,
+    //         flightNumber, departureAirport,
+    //         arrivalAirport, observations,
+    //         isModified, modifiedAt, createdAt
+    match /duties/{dutyId} {
+      // Owner can list/read their own duties
+      allow read: if request.auth != null
+                   && resource.data.userId == request.auth.uid;
+
+      // Only Admin SDK can write
+      allow write: if false;
+    }
+
+    // ── FLIGHTS ──────────────────────────────────
+    // Fields: flightNumber, aircraftType,
+    //         departureAirport, arrivalAirport
+    //
+    // Shared reference data — all authenticated
+    // users can read. Write is Admin SDK only.
+    match /flights/{flightId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // ── NOTIFICATIONS ────────────────────────────
+    // Fields: userId, type, title, message, isRead,
+    //         createdAt
+    match /notifications/{notifId} {
+      // Owner can read their own notifications
+      allow read: if request.auth != null
+                   && resource.data.userId == request.auth.uid;
+
+      // Owner can mark notifications as read only.
+      // Cannot change title, message, type, etc.
+      allow update: if request.auth != null
+                     && resource.data.userId == request.auth.uid
+                     && request.resource.data.diff(resource.data)
+                        .affectedKeys().hasOnly(['isRead']);
+
+      // Only Admin SDK can create or delete
+      allow create, delete: if false;
+    }
+
+    // ── CALENDAR EXPORTS ─────────────────────────
+    // Fields: userId, exportType, icsToken,
+    //         lastExportedAt, createdAt
+    //
+    // The ICS token is public (used in the feed URL),
+    // but the document is private to the owner.
+    // The ICS feed endpoint reads via Admin SDK.
+    match /calendarExports/{exportId} {
+      // Owner can read their export config
+      allow read: if request.auth != null
+                   && resource.data.userId == request.auth.uid;
+
+      // Only Admin SDK can write
+      allow write: if false;
+    }
+  }
+}
