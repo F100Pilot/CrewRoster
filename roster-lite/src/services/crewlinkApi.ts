@@ -74,11 +74,13 @@ export async function fetchRoster(options: FetchRosterOptions): Promise<ArrayBuf
   });
 
   if (!res.ok) {
-    // Try to parse error JSON; fall back to generic message.
     let message = 'Erro ao obter a escala.';
     try {
       const err = (await res.json()) as ApiError;
       message = err.error || message;
+      if (err.htmlPreview) {
+        console.warn('[CrewRoster] HTML preview from worker:', err.htmlPreview);
+      }
     } catch {
       // response wasn't JSON
     }

@@ -218,14 +218,19 @@ async function handleRoster(
   };
 
   // Step 1: Open the "Individual Duty Plan" service (like clicking the menu item).
-  await fetch(`${env.CREWLINK_BASE}${CREWLINK_APP_PATH}`, {
-    method: 'POST',
-    headers: upstreamHeaders,
-    body: formEncode({
-      crewlinkService: 'individualDutyPlan',
-      crewlinkOperation: 'default',
-    }),
-    redirect: 'manual',
+  // Uses GET with query params (matching browser behavior when clicking the menu).
+  const step1Params = new URLSearchParams({
+    crewlinkService: 'individualDutyPlan',
+    crewlinkOperation: 'default',
+  });
+  await fetch(`${env.CREWLINK_BASE}${CREWLINK_APP_PATH}?${step1Params}`, {
+    method: 'GET',
+    headers: {
+      'User-Agent': upstreamHeaders['User-Agent'],
+      Cookie: cookie,
+      Referer: `${env.CREWLINK_BASE}/crewlink/`,
+    },
+    redirect: 'follow',
   });
 
   // Step 2: Generate the report (like clicking "Generate" on the calendar).
@@ -238,7 +243,7 @@ async function handleRoster(
       beginDate: dates.beginDate!,
       endDate: dates.endDate!,
     }),
-    redirect: 'manual',
+    redirect: 'follow',
   });
 
   const contentType = reportResponse.headers.get('Content-Type') ?? '';
