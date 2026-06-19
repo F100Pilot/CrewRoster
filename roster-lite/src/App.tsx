@@ -6,6 +6,8 @@ import DayDetailPage from './pages/DayDetailPage';
 import DebugPage from './pages/DebugPage';
 import LoginPage from './pages/LoginPage';
 import ImportPage from './pages/ImportPage';
+import SavedPdfsPage from './pages/SavedPdfsPage';
+import PdfViewerPage from './pages/PdfViewerPage';
 import { RosterProvider } from './state/RosterProvider';
 import { useRoster } from './state/useRoster';
 
@@ -27,6 +29,8 @@ function AppRoutes() {
       <Routes>
         <Route path="/" element={<RosterPage />} />
         <Route path="/import" element={<ImportPage />} />
+        <Route path="/pdfs" element={<SavedPdfsPage />} />
+        <Route path="/pdf/:id" element={<PdfViewerPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/day/:date" element={<DayDetailPage />} />

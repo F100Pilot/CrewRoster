@@ -1,11 +1,12 @@
 import { type ReactNode } from 'react';
 import { AppBar, Box, Container, IconButton, Paper, Toolbar, Typography, BottomNavigation, BottomNavigationAction } from '@mui/material';
-import { CalendarMonth, FormatListBulleted, BugReport, Sync } from '@mui/icons-material';
+import { CalendarMonth, FormatListBulleted, BugReport, Sync, PictureAsPdf } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const NAV = [
   { label: 'Lista', icon: <FormatListBulleted />, path: '/' },
   { label: 'Calendário', icon: <CalendarMonth />, path: '/calendar' },
+  { label: 'PDFs', icon: <PictureAsPdf />, path: '/pdfs' },
   { label: 'Debug', icon: <BugReport />, path: '/debug' },
 ];
 

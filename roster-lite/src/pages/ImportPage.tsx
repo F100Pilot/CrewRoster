@@ -17,17 +17,27 @@ import {
   EventNote,
   Login,
   ChevronRight,
+  Visibility,
+  SaveAlt,
 } from '@mui/icons-material';
 import { format, parseISO } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { fetchRoster } from '../services/crewlinkApi';
 import { useRoster } from '../state/useRoster';
+import { savePdf } from '../storage/rosterStore';
+import { downloadBlob } from '../utils/download';
 import UploadDropzone from '../components/UploadDropzone';
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function toCrewLinkDate(iso: string): string {
   const [y, m, d] = iso.split('-');
   return `${d}${MONTHS[parseInt(m) - 1]}${y}`;
+}
+
+interface LastDownload {
+  id: string;
+  fileName: string;
+  blob: Blob;
 }
 
 export default function ImportPage() {
@@ -40,11 +50,13 @@ export default function ImportPage() {
   const [downloading, setDownloading] = useState(false);
   const [downloadStatus, setDownloadStatus] = useState('');
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [lastDownload, setLastDownload] = useState<LastDownload | null>(null);
 
   const handleDownload = async () => {
     if (!sessionToken) return;
     setDownloading(true);
     setDownloadError(null);
+    setLastDownload(null);
     setDownloadStatus('A descarregar escala do CrewLink…');
     try {
       const options: { sessionToken: string; beginDate?: string; endDate?: string } = { sessionToken };
@@ -52,14 +64,29 @@ export default function ImportPage() {
       if (endDate) options.endDate = toCrewLinkDate(endDate);
 
       const pdfBuffer = await fetchRoster(options);
-      setDownloadStatus('PDF recebido. A processar…');
-      const pdfFile = new File(
-        [new Blob([pdfBuffer], { type: 'application/pdf' })],
-        'crewlink-roster.pdf',
-        { type: 'application/pdf' },
-      );
+      setDownloadStatus('PDF recebido. A guardar e processar…');
+
+      const blob = new Blob([pdfBuffer], { type: 'application/pdf' });
+      const id = crypto.randomUUID();
+      const stamp = format(new Date(), 'yyyyMMdd-HHmm');
+      const fileName = `escala-${stamp}.pdf`;
+
+      // Persist the PDF in the history (registered by download time + date range).
+      await savePdf({
+        id,
+        fileName,
+        blob,
+        downloadedAt: new Date().toISOString(),
+        beginDate: beginDate || null,
+        endDate: endDate || null,
+      });
+
+      // Feed it through the parser pipeline so the roster view updates.
+      const pdfFile = new File([blob], fileName, { type: 'application/pdf' });
       await importFile(pdfFile);
-      navigate('/');
+
+      setLastDownload({ id, fileName, blob });
+      setDownloadStatus('');
     } catch (err) {
       setDownloadError(err instanceof Error ? err.message : 'Erro desconhecido.');
       setDownloadStatus('');
@@ -102,6 +129,40 @@ export default function ImportPage() {
               {downloadStatus && !downloadError && (
                 <Alert severity="info" icon={<CircularProgress size={18} />}>
                   {downloadStatus}
+                </Alert>
+              )}
+
+              {lastDownload && (
+                <Alert severity="success">
+                  <Typography variant="body2" gutterBottom>
+                    Escala descarregada e guardada no histórico.
+                  </Typography>
+                  <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap mt={1}>
+                    <Button
+                      size="small"
+                      variant="contained"
+                      startIcon={<Visibility />}
+                      onClick={() => navigate(`/pdf/${lastDownload.id}`)}
+                    >
+                      Ver PDF
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<SaveAlt />}
+                      onClick={() => downloadBlob(lastDownload.blob, lastDownload.fileName)}
+                    >
+                      Descarregar
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      endIcon={<ChevronRight />}
+                      onClick={() => navigate('/')}
+                    >
+                      Ver escala
+                    </Button>
+                  </Stack>
                 </Alert>
               )}
 
@@ -156,36 +217,43 @@ export default function ImportPage() {
         </CardContent>
       </Card>
 
-      {/* Card 3: Current roster (only if one exists) */}
-      {roster && (
-        <>
-          <Divider>
-            <Typography variant="caption" color="text.secondary">ou</Typography>
-          </Divider>
-          <Card variant="outlined">
-            <CardContent>
-              <Stack direction="row" alignItems="center" spacing={1} mb={1}>
-                <EventNote color="primary" />
-                <Typography variant="h6">Escala atual</Typography>
-              </Stack>
-              <Typography variant="body2" color="text.secondary" mb={2}>
-                {roster.fileName} · importada em{' '}
-                {format(parseISO(roster.importedAt), 'dd/MM/yyyy HH:mm')} ·{' '}
-                {roster.duties.length} registos
-              </Typography>
-              <Box display="flex" justifyContent="flex-end">
-                <Button
-                  variant="outlined"
-                  endIcon={<ChevronRight />}
-                  onClick={() => navigate('/')}
-                >
-                  Ver escala
-                </Button>
-              </Box>
-            </CardContent>
-          </Card>
-        </>
-      )}
+      {/* Card 3: History + current roster */}
+      <Divider>
+        <Typography variant="caption" color="text.secondary">ou</Typography>
+      </Divider>
+      <Card variant="outlined">
+        <CardContent>
+          <Stack direction="row" alignItems="center" spacing={1} mb={1}>
+            <EventNote color="primary" />
+            <Typography variant="h6">Escalas guardadas</Typography>
+          </Stack>
+          {roster && (
+            <Typography variant="body2" color="text.secondary" mb={2}>
+              Escala atual: {roster.fileName} · importada em{' '}
+              {format(parseISO(roster.importedAt), 'dd/MM/yyyy HH:mm')} ·{' '}
+              {roster.duties.length} registos
+            </Typography>
+          )}
+          <Box display="flex" gap={1} flexWrap="wrap">
+            <Button
+              variant="outlined"
+              startIcon={<EventNote />}
+              onClick={() => navigate('/pdfs')}
+            >
+              Histórico de PDFs
+            </Button>
+            {roster && (
+              <Button
+                variant="outlined"
+                endIcon={<ChevronRight />}
+                onClick={() => navigate('/')}
+              >
+                Ver escala
+              </Button>
+            )}
+          </Box>
+        </CardContent>
+      </Card>
     </Stack>
   );
 }

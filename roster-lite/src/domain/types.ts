@@ -33,3 +33,14 @@ export interface ParseResult {
   rawText: string;
   warnings: string[];
 }
+
+// A PDF downloaded from CrewLink, kept in IndexedDB so the user can re-open,
+// re-download, or delete it. Registered by download time and date range.
+export interface SavedPdf {
+  id: string;
+  fileName: string;
+  blob: Blob;
+  downloadedAt: string; // ISO timestamp of when it was fetched
+  beginDate: string | null; // ISO YYYY-MM-DD (requested range start), or null
+  endDate: string | null; // ISO YYYY-MM-DD (requested range end), or null = server max
+}
