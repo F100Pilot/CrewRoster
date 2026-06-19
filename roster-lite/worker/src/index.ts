@@ -321,6 +321,7 @@ async function handleRoster(
       crewlinkOperation: 'makeReport',
       beginDate: dates.beginDate!,
       endDate: dates.endDate!,
+      selectBtn: 'Generate Report',
     }),
     redirect: 'follow',
   });

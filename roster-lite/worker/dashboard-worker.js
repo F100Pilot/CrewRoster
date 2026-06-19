@@ -280,6 +280,7 @@ async function handleRoster(request) {
       crewlinkOperation: 'makeReport',
       beginDate: dates.beginDate,
       endDate: dates.endDate,
+      selectBtn: 'Generate Report',
     }),
     redirect: 'follow',
   });
