@@ -4,7 +4,7 @@ import {
   ListItemIcon, ListItemText, Menu, MenuItem, Popover, Stack, Typography,
 } from '@mui/material';
 import {
-  ChevronLeft, ChevronRight, Delete, Login, Today, CalendarMonth, MoreVert, InfoOutlined,
+  ChevronLeft, ChevronRight, Delete, Login, Today, CalendarMonth, MoreVert, InfoOutlined, EditCalendar,
 } from '@mui/icons-material';
 import { addMonths, format, isSameMonth, parseISO, subMonths } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
@@ -15,7 +15,13 @@ import NextDutyCard from '../components/NextDutyCard';
 import MonthStatsCard from '../components/MonthStatsCard';
 import GoogleCalendarSync from '../components/GoogleCalendarSync';
 import { downloadIcs } from '../utils/icsExport';
-import type { ParsedDuty } from '../domain/types';
+import type { ParsedDuty, ChangeType } from '../domain/types';
+
+const CHANGE_STYLE: Record<ChangeType, { color: string; label: string }> = {
+  added: { color: '#2e7d32', label: 'Novo' },
+  modified: { color: '#ed6c02', label: 'Alterado' },
+  removed: { color: '#c62828', label: 'Removido' },
+};
 
 // Tier 2 — coarse buckets the list can be filtered by.
 type Filter = 'all' | 'flights' | 'standby' | 'off';
@@ -41,12 +47,18 @@ function matchesFilter(d: ParsedDuty, f: Filter): boolean {
 }
 
 export default function RosterPage() {
-  const { roster, loading, warnings, error, clear, activeUser } = useRoster();
+  const { roster, loading, warnings, error, clear, dismissChanges, activeUser } = useRoster();
   const navigate = useNavigate();
   const [month, setMonth] = useState(new Date());
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [infoAnchor, setInfoAnchor] = useState<null | HTMLElement>(null);
   const [filter, setFilter] = useState<Filter>('all');
+
+  const changeByDate = useMemo(() => {
+    const map = new Map<string, ChangeType>();
+    for (const c of roster?.changes ?? []) map.set(c.date, c.type);
+    return map;
+  }, [roster]);
 
   const monthDuties = useMemo(
     () => (roster ? roster.duties.filter((d) => isSameMonth(parseISO(d.date), month)) : []),
@@ -94,6 +106,25 @@ export default function RosterPage() {
           {w}
         </Alert>
       ))}
+
+      {roster.changes && roster.changes.length > 0 && (
+        <Alert
+          severity="info"
+          onClose={() => dismissChanges()}
+          icon={<EditCalendar fontSize="inherit" />}
+        >
+          <Typography variant="body2" fontWeight={600}>
+            {roster.changes.length === 1
+              ? '1 dia mudou desde a última escala'
+              : `${roster.changes.length} dias mudaram desde a última escala`}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            {roster.changes
+              .map((c) => `${format(parseISO(c.date), 'dd/MM')} (${CHANGE_STYLE[c.type].label.toLowerCase()})`)
+              .join(' · ')}
+          </Typography>
+        </Alert>
+      )}
 
       <NextDutyCard duties={roster.duties} />
 
@@ -185,11 +216,32 @@ export default function RosterPage() {
         <Alert severity="info">Nenhum registo deste tipo neste mês.</Alert>
       )}
 
-      {[...dutiesByDay.entries()].map(([date, duties]) => (
-        <Card key={date} variant="outlined" sx={{ cursor: 'pointer' }} onClick={() => navigate(`/day/${date}`)}>
+      {[...dutiesByDay.entries()].map(([date, duties]) => {
+        const change = changeByDate.get(date);
+        return (
+        <Card
+          key={date}
+          variant="outlined"
+          sx={{
+            cursor: 'pointer',
+            ...(change && {
+              borderLeft: `4px solid ${CHANGE_STYLE[change].color}`,
+            }),
+          }}
+          onClick={() => navigate(`/day/${date}`)}
+        >
           <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
             <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
-              <Typography variant="subtitle2">{format(parseISO(date), 'EEE, dd MMM')}</Typography>
+              <Box display="flex" alignItems="center" gap={1}>
+                <Typography variant="subtitle2">{format(parseISO(date), 'EEE, dd MMM')}</Typography>
+                {change && (
+                  <Chip
+                    size="small"
+                    label={CHANGE_STYLE[change].label}
+                    sx={{ bgcolor: CHANGE_STYLE[change].color, color: '#fff', height: 18, fontSize: '0.65rem' }}
+                  />
+                )}
+              </Box>
               {duties[0]?.reportingTime && (
                 <Chip size="small" variant="outlined" label={`Apres. ${duties[0].reportingTime}z`} />
               )}
@@ -201,7 +253,8 @@ export default function RosterPage() {
             </Box>
           </CardContent>
         </Card>
-      ))}
+        );
+      })}
     </Stack>
   );
 }

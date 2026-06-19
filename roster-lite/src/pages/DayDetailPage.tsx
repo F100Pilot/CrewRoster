@@ -4,7 +4,7 @@ import { format, parseISO } from 'date-fns';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import { dutyColor } from '../theme';
-import { toLocalTime } from '../utils/localTime';
+import { toLocalTime, toUserTime, userTimeZoneLabel } from '../utils/localTime';
 import { diffMinutes, formatDuration } from '../utils/duration';
 import { dayStats } from '../domain/dutyStats';
 
@@ -77,6 +77,7 @@ export default function DayDetailPage() {
                     airport={duty.departureAirport}
                     utc={duty.departureTime}
                     lt={toLocalTime(date, duty.departureTime, duty.departureAirport)}
+                    userTime={toUserTime(date, duty.departureTime)}
                     label="STD"
                   />
                   <Box display="flex" alignItems="center" mt={1}>
@@ -88,6 +89,7 @@ export default function DayDetailPage() {
                     airport={duty.arrivalAirport}
                     utc={duty.arrivalTime}
                     lt={toLocalTime(date, duty.arrivalTime, duty.arrivalAirport)}
+                    userTime={toUserTime(date, duty.arrivalTime)}
                     label="STA"
                   />
                 </Box>
@@ -147,18 +149,24 @@ export default function DayDetailPage() {
   );
 }
 
-// One endpoint of a flight: airport code, UTC time, and (when known) local time.
+// One endpoint of a flight: airport code, UTC time, local airport time, and — when
+// the user is in a different timezone — the time in their own (device) timezone.
 function TimePoint({
   airport,
   utc,
   lt,
+  userTime,
   label,
 }: {
   airport: string | null;
   utc: string | null;
   lt: string | null;
+  userTime: string | null;
   label: string;
 }) {
+  // Only worth showing the user's own time when it differs from the airport's local
+  // time (i.e. the user isn't in the same timezone as this airport).
+  const showUser = userTime && userTime !== lt;
   return (
     <Box textAlign="center" minWidth={64}>
       <Typography variant="h5" fontWeight={700}>
@@ -171,8 +179,13 @@ function TimePoint({
         </Typography>
       </Typography>
       {lt && (
-        <Typography variant="caption" color="text.secondary">
+        <Typography variant="caption" color="text.secondary" display="block">
           ({lt} LT)
+        </Typography>
+      )}
+      {showUser && (
+        <Typography variant="caption" color="text.secondary" display="block">
+          ({userTime} {userTimeZoneLabel()})
         </Typography>
       )}
       <Typography variant="caption" color="text.secondary" display="block">

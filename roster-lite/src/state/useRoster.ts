@@ -10,6 +10,7 @@ export interface RosterState {
   sessionToken: string | null;
   importFile: (file: File) => Promise<void>;
   clear: () => Promise<void>;
+  dismissChanges: () => Promise<void>;
   setSessionToken: (token: string | null) => void;
   // multi-user
   users: UserProfile[];

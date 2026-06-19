@@ -16,6 +16,13 @@ export interface ParsedDuty {
 
 export type SourceType = 'pdf' | 'csv' | 'ics';
 
+// A single day's change between the previous roster and a freshly imported one.
+export type ChangeType = 'added' | 'removed' | 'modified';
+export interface DayChange {
+  date: string; // YYYY-MM-DD
+  type: ChangeType;
+}
+
 export interface UserProfile {
   id: string;
   name: string;
@@ -31,6 +38,7 @@ export interface Roster {
   importedAt: string; // ISO timestamp
   duties: ParsedDuty[];
   rawText: string; // extracted text — powers the debug view and the raw fallback
+  changes?: DayChange[]; // what changed vs the previous import (Tier 2 diff)
 }
 
 // Result of running a file through the parsing pipeline (before persistence).

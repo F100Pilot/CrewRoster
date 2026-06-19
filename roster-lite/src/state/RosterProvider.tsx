@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { Roster, UserProfile } from '../domain/types';
 import { parseRosterFile } from '../parsing';
+import { diffRosters } from '../domain/rosterDiff';
 import {
   clearRoster, deleteUser as deleteUserDB, getActiveUserId,
   listUsers, loadRoster, migrateLegacySingleUser,
@@ -99,6 +100,9 @@ export function RosterProvider({ children }: { children: ReactNode }) {
     setWarnings([]);
     try {
       const result = await parseRosterFile(file);
+      // Diff against whatever the user had before, so we can highlight what changed.
+      const previous = await loadRoster(activeUser.id);
+      const changes = previous ? diffRosters(previous.duties, result.duties) : [];
       const next: Roster = {
         id: activeUser.id,
         fileName: file.name,
@@ -106,6 +110,7 @@ export function RosterProvider({ children }: { children: ReactNode }) {
         importedAt: new Date().toISOString(),
         duties: result.duties,
         rawText: result.rawText,
+        changes,
       };
       await saveRoster(activeUser.id, next);
       setRoster(next);
@@ -125,15 +130,23 @@ export function RosterProvider({ children }: { children: ReactNode }) {
     setError(null);
   }, [activeUser]);
 
+  // Acknowledge the "what changed" highlights so they don't show again on reload.
+  const dismissChanges = useCallback(async () => {
+    if (!activeUser || !roster?.changes?.length) return;
+    const updated: Roster = { ...roster, changes: [] };
+    await saveRoster(activeUser.id, updated);
+    setRoster(updated);
+  }, [activeUser, roster]);
+
   const value = useMemo<RosterState>(
     () => ({
       roster, loading, importing, error, warnings, sessionToken,
-      importFile, clear, setSessionToken,
+      importFile, clear, dismissChanges, setSessionToken,
       users, activeUser,
       switchUser, createUser, deleteUser: deleteUserFn,
     }),
     [roster, loading, importing, error, warnings, sessionToken,
-     importFile, clear, users, activeUser, switchUser, createUser, deleteUserFn]
+     importFile, clear, dismissChanges, users, activeUser, switchUser, createUser, deleteUserFn]
   );
 
   return <RosterContext.Provider value={value}>{children}</RosterContext.Provider>;
