@@ -64,7 +64,7 @@ export default function CalendarPage() {
               variant="outlined"
               onClick={() => dayDuties.length && navigate(`/day/${key}`)}
               sx={{
-                minHeight: 64, p: 0.5, cursor: dayDuties.length ? 'pointer' : 'default',
+                minHeight: 64, minWidth: 0, p: 0.5, cursor: dayDuties.length ? 'pointer' : 'default',
                 opacity: inMonth ? 1 : 0.4,
                 borderColor: isToday(day) ? 'primary.main' : 'divider',
                 borderWidth: isToday(day) ? 2 : 1,

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import {
   Alert, Box, Button, Card, CardContent, Chip, Divider, IconButton, Popover, Stack, Typography,
 } from '@mui/material';
-import { ChevronLeft, ChevronRight, Delete, Login, Today, ExpandMore, ExpandLess, CalendarMonth, InfoOutlined } from '@mui/icons-material';
+import { ChevronLeft, ChevronRight, Delete, Login, Today, CalendarMonth, InfoOutlined } from '@mui/icons-material';
 import { addMonths, format, isSameMonth, parseISO, subMonths } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
@@ -17,7 +17,6 @@ export default function RosterPage() {
   const { roster, loading, warnings, error, clear, activeUser } = useRoster();
   const navigate = useNavigate();
   const [month, setMonth] = useState(new Date());
-  const [showRaw, setShowRaw] = useState(false);
   const [infoAnchor, setInfoAnchor] = useState<null | HTMLElement>(null);
 
   const dutiesByDay = useMemo(() => {
@@ -134,30 +133,6 @@ export default function RosterPage() {
           </CardContent>
         </Card>
       ))}
-
-      {roster.sourceType === 'pdf' && (
-        <Box>
-          <Divider sx={{ my: 1 }} />
-          <Button
-            size="small"
-            startIcon={showRaw ? <ExpandLess /> : <ExpandMore />}
-            onClick={() => setShowRaw((s) => !s)}
-          >
-            Texto extraído do PDF
-          </Button>
-          {showRaw && (
-            <Box
-              component="pre"
-              sx={{
-                mt: 1, p: 1.5, bgcolor: 'grey.100', borderRadius: 1, fontSize: '0.7rem',
-                whiteSpace: 'pre-wrap', maxHeight: 300, overflow: 'auto',
-              }}
-            >
-              {roster.rawText}
-            </Box>
-          )}
-        </Box>
-      )}
     </Stack>
   );
 }
