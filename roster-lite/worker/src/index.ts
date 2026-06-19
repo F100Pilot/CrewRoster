@@ -186,6 +186,48 @@ function defaultDateRange(): { beginDate: string; endDate: string } {
   return { beginDate: fmt(now), endDate: fmt(end) };
 }
 
+/** Parse forms + fields from an HTML page (diagnostic: discover required fields). */
+function extractForms(html: string): unknown[] {
+  const forms: unknown[] = [];
+  const formRe = /<form\b([^>]*)>([\s\S]*?)<\/form>/gi;
+  let fm: RegExpExecArray | null;
+  while ((fm = formRe.exec(html)) !== null) {
+    const attrs = fm[1];
+    const inner = fm[2];
+    const action = (attrs.match(/action\s*=\s*['"]([^'"]*)['"]/i) || [])[1] ?? '';
+    const method = (attrs.match(/method\s*=\s*['"]([^'"]*)['"]/i) || [])[1] ?? 'GET';
+    const fields: unknown[] = [];
+    const inputRe = /<input\b([^>]*)>/gi;
+    let im: RegExpExecArray | null;
+    while ((im = inputRe.exec(inner)) !== null) {
+      const a = im[1];
+      fields.push({
+        tag: 'input',
+        type: (a.match(/type\s*=\s*['"]([^'"]*)['"]/i) || [])[1] ?? 'text',
+        name: (a.match(/name\s*=\s*['"]([^'"]*)['"]/i) || [])[1] ?? '',
+        value: (a.match(/value\s*=\s*['"]([^'"]*)['"]/i) || [])[1] ?? '',
+      });
+    }
+    const selectRe = /<select\b([^>]*)>([\s\S]*?)<\/select>/gi;
+    let sm: RegExpExecArray | null;
+    while ((sm = selectRe.exec(inner)) !== null) {
+      const name = (sm[1].match(/name\s*=\s*['"]([^'"]*)['"]/i) || [])[1] ?? '';
+      const options: unknown[] = [];
+      const optRe = /<option\b([^>]*)>/gi;
+      let om: RegExpExecArray | null;
+      while ((om = optRe.exec(sm[2])) !== null) {
+        options.push({
+          value: (om[1].match(/value\s*=\s*['"]([^'"]*)['"]/i) || [])[1] ?? '',
+          selected: /selected/i.test(om[1]),
+        });
+      }
+      fields.push({ tag: 'select', name, options: options.slice(0, 8) });
+    }
+    forms.push({ action, method, fields });
+  }
+  return forms;
+}
+
 /** Try to find a PDF URL in an HTML response from CrewLink. */
 function findPdfUrl(html: string): string | null {
   // Known pattern: /crewlink/temp/{ts}.{USER}-nlc-p01.pga.pt.{id}.idp.pdf
@@ -261,7 +303,7 @@ async function handleRoster(
     status: step1.status,
     contentType: step1.headers.get('Content-Type') ?? '',
     cookieRotated: extractSessionId(step1) !== null,
-    preview: step1Html.substring(0, 800),
+    forms: extractForms(step1Html),
   });
 
   // Step 2: Generate the report (like clicking "Generate" on the calendar).
@@ -301,6 +343,7 @@ async function handleRoster(
     step: 'makeReport',
     status: reportResponse.status,
     contentType,
+    forms: extractForms(html),
     preview: html.substring(0, 1500),
   });
 

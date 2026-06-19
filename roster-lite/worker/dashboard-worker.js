@@ -149,6 +149,49 @@ function defaultDateRange() {
   return { beginDate: fmt(now), endDate: fmt(end) };
 }
 
+// Extrai os formulários e os respetivos campos (name/value) de uma página HTML.
+// Usado para diagnóstico: descobrir que campos o formulário "Filter" precisa.
+function extractForms(html) {
+  const forms = [];
+  const formRe = /<form\b([^>]*)>([\s\S]*?)<\/form>/gi;
+  let fm;
+  while ((fm = formRe.exec(html)) !== null) {
+    const attrs = fm[1];
+    const inner = fm[2];
+    const action = (attrs.match(/action\s*=\s*['"]([^'"]*)['"]/i) || [])[1] ?? '';
+    const method = (attrs.match(/method\s*=\s*['"]([^'"]*)['"]/i) || [])[1] ?? 'GET';
+    const fields = [];
+    const inputRe = /<input\b([^>]*)>/gi;
+    let im;
+    while ((im = inputRe.exec(inner)) !== null) {
+      const a = im[1];
+      fields.push({
+        tag: 'input',
+        type: (a.match(/type\s*=\s*['"]([^'"]*)['"]/i) || [])[1] ?? 'text',
+        name: (a.match(/name\s*=\s*['"]([^'"]*)['"]/i) || [])[1] ?? '',
+        value: (a.match(/value\s*=\s*['"]([^'"]*)['"]/i) || [])[1] ?? '',
+      });
+    }
+    const selectRe = /<select\b([^>]*)>([\s\S]*?)<\/select>/gi;
+    let sm;
+    while ((sm = selectRe.exec(inner)) !== null) {
+      const name = (sm[1].match(/name\s*=\s*['"]([^'"]*)['"]/i) || [])[1] ?? '';
+      const options = [];
+      const optRe = /<option\b([^>]*)>/gi;
+      let om;
+      while ((om = optRe.exec(sm[2])) !== null) {
+        options.push({
+          value: (om[1].match(/value\s*=\s*['"]([^'"]*)['"]/i) || [])[1] ?? '',
+          selected: /selected/i.test(om[1]),
+        });
+      }
+      fields.push({ tag: 'select', name, options: options.slice(0, 8) });
+    }
+    forms.push({ action, method, fields });
+  }
+  return forms;
+}
+
 function findPdfUrl(html) {
   const patterns = [
     /(?:src|href|url)\s*=\s*['"]([^'"]*\.idp\.pdf[^'"]*)['"]/i,
@@ -219,7 +262,7 @@ async function handleRoster(request) {
     status: step1.status,
     contentType: step1.headers.get('Content-Type') ?? '',
     cookieRotated: extractSessionId(step1) !== null,
-    preview: step1Html.substring(0, 2000),
+    forms: extractForms(step1Html),
   });
 
   // Passo 2: gerar o relatório (como clicar em "Generate" no calendário).
@@ -259,7 +302,8 @@ async function handleRoster(request) {
     step: 'makeReport',
     status: reportResponse.status,
     contentType,
-    preview: html.substring(0, 3000),
+    forms: extractForms(html),
+    preview: html.substring(0, 1500),
   });
 
   let pdfUrl = findPdfUrl(html);
