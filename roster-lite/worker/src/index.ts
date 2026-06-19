@@ -106,19 +106,20 @@ async function handleLogin(
     crewlinkPassword: body.password,
   });
 
+  const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36';
+
   const upstream = await fetch(`${env.CREWLINK_BASE}${CREWLINK_APP_PATH}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
-      'User-Agent': 'CrewRoster-Proxy/1.0',
+      'User-Agent': userAgent,
     },
     body: formData,
-    redirect: 'manual', // don't follow redirects — we need the Set-Cookie
+    redirect: 'manual',
   });
 
   const sessionId = extractSessionId(upstream);
   if (!sessionId) {
-    // Read the response body to check for error indicators
     const html = await upstream.text();
     const loginFailed =
       html.includes('Invalid') ||
@@ -132,13 +133,29 @@ async function handleLogin(
         error: loginFailed
           ? 'Credenciais inválidas ou servidor indisponível.'
           : 'Sessão não obtida. Tenta novamente.',
-        // Include status for debugging (never include credentials)
         upstreamStatus: upstream.status,
       },
       401,
       request,
       env,
     );
+  }
+
+  // Follow the login redirect to finalize session state on the server.
+  const redirectUrl = upstream.headers.get('Location');
+  if (redirectUrl) {
+    const fullUrl = redirectUrl.startsWith('http')
+      ? redirectUrl
+      : `${env.CREWLINK_BASE}${redirectUrl.startsWith('/') ? '' : '/crewlink/'}${redirectUrl}`;
+    await fetch(fullUrl, {
+      method: 'GET',
+      headers: {
+        'User-Agent': userAgent,
+        Cookie: `JSESSIONID=${sessionId}`,
+        Referer: `${env.CREWLINK_BASE}/crewlink/`,
+      },
+      redirect: 'follow',
+    });
   }
 
   return jsonResponse({ sessionToken: sessionId }, 200, request, env);

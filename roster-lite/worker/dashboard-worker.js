@@ -89,11 +89,13 @@ async function handleLogin(request) {
     crewlinkPassword: body.password,
   });
 
+  const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36';
+
   const upstream = await fetch(`${CREWLINK_BASE}${CREWLINK_APP_PATH}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36',
+      'User-Agent': userAgent,
     },
     body: formData,
     redirect: 'manual',
@@ -114,6 +116,24 @@ async function handleLogin(request) {
       401,
       request,
     );
+  }
+
+  // Follow the login redirect to finalize session state on the server.
+  // Java/NetLine apps often require the redirect GET to complete session initialization.
+  const redirectUrl = upstream.headers.get('Location');
+  if (redirectUrl) {
+    const fullUrl = redirectUrl.startsWith('http')
+      ? redirectUrl
+      : `${CREWLINK_BASE}${redirectUrl.startsWith('/') ? '' : '/crewlink/'}${redirectUrl}`;
+    await fetch(fullUrl, {
+      method: 'GET',
+      headers: {
+        'User-Agent': userAgent,
+        Cookie: `JSESSIONID=${sessionId}`,
+        Referer: `${CREWLINK_BASE}/crewlink/`,
+      },
+      redirect: 'follow',
+    });
   }
 
   return jsonResponse({ sessionToken: sessionId }, 200, request);
@@ -196,7 +216,7 @@ async function handleRoster(request) {
     status: step1.status,
     contentType: step1.headers.get('Content-Type') ?? '',
     cookieRotated: extractSessionId(step1) !== null,
-    preview: step1Html.substring(0, 800),
+    preview: step1Html.substring(0, 2000),
   });
 
   // Passo 2: gerar o relatório (como clicar em "Generate" no calendário).
@@ -236,7 +256,7 @@ async function handleRoster(request) {
     step: 'makeReport',
     status: reportResponse.status,
     contentType,
-    preview: html.substring(0, 1500),
+    preview: html.substring(0, 3000),
   });
 
   let pdfUrl = findPdfUrl(html);
