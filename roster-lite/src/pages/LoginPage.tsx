@@ -6,24 +6,22 @@ import {
   Card,
   CardContent,
   CircularProgress,
-  Divider,
   Stack,
   TextField,
   Typography,
 } from '@mui/material';
-import { Login, CloudUpload, ArrowBack } from '@mui/icons-material';
+import { Login } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { login, fetchRoster } from '../services/crewlinkApi';
+import { login } from '../services/crewlinkApi';
 import { useRoster } from '../state/useRoster';
 
 export default function LoginPage() {
-  const { roster, importFile } = useRoster();
+  const { setSessionToken } = useRoster();
   const navigate = useNavigate();
 
   const [crewCode, setCrewCode] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -32,26 +30,13 @@ export default function LoginPage() {
 
     setLoading(true);
     setError(null);
-    setStatus('A autenticar...');
 
     try {
-      // Step 1: Login
-      const sessionToken = await login(crewCode, password);
-      setStatus('Sessão obtida. A descarregar escala...');
-
-      // Step 2: Fetch roster PDF
-      const pdfBuffer = await fetchRoster({ sessionToken });
-      setStatus('PDF recebido. A processar...');
-
-      // Step 3: Feed the PDF through the existing parser pipeline
-      const pdfBlob = new Blob([pdfBuffer], { type: 'application/pdf' });
-      const pdfFile = new File([pdfBlob], 'crewlink-roster.pdf', { type: 'application/pdf' });
-      await importFile(pdfFile);
-
-      navigate('/');
+      const token = await login(crewCode, password);
+      setSessionToken(token);
+      navigate('/import');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido.');
-      setStatus('');
     } finally {
       setLoading(false);
     }
@@ -65,7 +50,7 @@ export default function LoginPage() {
             CrewLink Login
           </Typography>
           <Typography variant="body2" color="text.secondary" align="center" sx={{ mb: 3 }}>
-            Inicia sessão no CrewLink para importar a tua escala automaticamente.
+            Inicia sessão para descarregar a tua escala do CrewLink.
           </Typography>
 
           {error && (
@@ -104,39 +89,12 @@ export default function LoginPage() {
                 startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <Login />}
                 fullWidth
               >
-                {loading ? status || 'A processar...' : 'Entrar'}
+                {loading ? 'A autenticar…' : 'Entrar'}
               </Button>
             </Stack>
           </Box>
         </CardContent>
       </Card>
-
-      <Divider flexItem>
-        <Typography variant="caption" color="text.secondary">
-          ou
-        </Typography>
-      </Divider>
-
-      <Stack direction="row" spacing={2}>
-        {roster && (
-          <Button
-            variant="outlined"
-            startIcon={<ArrowBack />}
-            onClick={() => navigate('/')}
-            disabled={loading}
-          >
-            Voltar à escala
-          </Button>
-        )}
-        <Button
-          variant="outlined"
-          startIcon={<CloudUpload />}
-          onClick={() => navigate('/')}
-          disabled={loading}
-        >
-          Importar ficheiro
-        </Button>
-      </Stack>
     </Stack>
   );
 }

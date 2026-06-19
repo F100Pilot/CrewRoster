@@ -10,6 +10,7 @@ export function RosterProvider({ children }: { children: ReactNode }) {
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
+  const [sessionToken, setSessionToken] = useState<string | null>(null);
 
   // Hydrate from IndexedDB on first load so the user never re-uploads.
   useEffect(() => {
@@ -51,8 +52,8 @@ export function RosterProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<RosterState>(
-    () => ({ roster, loading, importing, error, warnings, importFile, clear }),
-    [roster, loading, importing, error, warnings, importFile, clear]
+    () => ({ roster, loading, importing, error, warnings, sessionToken, importFile, clear, setSessionToken }),
+    [roster, loading, importing, error, warnings, sessionToken, importFile, clear]
   );
 
   return <RosterContext.Provider value={value}>{children}</RosterContext.Provider>;

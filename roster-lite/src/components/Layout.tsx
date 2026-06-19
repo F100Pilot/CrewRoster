@@ -23,8 +23,8 @@ export default function Layout({ children }: { children: ReactNode }) {
           </Typography>
           <IconButton
             color="inherit"
-            onClick={() => navigate('/login')}
-            title="Atualizar escala via CrewLink"
+            onClick={() => navigate('/import')}
+            title="Importar / atualizar escala"
           >
             <Sync />
           </IconButton>

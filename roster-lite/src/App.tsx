@@ -5,6 +5,7 @@ import CalendarPage from './pages/CalendarPage';
 import DayDetailPage from './pages/DayDetailPage';
 import DebugPage from './pages/DebugPage';
 import LoginPage from './pages/LoginPage';
+import ImportPage from './pages/ImportPage';
 import { RosterProvider } from './state/RosterProvider';
 import { useRoster } from './state/useRoster';
 
@@ -21,12 +22,11 @@ function AppRoutes() {
     );
   }
 
-  // RosterPage handles the no-roster case itself (upload dropzone + Login button),
-  // so the routes are the same whether or not a roster exists.
   return (
     <Layout>
       <Routes>
         <Route path="/" element={<RosterPage />} />
+        <Route path="/import" element={<ImportPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/day/:date" element={<DayDetailPage />} />

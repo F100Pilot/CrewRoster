@@ -7,8 +7,10 @@ export interface RosterState {
   importing: boolean; // a file is being parsed
   error: string | null;
   warnings: string[];
+  sessionToken: string | null; // CrewLink session (memory only, not persisted)
   importFile: (file: File) => Promise<void>;
   clear: () => Promise<void>;
+  setSessionToken: (token: string | null) => void;
 }
 
 export const RosterContext = createContext<RosterState | null>(null);

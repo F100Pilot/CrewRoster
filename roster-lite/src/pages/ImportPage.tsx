@@ -1,0 +1,191 @@
+import { useState } from 'react';
+import {
+  Alert,
+  Box,
+  Button,
+  Card,
+  CardContent,
+  CircularProgress,
+  Divider,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
+import {
+  CloudDownload,
+  CloudUpload,
+  EventNote,
+  Login,
+  ChevronRight,
+} from '@mui/icons-material';
+import { format, parseISO } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
+import { fetchRoster } from '../services/crewlinkApi';
+import { useRoster } from '../state/useRoster';
+import UploadDropzone from '../components/UploadDropzone';
+
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function toCrewLinkDate(iso: string): string {
+  const [y, m, d] = iso.split('-');
+  return `${d}${MONTHS[parseInt(m) - 1]}${y}`;
+}
+
+export default function ImportPage() {
+  const { sessionToken, roster, importFile, importing } = useRoster();
+  const navigate = useNavigate();
+
+  const today = new Date();
+  const [beginDate, setBeginDate] = useState(format(today, 'yyyy-MM-dd'));
+  const [endDate, setEndDate] = useState('');
+  const [downloading, setDownloading] = useState(false);
+  const [downloadStatus, setDownloadStatus] = useState('');
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+
+  const handleDownload = async () => {
+    if (!sessionToken) return;
+    setDownloading(true);
+    setDownloadError(null);
+    setDownloadStatus('A descarregar escala do CrewLink…');
+    try {
+      const options: { sessionToken: string; beginDate?: string; endDate?: string } = { sessionToken };
+      if (beginDate) options.beginDate = toCrewLinkDate(beginDate);
+      if (endDate) options.endDate = toCrewLinkDate(endDate);
+
+      const pdfBuffer = await fetchRoster(options);
+      setDownloadStatus('PDF recebido. A processar…');
+      const pdfFile = new File(
+        [new Blob([pdfBuffer], { type: 'application/pdf' })],
+        'crewlink-roster.pdf',
+        { type: 'application/pdf' },
+      );
+      await importFile(pdfFile);
+      navigate('/');
+    } catch (err) {
+      setDownloadError(err instanceof Error ? err.message : 'Erro desconhecido.');
+      setDownloadStatus('');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  return (
+    <Stack spacing={3}>
+      {/* Card 1: Download from CrewLink */}
+      <Card variant="outlined">
+        <CardContent>
+          <Stack direction="row" alignItems="center" spacing={1} mb={1}>
+            <CloudDownload color="primary" />
+            <Typography variant="h6">Descarregar do CrewLink</Typography>
+          </Stack>
+
+          {!sessionToken ? (
+            <Stack spacing={2}>
+              <Typography variant="body2" color="text.secondary">
+                Faz login para descarregar a tua escala diretamente do CrewLink.
+              </Typography>
+              <Button
+                variant="contained"
+                startIcon={<Login />}
+                onClick={() => navigate('/login')}
+                sx={{ alignSelf: 'flex-start' }}
+              >
+                Fazer login
+              </Button>
+            </Stack>
+          ) : (
+            <Stack spacing={2}>
+              <Typography variant="body2" color="text.secondary">
+                Sessão ativa. Escolhe o intervalo de datas (opcional — o servidor usa os valores por defeito).
+              </Typography>
+
+              {downloadError && <Alert severity="error">{downloadError}</Alert>}
+              {downloadStatus && !downloadError && (
+                <Alert severity="info" icon={<CircularProgress size={18} />}>
+                  {downloadStatus}
+                </Alert>
+              )}
+
+              <Stack direction="row" spacing={2}>
+                <TextField
+                  label="Data início"
+                  type="date"
+                  value={beginDate}
+                  onChange={(e) => setBeginDate(e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                  size="small"
+                  fullWidth
+                />
+                <TextField
+                  label="Data fim"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  InputLabelProps={{ shrink: true }}
+                  helperText="Deixa em branco para o máximo disponível"
+                  size="small"
+                  fullWidth
+                />
+              </Stack>
+
+              <Button
+                variant="contained"
+                startIcon={downloading ? <CircularProgress size={18} color="inherit" /> : <CloudDownload />}
+                onClick={handleDownload}
+                disabled={downloading || importing}
+                sx={{ alignSelf: 'flex-start' }}
+              >
+                {downloading ? downloadStatus || 'A descarregar…' : 'Descarregar escala'}
+              </Button>
+            </Stack>
+          )}
+        </CardContent>
+      </Card>
+
+      <Divider>
+        <Typography variant="caption" color="text.secondary">ou</Typography>
+      </Divider>
+
+      {/* Card 2: Import file */}
+      <Card variant="outlined">
+        <CardContent>
+          <Stack direction="row" alignItems="center" spacing={1} mb={2}>
+            <CloudUpload color="primary" />
+            <Typography variant="h6">Importar ficheiro</Typography>
+          </Stack>
+          <UploadDropzone />
+        </CardContent>
+      </Card>
+
+      {/* Card 3: Current roster (only if one exists) */}
+      {roster && (
+        <>
+          <Divider>
+            <Typography variant="caption" color="text.secondary">ou</Typography>
+          </Divider>
+          <Card variant="outlined">
+            <CardContent>
+              <Stack direction="row" alignItems="center" spacing={1} mb={1}>
+                <EventNote color="primary" />
+                <Typography variant="h6">Escala atual</Typography>
+              </Stack>
+              <Typography variant="body2" color="text.secondary" mb={2}>
+                {roster.fileName} · importada em{' '}
+                {format(parseISO(roster.importedAt), 'dd/MM/yyyy HH:mm')} ·{' '}
+                {roster.duties.length} registos
+              </Typography>
+              <Box display="flex" justifyContent="flex-end">
+                <Button
+                  variant="outlined"
+                  endIcon={<ChevronRight />}
+                  onClick={() => navigate('/')}
+                >
+                  Ver escala
+                </Button>
+              </Box>
+            </CardContent>
+          </Card>
+        </>
+      )}
+    </Stack>
+  );
+}

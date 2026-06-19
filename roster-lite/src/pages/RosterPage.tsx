@@ -41,9 +41,9 @@ export default function RosterPage() {
           <Button
             variant="outlined"
             startIcon={<Login />}
-            onClick={() => navigate('/login')}
+            onClick={() => navigate('/import')}
           >
-            Login CrewLink
+            Importar escala
           </Button>
         </Box>
       </Stack>
