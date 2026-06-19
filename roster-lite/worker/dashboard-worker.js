@@ -193,6 +193,14 @@ function extractForms(html) {
 }
 
 function findPdfUrl(html) {
+  // O CrewLink embebe o PDF num visualizador pdf.js:
+  //   src="js/pdfjs/web/viewer.html?file=/crewlink/temp/....idp.pdf"
+  // O PDF real está no parâmetro file= — tem prioridade sobre tudo o resto.
+  const viewerMatch = html.match(/[?&]file=([^'"&\s>]*\.pdf[^'"&\s>]*)/i);
+  if (viewerMatch) {
+    try { return decodeURIComponent(viewerMatch[1]); } catch { return viewerMatch[1]; }
+  }
+
   const patterns = [
     /(?:src|href|url)\s*=\s*['"]([^'"]*\.idp\.pdf[^'"]*)['"]/i,
     /(?:src|href|url)\s*=\s*['"]([^'"]*\.pdf[^'"]*)['"]/i,

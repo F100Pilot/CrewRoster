@@ -230,6 +230,14 @@ function extractForms(html: string): unknown[] {
 
 /** Try to find a PDF URL in an HTML response from CrewLink. */
 function findPdfUrl(html: string): string | null {
+  // CrewLink embeds the PDF in a pdf.js viewer:
+  //   src="js/pdfjs/web/viewer.html?file=/crewlink/temp/....idp.pdf"
+  // The real PDF lives in the file= parameter — prioritize it.
+  const viewerMatch = html.match(/[?&]file=([^'"&\s>]*\.pdf[^'"&\s>]*)/i);
+  if (viewerMatch) {
+    try { return decodeURIComponent(viewerMatch[1]); } catch { return viewerMatch[1]; }
+  }
+
   // Known pattern: /crewlink/temp/{ts}.{USER}-nlc-p01.pga.pt.{id}.idp.pdf
   const patterns = [
     /(?:src|href|url)\s*=\s*['"]([^'"]*\.idp\.pdf[^'"]*)['"]/i,
