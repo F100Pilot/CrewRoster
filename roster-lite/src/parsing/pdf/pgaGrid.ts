@@ -224,16 +224,16 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
       r.cells.some((c) => /^date$/i.test(c.text.trim()) && c.x >= 494)
     );
 
-    headers.forEach((h, gi) => {
+    headers.forEach((h) => {
       const cols: Column[] = h.cells
         .filter((c) => DOW.test(c.text) && c.x < 500)
         .map((c) => ({ x: c.x, token: c.text }))
         .sort((a, b) => a.x - b.x);
       const yTop = h.y;
       // A band ends at the NEXT header row below it — counting summary/legend headers
-      // too. Using only parsed headers here would let a real grid's band run to the
-      // page bottom and swallow the summary tables underneath (June flights leaking
-      // onto late-July days). gi+1 alone isn't enough, hence the lookup over allHeaders.
+      // too. Bounding by the next *parsed* header instead would let a real grid's band
+      // run to the page bottom and swallow the summary tables underneath (June flights
+      // leaking onto late-July days), so we scan over allHeaders here.
       const yBot = Math.max(
         ...allHeaders.filter((r) => r.y < yTop - 2).map((r) => r.y),
         -Infinity
