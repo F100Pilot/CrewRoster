@@ -63,7 +63,7 @@ export default function FlightWeather({ duty, date }: { duty: ParsedDuty; date: 
 
       <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
         {fc
-          ? `Estimativa a ~FL300 (shear ${fc.shearKmh} km/h · CAPE ${fc.capeJkg} J/kg). `
+          ? `Estimativa a ~FL340 (shear ${fc.shearKmh} km/h · CAPE ${fc.capeJkg} J/kg). `
           : ''}
         Não substitui o briefing meteorológico oficial.
       </Typography>

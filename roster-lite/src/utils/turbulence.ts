@@ -6,7 +6,7 @@ import { AIRPORT_COORD, midpoint } from '../domain/airports';
 //   • vertical wind shear across cruise pressure levels → clear-air turbulence
 //   • CAPE (convective available potential energy)       → thunderstorm turbulence
 // The roster only knows origin/destination/time, so we sample the great-circle
-// midpoint at roughly mid-flight and at a typical short-haul cruise (~FL300).
+// midpoint at roughly mid-flight and at a typical short-haul cruise (~FL340).
 
 export type TurbulenceLevel = 'low' | 'moderate' | 'high';
 
@@ -99,7 +99,7 @@ export async function fetchTurbulence(
   }
 }
 
-// A Windy embed URL centred on the route midpoint, wind overlay at ~FL300 (300 hPa).
+// A Windy embed URL centred on the route midpoint, wind overlay at ~FL340 (250 hPa).
 // The dedicated turbulence overlay is Windy Premium and not available in the free
 // embed, so we show wind at cruise level as the visual proxy.
 export function windyEmbedUrl(dep: string | null, arr: string | null): string | null {
@@ -113,7 +113,7 @@ export function windyEmbedUrl(dep: string | null, arr: string | null): string | 
     detailLat: mid.lat.toFixed(3),
     detailLon: mid.lon.toFixed(3),
     zoom: '5',
-    level: '300h',
+    level: '250h',
     overlay: 'wind',
     menu: '',
     message: '',

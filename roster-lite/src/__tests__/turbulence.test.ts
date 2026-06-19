@@ -38,7 +38,7 @@ describe('windyEmbedUrl', () => {
     const url = windyEmbedUrl('LIS', 'NCE');
     expect(url).toContain('embed.windy.com/embed2.html');
     expect(url).toContain('overlay=wind');
-    expect(url).toContain('level=300h');
+    expect(url).toContain('level=250h');
   });
 });
 
