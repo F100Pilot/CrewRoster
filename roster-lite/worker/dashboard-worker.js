@@ -200,12 +200,25 @@ function findPdfUrl(html) {
     /['"]([^'"]*\/crewlink\/temp\/[^'"]*\.pdf)['"]/i,
     /(\/crewlink\/temp\/[^\s"'<>]*\.pdf)/i,
     /([^\s"'<>]*\.idp\.pdf)/i,
+    // JavaScript navigation patterns common in old frameset apps
+    /document\.location\s*=\s*['"]([^'"]*\.pdf[^'"]*)['"]/i,
+    /window\.location(?:\.href)?\s*=\s*['"]([^'"]*\.pdf[^'"]*)['"]/i,
+    /location\.replace\(['"]([^'"]*\.pdf[^'"]*)['"]/i,
+    // iframe/frame src
+    /<(?:i?frame)[^>]+src\s*=\s*['"]([^'"]*\.pdf[^'"]*)['"]/i,
+    /<(?:i?frame)[^>]+src\s*=\s*([^\s"'>]*\.pdf[^\s"'>]*)/i,
   ];
   for (const p of patterns) {
     const m = html.match(p);
     if (m) return m[1] ?? m[0];
   }
   return null;
+}
+
+// Extract the body portion of an HTML page for diagnostic output.
+function extractBody(html) {
+  const bodyMatch = html.match(/<body[^>]*>([\s\S]*)/i);
+  return bodyMatch ? bodyMatch[1].substring(0, 3000) : html.substring(html.length - 2000);
 }
 
 async function handleRoster(request) {
@@ -282,9 +295,39 @@ async function handleRoster(request) {
       endDate: dates.endDate,
       selectBtn: 'Generate Report',
     }),
-    redirect: 'follow',
+    redirect: 'manual',
   });
   updateCookie(reportResponse);
+
+  // If the server redirected us (302/303) after generating the report, follow manually.
+  const reportLocation = reportResponse.headers.get('Location');
+  if (reportLocation && (reportResponse.status === 302 || reportResponse.status === 303 || reportResponse.status === 301)) {
+    const fullRedirectUrl = reportLocation.startsWith('http')
+      ? reportLocation
+      : `${CREWLINK_BASE}${reportLocation.startsWith('/') ? '' : '/crewlink/'}${reportLocation}`;
+    trail.push({ step: 'makeReport-redirect', status: reportResponse.status, location: fullRedirectUrl });
+
+    const redirectResponse = await fetch(fullRedirectUrl, {
+      headers: { 'User-Agent': upstreamHeaders['User-Agent'], Cookie: sessionCookie, Referer: `${CREWLINK_BASE}/crewlink/` },
+    });
+    updateCookie(redirectResponse);
+    const redirectCT = redirectResponse.headers.get('Content-Type') ?? '';
+    if (redirectCT.includes('application/pdf')) {
+      const pdfBuffer = await redirectResponse.arrayBuffer();
+      return new Response(pdfBuffer, { status: 200, headers: { 'Content-Type': 'application/pdf', ...corsHeaders(request) } });
+    }
+    const redirectHtml = await redirectResponse.text();
+    const redirectPdfUrl = findPdfUrl(redirectHtml);
+    trail.push({ step: 'makeReport-redirect-body', status: redirectResponse.status, contentType: redirectCT, pdfUrl: redirectPdfUrl, body: extractBody(redirectHtml) });
+    if (redirectPdfUrl) {
+      const pdfFull = redirectPdfUrl.startsWith('http') ? redirectPdfUrl : `${CREWLINK_BASE}${redirectPdfUrl}`;
+      const pdfRes = await fetch(pdfFull, { headers: { 'User-Agent': upstreamHeaders['User-Agent'], Cookie: sessionCookie } });
+      if (pdfRes.ok && (pdfRes.headers.get('Content-Type') ?? '').includes('application/pdf')) {
+        const pdfBuffer = await pdfRes.arrayBuffer();
+        return new Response(pdfBuffer, { status: 200, headers: { 'Content-Type': 'application/pdf', ...corsHeaders(request) } });
+      }
+    }
+  }
 
   const contentType = reportResponse.headers.get('Content-Type') ?? '';
 
@@ -302,9 +345,10 @@ async function handleRoster(request) {
   trail.push({
     step: 'makeReport',
     status: reportResponse.status,
+    redirectLocation: reportLocation,
     contentType,
     forms: extractForms(html),
-    preview: html.substring(0, 1500),
+    body: extractBody(html),
   });
 
   let pdfUrl = findPdfUrl(html);
