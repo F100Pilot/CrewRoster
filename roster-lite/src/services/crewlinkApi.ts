@@ -55,7 +55,9 @@ export async function login(crewCode: string, password: string): Promise<string>
 
 export interface FetchRosterOptions {
   sessionToken: string;
-  startDate?: string;
+  /** Format: ddMMMyyyy e.g. "19Jun2026" */
+  beginDate?: string;
+  /** Format: ddMMMyyyy e.g. "31Jul2026" */
   endDate?: string;
 }
 

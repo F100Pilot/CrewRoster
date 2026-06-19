@@ -150,10 +150,41 @@ async function handleLogin(
 
 interface RosterPayload {
   sessionToken: string;
-  /** Optional start date — format DDMMMYYYY e.g. "15Jun2026" */
-  startDate?: string;
-  /** Optional end date */
+  /** Start date — format ddMMMyyyy e.g. "19Jun2026". Defaults to today. */
+  beginDate?: string;
+  /** End date — format ddMMMyyyy e.g. "31Jul2026". Defaults to ~6 weeks out. */
   endDate?: string;
+}
+
+/** Default date range: today → today + 45 days, formatted as ddMMMyyyy. */
+function defaultDateRange(): { beginDate: string; endDate: string } {
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const fmt = (d: Date) => {
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${dd}${months[d.getMonth()]}${d.getFullYear()}`;
+  };
+  const now = new Date();
+  const end = new Date(now);
+  end.setDate(end.getDate() + 45);
+  return { beginDate: fmt(now), endDate: fmt(end) };
+}
+
+/** Try to find a PDF URL in an HTML response from CrewLink. */
+function findPdfUrl(html: string): string | null {
+  // Known pattern: /crewlink/temp/{ts}.{USER}-nlc-p01.pga.pt.{id}.idp.pdf
+  const patterns = [
+    /(?:src|href|url)\s*=\s*['"]([^'"]*\.idp\.pdf[^'"]*)['"]/i,
+    /(?:src|href|url)\s*=\s*['"]([^'"]*\.pdf[^'"]*)['"]/i,
+    /window\.open\(['"]([^'"]*\.pdf[^'"]*)['"]/i,
+    /['"]([^'"]*\/crewlink\/temp\/[^'"]*\.pdf)['"]/i,
+    /(\/crewlink\/temp\/[^\s"'<>]*\.pdf)/i,
+    /([^\s"'<>]*\.idp\.pdf)/i,
+  ];
+  for (const p of patterns) {
+    const m = html.match(p);
+    if (m) return m[1] ?? m[0];
+  }
+  return null;
 }
 
 async function handleRoster(
@@ -172,87 +203,60 @@ async function handleRoster(
   }
 
   const cookie = `JSESSIONID=${body.sessionToken}`;
-
-  // TODO: The exact CrewLink navigation to reach the duty-plan PDF needs to be
-  // calibrated with real network captures. The flow below is a best-guess based
-  // on the known form-data pattern and the PDF filename structure
-  // (EWDP15Jun2631Jul2026_162819581_.pdf).
-  //
-  // Likely steps:
-  // 1. POST with an operation that requests the EWDP (Extended Weekly Duty Plan)
-  // 2. The response is either the PDF directly or an HTML page with a link/iframe
-  // 3. If it's HTML, parse out the PDF URL and fetch it
-
-  // Step 1: Request the duty plan page
-  // TODO: Try different crewlinkOperation values from real captures:
-  //   - "showEWDP", "loadEWDP", "generateReport", "showDutyPlan",
-  //     "loadDutyPlan", "printRoster", "exportRoster"
-  const ewdpParams: Record<string, string> = {
-    crewlinkService: 'crewlinkForCrew',
-    crewlinkOperation: 'showEWDP', // TODO: calibrate with real captures
-    crewlinkSourcePage: 'spMainFrameSet',
+  const dates = {
+    beginDate: body.beginDate,
+    endDate: body.endDate,
+    ...(!body.beginDate || !body.endDate ? defaultDateRange() : {}),
   };
 
-  // TODO: If start/end dates are needed as form params, add them here.
-  // The PDF filename pattern suggests dates like "15Jun26" and "31Jul2026".
-  if (body.startDate) {
-    ewdpParams['startDate'] = body.startDate; // TODO: confirm param name
-  }
-  if (body.endDate) {
-    ewdpParams['endDate'] = body.endDate; // TODO: confirm param name
-  }
+  const upstreamHeaders = {
+    'Content-Type': 'application/x-www-form-urlencoded',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36',
+    Cookie: cookie,
+    Referer: `${env.CREWLINK_BASE}/crewlink/`,
+    Origin: env.CREWLINK_BASE,
+  };
 
-  const step1 = await fetch(`${env.CREWLINK_BASE}${CREWLINK_APP_PATH}`, {
+  // Step 1: Open the "Individual Duty Plan" service (like clicking the menu item).
+  await fetch(`${env.CREWLINK_BASE}${CREWLINK_APP_PATH}`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'User-Agent': 'CrewRoster-Proxy/1.0',
-      Cookie: cookie,
-    },
-    body: formEncode(ewdpParams),
+    headers: upstreamHeaders,
+    body: formEncode({
+      crewlinkService: 'individualDutyPlan',
+      crewlinkOperation: 'default',
+    }),
     redirect: 'manual',
   });
 
-  const contentType = step1.headers.get('Content-Type') ?? '';
+  // Step 2: Generate the report (like clicking "Generate" on the calendar).
+  const reportResponse = await fetch(`${env.CREWLINK_BASE}${CREWLINK_APP_PATH}`, {
+    method: 'POST',
+    headers: upstreamHeaders,
+    body: formEncode({
+      crewlinkService: 'individualDutyPlan',
+      crewlinkOperation: 'makeReport',
+      beginDate: dates.beginDate!,
+      endDate: dates.endDate!,
+    }),
+    redirect: 'manual',
+  });
 
-  // Best case: the response is already the PDF
+  const contentType = reportResponse.headers.get('Content-Type') ?? '';
+
+  // If the response is already the PDF, return it directly.
   if (contentType.includes('application/pdf')) {
-    const pdfBuffer = await step1.arrayBuffer();
+    const pdfBuffer = await reportResponse.arrayBuffer();
     return new Response(pdfBuffer, {
       status: 200,
-      headers: {
-        'Content-Type': 'application/pdf',
-        ...corsHeaders(request, env),
-      },
+      headers: { 'Content-Type': 'application/pdf', ...corsHeaders(request, env) },
     });
   }
 
-  // If we got HTML, try to find a PDF link in it
-  const html = await step1.text();
-
-  // Look for PDF URLs in common patterns: iframe src, window.open, href, etc.
-  // Known PDF URL pattern: /crewlink/temp/{ts}.{USER}-nlc-p01.pga.pt.{id}.idp.pdf
-  const pdfPatterns = [
-    /(?:src|href|url)\s*=\s*['"]([^'"]*\.idp\.pdf[^'"]*)['"]/i,
-    /(?:src|href|url)\s*=\s*['"]([^'"]*\.pdf[^'"]*)['"]/i,
-    /window\.open\(['"]([^'"]*\.pdf[^'"]*)['"]/i,
-    /location\.href\s*=\s*['"]([^'"]*\.pdf[^'"]*)['"]/i,
-    /['"]([^'"]*\/crewlink\/temp\/[^'"]*\.pdf)['"]/i,
-    /['"]([^'"]*EWDP[^'"]*\.pdf)['"]/i,
-    /(\/crewlink\/temp\/[^\s"'<>]*\.pdf)/i,
-  ];
-
-  let pdfUrl: string | null = null;
-  for (const pattern of pdfPatterns) {
-    const match = html.match(pattern);
-    if (match) {
-      pdfUrl = match[1] ?? match[0];
-      break;
-    }
-  }
+  // Otherwise it's an HTML page (PDF viewer) containing the PDF URL.
+  const html = await reportResponse.text();
+  let pdfUrl = findPdfUrl(html);
 
   if (pdfUrl) {
-    // Resolve relative URLs
     if (pdfUrl.startsWith('/')) {
       pdfUrl = `${env.CREWLINK_BASE}${pdfUrl}`;
     } else if (!pdfUrl.startsWith('http')) {
@@ -261,31 +265,25 @@ async function handleRoster(
 
     const pdfResponse = await fetch(pdfUrl, {
       headers: {
-        'User-Agent': 'CrewRoster-Proxy/1.0',
+        'User-Agent': upstreamHeaders['User-Agent'],
         Cookie: cookie,
+        Referer: `${env.CREWLINK_BASE}/crewlink/`,
       },
     });
 
-    if (pdfResponse.ok) {
+    if (pdfResponse.ok && (pdfResponse.headers.get('Content-Type') ?? '').includes('application/pdf')) {
       const pdfBuffer = await pdfResponse.arrayBuffer();
       return new Response(pdfBuffer, {
         status: 200,
-        headers: {
-          'Content-Type': 'application/pdf',
-          ...corsHeaders(request, env),
-        },
+        headers: { 'Content-Type': 'application/pdf', ...corsHeaders(request, env) },
       });
     }
   }
 
-  // TODO: If we reach here, the navigation flow needs adjustment.
-  // Return the HTML (truncated) so the developer can inspect and calibrate.
   return jsonResponse(
     {
-      error: 'Não foi possível obter o PDF. A navegação CrewLink precisa de calibração.',
-      hint: 'Check the htmlPreview field and update the crewlinkOperation / navigation flow.',
-      upstreamStatus: step1.status,
-      upstreamContentType: contentType,
+      error: 'Não foi possível obter o PDF da escala.',
+      upstreamStatus: reportResponse.status,
       htmlPreview: html.substring(0, 2000),
     },
     502,
