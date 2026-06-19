@@ -237,18 +237,21 @@ async function handleRoster(
   const trail: unknown[] = [];
 
   // Step 1: Open the "Individual Duty Plan" service (like clicking the menu item).
-  // Uses GET with query params (matching browser behavior when clicking the menu).
-  const step1Params = new URLSearchParams({
-    crewlinkService: 'individualDutyPlan',
-    crewlinkOperation: 'default',
-  });
-  const step1 = await fetch(`${env.CREWLINK_BASE}${CREWLINK_APP_PATH}?${step1Params}`, {
-    method: 'GET',
+  // POST (not GET) to load in NetLine's frame context — GET returns the frameset
+  // shell instead of the actual content.
+  const step1 = await fetch(`${env.CREWLINK_BASE}${CREWLINK_APP_PATH}`, {
+    method: 'POST',
     headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
       'User-Agent': userAgent,
       Cookie: sessionCookie,
       Referer: `${env.CREWLINK_BASE}/crewlink/`,
+      Origin: env.CREWLINK_BASE,
     },
+    body: formEncode({
+      crewlinkService: 'individualDutyPlan',
+      crewlinkOperation: 'default',
+    }),
     redirect: 'follow',
   });
   const step1Html = await step1.text();
@@ -268,7 +271,7 @@ async function handleRoster(
       'Content-Type': 'application/x-www-form-urlencoded',
       'User-Agent': userAgent,
       Cookie: sessionCookie,
-      Referer: `${env.CREWLINK_BASE}${CREWLINK_APP_PATH}?${step1Params}`,
+      Referer: `${env.CREWLINK_BASE}${CREWLINK_APP_PATH}`,
       Origin: env.CREWLINK_BASE,
     },
     body: formEncode({

@@ -195,18 +195,21 @@ async function handleRoster(request) {
   const trail = [];
 
   // Passo 1: abrir o serviço "Individual Duty Plan" (como clicar no menu).
-  // Usa GET com query params (como o browser faz ao clicar no menu).
-  const step1Params = new URLSearchParams({
-    crewlinkService: 'individualDutyPlan',
-    crewlinkOperation: 'default',
-  });
-  const step1 = await fetch(`${CREWLINK_BASE}${CREWLINK_APP_PATH}?${step1Params}`, {
-    method: 'GET',
+  // POST (não GET) para carregar no contexto de frame do NetLine — o GET
+  // devolve o frameset em vez do conteúdo real.
+  const step1 = await fetch(`${CREWLINK_BASE}${CREWLINK_APP_PATH}`, {
+    method: 'POST',
     headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
       'User-Agent': userAgent,
       Cookie: sessionCookie,
       Referer: `${CREWLINK_BASE}/crewlink/`,
+      Origin: CREWLINK_BASE,
     },
+    body: formEncode({
+      crewlinkService: 'individualDutyPlan',
+      crewlinkOperation: 'default',
+    }),
     redirect: 'follow',
   });
   const step1Html = await step1.text();
@@ -226,7 +229,7 @@ async function handleRoster(request) {
       'Content-Type': 'application/x-www-form-urlencoded',
       'User-Agent': userAgent,
       Cookie: sessionCookie,
-      Referer: `${CREWLINK_BASE}${CREWLINK_APP_PATH}?${step1Params}`,
+      Referer: `${CREWLINK_BASE}${CREWLINK_APP_PATH}`,
       Origin: CREWLINK_BASE,
     },
     body: formEncode({
