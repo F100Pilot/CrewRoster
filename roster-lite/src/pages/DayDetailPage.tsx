@@ -8,6 +8,7 @@ import { toLocalTime, toUserTime, userTimeZoneLabel } from '../utils/localTime';
 import { diffMinutes, formatDuration } from '../utils/duration';
 import { dayStats } from '../domain/dutyStats';
 import { shareDayImage } from '../utils/shareDay';
+import FlightWeather from '../components/FlightWeather';
 
 export default function DayDetailPage() {
   const { date } = useParams<{ date: string }>();
@@ -116,6 +117,8 @@ export default function DayDetailPage() {
                 )}
               </Box>
             )}
+
+            {duty.flightNumber && date && <FlightWeather duty={duty} date={date} />}
 
             {(duty.dutyType === 'Training' || duty.dutyType === 'Simulator') &&
               (duty.departureTime || duty.arrivalTime) && (
