@@ -10,9 +10,10 @@ const API_BASE = import.meta.env.VITE_API_URL as string | undefined;
 
 function baseUrl(): string {
   if (API_BASE) return API_BASE.replace(/\/+$/, '');
-  // Default: assume the worker is deployed at this subdomain.
-  // Update once the real Cloudflare Worker URL is known.
-  return 'https://crewroster-proxy.<your-account>.workers.dev';
+  throw new Error(
+    'Proxy não configurado. Faz deploy do worker (roster-lite/worker/deploy.sh) ' +
+    'e define VITE_API_URL no ficheiro .env.local.',
+  );
 }
 
 // ---------------------------------------------------------------------------

@@ -27,6 +27,7 @@ jobs:
       - run: npm run build
         env:
           BASE: /CrewRoster/
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
       - uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
