@@ -49,7 +49,7 @@ export default function DayDetailPage() {
       {duties.map((duty, i) => (
         <Card key={i} variant="outlined">
           <CardContent>
-            <Box display="flex" alignItems="center" gap={1} mb={2}>
+            <Box display="flex" alignItems="center" gap={1} mb={2} flexWrap="wrap">
               <Chip
                 label={duty.dutyCode}
                 sx={{
