@@ -5,6 +5,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import { dutyColor } from '../theme';
 import { toLocalTime } from '../utils/localTime';
+import { diffMinutes, formatDuration } from '../utils/duration';
+import { dayStats } from '../domain/dutyStats';
 
 export default function DayDetailPage() {
   const { date } = useParams<{ date: string }>();
@@ -12,6 +14,7 @@ export default function DayDetailPage() {
   const { roster } = useRoster();
 
   const duties = (roster?.duties ?? []).filter((d) => d.date === date);
+  const stats = dayStats(duties);
 
   return (
     <Stack spacing={2}>
@@ -21,6 +24,13 @@ export default function DayDetailPage() {
         </IconButton>
         <Typography variant="h6">{date ? format(parseISO(date), 'EEEE, dd MMMM yyyy') : ''}</Typography>
       </Box>
+
+      {stats && (
+        <Box display="flex" gap={1}>
+          <Chip size="small" color="primary" variant="outlined" label={`Bloco ${formatDuration(stats.blockMinutes)}`} />
+          <Chip size="small" variant="outlined" label={`Serviço ${formatDuration(stats.dutyMinutes)}`} />
+        </Box>
+      )}
 
       {duties.length === 0 && <Typography color="text.secondary">Sem registos neste dia.</Typography>}
 
@@ -81,9 +91,13 @@ export default function DayDetailPage() {
                     label="STA"
                   />
                 </Box>
-                {duty.aircraftType && (
+                {(duty.aircraftType || (duty.departureTime && duty.arrivalTime)) && (
                   <Typography variant="caption" color="text.secondary" display="block" textAlign="center" mt={1}>
-                    {duty.aircraftType}
+                    {[duty.aircraftType, duty.departureTime && duty.arrivalTime
+                      ? `Bloco ${formatDuration(diffMinutes(duty.departureTime, duty.arrivalTime))}`
+                      : null]
+                      .filter(Boolean)
+                      .join(' · ')}
                   </Typography>
                 )}
               </Box>

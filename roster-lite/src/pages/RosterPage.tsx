@@ -2,12 +2,14 @@ import { useMemo, useState } from 'react';
 import {
   Alert, Box, Button, Card, CardContent, Chip, Divider, IconButton, Stack, Typography,
 } from '@mui/material';
-import { ChevronLeft, ChevronRight, Delete, Login, Today, ExpandMore, ExpandLess } from '@mui/icons-material';
+import { ChevronLeft, ChevronRight, Delete, Login, Today, ExpandMore, ExpandLess, CalendarMonth } from '@mui/icons-material';
 import { addMonths, format, isSameMonth, parseISO, subMonths } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import UploadDropzone from '../components/UploadDropzone';
 import DutyChip from '../components/DutyChip';
+import NextDutyCard from '../components/NextDutyCard';
+import { downloadIcs } from '../utils/icsExport';
 import type { ParsedDuty } from '../domain/types';
 
 export default function RosterPage() {
@@ -61,6 +63,8 @@ export default function RosterPage() {
         </Alert>
       ))}
 
+      <NextDutyCard duties={roster.duties} />
+
       <Box display="flex" alignItems="center" justifyContent="space-between">
         <Box display="flex" alignItems="center" gap={1}>
           <IconButton size="small" onClick={() => setMonth((m) => subMonths(m, 1))}>
@@ -81,9 +85,14 @@ export default function RosterPage() {
           {roster.fileName} · {roster.duties.length} dias · importado{' '}
           {format(parseISO(roster.importedAt), 'dd/MM/yyyy HH:mm')}
         </Typography>
-        <Button size="small" color="error" startIcon={<Delete />} onClick={clear}>
-          Limpar
-        </Button>
+        <Box display="flex" gap={1}>
+          <Button size="small" startIcon={<CalendarMonth />} onClick={() => downloadIcs(roster)}>
+            Exportar .ics
+          </Button>
+          <Button size="small" color="error" startIcon={<Delete />} onClick={clear}>
+            Limpar
+          </Button>
+        </Box>
       </Box>
 
       {monthDuties.length === 0 && (

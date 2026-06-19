@@ -4,6 +4,7 @@ import RosterPage from './pages/RosterPage';
 import CalendarPage from './pages/CalendarPage';
 import DayDetailPage from './pages/DayDetailPage';
 import DebugPage from './pages/DebugPage';
+import CodesPage from './pages/CodesPage';
 import LoginPage from './pages/LoginPage';
 import ImportPage from './pages/ImportPage';
 import SavedPdfsPage from './pages/SavedPdfsPage';
@@ -35,6 +36,7 @@ function AppRoutes() {
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/day/:date" element={<DayDetailPage />} />
         <Route path="/debug" element={<DebugPage />} />
+        <Route path="/codes" element={<CodesPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>
