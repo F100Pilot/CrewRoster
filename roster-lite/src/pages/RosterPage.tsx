@@ -9,6 +9,7 @@ import { useRoster } from '../state/useRoster';
 import UploadDropzone from '../components/UploadDropzone';
 import DutyChip from '../components/DutyChip';
 import NextDutyCard from '../components/NextDutyCard';
+import GoogleCalendarSync from '../components/GoogleCalendarSync';
 import { downloadIcs } from '../utils/icsExport';
 import type { ParsedDuty } from '../domain/types';
 
@@ -89,6 +90,7 @@ export default function RosterPage() {
           <Button size="small" startIcon={<CalendarMonth />} onClick={() => downloadIcs(roster)}>
             Exportar .ics
           </Button>
+          <GoogleCalendarSync roster={roster} />
           <Button size="small" color="error" startIcon={<Delete />} onClick={clear}>
             Limpar
           </Button>
