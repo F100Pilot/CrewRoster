@@ -62,7 +62,8 @@ function formEncode(params: Record<string, string>): string {
 /** Extract JSESSIONID from Set-Cookie headers. */
 function extractSessionId(response: Response): string | null {
   // Workers expose Set-Cookie via getSetCookie() or raw headers.
-  const cookies = response.headers.getSetCookie?.() ?? [];
+  const hdrs = response.headers as Headers & { getSetCookie?: () => string[] };
+  const cookies = hdrs.getSetCookie?.() ?? [];
   // Fallback for environments where getSetCookie is unavailable.
   const allCookies =
     cookies.length > 0 ? cookies : [response.headers.get('Set-Cookie') ?? ''];
