@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import type { Roster, UserProfile } from '../domain/types';
+import type { CrewRole, Roster, UserProfile } from '../domain/types';
 
 export interface RosterState {
   roster: Roster | null;
@@ -16,8 +16,8 @@ export interface RosterState {
   users: UserProfile[];
   activeUser: UserProfile | null;
   switchUser: (userId: string) => Promise<void>;
-  createUser: (name: string, crewCode?: string) => Promise<UserProfile>;
-  renameUser: (userId: string, name: string, crewCode?: string) => Promise<void>;
+  createUser: (name: string, crewCode?: string, role?: CrewRole) => Promise<UserProfile>;
+  renameUser: (userId: string, name: string, crewCode?: string, role?: CrewRole) => Promise<void>;
   deleteUser: (userId: string) => Promise<void>;
 }
 

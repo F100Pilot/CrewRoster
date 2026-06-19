@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import type { Roster, UserProfile } from '../domain/types';
+import type { CrewRole, Roster, UserProfile } from '../domain/types';
 import { parseRosterFile } from '../parsing';
 import { diffRosters } from '../domain/rosterDiff';
 import {
@@ -55,11 +55,12 @@ export function RosterProvider({ children }: { children: ReactNode }) {
     setRoster(r ?? null);
   }, [users]);
 
-  const createUser = useCallback(async (name: string, crewCode?: string): Promise<UserProfile> => {
+  const createUser = useCallback(async (name: string, crewCode?: string, role: CrewRole = 'pilot'): Promise<UserProfile> => {
     const user: UserProfile = {
       id: crypto.randomUUID(),
       name: name.trim(),
       crewCode: crewCode?.trim() || undefined,
+      role,
       createdAt: new Date().toISOString(),
     };
     await saveUser(user);
@@ -74,10 +75,15 @@ export function RosterProvider({ children }: { children: ReactNode }) {
     return user;
   }, []);
 
-  const renameUser = useCallback(async (userId: string, name: string, crewCode?: string) => {
+  const renameUser = useCallback(async (userId: string, name: string, crewCode?: string, role?: CrewRole) => {
     const user = users.find((u) => u.id === userId);
     if (!user) return;
-    const updated: UserProfile = { ...user, name: name.trim(), crewCode: crewCode?.trim() || undefined };
+    const updated: UserProfile = {
+      ...user,
+      name: name.trim(),
+      crewCode: crewCode?.trim() || undefined,
+      role: role ?? user.role ?? 'pilot',
+    };
     await saveUser(updated);
     setUsers((prev) => prev.map((u) => (u.id === userId ? updated : u)));
     if (activeUser?.id === userId) setActiveUser(updated);

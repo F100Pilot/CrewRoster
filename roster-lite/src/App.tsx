@@ -3,6 +3,7 @@ import Layout from './components/Layout';
 import RosterPage from './pages/RosterPage';
 import CalendarPage from './pages/CalendarPage';
 import DayDetailPage from './pages/DayDetailPage';
+import LogbookPage from './pages/LogbookPage';
 import DebugPage from './pages/DebugPage';
 import CodesPage from './pages/CodesPage';
 import LoginPage from './pages/LoginPage';
@@ -41,6 +42,7 @@ function AppRoutes() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/day/:date" element={<DayDetailPage />} />
+        <Route path="/logbook" element={<LogbookPage />} />
         <Route path="/debug" element={<DebugPage />} />
         <Route path="/codes" element={<CodesPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />

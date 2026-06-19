@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import {
   ChevronLeft, ChevronRight, Delete, Login, Today, CalendarMonth, MoreVert, InfoOutlined,
-  EditCalendar, Search, Clear,
+  EditCalendar, Search, Clear, MenuBook,
 } from '@mui/icons-material';
 import { addMonths, format, isSameMonth, parseISO, subMonths } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
@@ -14,6 +14,7 @@ import UploadDropzone from '../components/UploadDropzone';
 import DutyChip from '../components/DutyChip';
 import NextDutyCard from '../components/NextDutyCard';
 import MonthStatsCard from '../components/MonthStatsCard';
+import FtlCard from '../components/FtlCard';
 import GoogleCalendarSync from '../components/GoogleCalendarSync';
 import { downloadIcs } from '../utils/icsExport';
 import { toLocalTime } from '../utils/localTime';
@@ -162,6 +163,8 @@ export default function RosterPage() {
 
       <MonthStatsCard duties={monthDuties} />
 
+      <FtlCard duties={roster.duties} />
+
       <Box display="flex" alignItems="center" gap={1}>
         <IconButton size="small" onClick={(e) => setInfoAnchor(e.currentTarget)} title="Detalhes da escala">
           <InfoOutlined fontSize="small" />
@@ -201,6 +204,12 @@ export default function RosterPage() {
           anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
           transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         >
+          {activeUser?.role !== 'cabin' && (
+            <MenuItem onClick={() => { navigate('/logbook'); setMenuAnchor(null); }}>
+              <ListItemIcon><MenuBook fontSize="small" /></ListItemIcon>
+              <ListItemText>Diário de bordo</ListItemText>
+            </MenuItem>
+          )}
           <MenuItem onClick={() => { downloadIcs(roster); setMenuAnchor(null); }}>
             <ListItemIcon><CalendarMonth fontSize="small" /></ListItemIcon>
             <ListItemText>Exportar .ics</ListItemText>

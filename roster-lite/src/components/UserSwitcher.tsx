@@ -2,11 +2,36 @@ import { useState } from 'react';
 import {
   Avatar, Box, Button, Dialog, DialogContent, DialogTitle, Divider,
   IconButton, ListItemAvatar, ListItemText, Menu,
-  MenuItem, Stack, TextField, Tooltip, Typography,
+  MenuItem, Stack, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography,
 } from '@mui/material';
-import { Add, Check, Delete, Edit, Person } from '@mui/icons-material';
+import { Add, Check, Delete, Edit, FlightTakeoff, Person, AirlineSeatReclineNormal } from '@mui/icons-material';
 import { useRoster } from '../state/useRoster';
-import type { UserProfile } from '../domain/types';
+import type { CrewRole, UserProfile } from '../domain/types';
+
+// Pilot vs cabin crew — gates the pilot-only features (logbook, recency).
+function RoleToggle({ value, onChange }: { value: CrewRole; onChange: (r: CrewRole) => void }) {
+  return (
+    <Box>
+      <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
+        Função
+      </Typography>
+      <ToggleButtonGroup
+        exclusive
+        fullWidth
+        size="small"
+        value={value}
+        onChange={(_, v) => v && onChange(v)}
+      >
+        <ToggleButton value="pilot">
+          <FlightTakeoff fontSize="small" sx={{ mr: 0.5 }} /> Piloto
+        </ToggleButton>
+        <ToggleButton value="cabin">
+          <AirlineSeatReclineNormal fontSize="small" sx={{ mr: 0.5 }} /> Cabina
+        </ToggleButton>
+      </ToggleButtonGroup>
+    </Box>
+  );
+}
 
 const AVATAR_COLORS = [
   '#1565c0', '#2e7d32', '#c62828', '#6a1b9a',
@@ -44,14 +69,16 @@ export function CreateUserDialog({
   const { createUser } = useRoster();
   const [name, setName] = useState('');
   const [crewCode, setCrewCode] = useState('');
+  const [role, setRole] = useState<CrewRole>('pilot');
   const [busy, setBusy] = useState(false);
 
   async function handleSubmit() {
     if (!name.trim()) return;
     setBusy(true);
-    await createUser(name, crewCode);
+    await createUser(name, crewCode, role);
     setName('');
     setCrewCode('');
+    setRole('pilot');
     setBusy(false);
     onClose();
   }
@@ -79,6 +106,7 @@ export function CreateUserDialog({
             fullWidth
             size="small"
           />
+          <RoleToggle value={role} onChange={setRole} />
           <Button
             variant="contained"
             onClick={handleSubmit}
@@ -99,12 +127,13 @@ function RenameUserDialog({ user, open, onClose }: { user: UserProfile; open: bo
   const { renameUser } = useRoster();
   const [name, setName] = useState(user.name);
   const [crewCode, setCrewCode] = useState(user.crewCode ?? '');
+  const [role, setRole] = useState<CrewRole>(user.role ?? 'pilot');
   const [busy, setBusy] = useState(false);
 
   async function handleSubmit() {
     if (!name.trim()) return;
     setBusy(true);
-    await renameUser(user.id, name, crewCode);
+    await renameUser(user.id, name, crewCode, role);
     setBusy(false);
     onClose();
   }
@@ -131,6 +160,7 @@ function RenameUserDialog({ user, open, onClose }: { user: UserProfile; open: bo
             fullWidth
             size="small"
           />
+          <RoleToggle value={role} onChange={setRole} />
           <Button
             variant="contained"
             onClick={handleSubmit}

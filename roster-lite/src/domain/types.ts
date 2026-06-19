@@ -23,10 +23,16 @@ export interface DayChange {
   type: ChangeType;
 }
 
+// A crew member is either a pilot (flight crew) or cabin crew. Some features —
+// logbook, landing recency — only make sense for pilots; flight-time limits and
+// rest apply to both. Treat a missing role as 'pilot' for backward compatibility.
+export type CrewRole = 'pilot' | 'cabin';
+
 export interface UserProfile {
   id: string;
   name: string;
   crewCode?: string;
+  role?: CrewRole; // default 'pilot'
   createdAt: string;
 }
 

@@ -7,6 +7,7 @@ import { dutyColor } from '../theme';
 import { toLocalTime, toUserTime, userTimeZoneLabel } from '../utils/localTime';
 import { diffMinutes, formatDuration } from '../utils/duration';
 import { dayStats } from '../domain/dutyStats';
+import { restBefore } from '../domain/restPeriods';
 import { shareDayImage } from '../utils/shareDay';
 import FlightWeather from '../components/FlightWeather';
 
@@ -17,6 +18,7 @@ export default function DayDetailPage() {
 
   const duties = (roster?.duties ?? []).filter((d) => d.date === date);
   const stats = dayStats(duties);
+  const rest = date ? restBefore(roster?.duties ?? [], date) : null;
 
   return (
     <Stack spacing={2}>
@@ -38,10 +40,23 @@ export default function DayDetailPage() {
         )}
       </Box>
 
-      {stats && (
-        <Box display="flex" gap={1}>
-          <Chip size="small" color="primary" variant="outlined" label={`Bloco ${formatDuration(stats.blockMinutes)}`} />
-          <Chip size="small" variant="outlined" label={`Serviço ${formatDuration(stats.dutyMinutes)}`} />
+      {(stats || (rest && rest.restMinutes !== null)) && (
+        <Box display="flex" gap={1} flexWrap="wrap">
+          {stats && (
+            <>
+              <Chip size="small" color="primary" variant="outlined" label={`Bloco ${formatDuration(stats.blockMinutes)}`} />
+              <Chip size="small" variant="outlined" label={`Serviço ${formatDuration(stats.dutyMinutes)}`} />
+            </>
+          )}
+          {rest && rest.restMinutes !== null && (
+            <Chip
+              size="small"
+              variant={rest.short ? 'filled' : 'outlined'}
+              color={rest.short ? 'warning' : 'default'}
+              label={`Descanso ${formatDuration(rest.restMinutes)}`}
+              sx={rest.short ? { color: '#fff' } : undefined}
+            />
+          )}
         </Box>
       )}
 
