@@ -16,6 +16,7 @@ import NextDutyCard from '../components/NextDutyCard';
 import MonthStatsCard from '../components/MonthStatsCard';
 import GoogleCalendarSync from '../components/GoogleCalendarSync';
 import { downloadIcs } from '../utils/icsExport';
+import { toLocalTime } from '../utils/localTime';
 import type { ParsedDuty, ChangeType } from '../domain/types';
 
 const CHANGE_STYLE: Record<ChangeType, { color: string; label: string }> = {
@@ -280,9 +281,16 @@ export default function RosterPage() {
                   />
                 )}
               </Box>
-              {duties[0]?.reportingTime && (
-                <Chip size="small" variant="outlined" label={`Apres. ${duties[0].reportingTime}z`} />
-              )}
+              {duties[0]?.reportingTime && (() => {
+                const lt = toLocalTime(date, duties[0].reportingTime, duties[0].departureAirport);
+                return (
+                  <Chip
+                    size="small"
+                    variant="outlined"
+                    label={lt ? `Apres. ${lt} LT` : `Apres. ${duties[0].reportingTime}z`}
+                  />
+                );
+              })()}
             </Box>
             <Box display="flex" flexWrap="wrap" gap={0.5}>
               {duties.map((d, i) => (
