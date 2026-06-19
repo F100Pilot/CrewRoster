@@ -14,7 +14,7 @@ import { downloadIcs } from '../utils/icsExport';
 import type { ParsedDuty } from '../domain/types';
 
 export default function RosterPage() {
-  const { roster, loading, warnings, error, clear } = useRoster();
+  const { roster, loading, warnings, error, clear, activeUser } = useRoster();
   const navigate = useNavigate();
   const [month, setMonth] = useState(new Date());
   const [showRaw, setShowRaw] = useState(false);
@@ -90,7 +90,7 @@ export default function RosterPage() {
           <Button size="small" startIcon={<CalendarMonth />} onClick={() => downloadIcs(roster)}>
             Exportar .ics
           </Button>
-          <GoogleCalendarSync roster={roster} />
+          {activeUser && <GoogleCalendarSync roster={roster} userId={activeUser.id} />}
           <Button size="small" color="error" startIcon={<Delete />} onClick={clear}>
             Limpar
           </Button>

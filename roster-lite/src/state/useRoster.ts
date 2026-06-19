@@ -1,16 +1,22 @@
 import { createContext, useContext } from 'react';
-import type { Roster } from '../domain/types';
+import type { Roster, UserProfile } from '../domain/types';
 
 export interface RosterState {
   roster: Roster | null;
-  loading: boolean; // initial hydration from IndexedDB
-  importing: boolean; // a file is being parsed
+  loading: boolean;
+  importing: boolean;
   error: string | null;
   warnings: string[];
-  sessionToken: string | null; // CrewLink session (memory only, not persisted)
+  sessionToken: string | null;
   importFile: (file: File) => Promise<void>;
   clear: () => Promise<void>;
   setSessionToken: (token: string | null) => void;
+  // multi-user
+  users: UserProfile[];
+  activeUser: UserProfile | null;
+  switchUser: (userId: string) => Promise<void>;
+  createUser: (name: string, crewCode?: string) => Promise<UserProfile>;
+  deleteUser: (userId: string) => Promise<void>;
 }
 
 export const RosterContext = createContext<RosterState | null>(null);

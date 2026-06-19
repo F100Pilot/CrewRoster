@@ -9,11 +9,12 @@ import LoginPage from './pages/LoginPage';
 import ImportPage from './pages/ImportPage';
 import SavedPdfsPage from './pages/SavedPdfsPage';
 import PdfViewerPage from './pages/PdfViewerPage';
+import WelcomePage from './pages/WelcomePage';
 import { RosterProvider } from './state/RosterProvider';
 import { useRoster } from './state/useRoster';
 
 function AppRoutes() {
-  const { loading } = useRoster();
+  const { loading, users } = useRoster();
 
   if (loading) {
     return (
@@ -23,6 +24,11 @@ function AppRoutes() {
         </Routes>
       </Layout>
     );
+  }
+
+  // First launch or all users deleted — show onboarding
+  if (users.length === 0) {
+    return <WelcomePage />;
   }
 
   return (
@@ -43,8 +49,6 @@ function AppRoutes() {
   );
 }
 
-// HashRouter keeps client-side routing working on static hosts (e.g. GitHub Pages)
-// without server rewrites.
 export default function App() {
   return (
     <RosterProvider>

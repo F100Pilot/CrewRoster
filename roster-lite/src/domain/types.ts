@@ -16,9 +16,16 @@ export interface ParsedDuty {
 
 export type SourceType = 'pdf' | 'csv' | 'ics';
 
+export interface UserProfile {
+  id: string;
+  name: string;
+  crewCode?: string;
+  createdAt: string;
+}
+
 // A fully imported roster, as persisted in IndexedDB.
 export interface Roster {
-  id: 'current';
+  id: string; // userId
   fileName: string;
   sourceType: SourceType;
   importedAt: string; // ISO timestamp

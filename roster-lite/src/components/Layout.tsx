@@ -3,6 +3,7 @@ import { AppBar, Box, Container, IconButton, Paper, Toolbar, Tooltip, Typography
 import { CalendarMonth, FormatListBulleted, BugReport, Sync, PictureAsPdf, Logout, HelpOutline } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
+import UserSwitcher from './UserSwitcher';
 
 const NAV = [
   { label: 'Lista', icon: <FormatListBulleted />, path: '/' },
@@ -34,6 +35,7 @@ export default function Layout({ children }: { children: ReactNode }) {
               </IconButton>
             </Tooltip>
           )}
+          <UserSwitcher />
           <IconButton
             color="inherit"
             onClick={() => navigate('/codes')}
