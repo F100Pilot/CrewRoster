@@ -269,18 +269,10 @@ async function handleRoster(
     if (id) sessionCookie = `JSESSIONID=${id}`;
   };
 
-  const dates = {
-    beginDate: body.beginDate,
-    endDate: body.endDate,
-    ...(!body.beginDate || !body.endDate ? defaultDateRange() : {}),
-  };
-
   const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36';
   const trail: unknown[] = [];
 
   // Step 1: Open the "Individual Duty Plan" service (like clicking the menu item).
-  // POST (not GET) to load in NetLine's frame context — GET returns the frameset
-  // shell instead of the actual content.
   const step1 = await fetch(`${env.CREWLINK_BASE}${CREWLINK_APP_PATH}`, {
     method: 'POST',
     headers: {
@@ -298,12 +290,25 @@ async function handleRoster(
   });
   const step1Html = await step1.text();
   updateCookie(step1);
+
+  // Use the server's own form default dates — they already respect the allowed range.
+  const step1Forms = extractForms(step1Html) as Array<{ fields: Array<{ name: string; value: string }> }>;
+  const filterForm = step1Forms[0] ?? { fields: [] };
+  const serverBeginDate = filterForm.fields.find((f) => f.name === 'beginDate')?.value ?? '';
+  const serverEndDate = filterForm.fields.find((f) => f.name === 'endDate')?.value ?? '';
+  const fallback = defaultDateRange();
+  const dates = {
+    beginDate: body.beginDate || serverBeginDate || fallback.beginDate,
+    endDate: body.endDate || serverEndDate || fallback.endDate,
+  };
+
   trail.push({
     step: 'dutyPlan',
     status: step1.status,
     contentType: step1.headers.get('Content-Type') ?? '',
     cookieRotated: extractSessionId(step1) !== null,
-    forms: extractForms(step1Html),
+    datesUsed: dates,
+    forms: step1Forms,
   });
 
   // Step 2: Generate the report (like clicking "Generate" on the calendar).
@@ -319,8 +324,8 @@ async function handleRoster(
     body: formEncode({
       crewlinkService: 'individualDutyPlan',
       crewlinkOperation: 'makeReport',
-      beginDate: dates.beginDate!,
-      endDate: dates.endDate!,
+      beginDate: dates.beginDate,
+      endDate: dates.endDate,
       selectBtn: 'Generate Report',
     }),
     redirect: 'follow',

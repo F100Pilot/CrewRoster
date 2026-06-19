@@ -241,18 +241,10 @@ async function handleRoster(request) {
     if (id) sessionCookie = `JSESSIONID=${id}`;
   };
 
-  const dates = {
-    beginDate: body.beginDate,
-    endDate: body.endDate,
-    ...(!body.beginDate || !body.endDate ? defaultDateRange() : {}),
-  };
-
   const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36';
   const trail = [];
 
   // Passo 1: abrir o serviço "Individual Duty Plan" (como clicar no menu).
-  // POST (não GET) para carregar no contexto de frame do NetLine — o GET
-  // devolve o frameset em vez do conteúdo real.
   const step1 = await fetch(`${CREWLINK_BASE}${CREWLINK_APP_PATH}`, {
     method: 'POST',
     headers: {
@@ -270,12 +262,25 @@ async function handleRoster(request) {
   });
   const step1Html = await step1.text();
   updateCookie(step1);
+
+  // Usar os valores de data do formulário do servidor como fallback.
+  // O servidor já sabe o intervalo de datas permitido (aba Filter).
+  const step1Forms = extractForms(step1Html);
+  const filterForm = step1Forms[0] ?? { fields: [] };
+  const serverBeginDate = (filterForm.fields.find(f => f.name === 'beginDate') ?? {}).value ?? '';
+  const serverEndDate = (filterForm.fields.find(f => f.name === 'endDate') ?? {}).value ?? '';
+  const dates = {
+    beginDate: body.beginDate || serverBeginDate || defaultDateRange().beginDate,
+    endDate: body.endDate || serverEndDate || defaultDateRange().endDate,
+  };
+
   trail.push({
     step: 'dutyPlan',
     status: step1.status,
     contentType: step1.headers.get('Content-Type') ?? '',
     cookieRotated: extractSessionId(step1) !== null,
-    forms: extractForms(step1Html),
+    datesUsed: dates,
+    forms: step1Forms,
   });
 
   // Passo 2: gerar o relatório (como clicar em "Generate" no calendário).
@@ -308,7 +313,7 @@ async function handleRoster(request) {
     trail.push({ step: 'makeReport-redirect', status: reportResponse.status, location: fullRedirectUrl });
 
     const redirectResponse = await fetch(fullRedirectUrl, {
-      headers: { 'User-Agent': upstreamHeaders['User-Agent'], Cookie: sessionCookie, Referer: `${CREWLINK_BASE}/crewlink/` },
+      headers: { 'User-Agent': userAgent, Cookie: sessionCookie, Referer: `${CREWLINK_BASE}/crewlink/` },
     });
     updateCookie(redirectResponse);
     const redirectCT = redirectResponse.headers.get('Content-Type') ?? '';
@@ -321,7 +326,7 @@ async function handleRoster(request) {
     trail.push({ step: 'makeReport-redirect-body', status: redirectResponse.status, contentType: redirectCT, pdfUrl: redirectPdfUrl, body: extractBody(redirectHtml) });
     if (redirectPdfUrl) {
       const pdfFull = redirectPdfUrl.startsWith('http') ? redirectPdfUrl : `${CREWLINK_BASE}${redirectPdfUrl}`;
-      const pdfRes = await fetch(pdfFull, { headers: { 'User-Agent': upstreamHeaders['User-Agent'], Cookie: sessionCookie } });
+      const pdfRes = await fetch(pdfFull, { headers: { 'User-Agent': userAgent, Cookie: sessionCookie } });
       if (pdfRes.ok && (pdfRes.headers.get('Content-Type') ?? '').includes('application/pdf')) {
         const pdfBuffer = await pdfRes.arrayBuffer();
         return new Response(pdfBuffer, { status: 200, headers: { 'Content-Type': 'application/pdf', ...corsHeaders(request) } });
