@@ -36,6 +36,14 @@ export default function DayDetailPage() {
                 }}
               />
               <Chip label={duty.dutyType} variant="outlined" size="small" />
+              {duty.reportingTime && (
+                <Chip
+                  label={`Check-in ${duty.reportingTime} UTC`}
+                  size="small"
+                  color="primary"
+                  variant="outlined"
+                />
+              )}
             </Box>
 
             {duty.flightNumber && (
@@ -53,8 +61,11 @@ export default function DayDetailPage() {
                     <Typography variant="h5" fontWeight={700}>
                       {duty.departureAirport || '—'}
                     </Typography>
+                    <Typography variant="body2" fontWeight={600} color="primary.main">
+                      {duty.departureTime || '—'}
+                    </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      {duty.departureTime?.slice(11, 16) || duty.reportingTime || '—'}
+                      STD (UTC)
                     </Typography>
                   </Box>
                   <Box display="flex" alignItems="center">
@@ -66,8 +77,11 @@ export default function DayDetailPage() {
                     <Typography variant="h5" fontWeight={700}>
                       {duty.arrivalAirport || '—'}
                     </Typography>
+                    <Typography variant="body2" fontWeight={600} color="primary.main">
+                      {duty.arrivalTime || '—'}
+                    </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      {duty.arrivalTime?.slice(11, 16) || '—'}
+                      STA (UTC)
                     </Typography>
                   </Box>
                 </Box>
@@ -79,11 +93,34 @@ export default function DayDetailPage() {
               </Box>
             )}
 
-            <Stack spacing={0.5}>
-              {duty.reportingTime && <Detail label="Report" value={duty.reportingTime} />}
-              {duty.departureTime && <Detail label="STD" value={duty.departureTime.slice(11, 16) || duty.departureTime} />}
-              {duty.arrivalTime && <Detail label="STA" value={duty.arrivalTime.slice(11, 16) || duty.arrivalTime} />}
-            </Stack>
+            {(duty.dutyType === 'Training' || duty.dutyType === 'Simulator') &&
+              (duty.departureTime || duty.arrivalTime) && (
+                <Box sx={{ bgcolor: 'grey.50', borderRadius: 2, p: 2, mb: 2 }}>
+                  <Box display="flex" justifyContent="space-around">
+                    <Box textAlign="center">
+                      <Typography variant="body2" fontWeight={600} color="primary.main">
+                        {duty.departureTime || '—'}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Início (UTC)
+                      </Typography>
+                    </Box>
+                    <Box textAlign="center">
+                      <Typography variant="body2" fontWeight={600} color="primary.main">
+                        {duty.arrivalTime || '—'}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Fim (UTC)
+                      </Typography>
+                    </Box>
+                  </Box>
+                  {duty.departureAirport && (
+                    <Typography variant="caption" color="text.secondary" display="block" textAlign="center" mt={1}>
+                      {duty.departureAirport}
+                    </Typography>
+                  )}
+                </Box>
+              )}
 
             {duty.observations && (
               <>
@@ -97,18 +134,5 @@ export default function DayDetailPage() {
         </Card>
       ))}
     </Stack>
-  );
-}
-
-function Detail({ label, value }: { label: string; value: string }) {
-  return (
-    <Box display="flex" justifyContent="space-between">
-      <Typography variant="body2" color="text.secondary">
-        {label}
-      </Typography>
-      <Typography variant="body2" fontWeight={600}>
-        {value}
-      </Typography>
-    </Box>
   );
 }

@@ -96,7 +96,7 @@ export default function RosterPage() {
             <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
               <Typography variant="subtitle2">{format(parseISO(date), 'EEE, dd MMM')}</Typography>
               {duties[0]?.reportingTime && (
-                <Chip size="small" variant="outlined" label={`Report ${duties[0].reportingTime}`} />
+                <Chip size="small" variant="outlined" label={`Apres. ${duties[0].reportingTime}z`} />
               )}
             </Box>
             <Box display="flex" flexWrap="wrap" gap={0.5}>

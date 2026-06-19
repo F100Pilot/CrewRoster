@@ -152,7 +152,8 @@ function parseSubColumn(colTokens: PositionedToken[], date: string): ParsedDuty[
         date,
         dutyCode: isDeadhead ? 'DH' : 'FLT',
         dutyType: isDeadhead ? 'Positioning' : 'Flight Duty',
-        reportingTime: times[0] ?? null,
+        // reportingTime is computed day-wide (first flight dep - 1h) in interpretPgaGrid.
+        reportingTime: null,
         departureTime: times[0] ?? null,
         arrivalTime: times[1] ?? null,
         flightNumber: num ? `${code}${num}` : null,
@@ -187,6 +188,14 @@ function parseSubColumn(colTokens: PositionedToken[], date: string): ParsedDuty[
   }
 
   return duties;
+}
+
+function subtractHour(hhmm: string): string {
+  const [h, m] = hhmm.split(':').map(Number);
+  const total = h * 60 + m - 60;
+  const hh = ((Math.floor(total / 60)) % 24 + 24) % 24;
+  const mm = ((total % 60) + 60) % 60;
+  return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
 }
 
 function sameDuty(a: ParsedDuty, b: ParsedDuty): boolean {
@@ -249,13 +258,20 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
     });
   }
 
-  // Order duties within each day chronologically (by departure/reporting time).
+  // Order duties within each day chronologically (by departure/reporting time),
+  // then compute the day's check-in time = first flight's departure - 1h (UTC).
   for (const arr of byDate.values()) {
     arr.sort((a, b) => {
       const ta = a.departureTime ?? a.reportingTime ?? '';
       const tb = b.departureTime ?? b.reportingTime ?? '';
       return ta < tb ? -1 : ta > tb ? 1 : 0;
     });
+    const firstFlight = arr.find(
+      (d) => (d.dutyType === 'Flight Duty' || d.dutyType === 'Positioning') && d.departureTime
+    );
+    if (firstFlight) {
+      firstFlight.reportingTime = subtractHour(firstFlight.departureTime!);
+    }
   }
 
   return [...byDate.values()].flat().sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
