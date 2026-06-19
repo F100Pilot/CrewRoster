@@ -1,7 +1,8 @@
 import { type ReactNode } from 'react';
-import { AppBar, Box, Container, IconButton, Paper, Toolbar, Typography, BottomNavigation, BottomNavigationAction } from '@mui/material';
-import { CalendarMonth, FormatListBulleted, BugReport, Sync, PictureAsPdf } from '@mui/icons-material';
+import { AppBar, Box, Container, IconButton, Paper, Toolbar, Tooltip, Typography, BottomNavigation, BottomNavigationAction } from '@mui/material';
+import { CalendarMonth, FormatListBulleted, BugReport, Sync, PictureAsPdf, Logout } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useRoster } from '../state/useRoster';
 
 const NAV = [
   { label: 'Lista', icon: <FormatListBulleted />, path: '/' },
@@ -14,6 +15,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const current = NAV.findIndex((n) => n.path === location.pathname);
+  const { sessionToken, setSessionToken } = useRoster();
 
   return (
     <Box sx={{ pb: 8, minHeight: '100vh', bgcolor: 'background.default' }}>
@@ -22,6 +24,16 @@ export default function Layout({ children }: { children: ReactNode }) {
           <Typography variant="h6" sx={{ fontWeight: 700, flexGrow: 1 }}>
             CrewRoster Lite
           </Typography>
+          {sessionToken && (
+            <Tooltip title="Terminar sessão CrewLink">
+              <IconButton
+                color="inherit"
+                onClick={() => setSessionToken(null)}
+              >
+                <Logout />
+              </IconButton>
+            </Tooltip>
+          )}
           <IconButton
             color="inherit"
             onClick={() => navigate('/import')}
