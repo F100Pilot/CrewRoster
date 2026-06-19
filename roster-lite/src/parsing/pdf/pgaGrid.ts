@@ -214,7 +214,15 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
 
   for (const pageTokens of pages.values()) {
     const rows = clusterRows(pageTokens);
-    const headers = rows.filter((r) => r.cells.filter((c) => DOW.test(c.text) && c.x < 500).length >= 4);
+    // A real duty-plan grid header has weekday columns AND the right-margin "date"
+    // label. The qualifications/licences page and crew-detail blocks also contain
+    // scattered weekday tokens (and codes like "VAC" = vaccine, "LPC", "IM") but lack
+    // that label, so requiring it keeps those off-plan sections out of the roster.
+    const headers = rows.filter(
+      (r) =>
+        r.cells.filter((c) => DOW.test(c.text) && c.x < 500).length >= 4 &&
+        r.cells.some((c) => /^date$/i.test(c.text.trim()) && c.x >= 494)
+    );
 
     headers.forEach((h, gi) => {
       const cols: Column[] = h.cells

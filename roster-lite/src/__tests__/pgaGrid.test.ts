@@ -68,6 +68,13 @@ describe('interpretPgaGrid (real PGA PDF fixture)', () => {
     expect(flights.map((f) => f.flightNumber)).toEqual(['TP1134', 'TP1135', 'TP1136']);
   });
 
+  // Page 3 is a qualifications/licences sheet (with "VAC" = vaccine, "LPC", "IM"…).
+  // It must not leak into the roster: Thu 16 Jul is office duty, not vacation.
+  it('does not treat the licences page as duties (no spurious vacation)', () => {
+    expect(duties.some((d) => d.dutyType === 'Vacation')).toBe(false);
+    expect(onDate('2026-07-16').map((d) => d.dutyCode).sort()).toEqual(['GAB1', 'GAB2']);
+  });
+
   it('detects the Thu 2 Jul deadhead (positioning) to FRA', () => {
     const dh = onDate('2026-07-02').find((d) => d.dutyType === 'Positioning');
     expect(dh).toBeTruthy();

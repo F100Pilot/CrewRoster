@@ -4,6 +4,7 @@ import { format, parseISO } from 'date-fns';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import { dutyColor } from '../theme';
+import { toLocalTime } from '../utils/localTime';
 
 export default function DayDetailPage() {
   const { date } = useParams<{ date: string }>();
@@ -38,7 +39,12 @@ export default function DayDetailPage() {
               <Chip label={duty.dutyType} variant="outlined" size="small" />
               {duty.reportingTime && (
                 <Chip
-                  label={`Check-in ${duty.reportingTime} UTC`}
+                  label={
+                    `Check-in ${duty.reportingTime}z` +
+                    (toLocalTime(date, duty.reportingTime, duty.departureAirport)
+                      ? ` · ${toLocalTime(date, duty.reportingTime, duty.departureAirport)} LT`
+                      : '')
+                  }
                   size="small"
                   color="primary"
                   variant="outlined"
@@ -56,34 +62,24 @@ export default function DayDetailPage() {
                     {duty.flightNumber}
                   </Typography>
                 </Box>
-                <Box display="flex" alignItems="center" justifyContent="center" gap={2}>
-                  <Box textAlign="center">
-                    <Typography variant="h5" fontWeight={700}>
-                      {duty.departureAirport || '—'}
-                    </Typography>
-                    <Typography variant="body2" fontWeight={600} color="primary.main">
-                      {duty.departureTime || '—'}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      STD (UTC)
-                    </Typography>
-                  </Box>
-                  <Box display="flex" alignItems="center">
+                <Box display="flex" alignItems="flex-start" justifyContent="center" gap={2}>
+                  <TimePoint
+                    airport={duty.departureAirport}
+                    utc={duty.departureTime}
+                    lt={toLocalTime(date, duty.departureTime, duty.departureAirport)}
+                    label="STD"
+                  />
+                  <Box display="flex" alignItems="center" mt={1}>
                     <FlightTakeoff sx={{ color: 'primary.main' }} />
                     <Box sx={{ width: 32, height: 2, bgcolor: 'primary.main', mx: 0.5 }} />
                     <FlightLand sx={{ color: 'primary.main' }} />
                   </Box>
-                  <Box textAlign="center">
-                    <Typography variant="h5" fontWeight={700}>
-                      {duty.arrivalAirport || '—'}
-                    </Typography>
-                    <Typography variant="body2" fontWeight={600} color="primary.main">
-                      {duty.arrivalTime || '—'}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      STA (UTC)
-                    </Typography>
-                  </Box>
+                  <TimePoint
+                    airport={duty.arrivalAirport}
+                    utc={duty.arrivalTime}
+                    lt={toLocalTime(date, duty.arrivalTime, duty.arrivalAirport)}
+                    label="STA"
+                  />
                 </Box>
                 {duty.aircraftType && (
                   <Typography variant="caption" color="text.secondary" display="block" textAlign="center" mt={1}>
@@ -134,5 +130,43 @@ export default function DayDetailPage() {
         </Card>
       ))}
     </Stack>
+  );
+}
+
+// One endpoint of a flight: airport code, UTC time, and (when known) local time.
+function TimePoint({
+  airport,
+  utc,
+  lt,
+  label,
+}: {
+  airport: string | null;
+  utc: string | null;
+  lt: string | null;
+  label: string;
+}) {
+  return (
+    <Box textAlign="center" minWidth={64}>
+      <Typography variant="h5" fontWeight={700}>
+        {airport || '—'}
+      </Typography>
+      <Typography variant="body2" fontWeight={600} color="primary.main">
+        {utc || '—'}
+        <Typography component="span" variant="caption" color="text.secondary">
+          {' z'}
+        </Typography>
+      </Typography>
+      {lt && (
+        <Typography variant="body2" fontWeight={600}>
+          {lt}
+          <Typography component="span" variant="caption" color="text.secondary">
+            {' LT'}
+          </Typography>
+        </Typography>
+      )}
+      <Typography variant="caption" color="text.secondary" display="block">
+        {label}
+      </Typography>
+    </Box>
   );
 }
