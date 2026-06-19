@@ -152,7 +152,7 @@ function TimePoint({
       </Typography>
       <Typography variant="body2" fontWeight={600} color="primary.main">
         {utc || '—'}
-        <Typography component="span" variant="caption" color="text.secondary">
+        <Typography component="span" variant="body2" fontWeight={700} color="text.secondary">
           {' z'}
         </Typography>
       </Typography>
