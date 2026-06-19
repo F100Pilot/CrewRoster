@@ -78,7 +78,7 @@ export default function GoogleCalendarSync({ roster, userId }: Props) {
   return (
     <>
       <Button size="small" startIcon={<Google />} onClick={openDialog}>
-        Google Calendar
+        Calendar
       </Button>
 
       <Dialog open={open} onClose={close} maxWidth="sm" fullWidth>
