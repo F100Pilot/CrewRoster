@@ -2,7 +2,7 @@ name: Deploy roster-lite to GitHub Pages
 
 on:
   push:
-    branches: [claude/crewline-web-app-u7vftg]
+    branches: [master]
     paths: ['roster-lite/**', '.github/workflows/roster-lite-pages.yml']
   workflow_dispatch:
 
