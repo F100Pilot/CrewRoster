@@ -75,6 +75,16 @@ describe('interpretPgaGrid (real PGA PDF fixture)', () => {
     expect(onDate('2026-07-16').map((d) => d.dutyCode).sort()).toEqual(['GAB1', 'GAB2']);
   });
 
+  // Page 2 stacks the real Jul 27–31 grid on top of per-flight summary tables that
+  // re-list June/July flights in non-chronological columns. The summary band must not
+  // leak upward into the last roster grid: Mon 27 Jul is only TP1691/TP1692, never the
+  // June TP874 (Sun 21 Jun) or TP1454 (Fri 26 Jun) that live in the summary below.
+  it('does not leak summary-table flights into the last grid (Mon 27 Jul)', () => {
+    const day = onDate('2026-07-27').filter((d) => d.dutyType === 'Flight Duty');
+    expect(day.map((d) => d.flightNumber)).toEqual(['TP1691', 'TP1692']);
+    expect(duties.some((d) => d.date === '2026-07-27' && d.flightNumber === 'TP874')).toBe(false);
+  });
+
   it('detects the Thu 2 Jul deadhead (positioning) to FRA', () => {
     const dh = onDate('2026-07-02').find((d) => d.dutyType === 'Positioning');
     expect(dh).toBeTruthy();

@@ -214,14 +214,14 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
 
   for (const pageTokens of pages.values()) {
     const rows = clusterRows(pageTokens);
-    // A real duty-plan grid header has weekday columns AND the right-margin "date"
-    // label. The qualifications/licences page and crew-detail blocks also contain
-    // scattered weekday tokens (and codes like "VAC" = vaccine, "LPC", "IM") but lack
-    // that label, so requiring it keeps those off-plan sections out of the roster.
-    const headers = rows.filter(
-      (r) =>
-        r.cells.filter((c) => DOW.test(c.text) && c.x < 500).length >= 4 &&
-        r.cells.some((c) => /^date$/i.test(c.text.trim()) && c.x >= 494)
+    // Any row with several weekday columns is a grid header — whether it's the real
+    // chronological roster OR a non-plan summary/legend table (per-flight statistics,
+    // the licences page, etc.). We use ALL of them to delimit the vertical bands…
+    const allHeaders = rows.filter((r) => r.cells.filter((c) => DOW.test(c.text) && c.x < 500).length >= 4);
+    // …but only PARSE the ones that also carry the right-margin "date" label, which the
+    // summary/licences tables lack. (Page 3 even has "VAC" = vaccine, "LPC", "IM"…)
+    const headers = allHeaders.filter((r) =>
+      r.cells.some((c) => /^date$/i.test(c.text.trim()) && c.x >= 494)
     );
 
     headers.forEach((h, gi) => {
@@ -230,7 +230,14 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
         .map((c) => ({ x: c.x, token: c.text }))
         .sort((a, b) => a.x - b.x);
       const yTop = h.y;
-      const yBot = headers[gi + 1]?.y ?? -Infinity;
+      // A band ends at the NEXT header row below it — counting summary/legend headers
+      // too. Using only parsed headers here would let a real grid's band run to the
+      // page bottom and swallow the summary tables underneath (June flights leaking
+      // onto late-July days). gi+1 alone isn't enough, hence the lookup over allHeaders.
+      const yBot = Math.max(
+        ...allHeaders.filter((r) => r.y < yTop - 2).map((r) => r.y),
+        -Infinity
+      );
       const data = pageTokens.filter((t) => t.x < 494 && t.y < yTop - 2 && t.y > yBot && t.text.trim());
 
       // A day spans a RANGE of x: each of its flights/duties is drawn in its own narrow
