@@ -28,6 +28,8 @@ export interface ApiError {
   error: string;
   upstreamStatus?: number;
   htmlPreview?: string;
+  pdfUrlFound?: string | null;
+  trail?: unknown[];
 }
 
 /**
@@ -80,6 +82,12 @@ export async function fetchRoster(options: FetchRosterOptions): Promise<ArrayBuf
       message = err.error || message;
       if (err.htmlPreview) {
         console.warn('[CrewRoster] HTML preview from worker:', err.htmlPreview);
+      }
+      if (err.trail) {
+        console.warn('[CrewRoster] Diagnostic trail:', JSON.stringify(err.trail, null, 2));
+      }
+      if (err.pdfUrlFound !== undefined) {
+        console.warn('[CrewRoster] PDF URL found in HTML:', err.pdfUrlFound);
       }
     } catch {
       // response wasn't JSON

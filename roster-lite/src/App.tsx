@@ -1,4 +1,4 @@
-import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
 import Layout from './components/Layout';
 import RosterPage from './pages/RosterPage';
 import CalendarPage from './pages/CalendarPage';
@@ -9,8 +9,7 @@ import { RosterProvider } from './state/RosterProvider';
 import { useRoster } from './state/useRoster';
 
 function AppRoutes() {
-  const { roster, loading } = useRoster();
-  const location = useLocation();
+  const { loading } = useRoster();
 
   if (loading) {
     return (
@@ -22,20 +21,8 @@ function AppRoutes() {
     );
   }
 
-  // Login page is always accessible at /login, and is the default when no roster exists.
-  const isLoginRoute = location.pathname === '/login';
-
-  if (!roster && !isLoginRoute) {
-    return (
-      <Layout>
-        <Routes>
-          <Route path="/" element={<LoginPage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Layout>
-    );
-  }
-
+  // RosterPage handles the no-roster case itself (upload dropzone + Login button),
+  // so the routes are the same whether or not a roster exists.
   return (
     <Layout>
       <Routes>

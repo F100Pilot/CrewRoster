@@ -202,20 +202,22 @@ async function handleRoster(
     return jsonResponse({ error: 'sessionToken is required' }, 400, request, env);
   }
 
-  const cookie = `JSESSIONID=${body.sessionToken}`;
+  // Track the session cookie and update it if the upstream rotates JSESSIONID
+  // between requests (NetLine sometimes upgrades the session after navigation).
+  let sessionCookie = `JSESSIONID=${body.sessionToken}`;
+  const updateCookie = (response: Response): void => {
+    const id = extractSessionId(response);
+    if (id) sessionCookie = `JSESSIONID=${id}`;
+  };
+
   const dates = {
     beginDate: body.beginDate,
     endDate: body.endDate,
     ...(!body.beginDate || !body.endDate ? defaultDateRange() : {}),
   };
 
-  const upstreamHeaders = {
-    'Content-Type': 'application/x-www-form-urlencoded',
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36',
-    Cookie: cookie,
-    Referer: `${env.CREWLINK_BASE}/crewlink/`,
-    Origin: env.CREWLINK_BASE,
-  };
+  const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36';
+  const trail: unknown[] = [];
 
   // Step 1: Open the "Individual Duty Plan" service (like clicking the menu item).
   // Uses GET with query params (matching browser behavior when clicking the menu).
@@ -223,20 +225,35 @@ async function handleRoster(
     crewlinkService: 'individualDutyPlan',
     crewlinkOperation: 'default',
   });
-  await fetch(`${env.CREWLINK_BASE}${CREWLINK_APP_PATH}?${step1Params}`, {
+  const step1 = await fetch(`${env.CREWLINK_BASE}${CREWLINK_APP_PATH}?${step1Params}`, {
     method: 'GET',
     headers: {
-      'User-Agent': upstreamHeaders['User-Agent'],
-      Cookie: cookie,
+      'User-Agent': userAgent,
+      Cookie: sessionCookie,
       Referer: `${env.CREWLINK_BASE}/crewlink/`,
     },
     redirect: 'follow',
+  });
+  const step1Html = await step1.text();
+  updateCookie(step1);
+  trail.push({
+    step: 'dutyPlan',
+    status: step1.status,
+    contentType: step1.headers.get('Content-Type') ?? '',
+    cookieRotated: extractSessionId(step1) !== null,
+    preview: step1Html.substring(0, 800),
   });
 
   // Step 2: Generate the report (like clicking "Generate" on the calendar).
   const reportResponse = await fetch(`${env.CREWLINK_BASE}${CREWLINK_APP_PATH}`, {
     method: 'POST',
-    headers: upstreamHeaders,
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'User-Agent': userAgent,
+      Cookie: sessionCookie,
+      Referer: `${env.CREWLINK_BASE}${CREWLINK_APP_PATH}?${step1Params}`,
+      Origin: env.CREWLINK_BASE,
+    },
     body: formEncode({
       crewlinkService: 'individualDutyPlan',
       crewlinkOperation: 'makeReport',
@@ -245,6 +262,7 @@ async function handleRoster(
     }),
     redirect: 'follow',
   });
+  updateCookie(reportResponse);
 
   const contentType = reportResponse.headers.get('Content-Type') ?? '';
 
@@ -259,6 +277,13 @@ async function handleRoster(
 
   // Otherwise it's an HTML page (PDF viewer) containing the PDF URL.
   const html = await reportResponse.text();
+  trail.push({
+    step: 'makeReport',
+    status: reportResponse.status,
+    contentType,
+    preview: html.substring(0, 1500),
+  });
+
   let pdfUrl = findPdfUrl(html);
 
   if (pdfUrl) {
@@ -270,8 +295,8 @@ async function handleRoster(
 
     const pdfResponse = await fetch(pdfUrl, {
       headers: {
-        'User-Agent': upstreamHeaders['User-Agent'],
-        Cookie: cookie,
+        'User-Agent': userAgent,
+        Cookie: sessionCookie,
         Referer: `${env.CREWLINK_BASE}/crewlink/`,
       },
     });
@@ -288,8 +313,8 @@ async function handleRoster(
   return jsonResponse(
     {
       error: 'Não foi possível obter o PDF da escala.',
-      upstreamStatus: reportResponse.status,
-      htmlPreview: html.substring(0, 2000),
+      pdfUrlFound: pdfUrl ?? null,
+      trail,
     },
     502,
     request,
