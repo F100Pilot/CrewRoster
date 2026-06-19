@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import {
   Alert, Box, Button, Card, CardContent, Chip, Divider, IconButton, Stack, Typography,
 } from '@mui/material';
-import { ChevronLeft, ChevronRight, Delete, Today, ExpandMore, ExpandLess } from '@mui/icons-material';
+import { ChevronLeft, ChevronRight, Delete, Login, Today, ExpandMore, ExpandLess } from '@mui/icons-material';
 import { addMonths, format, isSameMonth, parseISO, subMonths } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
@@ -34,6 +34,23 @@ export default function RosterPage() {
       <Stack spacing={2}>
         {error && <Alert severity="error">{error}</Alert>}
         <UploadDropzone />
+        <Divider>
+          <Typography variant="caption" color="text.secondary">ou</Typography>
+        </Divider>
+        <Box textAlign="center">
+          <Button
+            variant="outlined"
+            startIcon={<Login />}
+            onClick={() => {
+              // Navigate to home which will show LoginPage (reset showUpload state).
+              // We reload to reset the App-level showUpload state.
+              window.location.hash = '#/';
+              window.location.reload();
+            }}
+          >
+            Login CrewLink
+          </Button>
+        </Box>
       </Stack>
     );
   }
