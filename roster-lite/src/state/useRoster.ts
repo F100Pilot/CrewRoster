@@ -17,6 +17,7 @@ export interface RosterState {
   activeUser: UserProfile | null;
   switchUser: (userId: string) => Promise<void>;
   createUser: (name: string, crewCode?: string) => Promise<UserProfile>;
+  renameUser: (userId: string, name: string, crewCode?: string) => Promise<void>;
   deleteUser: (userId: string) => Promise<void>;
 }
 

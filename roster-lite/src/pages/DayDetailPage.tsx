@@ -23,8 +23,8 @@ export default function DayDetailPage() {
         <IconButton onClick={() => navigate(-1)}>
           <ArrowBack />
         </IconButton>
-        <Typography variant="h6" sx={{ flexGrow: 1 }}>
-          {date ? format(parseISO(date), 'EEEE, dd MMMM yyyy') : ''}
+        <Typography variant="h6" sx={{ flexGrow: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {date ? format(parseISO(date), 'EEE, dd MMM yyyy') : ''}
         </Typography>
         {date && duties.length > 0 && (
           <IconButton

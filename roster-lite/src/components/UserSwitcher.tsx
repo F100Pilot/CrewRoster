@@ -4,7 +4,7 @@ import {
   IconButton, ListItemAvatar, ListItemText, Menu,
   MenuItem, Stack, TextField, Tooltip, Typography,
 } from '@mui/material';
-import { Add, Check, Delete, Person } from '@mui/icons-material';
+import { Add, Check, Delete, Edit, Person } from '@mui/icons-material';
 import { useRoster } from '../state/useRoster';
 import type { UserProfile } from '../domain/types';
 
@@ -93,12 +93,65 @@ export function CreateUserDialog({
   );
 }
 
+// ── Rename-user dialog ────────────────────────────────────────────────────────────
+
+function RenameUserDialog({ user, open, onClose }: { user: UserProfile; open: boolean; onClose: () => void }) {
+  const { renameUser } = useRoster();
+  const [name, setName] = useState(user.name);
+  const [crewCode, setCrewCode] = useState(user.crewCode ?? '');
+  const [busy, setBusy] = useState(false);
+
+  async function handleSubmit() {
+    if (!name.trim()) return;
+    setBusy(true);
+    await renameUser(user.id, name, crewCode);
+    setBusy(false);
+    onClose();
+  }
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
+      <DialogTitle>Editar perfil</DialogTitle>
+      <DialogContent>
+        <Stack spacing={2} pt={0.5}>
+          <TextField
+            label="Nome"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+            autoFocus
+            fullWidth
+            size="small"
+          />
+          <TextField
+            label="Código de tripulante (opcional)"
+            placeholder="Ex: FPT001"
+            value={crewCode}
+            onChange={(e) => setCrewCode(e.target.value)}
+            fullWidth
+            size="small"
+          />
+          <Button
+            variant="contained"
+            onClick={handleSubmit}
+            disabled={!name.trim() || busy}
+            startIcon={<Person />}
+          >
+            Guardar
+          </Button>
+        </Stack>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ── User switcher (AppBar button + menu) ───────────────────────────────────────────
 
 export default function UserSwitcher() {
   const { users, activeUser, switchUser, deleteUser } = useRoster();
   const [anchor, setAnchor] = useState<null | HTMLElement>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [renameTarget, setRenameTarget] = useState<UserProfile | null>(null);
 
   if (!activeUser) return null;
 
@@ -137,6 +190,13 @@ export default function UserSwitcher() {
               secondaryTypographyProps={{ variant: 'caption' }}
             />
             {u.id === activeUser.id && <Check fontSize="small" color="primary" />}
+            <IconButton
+              size="small"
+              onClick={(e) => { e.stopPropagation(); setRenameTarget(u); setAnchor(null); }}
+              sx={{ ml: 0.5 }}
+            >
+              <Edit fontSize="small" />
+            </IconButton>
             {users.length > 1 && (
               <IconButton
                 size="small"
@@ -157,6 +217,13 @@ export default function UserSwitcher() {
       </Menu>
 
       <CreateUserDialog open={createOpen} onClose={() => setCreateOpen(false)} />
+      {renameTarget && (
+        <RenameUserDialog
+          user={renameTarget}
+          open={Boolean(renameTarget)}
+          onClose={() => setRenameTarget(null)}
+        />
+      )}
     </>
   );
 }

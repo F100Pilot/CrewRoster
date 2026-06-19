@@ -74,6 +74,15 @@ export function RosterProvider({ children }: { children: ReactNode }) {
     return user;
   }, []);
 
+  const renameUser = useCallback(async (userId: string, name: string, crewCode?: string) => {
+    const user = users.find((u) => u.id === userId);
+    if (!user) return;
+    const updated: UserProfile = { ...user, name: name.trim(), crewCode: crewCode?.trim() || undefined };
+    await saveUser(updated);
+    setUsers((prev) => prev.map((u) => (u.id === userId ? updated : u)));
+    if (activeUser?.id === userId) setActiveUser(updated);
+  }, [users, activeUser]);
+
   const deleteUserFn = useCallback(async (userId: string) => {
     await deleteUserDB(userId);
     clearUserGCalData(userId);
@@ -143,10 +152,10 @@ export function RosterProvider({ children }: { children: ReactNode }) {
       roster, loading, importing, error, warnings, sessionToken,
       importFile, clear, dismissChanges, setSessionToken,
       users, activeUser,
-      switchUser, createUser, deleteUser: deleteUserFn,
+      switchUser, createUser, renameUser, deleteUser: deleteUserFn,
     }),
     [roster, loading, importing, error, warnings, sessionToken,
-     importFile, clear, dismissChanges, users, activeUser, switchUser, createUser, deleteUserFn]
+     importFile, clear, dismissChanges, users, activeUser, switchUser, createUser, renameUser, deleteUserFn]
   );
 
   return <RosterContext.Provider value={value}>{children}</RosterContext.Provider>;
