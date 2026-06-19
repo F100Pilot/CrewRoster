@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Box, Card, CardContent, Stack, Typography } from '@mui/material';
-import { Flight, AccessTime, EventBusy, WorkHistory, Today as TodayIcon } from '@mui/icons-material';
-import { timedFlights } from '../domain/dutyStats';
+import { Flight, AccessTime, EventBusy, WorkHistory, Today as TodayIcon, Hotel } from '@mui/icons-material';
+import { timedFlights, nightsAwayFromBase } from '../domain/dutyStats';
 import { diffMinutes, formatDuration } from '../utils/duration';
 import type { ParsedDuty } from '../domain/types';
 
@@ -28,6 +28,7 @@ export default function MonthStatsCard({ duties }: Props) {
     ).size;
     const offDays = duties.filter((d) => d.dutyType === 'Day Off' || d.dutyType === 'Vacation').length;
     const standby = duties.filter((d) => d.dutyType.startsWith('Standby') || d.dutyType === 'Reserve').length;
+    const nightsAway = nightsAwayFromBase(duties);
 
     return [
       { icon: <AccessTime fontSize="small" />, value: formatDuration(blockMinutes), label: 'Bloco' },
@@ -35,6 +36,7 @@ export default function MonthStatsCard({ duties }: Props) {
       { icon: <TodayIcon fontSize="small" />, value: String(dutyDays), label: 'Serviço' },
       { icon: <WorkHistory fontSize="small" />, value: String(standby), label: 'Standby' },
       { icon: <EventBusy fontSize="small" />, value: String(offDays), label: 'Folgas' },
+      { icon: <Hotel fontSize="small" />, value: String(nightsAway), label: 'Fora' },
     ];
   }, [duties]);
 
@@ -44,8 +46,8 @@ export default function MonthStatsCard({ duties }: Props) {
         <Box
           sx={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(5, 1fr)',
-            gap: 1,
+            gridTemplateColumns: { xs: 'repeat(3, 1fr)', sm: 'repeat(6, 1fr)' },
+            gap: 1.5,
           }}
         >
           {stats.map((s) => (

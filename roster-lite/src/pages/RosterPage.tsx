@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
 import {
-  Alert, Box, Button, Card, CardContent, Chip, Divider, IconButton,
-  ListItemIcon, ListItemText, Menu, MenuItem, Popover, Stack, Typography,
+  Alert, Box, Button, Card, CardContent, Chip, Divider, IconButton, InputAdornment,
+  ListItemIcon, ListItemText, Menu, MenuItem, Popover, Stack, TextField, Typography,
 } from '@mui/material';
 import {
-  ChevronLeft, ChevronRight, Delete, Login, Today, CalendarMonth, MoreVert, InfoOutlined, EditCalendar,
+  ChevronLeft, ChevronRight, Delete, Login, Today, CalendarMonth, MoreVert, InfoOutlined,
+  EditCalendar, Search, Clear,
 } from '@mui/icons-material';
 import { addMonths, format, isSameMonth, parseISO, subMonths } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
@@ -46,6 +47,19 @@ function matchesFilter(d: ParsedDuty, f: Filter): boolean {
   }
 }
 
+// Free-text search over the fields a crew member looks things up by: destination/
+// origin airport, flight number, aircraft type, and the raw duty code.
+function matchesQuery(d: ParsedDuty, q: string): boolean {
+  if (!q) return true;
+  const hay = [
+    d.flightNumber, d.departureAirport, d.arrivalAirport, d.aircraftType, d.dutyCode,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toUpperCase();
+  return hay.includes(q.toUpperCase());
+}
+
 export default function RosterPage() {
   const { roster, loading, warnings, error, clear, dismissChanges, activeUser } = useRoster();
   const navigate = useNavigate();
@@ -53,6 +67,7 @@ export default function RosterPage() {
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [infoAnchor, setInfoAnchor] = useState<null | HTMLElement>(null);
   const [filter, setFilter] = useState<Filter>('all');
+  const [query, setQuery] = useState('');
 
   const changeByDate = useMemo(() => {
     const map = new Map<string, ChangeType>();
@@ -69,11 +84,12 @@ export default function RosterPage() {
     const map = new Map<string, ParsedDuty[]>();
     for (const d of monthDuties) {
       if (!matchesFilter(d, filter)) continue;
+      if (!matchesQuery(d, query)) continue;
       if (!map.has(d.date)) map.set(d.date, []);
       map.get(d.date)!.push(d);
     }
     return new Map([...map.entries()].sort());
-  }, [monthDuties, filter]);
+  }, [monthDuties, filter, query]);
 
   if (loading) return <Typography color="text.secondary">A carregar…</Typography>;
 
@@ -196,6 +212,28 @@ export default function RosterPage() {
         </Menu>
       </Box>
 
+      <TextField
+        size="small"
+        fullWidth
+        placeholder="Pesquisar destino, voo, aeronave…"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <Search fontSize="small" color="action" />
+            </InputAdornment>
+          ),
+          endAdornment: query ? (
+            <InputAdornment position="end">
+              <IconButton size="small" onClick={() => setQuery('')}>
+                <Clear fontSize="small" />
+              </IconButton>
+            </InputAdornment>
+          ) : null,
+        }}
+      />
+
       <Box display="flex" gap={1} flexWrap="wrap">
         {FILTERS.map((f) => (
           <Chip
@@ -213,7 +251,7 @@ export default function RosterPage() {
         <Alert severity="info">Sem registos para este mês. Usa as setas para navegar.</Alert>
       )}
       {monthDuties.length > 0 && dutiesByDay.size === 0 && (
-        <Alert severity="info">Nenhum registo deste tipo neste mês.</Alert>
+        <Alert severity="info">Nenhum registo corresponde ao filtro ou pesquisa.</Alert>
       )}
 
       {[...dutiesByDay.entries()].map(([date, duties]) => {

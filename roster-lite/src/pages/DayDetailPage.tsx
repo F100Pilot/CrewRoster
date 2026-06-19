@@ -1,5 +1,5 @@
 import { Box, Card, CardContent, Chip, Divider, IconButton, Stack, Typography } from '@mui/material';
-import { ArrowBack, FlightLand, FlightTakeoff } from '@mui/icons-material';
+import { ArrowBack, FlightLand, FlightTakeoff, IosShare } from '@mui/icons-material';
 import { format, parseISO } from 'date-fns';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
@@ -7,11 +7,12 @@ import { dutyColor } from '../theme';
 import { toLocalTime, toUserTime, userTimeZoneLabel } from '../utils/localTime';
 import { diffMinutes, formatDuration } from '../utils/duration';
 import { dayStats } from '../domain/dutyStats';
+import { shareDayImage } from '../utils/shareDay';
 
 export default function DayDetailPage() {
   const { date } = useParams<{ date: string }>();
   const navigate = useNavigate();
-  const { roster } = useRoster();
+  const { roster, activeUser } = useRoster();
 
   const duties = (roster?.duties ?? []).filter((d) => d.date === date);
   const stats = dayStats(duties);
@@ -22,7 +23,18 @@ export default function DayDetailPage() {
         <IconButton onClick={() => navigate(-1)}>
           <ArrowBack />
         </IconButton>
-        <Typography variant="h6">{date ? format(parseISO(date), 'EEEE, dd MMMM yyyy') : ''}</Typography>
+        <Typography variant="h6" sx={{ flexGrow: 1 }}>
+          {date ? format(parseISO(date), 'EEEE, dd MMMM yyyy') : ''}
+        </Typography>
+        {date && duties.length > 0 && (
+          <IconButton
+            color="primary"
+            title="Partilhar este dia"
+            onClick={() => shareDayImage(date, duties, activeUser?.name)}
+          >
+            <IosShare />
+          </IconButton>
+        )}
       </Box>
 
       {stats && (
