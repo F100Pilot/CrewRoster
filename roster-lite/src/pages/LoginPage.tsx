@@ -11,17 +11,14 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { Login, CloudUpload } from '@mui/icons-material';
+import { Login, CloudUpload, ArrowBack } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import { login, fetchRoster } from '../services/crewlinkApi';
 import { useRoster } from '../state/useRoster';
 
-interface LoginPageProps {
-  /** Switch to the manual upload view. */
-  onSwitchToUpload: () => void;
-}
-
-export default function LoginPage({ onSwitchToUpload }: LoginPageProps) {
-  const { importFile } = useRoster();
+export default function LoginPage() {
+  const { roster, importFile } = useRoster();
+  const navigate = useNavigate();
 
   const [crewCode, setCrewCode] = useState('');
   const [password, setPassword] = useState('');
@@ -51,8 +48,7 @@ export default function LoginPage({ onSwitchToUpload }: LoginPageProps) {
       const pdfFile = new File([pdfBlob], 'crewlink-roster.pdf', { type: 'application/pdf' });
       await importFile(pdfFile);
 
-      // importFile will set the roster in context, which triggers navigation
-      // back to the roster list via the parent component.
+      navigate('/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido.');
       setStatus('');
@@ -121,14 +117,26 @@ export default function LoginPage({ onSwitchToUpload }: LoginPageProps) {
         </Typography>
       </Divider>
 
-      <Button
-        variant="outlined"
-        startIcon={<CloudUpload />}
-        onClick={onSwitchToUpload}
-        disabled={loading}
-      >
-        Importar ficheiro manualmente
-      </Button>
+      <Stack direction="row" spacing={2}>
+        {roster && (
+          <Button
+            variant="outlined"
+            startIcon={<ArrowBack />}
+            onClick={() => navigate('/')}
+            disabled={loading}
+          >
+            Voltar à escala
+          </Button>
+        )}
+        <Button
+          variant="outlined"
+          startIcon={<CloudUpload />}
+          onClick={() => navigate('/')}
+          disabled={loading}
+        >
+          Importar ficheiro
+        </Button>
+      </Stack>
     </Stack>
   );
 }

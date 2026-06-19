@@ -1,6 +1,6 @@
 import { type ReactNode } from 'react';
-import { AppBar, Box, Container, Paper, Toolbar, Typography, BottomNavigation, BottomNavigationAction } from '@mui/material';
-import { CalendarMonth, FormatListBulleted, BugReport } from '@mui/icons-material';
+import { AppBar, Box, Container, IconButton, Paper, Toolbar, Typography, BottomNavigation, BottomNavigationAction } from '@mui/material';
+import { CalendarMonth, FormatListBulleted, BugReport, Sync } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const NAV = [
@@ -18,9 +18,16 @@ export default function Layout({ children }: { children: ReactNode }) {
     <Box sx={{ pb: 8, minHeight: '100vh', bgcolor: 'background.default' }}>
       <AppBar position="sticky" elevation={0}>
         <Toolbar variant="dense">
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+          <Typography variant="h6" sx={{ fontWeight: 700, flexGrow: 1 }}>
             CrewRoster Lite
           </Typography>
+          <IconButton
+            color="inherit"
+            onClick={() => navigate('/login')}
+            title="Atualizar escala via CrewLink"
+          >
+            <Sync />
+          </IconButton>
         </Toolbar>
       </AppBar>
       <Container maxWidth="md" sx={{ py: 2 }}>

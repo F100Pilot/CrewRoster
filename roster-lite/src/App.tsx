@@ -1,4 +1,4 @@
-import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import Layout from './components/Layout';
 import RosterPage from './pages/RosterPage';
 import CalendarPage from './pages/CalendarPage';
@@ -7,14 +7,11 @@ import DebugPage from './pages/DebugPage';
 import LoginPage from './pages/LoginPage';
 import { RosterProvider } from './state/RosterProvider';
 import { useRoster } from './state/useRoster';
-import { useState } from 'react';
 
-// Inner component that can access RosterContext (must be inside RosterProvider).
 function AppRoutes() {
   const { roster, loading } = useRoster();
-  const [showUpload, setShowUpload] = useState(false);
+  const location = useLocation();
 
-  // While hydrating from IndexedDB, show nothing (RosterPage handles its own loading).
   if (loading) {
     return (
       <Layout>
@@ -25,18 +22,14 @@ function AppRoutes() {
     );
   }
 
-  // No roster loaded yet: show login page (with option to switch to manual upload).
-  // If the user chose manual upload, fall through to the normal RosterPage which
-  // shows the UploadDropzone.
-  if (!roster && !showUpload) {
+  // Login page is always accessible at /login, and is the default when no roster exists.
+  const isLoginRoute = location.pathname === '/login';
+
+  if (!roster && !isLoginRoute) {
     return (
       <Layout>
         <Routes>
-          <Route
-            path="/"
-            element={<LoginPage onSwitchToUpload={() => setShowUpload(true)} />}
-          />
-          {/* Allow deep-links to still work even without a roster */}
+          <Route path="/" element={<LoginPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>
@@ -47,6 +40,7 @@ function AppRoutes() {
     <Layout>
       <Routes>
         <Route path="/" element={<RosterPage />} />
+        <Route path="/login" element={<LoginPage />} />
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/day/:date" element={<DayDetailPage />} />
         <Route path="/debug" element={<DebugPage />} />
