@@ -1,35 +1,67 @@
 import { useMemo, useState } from 'react';
 import {
   Alert, Box, Button, Card, CardContent, Chip, Divider, IconButton,
-  ListItemIcon, ListItemText, Menu, MenuItem, Stack, Typography,
+  ListItemIcon, ListItemText, Menu, MenuItem, Popover, Stack, Typography,
 } from '@mui/material';
-import { ChevronLeft, ChevronRight, Delete, Login, Today, CalendarMonth, MoreVert } from '@mui/icons-material';
+import {
+  ChevronLeft, ChevronRight, Delete, Login, Today, CalendarMonth, MoreVert, InfoOutlined,
+} from '@mui/icons-material';
 import { addMonths, format, isSameMonth, parseISO, subMonths } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import UploadDropzone from '../components/UploadDropzone';
 import DutyChip from '../components/DutyChip';
 import NextDutyCard from '../components/NextDutyCard';
+import MonthStatsCard from '../components/MonthStatsCard';
 import GoogleCalendarSync from '../components/GoogleCalendarSync';
 import { downloadIcs } from '../utils/icsExport';
 import type { ParsedDuty } from '../domain/types';
+
+// Tier 2 — coarse buckets the list can be filtered by.
+type Filter = 'all' | 'flights' | 'standby' | 'off';
+
+const FILTERS: { key: Filter; label: string }[] = [
+  { key: 'all', label: 'Tudo' },
+  { key: 'flights', label: 'Voos' },
+  { key: 'standby', label: 'Standby' },
+  { key: 'off', label: 'Folgas' },
+];
+
+function matchesFilter(d: ParsedDuty, f: Filter): boolean {
+  switch (f) {
+    case 'flights':
+      return d.dutyType === 'Flight Duty' || d.dutyType === 'Positioning';
+    case 'standby':
+      return d.dutyType.startsWith('Standby') || d.dutyType === 'Reserve';
+    case 'off':
+      return d.dutyType === 'Day Off' || d.dutyType === 'Vacation';
+    default:
+      return true;
+  }
+}
 
 export default function RosterPage() {
   const { roster, loading, warnings, error, clear, activeUser } = useRoster();
   const navigate = useNavigate();
   const [month, setMonth] = useState(new Date());
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+  const [infoAnchor, setInfoAnchor] = useState<null | HTMLElement>(null);
+  const [filter, setFilter] = useState<Filter>('all');
+
+  const monthDuties = useMemo(
+    () => (roster ? roster.duties.filter((d) => isSameMonth(parseISO(d.date), month)) : []),
+    [roster, month]
+  );
 
   const dutiesByDay = useMemo(() => {
     const map = new Map<string, ParsedDuty[]>();
-    if (!roster) return map;
-    for (const d of roster.duties) {
-      if (!isSameMonth(parseISO(d.date), month)) continue;
+    for (const d of monthDuties) {
+      if (!matchesFilter(d, filter)) continue;
       if (!map.has(d.date)) map.set(d.date, []);
       map.get(d.date)!.push(d);
     }
     return new Map([...map.entries()].sort());
-  }, [roster, month]);
+  }, [monthDuties, filter]);
 
   if (loading) return <Typography color="text.secondary">A carregar…</Typography>;
 
@@ -53,8 +85,6 @@ export default function RosterPage() {
       </Stack>
     );
   }
-
-  const monthDuties = roster.duties.filter((d) => isSameMonth(parseISO(d.date), month));
 
   return (
     <Stack spacing={2}>
@@ -82,12 +112,27 @@ export default function RosterPage() {
         </Button>
       </Box>
 
+      <MonthStatsCard duties={monthDuties} />
+
       <Box display="flex" alignItems="center" gap={1}>
-        <Box flexGrow={1} minWidth={0}>
-          <Typography variant="caption" color="text.secondary" noWrap display="block">
-            {roster.duties.length} dias · {roster.fileName}
-          </Typography>
-        </Box>
+        <IconButton size="small" onClick={(e) => setInfoAnchor(e.currentTarget)} title="Detalhes da escala">
+          <InfoOutlined fontSize="small" />
+        </IconButton>
+        <Popover
+          open={Boolean(infoAnchor)}
+          anchorEl={infoAnchor}
+          onClose={() => setInfoAnchor(null)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        >
+          <Box sx={{ p: 1.5, maxWidth: 280 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ wordBreak: 'break-word' }}>
+              {roster.fileName} · {roster.duties.length} dias · importado{' '}
+              {format(parseISO(roster.importedAt), 'dd/MM/yyyy HH:mm')}
+            </Typography>
+          </Box>
+        </Popover>
+
+        <Box flexGrow={1} />
 
         {activeUser && (
           <GoogleCalendarSync
@@ -120,8 +165,24 @@ export default function RosterPage() {
         </Menu>
       </Box>
 
+      <Box display="flex" gap={1} flexWrap="wrap">
+        {FILTERS.map((f) => (
+          <Chip
+            key={f.key}
+            label={f.label}
+            size="small"
+            color={filter === f.key ? 'primary' : 'default'}
+            variant={filter === f.key ? 'filled' : 'outlined'}
+            onClick={() => setFilter(f.key)}
+          />
+        ))}
+      </Box>
+
       {monthDuties.length === 0 && (
         <Alert severity="info">Sem registos para este mês. Usa as setas para navegar.</Alert>
+      )}
+      {monthDuties.length > 0 && dutiesByDay.size === 0 && (
+        <Alert severity="info">Nenhum registo deste tipo neste mês.</Alert>
       )}
 
       {[...dutiesByDay.entries()].map(([date, duties]) => (
