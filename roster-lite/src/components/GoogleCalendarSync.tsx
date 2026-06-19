@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import { Close, Google, OpenInNew } from '@mui/icons-material';
 import {
-  getClientId, setClientId, clearClientId,
+  getClientId, setClientId, revokeAccess,
   syncToGoogleCalendar, type SyncProgressFn,
 } from '../utils/googleCalendar';
 import type { Roster } from '../domain/types';
@@ -14,20 +14,21 @@ type Phase = 'idle' | 'setup' | 'syncing' | 'done' | 'error';
 
 interface Props {
   roster: Roster;
+  userId: string;
 }
 
-export default function GoogleCalendarSync({ roster }: Props) {
+export default function GoogleCalendarSync({ roster, userId }: Props) {
   const [open, setOpen] = useState(false);
   const [phase, setPhase] = useState<Phase>('idle');
-  const [clientIdInput, setClientIdInput] = useState(getClientId() ?? '');
+  const [clientIdInput, setClientIdInput] = useState('');
   const [message, setMessage] = useState('');
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const hasClientId = !!getClientId();
-
   function openDialog() {
-    setPhase(hasClientId ? 'idle' : 'setup');
+    const stored = getClientId(userId);
+    setClientIdInput(stored ?? '');
+    setPhase(stored ? 'idle' : 'setup');
     setMessage('');
     setErrorMsg('');
     setProgress(null);
@@ -35,16 +36,17 @@ export default function GoogleCalendarSync({ roster }: Props) {
   }
 
   function close() {
-    if (phase === 'syncing') return; // block accidental close
+    if (phase === 'syncing') return;
     setOpen(false);
-    setTimeout(() => setPhase('idle'), 300); // reset after animation
+    setTimeout(() => setPhase('idle'), 300);
   }
 
   async function handleSync() {
-    const cid = hasClientId ? getClientId()! : clientIdInput.trim();
+    const storedId = getClientId(userId);
+    const cid = storedId ?? clientIdInput.trim();
     if (!cid) return;
 
-    if (!hasClientId) setClientId(cid);
+    if (!storedId) setClientId(userId, cid);
 
     setPhase('syncing');
     setProgress(null);
@@ -56,7 +58,7 @@ export default function GoogleCalendarSync({ roster }: Props) {
     };
 
     try {
-      await syncToGoogleCalendar(roster, cid, onProgress);
+      await syncToGoogleCalendar(roster, userId, cid, onProgress);
       setPhase('done');
     } catch (e) {
       setErrorMsg(e instanceof Error ? e.message : String(e));
@@ -65,11 +67,13 @@ export default function GoogleCalendarSync({ roster }: Props) {
   }
 
   function handleDisconnect() {
-    clearClientId();
+    revokeAccess(userId);
     setClientIdInput('');
     setPhase('setup');
     setErrorMsg('');
   }
+
+  const hasClientId = !!getClientId(userId);
 
   return (
     <>
@@ -87,15 +91,16 @@ export default function GoogleCalendarSync({ roster }: Props) {
 
         <DialogContent dividers>
           <Stack spacing={2}>
-            {/* ── Setup: client ID not configured ── */}
+            {/* ── Setup ── */}
             {(phase === 'setup' || (!hasClientId && phase === 'idle')) && (
               <>
                 <Typography variant="body2">
-                  Esta funcionalidade sincroniza a tua escala com um calendário chamado{' '}
+                  Sincroniza a tua escala com um calendário chamado{' '}
                   <strong>"CrewRoster Lite"</strong> na tua conta Google.
+                  As credenciais ficam guardadas <strong>neste dispositivo</strong>, separadas por utilizador.
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                  Precisas de criar credenciais OAuth gratuitas no Google Cloud. Segue os passos:
+                  Segue os passos para criar credenciais OAuth gratuitas:
                 </Typography>
                 <Box component="ol" sx={{ pl: 2, m: 0, '& li': { mb: 0.5 } }}>
                   <Typography component="li" variant="body2">
@@ -103,16 +108,16 @@ export default function GoogleCalendarSync({ roster }: Props) {
                     <Link href="https://console.cloud.google.com/" target="_blank" rel="noopener">
                       console.cloud.google.com
                     </Link>{' '}
-                    e cria um projeto (ex: "CrewRoster").
+                    → cria um projeto (ex: "CrewRoster").
                   </Typography>
                   <Typography component="li" variant="body2">
-                    Ativa a <strong>Google Calendar API</strong> (Biblioteca → pesquisa "Calendar").
+                    <strong>Biblioteca</strong> → ativa a <strong>Google Calendar API</strong>.
                   </Typography>
                   <Typography component="li" variant="body2">
-                    Cria um <strong>Ecrã de consentimento OAuth</strong> → Externo → adiciona o teu e-mail como utilizador de teste.
+                    <strong>Ecrã de consentimento OAuth</strong> → Externo → adiciona o teu e-mail como utilizador de teste.
                   </Typography>
                   <Typography component="li" variant="body2">
-                    Cria credenciais: <strong>ID de cliente OAuth → Aplicação Web</strong>.
+                    <strong>Credenciais</strong> → ID de cliente OAuth → Aplicação Web.
                     Em "Origens JavaScript autorizadas" adiciona:{' '}
                     <code style={{ fontSize: '0.75rem', background: '#f5f5f5', padding: '1px 4px' }}>
                       {window.location.origin}
@@ -130,7 +135,7 @@ export default function GoogleCalendarSync({ roster }: Props) {
                   onChange={(e) => setClientIdInput(e.target.value)}
                   size="small"
                   fullWidth
-                  helperText="Guardado localmente no teu dispositivo; nunca enviado a nenhum servidor."
+                  helperText="Guardado localmente neste dispositivo; nunca enviado a servidores."
                 />
                 <Button
                   variant="contained"
@@ -143,15 +148,15 @@ export default function GoogleCalendarSync({ roster }: Props) {
               </>
             )}
 
-            {/* ── Idle: client ID already stored ── */}
+            {/* ── Idle ── */}
             {phase === 'idle' && hasClientId && (
               <>
                 <Typography variant="body2">
                   Pronto para sincronizar <strong>{roster.duties.length} entradas</strong> da escala{' '}
-                  <em>{roster.fileName}</em> para o calendário "CrewRoster Lite" no Google Calendar.
+                  <em>{roster.fileName}</em>.
                 </Typography>
                 <Alert severity="info" sx={{ fontSize: '0.8rem' }}>
-                  Todos os eventos existentes no calendário "CrewRoster Lite" serão substituídos.
+                  Os eventos existentes no calendário "CrewRoster Lite" serão substituídos.
                 </Alert>
                 <Box display="flex" gap={1} flexWrap="wrap">
                   <Button variant="contained" startIcon={<Google />} onClick={handleSync}>
@@ -190,7 +195,7 @@ export default function GoogleCalendarSync({ roster }: Props) {
             {phase === 'done' && (
               <>
                 <Alert severity="success">
-                  Escala sincronizada com sucesso! O calendário "CrewRoster Lite" foi atualizado.
+                  Escala sincronizada! O calendário "CrewRoster Lite" foi atualizado.
                 </Alert>
                 <Button
                   variant="outlined"

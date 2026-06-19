@@ -1,7 +1,7 @@
 // Google Calendar API integration — no backend required.
 // Uses Google Identity Services (GIS) for OAuth 2.0 in-browser token flow.
-// The user supplies a Google Cloud OAuth 2.0 Client ID once; it's stored in
-// localStorage. Tokens are cached and refreshed automatically.
+// All localStorage keys are scoped per-user so multiple pilots can each have
+// their own Google Calendar credentials on the same device.
 
 import { addDays, format, parseISO } from 'date-fns';
 import type { ParsedDuty, Roster } from '../domain/types';
@@ -10,10 +10,8 @@ const CALENDAR_API = 'https://www.googleapis.com/calendar/v3';
 const SCOPES = 'https://www.googleapis.com/auth/calendar';
 const CALENDAR_NAME = 'CrewRoster Lite';
 
-const KEY_CLIENT_ID = 'gcal_client_id';
-const KEY_CALENDAR_ID = 'gcal_calendar_id';
-const KEY_TOKEN = 'gcal_token';
-const KEY_EXPIRES = 'gcal_expires';
+// Per-user key helpers
+const K = (suffix: string, userId: string) => `gcal_${suffix}_${userId}`;
 
 // ── GIS type declarations ──────────────────────────────────────────────────
 
@@ -46,47 +44,50 @@ declare global {
   }
 }
 
-// ── Stored-client-ID helpers ───────────────────────────────────────────────
+// ── Per-user client ID helpers ─────────────────────────────────────────────
 
-export function getClientId(): string | null {
-  return localStorage.getItem(KEY_CLIENT_ID);
+export function getClientId(userId: string): string | null {
+  return localStorage.getItem(K('client_id', userId));
 }
 
-export function setClientId(id: string): void {
-  localStorage.setItem(KEY_CLIENT_ID, id.trim());
-  localStorage.removeItem(KEY_CALENDAR_ID); // calendar may belong to old client
-  clearStoredToken();
+export function setClientId(userId: string, id: string): void {
+  localStorage.setItem(K('client_id', userId), id.trim());
+  localStorage.removeItem(K('calendar_id', userId));
+  clearStoredToken(userId);
 }
 
-export function clearClientId(): void {
-  localStorage.removeItem(KEY_CLIENT_ID);
-  revokeAccess();
+export function clearUserGCalData(userId: string): void {
+  for (const suffix of ['client_id', 'token', 'expires', 'calendar_id']) {
+    localStorage.removeItem(K(suffix, userId));
+  }
+  const token = localStorage.getItem(K('token', userId));
+  if (token) window.google?.accounts?.oauth2?.revoke(token, () => {});
 }
 
 // ── Token helpers ──────────────────────────────────────────────────────────
 
-function getStoredToken(): string | null {
-  const token = localStorage.getItem(KEY_TOKEN);
-  const exp = Number(localStorage.getItem(KEY_EXPIRES) ?? 0);
-  if (!token || Date.now() > exp) { clearStoredToken(); return null; }
+function getStoredToken(userId: string): string | null {
+  const token = localStorage.getItem(K('token', userId));
+  const exp = Number(localStorage.getItem(K('expires', userId)) ?? 0);
+  if (!token || Date.now() > exp) { clearStoredToken(userId); return null; }
   return token;
 }
 
-function storeToken(token: string, expiresIn: number): void {
-  localStorage.setItem(KEY_TOKEN, token);
-  localStorage.setItem(KEY_EXPIRES, String(Date.now() + (expiresIn - 60) * 1000));
+function storeToken(userId: string, token: string, expiresIn: number): void {
+  localStorage.setItem(K('token', userId), token);
+  localStorage.setItem(K('expires', userId), String(Date.now() + (expiresIn - 60) * 1000));
 }
 
-function clearStoredToken(): void {
-  localStorage.removeItem(KEY_TOKEN);
-  localStorage.removeItem(KEY_EXPIRES);
+function clearStoredToken(userId: string): void {
+  localStorage.removeItem(K('token', userId));
+  localStorage.removeItem(K('expires', userId));
 }
 
-export function revokeAccess(): void {
-  const token = getStoredToken();
+export function revokeAccess(userId: string): void {
+  const token = getStoredToken(userId);
   if (token) window.google?.accounts?.oauth2?.revoke(token, () => {});
-  clearStoredToken();
-  localStorage.removeItem(KEY_CALENDAR_ID);
+  clearStoredToken(userId);
+  localStorage.removeItem(K('calendar_id', userId));
 }
 
 // ── GIS script loader ──────────────────────────────────────────────────────
@@ -112,8 +113,8 @@ function loadGis(): Promise<void> {
 
 // ── OAuth ──────────────────────────────────────────────────────────────────
 
-export async function authorize(clientId: string): Promise<string> {
-  const cached = getStoredToken();
+export async function authorize(userId: string, clientId: string): Promise<string> {
+  const cached = getStoredToken(userId);
   if (cached) return cached;
 
   await loadGis();
@@ -127,7 +128,7 @@ export async function authorize(clientId: string): Promise<string> {
           reject(new Error(resp.error_description ?? resp.error ?? 'Token não recebido'));
           return;
         }
-        storeToken(resp.access_token, resp.expires_in ?? 3600);
+        storeToken(userId, resp.access_token, resp.expires_in ?? 3600);
         resolve(resp.access_token);
       },
       error_callback: (e) => {
@@ -135,7 +136,7 @@ export async function authorize(clientId: string): Promise<string> {
         else reject(new Error(e.message ?? e.type));
       },
     });
-    client.requestAccessToken({ prompt: '' }); // silent if already granted
+    client.requestAccessToken({ prompt: '' });
   });
 }
 
@@ -158,14 +159,14 @@ async function gcal<T>(token: string, url: string, init: RequestInit = {}): Prom
 
 interface CalItem { id: string; summary: string }
 
-async function findOrCreateCalendar(token: string): Promise<string> {
-  const stored = localStorage.getItem(KEY_CALENDAR_ID);
+async function findOrCreateCalendar(userId: string, token: string): Promise<string> {
+  const stored = localStorage.getItem(K('calendar_id', userId));
   if (stored) return stored;
 
   const list = await gcal<{ items?: CalItem[] }>(token, `${CALENDAR_API}/users/me/calendarList`);
   const match = list.items?.find((c) => c.summary === CALENDAR_NAME);
   if (match) {
-    localStorage.setItem(KEY_CALENDAR_ID, match.id);
+    localStorage.setItem(K('calendar_id', userId), match.id);
     return match.id;
   }
 
@@ -173,7 +174,7 @@ async function findOrCreateCalendar(token: string): Promise<string> {
     method: 'POST',
     body: JSON.stringify({ summary: CALENDAR_NAME }),
   });
-  localStorage.setItem(KEY_CALENDAR_ID, created.id);
+  localStorage.setItem(K('calendar_id', userId), created.id);
   return created.id;
 }
 
@@ -202,14 +203,14 @@ async function deleteAllEvents(token: string, calendarId: string): Promise<void>
 // ── Event builder ──────────────────────────────────────────────────────────
 
 const DUTY_COLOR: Record<string, string> = {
-  'Flight Duty':    '9', // blueberry (dark blue)
-  'Standby Airport': '5', // banana (yellow)
-  'Day Off':        '8', // graphite
-  'Vacation':       '2', // sage (green)
-  'Training':       '6', // tangerine (orange)
-  'Simulator':      '6', // tangerine (orange)
-  'Positioning':    '3', // grape (purple)
-  'Office Duty':    '1', // lavender
+  'Flight Duty':     '9', // blueberry
+  'Standby Airport': '5', // banana
+  'Day Off':         '8', // graphite
+  'Vacation':        '2', // sage
+  'Training':        '6', // tangerine
+  'Simulator':       '6', // tangerine
+  'Positioning':     '3', // grape
+  'Office Duty':     '1', // lavender
 };
 
 function gcalDateTime(dateISO: string, hhmm: string): string {
@@ -255,14 +256,15 @@ export type SyncProgressFn = (msg: string, done?: number, total?: number) => voi
 
 export async function syncToGoogleCalendar(
   roster: Roster,
+  userId: string,
   clientId: string,
   onProgress: SyncProgressFn = () => {}
 ): Promise<void> {
   onProgress('A autorizar no Google…');
-  const token = await authorize(clientId);
+  const token = await authorize(userId, clientId);
 
   onProgress('A localizar calendário "CrewRoster Lite"…');
-  const calId = await findOrCreateCalendar(token);
+  const calId = await findOrCreateCalendar(userId, token);
 
   onProgress('A remover eventos anteriores…');
   await deleteAllEvents(token, calId);
