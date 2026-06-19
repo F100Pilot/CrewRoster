@@ -15,9 +15,11 @@ type Phase = 'idle' | 'setup' | 'syncing' | 'done' | 'error';
 interface Props {
   roster: Roster;
   userId: string;
+  variant?: 'text' | 'outlined' | 'contained';
+  label?: string;
 }
 
-export default function GoogleCalendarSync({ roster, userId }: Props) {
+export default function GoogleCalendarSync({ roster, userId, variant = 'text', label = 'Calendar' }: Props) {
   const [open, setOpen] = useState(false);
   const [phase, setPhase] = useState<Phase>('idle');
   const [clientIdInput, setClientIdInput] = useState('');
@@ -77,8 +79,8 @@ export default function GoogleCalendarSync({ roster, userId }: Props) {
 
   return (
     <>
-      <Button size="small" startIcon={<Google />} onClick={openDialog}>
-        Calendar
+      <Button size="small" variant={variant} startIcon={<Google />} onClick={openDialog}>
+        {label}
       </Button>
 
       <Dialog open={open} onClose={close} maxWidth="sm" fullWidth>

@@ -1,8 +1,9 @@
 import { useMemo, useState } from 'react';
 import {
-  Alert, Box, Button, Card, CardContent, Chip, Divider, IconButton, Popover, Stack, Typography,
+  Alert, Box, Button, Card, CardContent, Chip, Divider, IconButton,
+  ListItemIcon, ListItemText, Menu, MenuItem, Stack, Typography,
 } from '@mui/material';
-import { ChevronLeft, ChevronRight, Delete, Login, Today, CalendarMonth, InfoOutlined } from '@mui/icons-material';
+import { ChevronLeft, ChevronRight, Delete, Login, Today, CalendarMonth, MoreVert } from '@mui/icons-material';
 import { addMonths, format, isSameMonth, parseISO, subMonths } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
@@ -17,7 +18,7 @@ export default function RosterPage() {
   const { roster, loading, warnings, error, clear, activeUser } = useRoster();
   const navigate = useNavigate();
   const [month, setMonth] = useState(new Date());
-  const [infoAnchor, setInfoAnchor] = useState<null | HTMLElement>(null);
+  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
 
   const dutiesByDay = useMemo(() => {
     const map = new Map<string, ParsedDuty[]>();
@@ -81,35 +82,42 @@ export default function RosterPage() {
         </Button>
       </Box>
 
-      <Box display="flex" alignItems="center" justifyContent="flex-end" flexWrap="wrap" gap={1}>
-        <IconButton
-          size="small"
-          onClick={(e) => setInfoAnchor(e.currentTarget)}
-          title="Detalhes da escala"
-          sx={{ mr: 'auto' }}
-        >
-          <InfoOutlined fontSize="small" />
+      <Box display="flex" alignItems="center" gap={1}>
+        <Box flexGrow={1} minWidth={0}>
+          <Typography variant="caption" color="text.secondary" noWrap display="block">
+            {roster.duties.length} dias · {roster.fileName}
+          </Typography>
+        </Box>
+
+        {activeUser && (
+          <GoogleCalendarSync
+            roster={roster}
+            userId={activeUser.id}
+            variant="contained"
+            label="Sincronizar"
+          />
+        )}
+
+        <IconButton size="small" onClick={(e) => setMenuAnchor(e.currentTarget)} title="Mais ações">
+          <MoreVert />
         </IconButton>
-        <Popover
-          open={Boolean(infoAnchor)}
-          anchorEl={infoAnchor}
-          onClose={() => setInfoAnchor(null)}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+        <Menu
+          anchorEl={menuAnchor}
+          open={Boolean(menuAnchor)}
+          onClose={() => setMenuAnchor(null)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+          transformOrigin={{ vertical: 'top', horizontal: 'right' }}
         >
-          <Box sx={{ p: 1.5, maxWidth: 280 }}>
-            <Typography variant="caption" color="text.secondary" sx={{ wordBreak: 'break-word' }}>
-              {roster.fileName} · {roster.duties.length} dias · importado{' '}
-              {format(parseISO(roster.importedAt), 'dd/MM/yyyy HH:mm')}
-            </Typography>
-          </Box>
-        </Popover>
-        <Button size="small" startIcon={<CalendarMonth />} onClick={() => downloadIcs(roster)}>
-          .ics
-        </Button>
-        {activeUser && <GoogleCalendarSync roster={roster} userId={activeUser.id} />}
-        <Button size="small" color="error" startIcon={<Delete />} onClick={clear}>
-          Limpar
-        </Button>
+          <MenuItem onClick={() => { downloadIcs(roster); setMenuAnchor(null); }}>
+            <ListItemIcon><CalendarMonth fontSize="small" /></ListItemIcon>
+            <ListItemText>Exportar .ics</ListItemText>
+          </MenuItem>
+          <Divider />
+          <MenuItem onClick={() => { clear(); setMenuAnchor(null); }} sx={{ color: 'error.main' }}>
+            <ListItemIcon><Delete fontSize="small" color="error" /></ListItemIcon>
+            <ListItemText>Limpar escala</ListItemText>
+          </MenuItem>
+        </Menu>
       </Box>
 
       {monthDuties.length === 0 && (
