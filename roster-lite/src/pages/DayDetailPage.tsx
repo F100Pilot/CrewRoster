@@ -157,11 +157,8 @@ function TimePoint({
         </Typography>
       </Typography>
       {lt && (
-        <Typography variant="body2" fontWeight={600}>
-          {lt}
-          <Typography component="span" variant="caption" color="text.secondary">
-            {' LT'}
-          </Typography>
+        <Typography variant="caption" color="text.secondary">
+          ({lt} LT)
         </Typography>
       )}
       <Typography variant="caption" color="text.secondary" display="block">
