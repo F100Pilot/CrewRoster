@@ -41,12 +41,7 @@ export default function RosterPage() {
           <Button
             variant="outlined"
             startIcon={<Login />}
-            onClick={() => {
-              // Navigate to home which will show LoginPage (reset showUpload state).
-              // We reload to reset the App-level showUpload state.
-              window.location.hash = '#/';
-              window.location.reload();
-            }}
+            onClick={() => navigate('/login')}
           >
             Login CrewLink
           </Button>
