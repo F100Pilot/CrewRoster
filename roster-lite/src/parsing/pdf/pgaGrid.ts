@@ -77,13 +77,19 @@ function toTime(token: string): string | null {
 // Returns null for anything that isn't a duty "starter" (annotations, crew, etc.).
 function classifyDuty(name: string): { dutyType: string; dutyCode: string } | null {
   const n = name.toUpperCase();
-  if (/^W?_?OFF$/.test(n) || n === 'X') return { dutyType: 'Day Off', dutyCode: 'OFF' };
+  // "X" = day off away from base; keep it distinct from a regular W_OFF so the chip
+  // still reads "X" (the crew member recognises it as a free day outside the base).
+  if (n === 'X') return { dutyType: 'Day Off', dutyCode: 'X' };
+  if (/^W?_?OFF$/.test(n)) return { dutyType: 'Day Off', dutyCode: 'OFF' };
   if (/^E\d{2}-[A-Z]{3}-\d$/.test(n)) return { dutyType: 'Simulator', dutyCode: n }; // E90-VIE-1
   if (/^GAB\d$/.test(n)) return { dutyType: 'Office Duty', dutyCode: n };
   if (/^SIM/.test(n)) return { dutyType: 'Simulator', dutyCode: 'SIM' };
   if (/^(SBY|STBY)/.test(n)) return { dutyType: 'Standby Airport', dutyCode: 'SBY' };
   if (/^(VAC|AN)$/.test(n)) return { dutyType: 'Vacation', dutyCode: 'VAC' };
-  if (/^FP/.test(n) && /LEARN/.test(n)) return { dutyType: 'Training', dutyCode: 'ELEARN' };
+  // Training duty code, e.g. "FPE-LEARN". Anchored so the longer descriptive token
+  // ("FP-Elearning CA-MEL ...") that sits in an adjacent sub-column is NOT mistaken
+  // for a second training duty.
+  if (/^FP\w*-LEARN$/.test(n)) return { dutyType: 'Training', dutyCode: n };
   return null;
 }
 
@@ -101,10 +107,11 @@ interface Segment {
   notes: string[];
 }
 
-// Parse one day-column's tokens into duties. Tokens are stacked vertically (one
-// attribute per y-line), so we walk top→bottom and segment on each "starter"
-// (a carrier prefix or a duty-name); everything else accrues to the current entry.
-function parseColumn(colTokens: PositionedToken[], date: string): ParsedDuty[] {
+// Parse a single sub-column's tokens into duties. Each flight/duty occupies its own
+// narrow x sub-column with its attributes stacked vertically (one per y-line), so we
+// walk top→bottom and segment on each "starter" (a carrier prefix or a duty-name);
+// everything else accrues to the current entry. A clean sub-column yields one duty.
+function parseSubColumn(colTokens: PositionedToken[], date: string): ParsedDuty[] {
   const ordered = [...colTokens].sort((a, b) => b.y - a.y).map((t) => t.text);
   const segments: Segment[] = [];
   let cur: Segment | null = null;
@@ -115,7 +122,7 @@ function parseColumn(colTokens: PositionedToken[], date: string): ParsedDuty[] {
       cur = { tokens: [w], notes: [] };
       segments.push(cur);
     } else if (isAnnotation(w) || isCrewName(w)) {
-      if (cur && (/_INS$/.test(w) || /-LEARN$/i.test(w))) cur.notes.push(w);
+      if (cur && /_INS$/.test(w)) cur.notes.push(w);
     } else if (cur) {
       cur.tokens.push(w);
     }
@@ -125,14 +132,22 @@ function parseColumn(colTokens: PositionedToken[], date: string): ParsedDuty[] {
   for (const seg of segments) {
     const words = seg.tokens;
     const airports = words.filter((w) => AIRPORT.test(w) && !CARRIER.test(w));
-    const times = words.map(toTime).filter((t): t is string => !!t);
     const aircraft = words.find((w, i) => i > 0 && AIRCRAFT.test(w) && !AIRPORT.test(w)) ?? null;
 
     const carrierIdx = words.findIndex((w) => CARRIER.test(w));
     if (carrierIdx >= 0) {
       const isDeadhead = /^DH\//i.test(words[carrierIdx]);
-      const num = words.slice(carrierIdx + 1).find((w) => /^\d{2,4}$/.test(w) && !TIME.test(w));
+      // The flight number sits in the row directly below the carrier code (next token
+      // by y). Identify it structurally rather than by value, because numbers like
+      // "1455" are indistinguishable from a 14:55 clock time.
+      const numIdx = /^\d{2,4}$/.test(words[carrierIdx + 1] ?? '') ? carrierIdx + 1 : -1;
+      const num = numIdx >= 0 ? words[numIdx] : null;
       const code = words[carrierIdx].replace(/^DH\//i, '').toUpperCase();
+      // Exclude the flight-number slot so it can't be read as a departure/arrival time.
+      const times = words
+        .filter((_, i) => i !== numIdx)
+        .map(toTime)
+        .filter((t): t is string => !!t);
       duties.push({
         date,
         dutyCode: isDeadhead ? 'DH' : 'FLT',
@@ -152,13 +167,16 @@ function parseColumn(colTokens: PositionedToken[], date: string): ParsedDuty[] {
     const named = classifyDuty(words[0]);
     if (named) {
       const isFree = named.dutyType === 'Day Off';
+      const isTraining = named.dutyType === 'Training';
+      const times = words.map(toTime).filter((t): t is string => !!t);
       duties.push({
         date,
         dutyCode: named.dutyCode,
         dutyType: named.dutyType,
         reportingTime: isFree ? null : times[0] ?? null,
-        departureTime: null,
-        arrivalTime: null,
+        // Training shows the scheduled block (e.g. FPE-LEARN 07:45–08:15).
+        departureTime: isTraining ? times[0] ?? null : null,
+        arrivalTime: isTraining ? times[1] ?? null : null,
         flightNumber: null,
         departureAirport: isFree ? null : airports[0] ?? null,
         arrivalAirport: null,
@@ -196,24 +214,47 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
         .sort((a, b) => a.x - b.x);
       const yTop = h.y;
       const yBot = headers[gi + 1]?.y ?? -Infinity;
-      const data = pageTokens.filter((t) => t.x < 494 && t.y < yTop - 2 && t.y > yBot);
+      const data = pageTokens.filter((t) => t.x < 494 && t.y < yTop - 2 && t.y > yBot && t.text.trim());
 
-      for (const col of cols) {
-        const date = dateMap.get(col.token);
+      // A day spans a RANGE of x: each of its flights/duties is drawn in its own narrow
+      // sub-column, and the day's header label sits at the right-most (largest-x)
+      // sub-column. So we cluster data tokens into sub-columns by x (a tight tolerance —
+      // adjacent flights can be only ~5px apart) and assign each sub-column to a day.
+      const subs: { x: number; tokens: PositionedToken[] }[] = [];
+      for (const t of [...data].sort((a, b) => a.x - b.x)) {
+        const s = subs.find((s) => Math.abs(s.x - t.x) <= 3);
+        if (s) {
+          s.tokens.push(t);
+          s.x = Math.round((s.x * (s.tokens.length - 1) + t.x) / s.tokens.length);
+        } else {
+          subs.push({ x: t.x, tokens: [t] });
+        }
+      }
+
+      // A sub-column belongs to the day with the smallest label-x that is >= its x
+      // (the label marks the day's right edge; the day owns everything up to it).
+      const dayFor = (x: number): Column => {
+        for (const c of cols) if (c.x >= x - 4) return c;
+        return cols[cols.length - 1];
+      };
+
+      for (const s of subs) {
+        const date = dateMap.get(dayFor(s.x).token);
         if (!date) continue;
-        // Assign tokens whose nearest column center is this column (within 22px).
-        const colTokens = data.filter((t) => {
-          let best = cols[0];
-          for (const c of cols) if (Math.abs(t.x - c.x) < Math.abs(t.x - best.x)) best = c;
-          return best.x === col.x && Math.abs(t.x - col.x) <= 22;
-        });
-        if (!colTokens.length) continue;
-
-        const entries = parseColumn(colTokens, date);
+        const entries = parseSubColumn(s.tokens, date);
         if (!byDate.has(date)) byDate.set(date, []);
         const arr = byDate.get(date)!;
         for (const d of entries) if (!arr.some((e) => sameDuty(e, d))) arr.push(d);
       }
+    });
+  }
+
+  // Order duties within each day chronologically (by departure/reporting time).
+  for (const arr of byDate.values()) {
+    arr.sort((a, b) => {
+      const ta = a.departureTime ?? a.reportingTime ?? '';
+      const tb = b.departureTime ?? b.reportingTime ?? '';
+      return ta < tb ? -1 : ta > tb ? 1 : 0;
     });
   }
 
