@@ -1,7 +1,5 @@
 name: Deploy roster-lite to GitHub Pages
 
-# Builds the static client-side roster viewer and publishes it to GitHub Pages.
-# Enable Pages (Settings → Pages → Source: GitHub Actions) for this to take effect.
 on:
   push:
     branches: [claude/crewline-web-app-u7vftg]
@@ -9,16 +7,10 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: true
+  contents: write
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -35,16 +27,7 @@ jobs:
       - run: npm run build
         env:
           BASE: /CrewRoster/
-      - uses: actions/upload-pages-artifact@v3
+      - uses: peaceiris/actions-gh-pages@v4
         with:
-          path: roster-lite/dist
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: roster-lite/dist
