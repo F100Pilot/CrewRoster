@@ -187,8 +187,21 @@ function defaultDateRange(): { beginDate: string; endDate: string } {
 }
 
 /** Parse forms + fields from an HTML page (diagnostic: discover required fields). */
-function extractForms(html: string): unknown[] {
-  const forms: unknown[] = [];
+interface FormField {
+  tag: string;
+  type?: string;
+  name: string;
+  value?: string;
+  options?: Array<{ value: string; selected: boolean }>;
+}
+interface ParsedForm {
+  action: string;
+  method: string;
+  fields: FormField[];
+}
+
+function extractForms(html: string): ParsedForm[] {
+  const forms: ParsedForm[] = [];
   const formRe = /<form\b([^>]*)>([\s\S]*?)<\/form>/gi;
   let fm: RegExpExecArray | null;
   while ((fm = formRe.exec(html)) !== null) {
@@ -196,7 +209,7 @@ function extractForms(html: string): unknown[] {
     const inner = fm[2];
     const action = (attrs.match(/action\s*=\s*['"]([^'"]*)['"]/i) || [])[1] ?? '';
     const method = (attrs.match(/method\s*=\s*['"]([^'"]*)['"]/i) || [])[1] ?? 'GET';
-    const fields: unknown[] = [];
+    const fields: FormField[] = [];
     const inputRe = /<input\b([^>]*)>/gi;
     let im: RegExpExecArray | null;
     while ((im = inputRe.exec(inner)) !== null) {
@@ -212,7 +225,7 @@ function extractForms(html: string): unknown[] {
     let sm: RegExpExecArray | null;
     while ((sm = selectRe.exec(inner)) !== null) {
       const name = (sm[1].match(/name\s*=\s*['"]([^'"]*)['"]/i) || [])[1] ?? '';
-      const options: unknown[] = [];
+      const options: Array<{ value: string; selected: boolean }> = [];
       const optRe = /<option\b([^>]*)>/gi;
       let om: RegExpExecArray | null;
       while ((om = optRe.exec(sm[2])) !== null) {
@@ -226,6 +239,52 @@ function extractForms(html: string): unknown[] {
     forms.push({ action, method, fields });
   }
   return forms;
+}
+
+// The duty-plan filter page is the one carrying the begin/end date fields. Anything
+// else returned in its place (a notification/acknowledgement interstitial, a "you
+// have unread messages" page, etc.) must be cleared before we can generate a report.
+function looksLikeDutyPlan(html: string): boolean {
+  return /name\s*=\s*['"]beginDate['"]/i.test(html) && /name\s*=\s*['"]endDate['"]/i.test(html);
+}
+
+// Resolve a form action (possibly relative) against the CrewLink base.
+function resolveUrl(action: string, env: Env): string {
+  if (!action) return `${env.CREWLINK_BASE}${CREWLINK_APP_PATH}`;
+  if (action.startsWith('http')) return action;
+  if (action.startsWith('/')) return `${env.CREWLINK_BASE}${action}`;
+  return `${env.CREWLINK_BASE}/crewlink/${action}`;
+}
+
+// Build a form body from parsed fields: hidden/text/submit inputs by value, selects
+// by their selected (or first) option. Unchecked checkboxes/radios are skipped.
+function buildFormBody(form: ParsedForm): string {
+  const params: Record<string, string> = {};
+  for (const f of form.fields) {
+    if (!f.name) continue;
+    if (f.tag === 'select') {
+      const sel = f.options?.find((o) => o.selected) ?? f.options?.[0];
+      params[f.name] = sel?.value ?? '';
+    } else if (f.type === 'checkbox' || f.type === 'radio') {
+      continue;
+    } else {
+      params[f.name] = f.value ?? '';
+    }
+  }
+  return formEncode(params);
+}
+
+// Choose the form most likely to dismiss an interstitial: one with a submit/button
+// whose label reads like an acknowledgement; otherwise the first form on the page.
+function pickAckForm(forms: ParsedForm[]): ParsedForm | null {
+  const ackRe = /ok|continue|acknowledg|confirm|proceed|\bread\b|close|accept|enter|main|next/i;
+  for (const f of forms) {
+    const hasAck = f.fields.some(
+      (fl) => (fl.type === 'submit' || fl.type === 'button') && ackRe.test(fl.value ?? '')
+    );
+    if (hasAck) return f;
+  }
+  return forms[0] ?? null;
 }
 
 /** Try to find a PDF URL in an HTML response from CrewLink. */
@@ -280,24 +339,66 @@ async function handleRoster(
   const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36';
   const trail: unknown[] = [];
 
-  // Step 1: Open the "Individual Duty Plan" service (like clicking the menu item).
-  const step1 = await fetch(`${env.CREWLINK_BASE}${CREWLINK_APP_PATH}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'User-Agent': userAgent,
-      Cookie: sessionCookie,
-      Referer: `${env.CREWLINK_BASE}/crewlink/`,
-      Origin: env.CREWLINK_BASE,
-    },
-    body: formEncode({
-      crewlinkService: 'individualDutyPlan',
-      crewlinkOperation: 'default',
-    }),
-    redirect: 'follow',
-  });
-  const step1Html = await step1.text();
-  updateCookie(step1);
+  // Open the "Individual Duty Plan" service (like clicking the menu item).
+  const openDutyPlan = async (): Promise<{ response: Response; html: string }> => {
+    const response = await fetch(`${env.CREWLINK_BASE}${CREWLINK_APP_PATH}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': userAgent,
+        Cookie: sessionCookie,
+        Referer: `${env.CREWLINK_BASE}/crewlink/`,
+        Origin: env.CREWLINK_BASE,
+      },
+      body: formEncode({
+        crewlinkService: 'individualDutyPlan',
+        crewlinkOperation: 'default',
+      }),
+      redirect: 'follow',
+    });
+    const html = await response.text();
+    updateCookie(response);
+    return { response, html };
+  };
+
+  // Step 1: open the duty plan. CrewLink sometimes shows an interstitial first — a
+  // notification/acknowledgement page that has to be confirmed before the duty plan
+  // is reachable. Detect that (the duty-plan date fields are missing), submit the
+  // page's acknowledgement form, and retry. Capped to avoid loops.
+  let { response: step1, html: step1Html } = await openDutyPlan();
+  let ackAttempts = 0;
+  while (!looksLikeDutyPlan(step1Html) && ackAttempts < 3) {
+    const forms = extractForms(step1Html);
+    const ackForm = pickAckForm(forms);
+    trail.push({
+      step: 'interstitial',
+      attempt: ackAttempts + 1,
+      status: step1.status,
+      forms,
+      preview: step1Html.substring(0, 1200),
+    });
+    if (!ackForm) break;
+
+    const isGet = (ackForm.method || 'POST').toUpperCase() === 'GET';
+    const body = buildFormBody(ackForm);
+    const ackUrl = resolveUrl(ackForm.action, env);
+    const ackRes = await fetch(isGet ? `${ackUrl}?${body}` : ackUrl, {
+      method: isGet ? 'GET' : 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': userAgent,
+        Cookie: sessionCookie,
+        Referer: `${env.CREWLINK_BASE}${CREWLINK_APP_PATH}`,
+        Origin: env.CREWLINK_BASE,
+      },
+      ...(isGet ? {} : { body }),
+      redirect: 'follow',
+    });
+    updateCookie(ackRes);
+
+    ({ response: step1, html: step1Html } = await openDutyPlan());
+    ackAttempts++;
+  }
 
   // Use the server's own form default dates — they already respect the allowed range.
   const step1Forms = extractForms(step1Html) as Array<{ fields: Array<{ name: string; value: string }> }>;
@@ -315,6 +416,8 @@ async function handleRoster(
     status: step1.status,
     contentType: step1.headers.get('Content-Type') ?? '',
     cookieRotated: extractSessionId(step1) !== null,
+    interstitialsCleared: ackAttempts,
+    dutyPlanReady: looksLikeDutyPlan(step1Html),
     datesUsed: dates,
     forms: step1Forms,
   });
@@ -389,7 +492,11 @@ async function handleRoster(
 
   return jsonResponse(
     {
-      error: 'Não foi possível obter o PDF da escala.',
+      error:
+        ackAttempts > 0
+          ? 'O CrewLink mostrou uma notificação que não foi possível confirmar automaticamente. ' +
+            'Abre o CrewLink, confirma a notificação pendente e tenta de novo.'
+          : 'Não foi possível obter o PDF da escala.',
       pdfUrlFound: pdfUrl ?? null,
       trail,
     },
