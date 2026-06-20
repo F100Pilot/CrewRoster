@@ -1,9 +1,10 @@
-import { type ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { AppBar, Box, Container, IconButton, Paper, Toolbar, Tooltip, Typography, BottomNavigation, BottomNavigationAction } from '@mui/material';
-import { CalendarMonth, FormatListBulleted, BugReport, Sync, PictureAsPdf, Logout, HelpOutline } from '@mui/icons-material';
+import { CalendarMonth, FormatListBulleted, BugReport, CloudDownload, PictureAsPdf, Logout, HelpOutline } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import UserSwitcher from './UserSwitcher';
+import DownloadRosterDialog from './DownloadRosterDialog';
 
 const NAV = [
   { label: 'Lista', icon: <FormatListBulleted />, path: '/' },
@@ -17,6 +18,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   const location = useLocation();
   const current = NAV.findIndex((n) => n.path === location.pathname);
   const { sessionToken, setSessionToken } = useRoster();
+  const [downloadOpen, setDownloadOpen] = useState(false);
 
   return (
     <Box sx={{ pb: 8, minHeight: '100vh', bgcolor: 'background.default' }}>
@@ -43,18 +45,17 @@ export default function Layout({ children }: { children: ReactNode }) {
           >
             <HelpOutline />
           </IconButton>
-          <IconButton
-            color="inherit"
-            onClick={() => navigate('/import')}
-            title="Importar / atualizar escala"
-          >
-            <Sync />
-          </IconButton>
+          <Tooltip title="Descarregar / atualizar escala">
+            <IconButton color="inherit" onClick={() => setDownloadOpen(true)}>
+              <CloudDownload />
+            </IconButton>
+          </Tooltip>
         </Toolbar>
       </AppBar>
       <Container maxWidth="md" sx={{ py: 2 }}>
         {children}
       </Container>
+      <DownloadRosterDialog open={downloadOpen} onClose={() => setDownloadOpen(false)} />
       <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }} elevation={3}>
         <BottomNavigation
           showLabels
