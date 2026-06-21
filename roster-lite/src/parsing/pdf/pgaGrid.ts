@@ -85,6 +85,10 @@ function classifyDuty(name: string): { dutyType: string; dutyCode: string } | nu
   if (/^GAB\d$/.test(n)) return { dutyType: 'Office Duty', dutyCode: n };
   if (/^SIM/.test(n)) return { dutyType: 'Simulator', dutyCode: 'SIM' };
   if (/^(SBY|STBY)/.test(n)) return { dutyType: 'Standby Airport', dutyCode: 'SBY' };
+  // Airport standby slots are coded A1, A2, A3, … in the PGA roster (single/double
+  // digit, so they never collide with aircraft like A320 which is A\d{3}). Keep the
+  // exact code so the chip still reads "A1".
+  if (/^A\d{1,2}$/.test(n)) return { dutyType: 'Standby Airport', dutyCode: n };
   if (/^(VAC|AN)$/.test(n)) return { dutyType: 'Vacation', dutyCode: 'VAC' };
   // Training duty code, e.g. "FPE-LEARN". Anchored so the longer descriptive token
   // ("FP-Elearning CA-MEL ...") that sits in an adjacent sub-column is NOT mistaken

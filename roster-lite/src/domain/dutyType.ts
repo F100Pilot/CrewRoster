@@ -4,6 +4,7 @@ export function inferDutyType(dutyCode: string): string {
   const code = (dutyCode || '').toUpperCase();
   if (['FLT', 'FDP', 'FP', 'FD'].includes(code)) return 'Flight Duty';
   if (['SBY', 'SBY-A', 'STA'].includes(code)) return 'Standby Airport';
+  if (/^A\d{1,2}$/.test(code)) return 'Standby Airport'; // PGA airport standby slots A1, A2, A3…
   if (['SBY-H', 'STH'].includes(code)) return 'Standby Home';
   if (['OFF', 'DO', 'DOF'].includes(code)) return 'Day Off';
   if (['VAC', 'VACATION', 'AN'].includes(code)) return 'Vacation';

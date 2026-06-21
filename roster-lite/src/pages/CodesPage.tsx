@@ -12,6 +12,7 @@ const CODES: { code: string; dutyType: string; label: string }[] = [
   { code: 'FPE-LEARN', dutyType: 'Training', label: 'Formação (e-learning)' },
   { code: 'SIM / E90-…', dutyType: 'Simulator', label: 'Simulador' },
   { code: 'SBY / STBY', dutyType: 'Standby Airport', label: 'Reserva (standby)' },
+  { code: 'A1 / A2 / A3…', dutyType: 'Standby Airport', label: 'Reserva no aeroporto (slots)' },
   { code: 'VAC', dutyType: 'Vacation', label: 'Férias' },
 ];
 
