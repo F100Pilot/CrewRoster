@@ -280,6 +280,52 @@ function pickAckForm(forms) {
   return forms[0] ?? null;
 }
 
+// O NetLine recusa gerar o duty plan enquanto houver uma notificação por ler para o
+// período: "There is a notification for the period... Get it before you retrieve the
+// duty plan."
+function needsNotification(html) {
+  if (!html) return false;
+  return (
+    /there is a notification/i.test(html) ||
+    /notification for the period/i.test(html) ||
+    /notification[^<]*before you retrieve/i.test(html)
+  );
+}
+
+// Ações candidatas para obter/confirmar a notificação pendente, por ordem de
+// preferência: qualquer link ou formulário explícito da página que mencione
+// "notification", seguido de operações prováveis do serviço individualDutyPlan.
+function notificationCandidates(html, dates) {
+  const forms = extractForms(html);
+  const cands = [];
+
+  const hrefMatch = html.match(/href\s*=\s*['"]([^'"]*otification[^'"]*)['"]/i);
+  if (hrefMatch) {
+    cands.push({ via: `href:${hrefMatch[1]}`, method: 'GET', url: resolveUrl(hrefMatch[1].replace(/&amp;/g, '&')) });
+  }
+
+  const notifForm = forms.find((f) => f.fields.some((fl) => /otification/i.test(fl.value ?? '')));
+  if (notifForm) {
+    const isGet = (notifForm.method || 'POST').toUpperCase() === 'GET';
+    cands.push({ via: 'form', method: isGet ? 'GET' : 'POST', url: resolveUrl(notifForm.action), body: buildFormBody(notifForm) });
+  }
+
+  for (const op of ['getNotification', 'showNotification', 'readNotification', 'acknowledgeNotification', 'confirmNotification']) {
+    cands.push({
+      via: `op:${op}`,
+      method: 'POST',
+      url: `${CREWLINK_BASE}${CREWLINK_APP_PATH}`,
+      body: formEncode({
+        crewlinkService: 'individualDutyPlan',
+        crewlinkOperation: op,
+        beginDate: dates.beginDate,
+        endDate: dates.endDate,
+      }),
+    });
+  }
+  return cands;
+}
+
 async function handleRoster(request) {
   let body;
   try {
@@ -386,113 +432,129 @@ async function handleRoster(request) {
     forms: step1Forms,
   });
 
-  // Passo 2: gerar o relatório (como clicar em "Generate" no calendário).
-  const reportResponse = await fetch(`${CREWLINK_BASE}${CREWLINK_APP_PATH}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'User-Agent': userAgent,
-      Cookie: sessionCookie,
-      Referer: `${CREWLINK_BASE}${CREWLINK_APP_PATH}`,
-      Origin: CREWLINK_BASE,
-    },
-    body: formEncode({
-      crewlinkService: 'individualDutyPlan',
-      crewlinkOperation: 'makeReport',
-      beginDate: dates.beginDate,
-      endDate: dates.endDate,
-      selectBtn: 'Generate Report',
-    }),
-    redirect: 'manual',
-  });
-  updateCookie(reportResponse);
-
-  // If the server redirected us (302/303) after generating the report, follow manually.
-  const reportLocation = reportResponse.headers.get('Location');
-  if (reportLocation && (reportResponse.status === 302 || reportResponse.status === 303 || reportResponse.status === 301)) {
-    const fullRedirectUrl = reportLocation.startsWith('http')
-      ? reportLocation
-      : `${CREWLINK_BASE}${reportLocation.startsWith('/') ? '' : '/crewlink/'}${reportLocation}`;
-    trail.push({ step: 'makeReport-redirect', status: reportResponse.status, location: fullRedirectUrl });
-
-    const redirectResponse = await fetch(fullRedirectUrl, {
+  // Resolve e descarrega o PDF a partir de um URL (possivelmente relativo).
+  const fetchPdf = async (rawUrl) => {
+    let pdfUrl = rawUrl;
+    if (pdfUrl.startsWith('/')) pdfUrl = `${CREWLINK_BASE}${pdfUrl}`;
+    else if (!pdfUrl.startsWith('http')) pdfUrl = `${CREWLINK_BASE}/crewlink/${pdfUrl}`;
+    const pdfResponse = await fetch(pdfUrl, {
       headers: { 'User-Agent': userAgent, Cookie: sessionCookie, Referer: `${CREWLINK_BASE}/crewlink/` },
     });
-    updateCookie(redirectResponse);
-    const redirectCT = redirectResponse.headers.get('Content-Type') ?? '';
-    if (redirectCT.includes('application/pdf')) {
-      const pdfBuffer = await redirectResponse.arrayBuffer();
-      return new Response(pdfBuffer, { status: 200, headers: { 'Content-Type': 'application/pdf', ...corsHeaders(request) } });
+    if (pdfResponse.ok && (pdfResponse.headers.get('Content-Type') ?? '').includes('application/pdf')) {
+      return pdfResponse.arrayBuffer();
     }
-    const redirectHtml = await redirectResponse.text();
-    const redirectPdfUrl = findPdfUrl(redirectHtml);
-    trail.push({ step: 'makeReport-redirect-body', status: redirectResponse.status, contentType: redirectCT, pdfUrl: redirectPdfUrl, body: extractBody(redirectHtml) });
-    if (redirectPdfUrl) {
-      const pdfFull = redirectPdfUrl.startsWith('http') ? redirectPdfUrl : `${CREWLINK_BASE}${redirectPdfUrl}`;
-      const pdfRes = await fetch(pdfFull, { headers: { 'User-Agent': userAgent, Cookie: sessionCookie } });
-      if (pdfRes.ok && (pdfRes.headers.get('Content-Type') ?? '').includes('application/pdf')) {
-        const pdfBuffer = await pdfRes.arrayBuffer();
-        return new Response(pdfBuffer, { status: 200, headers: { 'Content-Type': 'application/pdf', ...corsHeaders(request) } });
-      }
-    }
-  }
+    return null;
+  };
 
-  const contentType = reportResponse.headers.get('Content-Type') ?? '';
-
-  // Se a resposta já for o PDF, devolve-o diretamente.
-  if (contentType.includes('application/pdf')) {
-    const pdfBuffer = await reportResponse.arrayBuffer();
-    return new Response(pdfBuffer, {
-      status: 200,
-      headers: { 'Content-Type': 'application/pdf', ...corsHeaders(request) },
-    });
-  }
-
-  // Caso contrário é uma página HTML (visualizador) com o URL do PDF.
-  const html = await reportResponse.text();
-  trail.push({
-    step: 'makeReport',
-    status: reportResponse.status,
-    redirectLocation: reportLocation,
-    contentType,
-    forms: extractForms(html),
-    body: extractBody(html),
-  });
-
-  let pdfUrl = findPdfUrl(html);
-
-  if (pdfUrl) {
-    if (pdfUrl.startsWith('/')) {
-      pdfUrl = `${CREWLINK_BASE}${pdfUrl}`;
-    } else if (!pdfUrl.startsWith('http')) {
-      pdfUrl = `${CREWLINK_BASE}/crewlink/${pdfUrl}`;
-    }
-
-    const pdfResponse = await fetch(pdfUrl, {
+  // Gera o relatório (como clicar em "Generate"). Devolve { pdf } se conseguiu o PDF,
+  // ou { html, pdfUrl? } com a página HTML para inspeção. Reutilizável: corre uma vez
+  // por tentativa, incluindo depois de obter uma notificação pendente.
+  const runReport = async () => {
+    const reportResponse = await fetch(`${CREWLINK_BASE}${CREWLINK_APP_PATH}`, {
+      method: 'POST',
       headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
         'User-Agent': userAgent,
         Cookie: sessionCookie,
-        Referer: `${CREWLINK_BASE}/crewlink/`,
+        Referer: `${CREWLINK_BASE}${CREWLINK_APP_PATH}`,
+        Origin: CREWLINK_BASE,
       },
+      body: formEncode({
+        crewlinkService: 'individualDutyPlan',
+        crewlinkOperation: 'makeReport',
+        beginDate: dates.beginDate,
+        endDate: dates.endDate,
+        selectBtn: 'Generate Report',
+      }),
+      redirect: 'manual',
     });
+    updateCookie(reportResponse);
 
-    if (pdfResponse.ok && (pdfResponse.headers.get('Content-Type') ?? '').includes('application/pdf')) {
-      const pdfBuffer = await pdfResponse.arrayBuffer();
-      return new Response(pdfBuffer, {
-        status: 200,
-        headers: { 'Content-Type': 'application/pdf', ...corsHeaders(request) },
+    // Seguir um redirect (301/302/303) manualmente, se existir.
+    const reportLocation = reportResponse.headers.get('Location');
+    if (reportLocation && [301, 302, 303].includes(reportResponse.status)) {
+      const fullRedirectUrl = reportLocation.startsWith('http')
+        ? reportLocation
+        : `${CREWLINK_BASE}${reportLocation.startsWith('/') ? '' : '/crewlink/'}${reportLocation}`;
+      const redirectResponse = await fetch(fullRedirectUrl, {
+        headers: { 'User-Agent': userAgent, Cookie: sessionCookie, Referer: `${CREWLINK_BASE}/crewlink/` },
       });
+      updateCookie(redirectResponse);
+      if ((redirectResponse.headers.get('Content-Type') ?? '').includes('application/pdf')) {
+        return { pdf: await redirectResponse.arrayBuffer() };
+      }
+      const redirectHtml = await redirectResponse.text();
+      const redirectPdfUrl = findPdfUrl(redirectHtml);
+      if (redirectPdfUrl) {
+        const pdf = await fetchPdf(redirectPdfUrl);
+        if (pdf) return { pdf };
+      }
+      return { html: redirectHtml, pdfUrl: redirectPdfUrl };
     }
+
+    if ((reportResponse.headers.get('Content-Type') ?? '').includes('application/pdf')) {
+      return { pdf: await reportResponse.arrayBuffer() };
+    }
+    const html = await reportResponse.text();
+    const pdfUrl = findPdfUrl(html);
+    if (pdfUrl) {
+      const pdf = await fetchPdf(pdfUrl);
+      if (pdf) return { pdf };
+    }
+    return { html, pdfUrl };
+  };
+
+  const pdfOk = (buf) =>
+    new Response(buf, { status: 200, headers: { 'Content-Type': 'application/pdf', ...corsHeaders(request) } });
+
+  // Passo 2: gerar o relatório.
+  let result = await runReport();
+  if (result.pdf) return pdfOk(result.pdf);
+
+  trail.push({
+    step: 'makeReport',
+    needsNotification: needsNotification(result.html),
+    pdfUrlFound: result.pdfUrl ?? null,
+    forms: extractForms(result.html),
+    body: extractBody(result.html),
+  });
+
+  // Passo 3: o NetLine pode exigir que se "obtenha" a notificação do período antes de
+  // gerar o duty plan ("There is a notification for the period... Get it before you
+  // retrieve the duty plan."). Tentar obter/confirmar a notificação e repetir o
+  // relatório. As candidatas são links/formulários explícitos da página seguidos de
+  // operações prováveis do serviço — best-effort, calibrável pelo trail.
+  const candidates = notificationCandidates(result.html, dates);
+  let notifAttempts = 0;
+  while (needsNotification(result.html) && notifAttempts < candidates.length) {
+    const c = candidates[notifAttempts];
+    const res = await fetch(c.method === 'GET' && c.body ? `${c.url}?${c.body}` : c.url, {
+      method: c.method,
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': userAgent,
+        Cookie: sessionCookie,
+        Referer: `${CREWLINK_BASE}${CREWLINK_APP_PATH}`,
+        Origin: CREWLINK_BASE,
+      },
+      ...(c.method === 'POST' && c.body ? { body: c.body } : {}),
+      redirect: 'follow',
+    });
+    updateCookie(res);
+    trail.push({ step: 'getNotification', attempt: notifAttempts + 1, via: c.via, status: res.status });
+
+    result = await runReport();
+    if (result.pdf) return pdfOk(result.pdf);
+    notifAttempts++;
   }
 
   return jsonResponse(
     {
-      error:
-        ackAttempts > 0
-          ? 'O CrewLink mostrou uma notificação que não foi possível confirmar automaticamente. ' +
-            'Abre o CrewLink, confirma a notificação pendente e tenta de novo.'
-          : 'Não foi possível obter o PDF da escala.',
-      pdfUrlFound: pdfUrl ?? null,
+      error: needsNotification(result.html)
+        ? 'O CrewLink tem uma notificação por ler para este período. Abre o CrewLink ' +
+          '(app ou site), lê/confirma a notificação pendente e tenta novamente.'
+        : 'Não foi possível obter o PDF da escala.',
+      pdfUrlFound: result.pdfUrl ?? null,
       trail,
     },
     502,
