@@ -294,23 +294,42 @@ function needsNotification(html) {
 
 // Ações candidatas para obter/confirmar a notificação pendente, por ordem de
 // preferência: qualquer link ou formulário explícito da página que mencione
-// "notification", seguido de operações prováveis do serviço individualDutyPlan.
+// "notification", seguido de serviços de notificação prováveis do NetLine.
+// Nota: usar crewlinkService=individualDutyPlan com op getNotification/etc. não
+// funciona — o módulo de notificações é um serviço separado no NetLine.
 function notificationCandidates(html, dates) {
   const forms = extractForms(html);
   const cands = [];
 
+  // 1. Link explícito na página de erro (ex: "Get it" poderia ser um âncora)
   const hrefMatch = html.match(/href\s*=\s*['"]([^'"]*otification[^'"]*)['"]/i);
   if (hrefMatch) {
     cands.push({ via: `href:${hrefMatch[1]}`, method: 'GET', url: resolveUrl(hrefMatch[1].replace(/&amp;/g, '&')) });
   }
 
+  // 2. Formulário da página de erro que menciona "notification"
   const notifForm = forms.find((f) => f.fields.some((fl) => /otification/i.test(fl.value ?? '')));
   if (notifForm) {
     const isGet = (notifForm.method || 'POST').toUpperCase() === 'GET';
     cands.push({ via: 'form', method: isGet ? 'GET' : 'POST', url: resolveUrl(notifForm.action), body: buildFormBody(notifForm) });
   }
 
-  for (const op of ['getNotification', 'showNotification', 'readNotification', 'acknowledgeNotification', 'confirmNotification']) {
+  // 3. Serviços de notificação do NetLine (módulo separado do individualDutyPlan).
+  //    Cada candidato é visitado e, se devolver uma página com formulário de
+  //    confirmação, esse formulário também é submetido (ver loop em handleRoster).
+  for (const svc of ['notifications', 'crewNotification', 'individualNotification',
+                      'crewlinkNotification', 'crewNotifications', 'systemNotification']) {
+    cands.push({
+      via: `svc:${svc}`,
+      method: 'POST',
+      url: `${CREWLINK_BASE}${CREWLINK_APP_PATH}`,
+      body: formEncode({ crewlinkService: svc, crewlinkOperation: 'default' }),
+    });
+  }
+
+  // 4. Operações do serviço individualDutyPlan (tentativa de último recurso)
+  for (const op of ['getNotification', 'showNotification', 'readNotification',
+                     'acknowledgeNotification', 'confirmNotification']) {
     cands.push({
       via: `op:${op}`,
       method: 'POST',
@@ -521,14 +540,17 @@ async function handleRoster(request) {
 
   // Passo 3: o NetLine pode exigir que se "obtenha" a notificação do período antes de
   // gerar o duty plan ("There is a notification for the period... Get it before you
-  // retrieve the duty plan."). Tentar obter/confirmar a notificação e repetir o
-  // relatório. As candidatas são links/formulários explícitos da página seguidos de
-  // operações prováveis do serviço — best-effort, calibrável pelo trail.
+  // retrieve the duty plan."). Para cada candidato:
+  //   a) Visitar o URL/serviço de notificação.
+  //   b) Se a resposta for uma página de notificação com formulário de confirmação,
+  //      submeter esse formulário (simula o clique em "OK"/"Confirmar").
+  //   c) Repetir o relatório.
+  // O trail regista o bodySnippet de cada candidato para diagnóstico.
   const candidates = notificationCandidates(result.html, dates);
   let notifAttempts = 0;
   while (needsNotification(result.html) && notifAttempts < candidates.length) {
     const c = candidates[notifAttempts];
-    const res = await fetch(c.method === 'GET' && c.body ? `${c.url}?${c.body}` : c.url, {
+    const notifRes = await fetch(c.method === 'GET' && c.body ? `${c.url}?${c.body}` : c.url, {
       method: c.method,
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -540,8 +562,44 @@ async function handleRoster(request) {
       ...(c.method === 'POST' && c.body ? { body: c.body } : {}),
       redirect: 'follow',
     });
-    updateCookie(res);
-    trail.push({ step: 'getNotification', attempt: notifAttempts + 1, via: c.via, status: res.status });
+    updateCookie(notifRes);
+    const notifHtml = await notifRes.text();
+
+    // Se a resposta não é a mesma página de erro (não é o duty plan nem outra
+    // notificação bloqueante), procurar um formulário de confirmação e submetê-lo.
+    let ackStatus = null;
+    const isRealNotifPage = !needsNotification(notifHtml) && !looksLikeDutyPlan(notifHtml);
+    if (isRealNotifPage) {
+      const notifForms = extractForms(notifHtml);
+      const ackForm = pickAckForm(notifForms);
+      if (ackForm) {
+        const ackBody = buildFormBody(ackForm);
+        const ackRes = await fetch(resolveUrl(ackForm.action), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'User-Agent': userAgent,
+            Cookie: sessionCookie,
+            Referer: `${CREWLINK_BASE}${CREWLINK_APP_PATH}`,
+            Origin: CREWLINK_BASE,
+          },
+          body: ackBody,
+          redirect: 'follow',
+        });
+        updateCookie(ackRes);
+        ackStatus = ackRes.status;
+      }
+    }
+
+    trail.push({
+      step: 'getNotification',
+      attempt: notifAttempts + 1,
+      via: c.via,
+      status: notifRes.status,
+      isRealNotifPage,
+      ackStatus,
+      bodySnippet: notifHtml.substring(0, 500),
+    });
 
     result = await runReport();
     if (result.pdf) return pdfOk(result.pdf);
