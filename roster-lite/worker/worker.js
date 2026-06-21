@@ -1,7 +1,10 @@
 /**
- * CrewRoster Proxy — Cloudflare Worker (versão para colar no dashboard).
+ * CrewRoster Proxy — Cloudflare Worker (ficheiro único).
  *
- * Proxy CORS entre a app CrewRoster Lite e o portal NetLine/CrewLink.
+ * Proxy CORS entre a app CrewRoster Lite e o portal NetLine/CrewLink. Esta é a
+ * ÚNICA fonte de verdade do worker: serve tanto para colar no dashboard como para
+ * `wrangler deploy` (wrangler.toml aponta para este ficheiro). Toda a configuração
+ * está hardcoded em baixo — não são precisas variáveis de ambiente.
  *
  * Endpoints:
  *   POST /api/login   — autentica, devolve o JSESSIONID
@@ -11,11 +14,11 @@
  * Segurança: as credenciais são reenviadas para netline.pga.pt por HTTPS e
  * nunca são guardadas, registadas ou colocadas em cache pelo worker.
  *
- * COMO USAR NO DASHBOARD CLOUDFLARE:
- *   1. dash.cloudflare.com → Workers & Pages → Create → Create Worker
- *   2. Dá-lhe o nome "crewroster-proxy" → Deploy
- *   3. Edit code → apaga tudo → cola este ficheiro → Deploy
- *   Não é preciso configurar variáveis de ambiente — está tudo aqui em baixo.
+ * COMO FAZER DEPLOY — escolhe UM dos métodos:
+ *   A) Dashboard: dash.cloudflare.com → Workers & Pages → o worker "crewroster-proxy"
+ *      → Edit code → apaga tudo → cola este ficheiro → Deploy.
+ *   B) CLI: a partir de roster-lite/worker/ corre ./deploy.sh (usa `wrangler deploy`).
+ *   Se mudares a config (CREWLINK_BASE / ALLOWED_ORIGINS), edita as constantes abaixo.
  */
 
 // --- Configuração ----------------------------------------------------------

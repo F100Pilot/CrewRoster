@@ -1,10 +1,6 @@
 name = "crewroster-proxy"
-main = "src/index.ts"
+main = "worker.js"
 compatibility_date = "2024-09-01"
 
-[vars]
-# The upstream CrewLink portal
-CREWLINK_BASE = "https://netline.pga.pt"
-
-# Allowed CORS origins (comma-separated). Updated once the GitHub Pages URL is known.
-ALLOWED_ORIGINS = "https://f100pilot.github.io,http://localhost:5173,http://localhost:4173"
+# Configuração (CREWLINK_BASE / ALLOWED_ORIGINS) está hardcoded em worker.js —
+# o ficheiro é autónomo para poder ser colado no dashboard sem variáveis.
