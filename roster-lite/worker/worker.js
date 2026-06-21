@@ -232,6 +232,39 @@ function extractBody(html) {
   return bodyMatch ? bodyMatch[1].substring(0, 3000) : html.substring(html.length - 2000);
 }
 
+// Extrai os URLs de <frame>/<iframe> de uma página, resolvidos contra a base.
+function extractFrameSrcs(html) {
+  const urls = [];
+  const re = /<(?:i?frame)\b[^>]+src\s*=\s*['"]([^'"]+)['"]/gi;
+  let m;
+  while ((m = re.exec(html)) !== null) {
+    const raw = m[1].replace(/&amp;/g, '&');
+    if (/^javascript:/i.test(raw) || raw === 'about:blank' || !raw) continue;
+    urls.push(raw.startsWith('http') ? raw : `${CREWLINK_BASE}${raw.startsWith('/') ? raw : `/crewlink/${raw}`}`);
+  }
+  return urls;
+}
+
+// Extrai todos os links para clApp (menu de navegação), com o texto da âncora.
+// É a partir destes que descobrimos o nome real do serviço de notificações.
+function extractAppLinks(html) {
+  const links = [];
+  const re = /<a\b[^>]*href\s*=\s*['"]([^'"]*clApp[^'"]*)['"][^>]*>([\s\S]*?)<\/a>/gi;
+  let m;
+  while ((m = re.exec(html)) !== null) {
+    const href = m[1].replace(/&amp;/g, '&');
+    const text = m[2].replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+    links.push({ href, text });
+  }
+  // Também links embebidos em JavaScript (window.open / location = '...clApp?...').
+  const jsRe = /['"]([^'"]*clApp\?[^'"]*)['"]/gi;
+  while ((m = jsRe.exec(html)) !== null) {
+    const href = m[1].replace(/&amp;/g, '&');
+    if (!links.some((l) => l.href === href)) links.push({ href, text: '' });
+  }
+  return links;
+}
+
 // A página do duty plan é a que tem os campos de data begin/end. Se vier outra coisa
 // no lugar (uma notificação/aviso a confirmar), tem de ser limpa antes de gerar o
 // relatório.
@@ -298,72 +331,10 @@ function needsNotification(html) {
   );
 }
 
-// Ações candidatas para obter/confirmar a notificação pendente, por ordem de
-// preferência. O trail confirmou que crewlinkService=notifications é o serviço
-// certo; as operações específicas abaixo são as mais prováveis para confirmar.
-function notificationCandidates(html, dates) {
-  const forms = extractForms(html);
-  const cands = [];
-
-  // 1. Link explícito na página de erro (ex: "Get it" poderia ser um âncora)
-  const hrefMatch = html.match(/href\s*=\s*['"]([^'"]*otification[^'"]*)['"]/i);
-  if (hrefMatch) {
-    cands.push({ via: `href:${hrefMatch[1]}`, method: 'GET', url: resolveUrl(hrefMatch[1].replace(/&amp;/g, '&')) });
-  }
-
-  // 2. Formulário da página de erro que menciona "notification"
-  const notifForm = forms.find((f) => f.fields.some((fl) => /otification/i.test(fl.value ?? '')));
-  if (notifForm) {
-    const isGet = (notifForm.method || 'POST').toUpperCase() === 'GET';
-    cands.push({ via: 'form', method: isGet ? 'GET' : 'POST', url: resolveUrl(notifForm.action), body: buildFormBody(notifForm) });
-  }
-
-  // 3. Serviço 'notifications' com a operação default e depois operações específicas.
-  //    O trail confirmou que este é o serviço correto. A página default é um frameset
-  //    — o worker segue os frames automaticamente (ver loop em handleRoster).
-  cands.push({
-    via: 'svc:notifications',
-    method: 'POST',
-    url: `${CREWLINK_BASE}${CREWLINK_APP_PATH}`,
-    body: formEncode({ crewlinkService: 'notifications', crewlinkOperation: 'default' }),
-  });
-  for (const op of ['getNotification', 'showNotification', 'readNotification',
-                     'acknowledgeNotification', 'acknowledge', 'acknowledgeAll', 'confirmNotification']) {
-    cands.push({
-      via: `svc:notifications:${op}`,
-      method: 'POST',
-      url: `${CREWLINK_BASE}${CREWLINK_APP_PATH}`,
-      body: formEncode({ crewlinkService: 'notifications', crewlinkOperation: op }),
-    });
-  }
-
-  // 4. Outros serviços possíveis (menos provável após o diagnóstico)
-  for (const svc of ['crewNotification', 'individualNotification', 'crewlinkNotification',
-                      'crewNotifications', 'systemNotification']) {
-    cands.push({
-      via: `svc:${svc}`,
-      method: 'POST',
-      url: `${CREWLINK_BASE}${CREWLINK_APP_PATH}`,
-      body: formEncode({ crewlinkService: svc, crewlinkOperation: 'default' }),
-    });
-  }
-
-  // 5. Operações no individualDutyPlan (último recurso)
-  for (const op of ['getNotification', 'showNotification', 'readNotification',
-                     'acknowledgeNotification', 'confirmNotification']) {
-    cands.push({
-      via: `op:${op}`,
-      method: 'POST',
-      url: `${CREWLINK_BASE}${CREWLINK_APP_PATH}`,
-      body: formEncode({
-        crewlinkService: 'individualDutyPlan',
-        crewlinkOperation: op,
-        beginDate: dates.beginDate,
-        endDate: dates.endDate,
-      }),
-    });
-  }
-  return cands;
+// Um link de menu parece ser de notificações/mensagens?
+function looksLikeNotificationLink(link) {
+  const re = /otification|message|\bmsg\b|inform|acknowledg|\bread\b|pending|alert|mail|inbox/i;
+  return re.test(link.href) || re.test(link.text);
 }
 
 async function handleRoster(request) {
@@ -568,98 +539,124 @@ async function handleRoster(request) {
     body: extractBody(result.html),
   });
 
-  // Passo 3: o NetLine pode exigir que se "obtenha" a notificação do período antes de
-  // gerar o duty plan ("There is a notification for the period... Get it before you
-  // retrieve the duty plan."). Para cada candidato:
-  //   a) Visitar o URL/serviço de notificação.
-  //   b) Se a resposta for uma página de notificação com formulário de confirmação,
-  //      submeter esse formulário (simula o clique em "OK"/"Confirmar").
-  //   c) Repetir o relatório.
-  // O trail regista o bodySnippet de cada candidato para diagnóstico.
-  const candidates = notificationCandidates(result.html, dates);
-  let notifAttempts = 0;
-  while (needsNotification(result.html) && notifAttempts < candidates.length) {
-    const c = candidates[notifAttempts];
-    const notifRes = await fetch(c.method === 'GET' && c.body ? `${c.url}?${c.body}` : c.url, {
-      method: c.method,
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'User-Agent': userAgent,
-        Cookie: sessionCookie,
-        Referer: `${CREWLINK_BASE}${CREWLINK_APP_PATH}`,
-        Origin: CREWLINK_BASE,
-      },
-      ...(c.method === 'POST' && c.body ? { body: c.body } : {}),
-      redirect: 'follow',
+  // Passo 3: o NetLine exige que se "obtenha"/confirme a notificação pendente do
+  // período antes de gerar o duty plan ("There is a notification for the period...
+  // Get it before you retrieve the duty plan."). O nome do serviço de notificações
+  // não é conhecido à partida (adivinhar dá "Unauthorized access"), por isso é
+  // DESCOBERTO a partir do menu: o frameset principal (loadMainFrameSet) tem um frame
+  // de navegação com os links reais para todos os serviços a que este tripulante tem
+  // acesso. Esses links vão para o trail — mesmo que a confirmação automática falhe,
+  // revelam o nome exato do serviço de notificações.
+  if (needsNotification(result.html)) {
+    // Helpers fechados sobre a sessão atual.
+    const getHtml = async (url, referer = `${CREWLINK_BASE}/crewlink/`) => {
+      const res = await fetch(url, {
+        headers: { 'User-Agent': userAgent, Cookie: sessionCookie, Referer: referer },
+        redirect: 'follow',
+      });
+      updateCookie(res);
+      return { res, html: await res.text() };
+    };
+    const postApp = async (params, referer = `${CREWLINK_BASE}${CREWLINK_APP_PATH}`) => {
+      const res = await fetch(`${CREWLINK_BASE}${CREWLINK_APP_PATH}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': userAgent, Cookie: sessionCookie,
+          Referer: referer, Origin: CREWLINK_BASE,
+        },
+        body: formEncode(params),
+        redirect: 'follow',
+      });
+      updateCookie(res);
+      return { res, html: await res.text() };
+    };
+    const toUrl = (href) =>
+      href.startsWith('http') ? href : `${CREWLINK_BASE}${href.startsWith('/') ? href : `/crewlink/${href}`}`;
+
+    // Descobre os links de navegação seguindo o frameset principal até 2 níveis.
+    const seen = new Set();
+    const menuLinks = [];
+    const addLinks = (html) => {
+      for (const l of extractAppLinks(html)) {
+        if (!seen.has(l.href)) { seen.add(l.href); menuLinks.push(l); }
+      }
+    };
+    const { html: fsHtml } = await postApp({
+      crewlinkService: 'crewlinkForCrew',
+      crewlinkOperation: 'loadMainFrameSet',
+      crewlinkSourcePage: 'spStartup',
     });
-    updateCookie(notifRes);
-    const notifHtml = await notifRes.text();
+    addLinks(fsHtml);
+    for (const u of extractFrameSrcs(fsHtml).slice(0, 6)) {
+      const { html: fh } = await getHtml(u);
+      addLinks(fh);
+      for (const u2 of extractFrameSrcs(fh).slice(0, 6)) {
+        const { html: fh2 } = await getHtml(u2);
+        addLinks(fh2);
+      }
+    }
+    trail.push({ step: 'menu', linkCount: menuLinks.length, links: menuLinks.slice(0, 50) });
 
-    // Se a resposta não é a mesma página de erro (não é o duty plan nem outra
-    // notificação bloqueante), procurar um formulário de confirmação e submetê-lo.
-    // Caso a página seja um frameset (padrão NetLine), seguir cada <frame src> para
-    // encontrar o formulário de confirmação dentro das frames.
-    let ackStatus = null;
-    const isRealNotifPage = !needsNotification(notifHtml) && !looksLikeDutyPlan(notifHtml);
-    if (isRealNotifPage) {
-      let ackForm = pickAckForm(extractForms(notifHtml));
+    // Candidatos: links do menu que pareçam de notificações/mensagens.
+    const linkCandidates = menuLinks.filter(looksLikeNotificationLink);
 
-      // Frameset: a página de notificações do NetLine é um frameset que não tem
-      // formulários no documento raiz — eles estão dentro de <frame src="...">.
-      if (!ackForm) {
-        const frameRe = /<(?:i?frame)\b[^>]+src\s*=\s*['"]([^'"]+)['"]/gi;
-        let fm;
-        while ((fm = frameRe.exec(notifHtml)) !== null && !ackForm) {
-          const rawSrc = fm[1];
-          const frameUrl = rawSrc.startsWith('http')
-            ? rawSrc
-            : `${CREWLINK_BASE}${rawSrc.startsWith('/') ? rawSrc : `/crewlink/${rawSrc}`}`;
-          const frameRes = await fetch(frameUrl, {
-            headers: {
-              'User-Agent': userAgent,
-              Cookie: sessionCookie,
-              Referer: `${CREWLINK_BASE}${CREWLINK_APP_PATH}`,
-            },
-            redirect: 'follow',
-          });
-          updateCookie(frameRes);
-          const frameHtml = await frameRes.text();
-          ackForm = pickAckForm(extractForms(frameHtml));
+    // Submete um formulário (action possivelmente relativa) e devolve a resposta.
+    const submitForm = async (form) => {
+      const isGet = (form.method || 'POST').toUpperCase() === 'GET';
+      const fbody = buildFormBody(form);
+      const fUrl = resolveUrl(form.action);
+      const res = await fetch(isGet ? `${fUrl}?${fbody}` : fUrl, {
+        method: isGet ? 'GET' : 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': userAgent, Cookie: sessionCookie,
+          Referer: `${CREWLINK_BASE}${CREWLINK_APP_PATH}`, Origin: CREWLINK_BASE,
+        },
+        ...(isGet ? {} : { body: fbody }),
+        redirect: 'follow',
+      });
+      updateCookie(res);
+      return res;
+    };
+
+    // Para cada candidato: abrir o link, seguir os frames, e submeter qualquer
+    // formulário de confirmação encontrado (exceto o próprio filtro do duty plan);
+    // depois repetir o relatório.
+    let notifAttempts = 0;
+    for (const c of linkCandidates) {
+      if (!needsNotification(result.html)) break;
+      const cUrl = toUrl(c.href);
+      const { html: openHtml } = await getHtml(cUrl);
+      const pages = [openHtml, ...(await Promise.all(
+        extractFrameSrcs(openHtml).slice(0, 6).map((fu) => getHtml(fu).then((r) => r.html)),
+      ))];
+
+      let ackStatus = null;
+      for (const page of pages) {
+        const forms = extractForms(page).filter(
+          (f) => !f.fields.some((fl) => fl.name === 'beginDate') && // não é o filtro
+                 !f.fields.some((fl) => fl.name === 'crewlinkUserName'), // não é login
+        );
+        const ackForm = pickAckForm(forms);
+        if (ackForm && ackForm.fields.some((f) => f.name)) {
+          const ackRes = await submitForm(ackForm);
+          ackStatus = ackRes.status;
+          break;
         }
       }
 
-      if (ackForm) {
-        const ackBody = buildFormBody(ackForm);
-        const ackRes = await fetch(resolveUrl(ackForm.action), {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'User-Agent': userAgent,
-            Cookie: sessionCookie,
-            Referer: `${CREWLINK_BASE}${CREWLINK_APP_PATH}`,
-            Origin: CREWLINK_BASE,
-          },
-          body: ackBody,
-          redirect: 'follow',
-        });
-        updateCookie(ackRes);
-        ackStatus = ackRes.status;
-      }
+      trail.push({
+        step: 'getNotification',
+        attempt: ++notifAttempts,
+        via: `menu:${c.text || c.href}`,
+        ackStatus,
+        bodySnippet: openHtml.substring(0, 600),
+      });
+
+      result = await runReport();
+      if (result.pdf) return pdfOk(result.pdf);
     }
-
-    trail.push({
-      step: 'getNotification',
-      attempt: notifAttempts + 1,
-      via: c.via,
-      status: notifRes.status,
-      isRealNotifPage,
-      ackStatus,
-      bodySnippet: notifHtml.substring(0, 1000),
-    });
-
-    result = await runReport();
-    if (result.pdf) return pdfOk(result.pdf);
-    notifAttempts++;
   }
 
   return jsonResponse(
