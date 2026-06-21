@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Alert, Box, Button, CircularProgress, Stack, Typography } from '@mui/material';
-import { ArrowBack, SaveAlt } from '@mui/icons-material';
+import { ArrowBack, SaveAlt, OpenInNew } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { SavedPdf } from '../domain/types';
 import { getPdf } from '../storage/rosterStore';
 import { downloadBlob } from '../utils/download';
+import PdfCanvasViewer from '../components/PdfCanvasViewer';
 
 export default function PdfViewerPage() {
   const { id } = useParams<{ id: string }>();
@@ -68,23 +69,19 @@ export default function PdfViewerPage() {
         </Button>
       </Box>
 
-      <Box
-        component="iframe"
-        src={url}
-        title={pdf.fileName}
-        sx={{
-          width: '100%',
-          height: 'calc(100vh - 200px)',
-          minHeight: 400,
-          border: '1px solid',
-          borderColor: 'divider',
-          borderRadius: 1,
-        }}
-      />
+      {/* Canvas rendering works on mobile (Android Chrome won't show a PDF in an
+          iframe). The button below opens it in the device's native viewer. */}
+      <PdfCanvasViewer blob={pdf.blob} />
 
-      <Typography variant="caption" color="text.secondary" align="center">
-        Se o PDF não aparecer, usa o botão "Descarregar" para o abrir no leitor do dispositivo.
-      </Typography>
+      <Button
+        startIcon={<OpenInNew />}
+        onClick={() => window.open(url, '_blank', 'noopener')}
+        variant="text"
+        size="small"
+        sx={{ alignSelf: 'center' }}
+      >
+        Abrir no leitor do dispositivo
+      </Button>
     </Stack>
   );
 }
