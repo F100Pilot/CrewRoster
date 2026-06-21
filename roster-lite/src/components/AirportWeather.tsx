@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Box, CircularProgress, Tooltip, Typography } from '@mui/material';
+import { Navigation } from '@mui/icons-material';
 import { fetchAirportWeather, describeWeatherCode, windCardinal, type AirportWeather as AW } from '../utils/airportWeather';
 import { AIRPORT_COORD } from '../domain/airports';
 import { sunTimes, isDaylight } from '../utils/sun';
@@ -69,12 +70,17 @@ export default function AirportWeather({
             <Typography variant="body2" sx={{ fontWeight: 600 }}>{wx.tempC}°C</Typography>
             <Typography variant="caption" color="text.secondary" noWrap>{desc.label}</Typography>
           </Box>
-          <Tooltip title={`Vento ${wx.windDir}° (${windCardinal(wx.windDir)}) ${wx.windKt}kt${gust ? `, rajadas ${wx.gustKt}kt` : ''}`}>
-            <Typography variant="caption" color="text.secondary" noWrap>
-              💨 {windCardinal(wx.windDir)} {wx.windKt}{gust}kt
-              {wx.visibilityKm !== null && wx.visibilityKm < 10 ? ` · vis ${wx.visibilityKm}km` : ''}
-              {wx.precipMm >= 0.1 ? ` · ${wx.precipMm.toFixed(1)}mm` : ''}
-            </Typography>
+          <Tooltip title={`Vento de ${wx.windDir}° (${windCardinal(wx.windDir)}) ${wx.windKt}kt${gust ? `, rajadas ${wx.gustKt}kt` : ''} — a seta aponta para onde sopra`}>
+            <Box display="flex" alignItems="center" gap={0.5} sx={{ color: 'text.secondary' }}>
+              {/* Navigation points up (North) at 0°; rotate to the downwind direction
+                  (windDir is where the wind comes FROM, so +180 to show where it goes). */}
+              <Navigation sx={{ fontSize: 15, transform: `rotate(${wx.windDir + 180}deg)` }} />
+              <Typography variant="caption" color="text.secondary" noWrap>
+                {wx.windKt}{gust}kt
+                {wx.visibilityKm !== null && wx.visibilityKm < 10 ? ` · vis ${wx.visibilityKm}km` : ''}
+                {wx.precipMm >= 0.1 ? ` · ${wx.precipMm.toFixed(1)}mm` : ''}
+              </Typography>
+            </Box>
           </Tooltip>
         </>
       ) : (
