@@ -41,29 +41,96 @@ function clusterRows(tokens: PositionedToken[], tol = 2.5): Row[] {
 }
 
 // --- Date reconstruction -------------------------------------------------------------
-// Day tokens are weekday+day-of-month only ("Mon15"); reconstruct full dates from the
-// period start date printed in the header.
-function buildDateMap(tokens: PositionedToken[]): Map<string, string> {
-  const map = new Map<string, string>();
-  // The duty-plan period start is printed as "<date> -" (e.g. "15Jun26 -"). Anchor on
-  // that so we don't pick up unrelated dates (licence validity, vacation ranges, etc.).
-  const startToken = tokens.map((t) => t.text.match(/^(\d{2})([A-Za-z]{3})(\d{2})\s*-\s*$/)).find((m) => !!m);
+// Day tokens are weekday+day-of-month only ("Mon15"). A single global weekday+dd map
+// breaks on long ranges: it can only cover a fixed window and the same "Mon15" recurs
+// across months (collisions). Instead we reconstruct the period's full calendar and
+// resolve each grid band by matching its consecutive day columns against that calendar.
+
+const DDMMMYY = /^(\d{2})([A-Za-z]{3})(\d{2})$/;
+const MAX_PERIOD_DAYS = 420; // safety cap (> a full year would be unusual)
+
+interface CalDay { key: string; date: string }
+
+// The duty-plan header prints the period as "<start> -" immediately followed by the
+// end date (e.g. "01Jan26 -" then "31Jul26"). Pairing the dash-start with the very
+// next bare date avoids picking up unrelated dates (licence validity, etc.).
+function periodRange(tokens: PositionedToken[]): { start: Date; end: Date } {
+  const ref = new Date();
   let start: Date | undefined;
-  if (startToken) start = parseDate(`${startToken[1]}${startToken[2]}${startToken[3]}`, 'ddMMMyy', new Date());
+  let end: Date | undefined;
+  for (let i = 0; i < tokens.length; i++) {
+    const m = tokens[i].text.match(/^(\d{2})([A-Za-z]{3})(\d{2})\s*-\s*$/);
+    if (!m) continue;
+    const s = parseDate(`${m[1]}${m[2]}${m[3]}`, 'ddMMMyy', ref);
+    if (!isValid(s)) continue;
+    start = s;
+    for (let j = i + 1; j < Math.min(i + 6, tokens.length); j++) {
+      const e = tokens[j].text.match(DDMMMYY);
+      if (e) {
+        const d = parseDate(`${e[1]}${e[2]}${e[3]}`, 'ddMMMyy', ref);
+        if (isValid(d)) { end = d; break; }
+      }
+    }
+    if (start && end) break;
+  }
+  // Fallback: earliest weekday+dd-style period token as the start.
   if (!start || !isValid(start)) {
     const periods = tokens
       .map((t) => t.text.match(PERIOD))
       .filter((m): m is RegExpMatchArray => !!m)
-      .map((m) => parseDate(`${m[1]}${m[2]}${m[3]}`, 'ddMMMyy', new Date()))
+      .map((m) => parseDate(`${m[1]}${m[2]}${m[3]}`, 'ddMMMyy', ref))
       .filter((d) => isValid(d))
       .sort((a, b) => a.getTime() - b.getTime());
     start = periods[0] ?? new Date();
   }
-  // Walk 70 days from the start; first occurrence of each weekday+dd key wins.
-  for (let i = 0; i < 70; i++) {
-    const d = addDays(start, i);
-    const key = format(d, 'EEEdd'); // "Mon15"
-    if (!map.has(key)) map.set(key, format(d, 'yyyy-MM-dd'));
+  if (!end || !isValid(end) || end < start) end = addDays(start, 200);
+  if ((end.getTime() - start.getTime()) / 86400000 > MAX_PERIOD_DAYS) end = addDays(start, MAX_PERIOD_DAYS);
+  return { start, end };
+}
+
+function buildCalendar(start: Date, end: Date): CalDay[] {
+  const cal: CalDay[] = [];
+  for (let d = start; d <= end; d = addDays(d, 1)) {
+    cal.push({ key: format(d, 'EEEdd'), date: format(d, 'yyyy-MM-dd') });
+  }
+  return cal;
+}
+
+// Best contiguous offset where `keys` align with `calKeys`, plus the match score.
+function bestMatch(keys: string[], calKeys: string[]): { off: number; score: number } {
+  let off = -1;
+  let score = -1;
+  for (let o = 0; o + keys.length <= calKeys.length; o++) {
+    let s = 0;
+    for (let i = 0; i < keys.length; i++) if (calKeys[o + i] === keys[i]) s++;
+    if (s > score) { score = s; off = o; }
+    if (s === keys.length) break;
+  }
+  return { off, score };
+}
+
+// Resolve a band's day columns to real dates by matching its consecutive weekday+dd
+// sequence against the period calendar. The PGA grid draws days right-to-left (columns
+// run in DESCENDING date order by x), so we try both orientations and keep the better.
+// Sequence matching is far less ambiguous than a single weekday+dd key, so it
+// disambiguates recurring days across a long roster.
+function resolveBandDates(colKeys: string[], calendar: CalDay[]): Map<string, string> {
+  const map = new Map<string, string>();
+  if (colKeys.length === 0) return map;
+  const calKeys = calendar.map((c) => c.key);
+
+  const fwd = bestMatch(colKeys, calKeys);
+  const rev = bestMatch([...colKeys].reverse(), calKeys);
+  const reversed = rev.score > fwd.score;
+  const { off, score } = reversed ? rev : fwd;
+
+  const required = Math.max(2, Math.ceil(colKeys.length * 0.6));
+  if (off < 0 || score < required) return map;
+
+  const n = colKeys.length;
+  for (let i = 0; i < n; i++) {
+    const cal = reversed ? calendar[off + (n - 1 - i)] : calendar[off + i];
+    if (cal) map.set(colKeys[i], cal.date);
   }
   return map;
 }
@@ -207,7 +274,8 @@ function sameDuty(a: ParsedDuty, b: ParsedDuty): boolean {
 }
 
 export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
-  const dateMap = buildDateMap(tokens);
+  const { start, end } = periodRange(tokens);
+  const calendar = buildCalendar(start, end);
   const byDate = new Map<string, ParsedDuty[]>();
 
   const pages = new Map<number, PositionedToken[]>();
@@ -233,6 +301,12 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
         .filter((c) => DOW.test(c.text) && c.x < 500)
         .map((c) => ({ x: c.x, token: c.text }))
         .sort((a, b) => a.x - b.x);
+
+      // Resolve this band's columns to real dates by matching its consecutive
+      // weekday+dd sequence against the period calendar (handles long ranges and
+      // recurring days that a global map would collide).
+      const bandDate = resolveBandDates(cols.map((c) => c.token), calendar);
+
       const yTop = h.y;
       // A band ends at the NEXT header row below it — counting summary/legend headers
       // too. Bounding by the next *parsed* header instead would let a real grid's band
@@ -267,7 +341,7 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
       };
 
       for (const s of subs) {
-        const date = dateMap.get(dayFor(s.x).token);
+        const date = bandDate.get(dayFor(s.x).token);
         if (!date) continue;
         const entries = parseSubColumn(s.tokens, date);
         if (!byDate.has(date)) byDate.set(date, []);
