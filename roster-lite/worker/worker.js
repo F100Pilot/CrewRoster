@@ -590,17 +590,19 @@ async function handleRoster(request) {
       crewlinkOperation: 'loadMainFrameSet',
       crewlinkSourcePage: 'spStartup',
     });
+    // O frame do menu (MenuForCrew) é onde estão os itens de navegação — dump maior.
+    const dumpLen = (html) => (/MenuForCrew/i.test(html) ? 14000 : 1200);
     addLinks(fsHtml);
-    frameDump.push({ url: 'loadMainFrameSet', frameSrcs: extractFrameSrcs(fsHtml), snippet: fsHtml.substring(0, 1500) });
+    frameDump.push({ url: 'loadMainFrameSet', frameSrcs: extractFrameSrcs(fsHtml), snippet: fsHtml.substring(0, dumpLen(fsHtml)) });
     for (const u of extractFrameSrcs(fsHtml).slice(0, 6)) {
       const { html: fh } = await getHtml(u);
       addLinks(fh);
       const nested = extractFrameSrcs(fh);
-      frameDump.push({ url: u, frameSrcs: nested, snippet: fh.substring(0, 1500) });
+      frameDump.push({ url: u, frameSrcs: nested, snippet: fh.substring(0, dumpLen(fh)) });
       for (const u2 of nested.slice(0, 6)) {
         const { html: fh2 } = await getHtml(u2);
         addLinks(fh2);
-        frameDump.push({ url: u2, frameSrcs: extractFrameSrcs(fh2), snippet: fh2.substring(0, 1500) });
+        frameDump.push({ url: u2, frameSrcs: extractFrameSrcs(fh2), snippet: fh2.substring(0, dumpLen(fh2)) });
       }
     }
     trail.push({ step: 'menu', linkCount: menuLinks.length, links: menuLinks.slice(0, 50), frameDump });
