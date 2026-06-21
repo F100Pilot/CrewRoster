@@ -5,9 +5,9 @@ describe('inferDutyType', () => {
   const cases: [string, string][] = [
     ['FLT', 'Flight Duty'],
     ['SBY', 'Standby Airport'],
-    ['A1', 'Standby Airport'],
-    ['A2', 'Standby Airport'],
-    ['A3', 'Standby Airport'],
+    ['A1', 'Standby Home'],
+    ['A2', 'Standby Home'],
+    ['A3', 'Standby Home'],
     ['SBY-H', 'Standby Home'],
     ['OFF', 'Day Off'],
     ['VAC', 'Vacation'],
