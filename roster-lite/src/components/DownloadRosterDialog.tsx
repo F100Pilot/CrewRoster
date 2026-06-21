@@ -3,11 +3,12 @@ import {
   Alert, Box, Button, CircularProgress, Dialog, DialogContent, DialogTitle,
   IconButton, Link, Stack, TextField, Typography,
 } from '@mui/material';
-import { CloudDownload, Close, Login, CheckCircle } from '@mui/icons-material';
+import { CloudDownload, Close, Login, CheckCircle, NotificationsActive } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { login, fetchRoster, SessionExpiredError } from '../services/crewlinkApi';
 import { useRoster } from '../state/useRoster';
 import { savePdf } from '../storage/rosterStore';
+import { addNotification } from '../storage/notifications';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 function toCrewLinkDate(iso: string): string {
@@ -32,6 +33,9 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
   const [status, setStatus] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  // Pending CrewLink notification the user must read and confirm before the PDF
+  // can be generated. While set, the dialog shows the notification phase.
+  const [pendingNotification, setPendingNotification] = useState<string | null>(null);
 
   function handleClose() {
     if (downloading || authLoading) return;
@@ -39,6 +43,7 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
     setError(null);
     setStatus('');
     setPassword('');
+    setPendingNotification(null);
     onClose();
   }
 
@@ -56,39 +61,60 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
     }
   }
 
-  async function handleDownload() {
+  // Persist + parse the downloaded PDF. Shared by the normal and post-confirmation
+  // paths. `notificationText`, when given, is recorded in the top banner.
+  async function processPdf(buffer: ArrayBuffer, notificationText?: string) {
+    setStatus('PDF recebido. A processar…');
+    const blob = new Blob([buffer], { type: 'application/pdf' });
+    const id = crypto.randomUUID();
+    const fileName = `escala-${format(new Date(), 'yyyyMMdd-HHmm')}.pdf`;
+    await savePdf({
+      id,
+      userId: activeUser?.id,
+      fileName,
+      blob,
+      downloadedAt: new Date().toISOString(),
+      beginDate: beginDate || null,
+      endDate: endDate || null,
+    });
+    await importFile(new File([blob], fileName, { type: 'application/pdf' }));
+    if (notificationText && activeUser) addNotification(activeUser.id, notificationText);
+    setStatus('');
+    setPendingNotification(null);
+    setDone(true);
+  }
+
+  // confirmNotification: when true, the worker acknowledges the pending CrewLink
+  // notification before generating the PDF (the user pressed "Confirmar").
+  async function runDownload(confirmNotification: boolean) {
     if (!sessionToken) return;
     setDownloading(true);
     setError(null);
     setDone(false);
-    setStatus('A descarregar do CrewLink…');
+    setStatus(confirmNotification ? 'A confirmar notificação…' : 'A descarregar do CrewLink…');
     try {
-      const options: { sessionToken: string; beginDate?: string; endDate?: string } = { sessionToken };
-      if (beginDate) options.beginDate = toCrewLinkDate(beginDate);
-      if (endDate) options.endDate = toCrewLinkDate(endDate);
+      const options = {
+        sessionToken,
+        ...(beginDate ? { beginDate: toCrewLinkDate(beginDate) } : {}),
+        ...(endDate ? { endDate: toCrewLinkDate(endDate) } : {}),
+        ...(confirmNotification ? { confirmNotification: true } : {}),
+      };
 
-      const buffer = await fetchRoster(options);
-      setStatus('PDF recebido. A processar…');
-
-      const blob = new Blob([buffer], { type: 'application/pdf' });
-      const id = crypto.randomUUID();
-      const fileName = `escala-${format(new Date(), 'yyyyMMdd-HHmm')}.pdf`;
-      await savePdf({
-        id,
-        userId: activeUser?.id,
-        fileName,
-        blob,
-        downloadedAt: new Date().toISOString(),
-        beginDate: beginDate || null,
-        endDate: endDate || null,
-      });
-
-      await importFile(new File([blob], fileName, { type: 'application/pdf' }));
-      setStatus('');
-      setDone(true);
+      const result = await fetchRoster(options);
+      if (result.type === 'notification') {
+        // CrewLink blocked the period with an unread notification: show it and let
+        // the user decide. Nothing is confirmed until they press "Confirmar".
+        setPendingNotification(result.text || '(Sem texto na notificação.)');
+        setStatus('');
+        return;
+      }
+      // result.type === 'pdf' — record the notification text in the banner if this
+      // download was the confirmation step.
+      await processPdf(result.buffer, confirmNotification ? pendingNotification ?? undefined : undefined);
     } catch (e) {
       if (e instanceof SessionExpiredError) {
         setSessionToken(null); // volta ao ecrã de login automaticamente
+        setPendingNotification(null);
       } else {
         setError(e instanceof Error ? e.message : 'Erro ao obter a escala.');
       }
@@ -115,6 +141,48 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
               Escala atualizada. As alterações aparecem na lista.
             </Typography>
             <Button variant="contained" onClick={handleClose}>Ver escala</Button>
+          </Stack>
+        ) : pendingNotification !== null ? (
+          // ── Notification phase ───────────────────────────────────────────────
+          <Stack spacing={2} pt={0.5}>
+            <Alert severity="warning" icon={<NotificationsActive />}>
+              O CrewLink tem uma notificação por ler para este período. Lê-a abaixo. Só
+              depois de a confirmares é que a escala é descarregada.
+            </Alert>
+            {error && <Alert severity="error">{error}</Alert>}
+            <Box
+              sx={{
+                maxHeight: 280, overflowY: 'auto', p: 1.5, borderRadius: 1,
+                bgcolor: 'action.hover', whiteSpace: 'pre-wrap',
+                fontSize: 13, fontFamily: 'inherit',
+              }}
+            >
+              {pendingNotification}
+            </Box>
+            <Stack direction="row" spacing={1}>
+              <Button
+                variant="contained"
+                color="primary"
+                fullWidth
+                onClick={() => runDownload(true)}
+                disabled={downloading}
+                startIcon={downloading ? <CircularProgress size={18} color="inherit" /> : <CheckCircle />}
+              >
+                {downloading ? 'A confirmar…' : 'Confirmar'}
+              </Button>
+              <Button
+                variant="outlined"
+                color="inherit"
+                fullWidth
+                onClick={handleClose}
+                disabled={downloading}
+              >
+                Não confirmar
+              </Button>
+            </Stack>
+            <Typography variant="caption" color="text.secondary">
+              Se não confirmares, nada é alterado — é como se tivesses saído.
+            </Typography>
           </Stack>
         ) : !sessionToken ? (
           // ── Login phase ──────────────────────────────────────────────────────
@@ -184,7 +252,7 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
             </Box>
             <Button
               variant="contained"
-              onClick={handleDownload}
+              onClick={() => runDownload(false)}
               disabled={downloading || importing}
               startIcon={downloading ? <CircularProgress size={18} color="inherit" /> : <CloudDownload />}
             >

@@ -63,10 +63,20 @@ export default function ImportPage() {
       if (beginDate) options.beginDate = toCrewLinkDate(beginDate);
       if (endDate) options.endDate = toCrewLinkDate(endDate);
 
-      const pdfBuffer = await fetchRoster(options);
+      const result = await fetchRoster(options);
+      if (result.type === 'notification') {
+        // There's a pending CrewLink notification. The confirmation UI lives in the
+        // download dialog (☁ no topo); send the user there.
+        setDownloadError(
+          'O CrewLink tem uma notificação por ler para este período. Usa o botão ☁ no ' +
+          'topo para a ler e confirmar antes de descarregar.',
+        );
+        setDownloadStatus('');
+        return;
+      }
       setDownloadStatus('PDF recebido. A guardar e processar…');
 
-      const blob = new Blob([pdfBuffer], { type: 'application/pdf' });
+      const blob = new Blob([result.buffer], { type: 'application/pdf' });
       const id = crypto.randomUUID();
       const stamp = format(new Date(), 'yyyyMMdd-HHmm');
       const fileName = `escala-${stamp}.pdf`;

@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import UserSwitcher from './UserSwitcher';
 import DownloadRosterDialog from './DownloadRosterDialog';
+import NotificationBanner from './NotificationBanner';
 
 const NAV = [
   { label: 'Lista', icon: <FormatListBulleted />, path: '/' },
@@ -53,6 +54,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         </Toolbar>
       </AppBar>
       <Container maxWidth="md" sx={{ py: 2 }}>
+        <NotificationBanner />
         {children}
       </Container>
       <DownloadRosterDialog open={downloadOpen} onClose={() => setDownloadOpen(false)} />

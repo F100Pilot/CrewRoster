@@ -70,13 +70,26 @@ export interface FetchRosterOptions {
   beginDate?: string;
   /** Format: ddMMMyyyy e.g. "31Jul2026" */
   endDate?: string;
+  /** When true, confirm the pending CrewLink notification before generating the PDF. */
+  confirmNotification?: boolean;
 }
 
 /**
- * Fetch the roster PDF from CrewLink via the proxy worker.
- * Returns the raw PDF as an ArrayBuffer so it can be fed into parseRosterFile.
+ * Result of fetchRoster: either the PDF bytes, or a pending notification that the
+ * user must read and explicitly confirm before the roster can be generated.
  */
-export async function fetchRoster(options: FetchRosterOptions): Promise<ArrayBuffer> {
+export type FetchRosterResult =
+  | { type: 'pdf'; buffer: ArrayBuffer }
+  | { type: 'notification'; text: string };
+
+/**
+ * Fetch the roster PDF from CrewLink via the proxy worker.
+ *
+ * If CrewLink has an unread notification blocking the period, the worker returns
+ * its content (without confirming it) and this resolves to { type: 'notification' }.
+ * Call again with confirmNotification:true to acknowledge it and get the PDF.
+ */
+export async function fetchRoster(options: FetchRosterOptions): Promise<FetchRosterResult> {
   const res = await fetch(`${baseUrl()}/api/roster`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -107,9 +120,19 @@ export async function fetchRoster(options: FetchRosterOptions): Promise<ArrayBuf
   }
 
   const contentType = res.headers.get('Content-Type') ?? '';
+
+  // A pending notification comes back as JSON, not a PDF.
+  if (contentType.includes('application/json')) {
+    const data = (await res.json()) as { notificationPending?: boolean; notificationText?: string };
+    if (data.notificationPending) {
+      return { type: 'notification', text: data.notificationText ?? '' };
+    }
+    throw new Error('Resposta inesperada do servidor.');
+  }
+
   if (!contentType.includes('application/pdf')) {
     throw new Error('O servidor não devolveu um PDF. A navegação CrewLink pode precisar de calibração.');
   }
 
-  return res.arrayBuffer();
+  return { type: 'pdf', buffer: await res.arrayBuffer() };
 }

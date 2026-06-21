@@ -232,6 +232,25 @@ function extractBody(html) {
   return bodyMatch ? bodyMatch[1].substring(0, 3000) : html.substring(html.length - 2000);
 }
 
+// Converte uma página HTML em texto legível: remove head/scripts/styles, troca
+// <br>/</tr>/</p> por quebras de linha, tira as restantes tags, descodifica as
+// entidades mais comuns e colapsa espaços. Usado para mostrar o conteúdo da
+// notificação ao utilizador antes de ele confirmar.
+function extractReadableText(html) {
+  let s = html;
+  s = s.replace(/<head[\s\S]*?<\/head>/gi, ' ');
+  s = s.replace(/<script[\s\S]*?<\/script>/gi, ' ');
+  s = s.replace(/<style[\s\S]*?<\/style>/gi, ' ');
+  s = s.replace(/<!--[\s\S]*?-->/g, ' ');
+  s = s.replace(/<br\s*\/?>/gi, '\n');
+  s = s.replace(/<\/(tr|p|div|li|h[1-6]|table|td)>/gi, '\n');
+  s = s.replace(/<[^>]+>/g, ' ');
+  s = s.replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&').replace(/&lt;/gi, '<')
+       .replace(/&gt;/gi, '>').replace(/&quot;/gi, '"').replace(/&#39;/gi, "'");
+  s = s.replace(/[ \t]+/g, ' ').replace(/ *\n */g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+  return s;
+}
+
 // A página do duty plan é a que tem os campos de data begin/end. Se vier outra coisa
 // no lugar (uma notificação/aviso a confirmar), tem de ser limpa antes de gerar o
 // relatório.
@@ -504,9 +523,13 @@ async function handleRoster(request) {
   // de gerar o duty plan ("There is a notification for the period... Get it before you
   // retrieve the duty plan."). O menu do CrewLink (MenuForCrew) revelou a ação exata:
   //   onclick="loadDialog('notification','default')"
-  // ou seja, o serviço é 'notification' (singular) com operação 'default'. Abrimos
-  // essa página, submetemos todos os formulários de confirmação que lá estejam, e
-  // repetimos o relatório.
+  // ou seja, o serviço é 'notification' (singular) com operação 'default'.
+  //
+  // Em vez de confirmar automaticamente, há dois modos:
+  //   - Pedido normal: MOSTRAR o conteúdo da notificação ao utilizador (sem confirmar)
+  //     e devolver notificationPending — a app pergunta-lhe se quer confirmar.
+  //   - confirmNotification=true: o utilizador confirmou — submeter os formulários de
+  //     confirmação da página e só então gerar o duty plan.
   if (needsNotification(result.html)) {
     const getHtml = async (url, referer = `${CREWLINK_BASE}/crewlink/`) => {
       const res = await fetch(url, {
@@ -543,32 +566,31 @@ async function handleRoster(request) {
 
     // Abre a página de notificações (serviço 'notification', operação 'default').
     const notifUrl = `${CREWLINK_BASE}${CREWLINK_APP_PATH}?crewlinkService=notification&crewlinkOperation=default&crewlinkSourcePage=spCrew`;
-    const acks = [];
-    let openStatus = null;
-    let notifBody = '';
-    for (let round = 0; round < 5 && needsNotification(result.html); round++) {
-      const { res: openRes, html: notifHtml } = await getHtml(notifUrl);
-      openStatus = openRes.status;
-      notifBody = notifHtml.substring(0, 4000);
 
-      // Submeter todos os formulários de confirmação da página (pode haver vários
-      // botões: confirmar / próxima notificação). Pára quando não houver mais.
+    if (!body.confirmNotification) {
+      // Modo "mostrar": ler o conteúdo da notificação sem confirmar nada.
+      const { html: notifHtml } = await getHtml(notifUrl);
+      return jsonResponse(
+        { notificationPending: true, notificationText: extractReadableText(notifHtml) },
+        200,
+        request,
+      );
+    }
+
+    // Modo "confirmar": o utilizador aceitou — submeter os formulários de confirmação.
+    const acks = [];
+    for (let round = 0; round < 5 && needsNotification(result.html); round++) {
+      const { html: notifHtml } = await getHtml(notifUrl);
       const forms = extractForms(notifHtml).filter(isAckForm);
       if (forms.length === 0) break;
       for (const form of forms) {
         const { res } = await submitForm(form);
-        acks.push({
-          status: res.status,
-          service: (form.fields.find((fl) => fl.name === 'crewlinkService') ?? {}).value ?? '',
-          operation: (form.fields.find((fl) => fl.name === 'crewlinkOperation') ?? {}).value ?? '',
-        });
+        acks.push({ status: res.status });
       }
-
       result = await runReport();
       if (result.pdf) return pdfOk(result.pdf);
     }
-
-    trail.push({ step: 'notification', url: notifUrl, openStatus, acks, body: notifBody });
+    trail.push({ step: 'notification', url: notifUrl, acks });
   }
 
   return jsonResponse(
