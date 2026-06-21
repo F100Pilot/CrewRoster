@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import { CloudDownload, Close, Login, CheckCircle } from '@mui/icons-material';
 import { format } from 'date-fns';
-import { login, fetchRoster } from '../services/crewlinkApi';
+import { login, fetchRoster, SessionExpiredError } from '../services/crewlinkApi';
 import { useRoster } from '../state/useRoster';
 import { savePdf } from '../storage/rosterStore';
 
@@ -87,7 +87,11 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
       setStatus('');
       setDone(true);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Erro ao obter a escala.');
+      if (e instanceof SessionExpiredError) {
+        setSessionToken(null); // volta ao ecrã de login automaticamente
+      } else {
+        setError(e instanceof Error ? e.message : 'Erro ao obter a escala.');
+      }
       setStatus('');
     } finally {
       setDownloading(false);

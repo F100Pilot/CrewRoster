@@ -26,10 +26,18 @@ export interface LoginResult {
 
 export interface ApiError {
   error: string;
+  sessionExpired?: boolean;
   upstreamStatus?: number;
   htmlPreview?: string;
   pdfUrlFound?: string | null;
   trail?: unknown[];
+}
+
+export class SessionExpiredError extends Error {
+  constructor() {
+    super('Sessão expirada. Volta a fazer login no CrewLink.');
+    this.name = 'SessionExpiredError';
+  }
 }
 
 /**
@@ -77,9 +85,11 @@ export async function fetchRoster(options: FetchRosterOptions): Promise<ArrayBuf
 
   if (!res.ok) {
     let message = 'Erro ao obter a escala.';
+    let sessionExpired = res.status === 401;
     try {
       const err = (await res.json()) as ApiError;
       message = err.error || message;
+      if (err.sessionExpired) sessionExpired = true;
       if (err.htmlPreview) {
         console.warn('[CrewRoster] HTML preview from worker:', err.htmlPreview);
       }
@@ -92,6 +102,7 @@ export async function fetchRoster(options: FetchRosterOptions): Promise<ArrayBuf
     } catch {
       // response wasn't JSON
     }
+    if (sessionExpired) throw new SessionExpiredError();
     throw new Error(message);
   }
 

@@ -22,7 +22,7 @@ import {
 } from '@mui/icons-material';
 import { format, parseISO } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
-import { fetchRoster } from '../services/crewlinkApi';
+import { fetchRoster, SessionExpiredError } from '../services/crewlinkApi';
 import { useRoster } from '../state/useRoster';
 import { savePdf } from '../storage/rosterStore';
 import { downloadBlob } from '../utils/download';
@@ -89,7 +89,12 @@ export default function ImportPage() {
       setLastDownload({ id, fileName, blob });
       setDownloadStatus('');
     } catch (err) {
-      setDownloadError(err instanceof Error ? err.message : 'Erro desconhecido.');
+      if (err instanceof SessionExpiredError) {
+        // useRoster doesn't expose setSessionToken here — show a clear message
+        setDownloadError('Sessão expirada. Abre o diálogo de download (botão ☁ no topo) e volta a fazer login.');
+      } else {
+        setDownloadError(err instanceof Error ? err.message : 'Erro desconhecido.');
+      }
       setDownloadStatus('');
     } finally {
       setDownloading(false);

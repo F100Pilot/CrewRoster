@@ -239,6 +239,12 @@ function looksLikeDutyPlan(html) {
   return /name\s*=\s*['"]beginDate['"]/i.test(html) && /name\s*=\s*['"]endDate['"]/i.test(html);
 }
 
+// A sessão expirou se o NetLine devolveu a página de login em vez do conteúdo pedido.
+function looksLikeLoginPage(html) {
+  return /name\s*=\s*['"]crewlinkUserName['"]/i.test(html) ||
+    (/loadMainFrameSet/i.test(html) && /crewlinkForCrew/i.test(html));
+}
+
 // Resolve a action de um formulário (possivelmente relativa) contra a base CrewLink.
 function resolveUrl(action) {
   if (!action) return `${CREWLINK_BASE}${CREWLINK_APP_PATH}`;
@@ -410,8 +416,13 @@ async function handleRoster(request) {
   // campos de data estão em falta), confirma o formulário dessa página e volta a
   // abrir o duty plan — até 3 vezes, para não entrar em loop.
   let { response: step1, html: step1Html } = await openDutyPlan();
+  // Sessão expirada antes mesmo de começar — devolver 401 de imediato.
+  if (looksLikeLoginPage(step1Html)) {
+    return jsonResponse({ error: 'Sessão expirada. Volta a fazer login no CrewLink.', sessionExpired: true }, 401, request);
+  }
   let ackAttempts = 0;
   while (!looksLikeDutyPlan(step1Html) && ackAttempts < 3) {
+    if (looksLikeLoginPage(step1Html)) break; // não submeter credenciais vazias
     const forms = extractForms(step1Html);
     const ackForm = pickAckForm(forms);
     trail.push({
@@ -442,6 +453,10 @@ async function handleRoster(request) {
 
     ({ response: step1, html: step1Html } = await openDutyPlan());
     ackAttempts++;
+  }
+
+  if (looksLikeLoginPage(step1Html)) {
+    return jsonResponse({ error: 'Sessão expirada. Volta a fazer login no CrewLink.', sessionExpired: true }, 401, request);
   }
 
   // Usar os valores de data do formulário do servidor como fallback.
