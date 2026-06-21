@@ -54,7 +54,14 @@ export async function login(crewCode: string, password: string): Promise<string>
   const data = (await res.json()) as LoginResult | ApiError;
 
   if (!res.ok || !('sessionToken' in data)) {
-    throw new Error((data as ApiError).error || 'Erro de autenticação.');
+    const err = data as ApiError;
+    if (err.trail) {
+      console.warn('[CrewRoster] Login diagnostic trail:', JSON.stringify(err.trail, null, 2));
+    }
+    if (err.upstreamStatus !== undefined) {
+      console.warn('[CrewRoster] Login upstream status:', err.upstreamStatus);
+    }
+    throw new Error(err.error || 'Erro de autenticação.');
   }
 
   return data.sessionToken;

@@ -131,10 +131,13 @@ async function handleLogin(request) {
   const redirectUrl = upstream.headers.get('Location');
   const isRedirect = upstream.status >= 300 && upstream.status < 400;
   let authed = isRedirect;
+  let postSnippet = '';
+  let isLoginForm = false;
   if (!isRedirect) {
     const html = await upstream.text();
-    const isLoginForm = /name\s*=\s*['"]crewlinkUserName['"]/i.test(html);
+    isLoginForm = /name\s*=\s*['"]crewlinkUserName['"]/i.test(html);
     authed = !isLoginForm;
+    postSnippet = extractBody(html).substring(0, 1500);
   }
 
   // Seguir o redirect do login para finalizar a sessão no servidor (apps Java exigem o
@@ -162,6 +165,18 @@ async function handleLogin(request) {
           ? 'Credenciais inválidas ou servidor indisponível.'
           : 'Sessão não obtida. Tenta novamente.',
         upstreamStatus: upstream.status,
+        trail: [
+          {
+            step: 'login',
+            primedCookie: !!sessionId,
+            postStatus: upstream.status,
+            isRedirect,
+            location: redirectUrl ?? null,
+            isLoginForm,
+            authed,
+            postSnippet,
+          },
+        ],
       },
       401,
       request,
