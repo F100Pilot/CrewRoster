@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { CrewRole, Roster, UserProfile } from '../domain/types';
 import { parseRosterFile } from '../parsing';
 import { diffRosters } from '../domain/rosterDiff';
@@ -18,7 +18,23 @@ export function RosterProvider({ children }: { children: ReactNode }) {
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
-  const [sessionToken, setSessionToken] = useState<string | null>(null);
+  // CrewLink sessions are per-user and kept in memory only (never persisted): each
+  // crew member logs in with their own credentials. `sessionToken` is the active
+  // user's token; the map holds every signed-in user's token for this tab.
+  const [sessionToken, setSessionTokenState] = useState<string | null>(null);
+  const sessionsByUser = useRef<Map<string, string>>(new Map());
+  const activeUserRef = useRef<UserProfile | null>(null);
+  activeUserRef.current = activeUser;
+
+  // Set/clear the CrewLink session for whoever is active right now.
+  const setSessionToken = useCallback((token: string | null) => {
+    const uid = activeUserRef.current?.id;
+    if (uid) {
+      if (token) sessionsByUser.current.set(uid, token);
+      else sessionsByUser.current.delete(uid);
+    }
+    setSessionTokenState(token);
+  }, []);
 
   useEffect(() => {
     async function init() {
@@ -48,9 +64,12 @@ export function RosterProvider({ children }: { children: ReactNode }) {
     if (!user) return;
     setActiveUserId(userId);
     setActiveUser(user);
+    activeUserRef.current = user;
     setRoster(null);
     setError(null);
     setWarnings([]);
+    // Restore this user's own CrewLink session (if they signed in this tab).
+    setSessionTokenState(sessionsByUser.current.get(userId) ?? null);
     const r = await loadRoster(userId);
     setRoster(r ?? null);
   }, [users]);
@@ -64,14 +83,19 @@ export function RosterProvider({ children }: { children: ReactNode }) {
       createdAt: new Date().toISOString(),
     };
     await saveUser(user);
-    setUsers((prev) => {
-      const updated = [...prev, user];
-      if (updated.length === 1) {
-        setActiveUserId(user.id);
-        setActiveUser(user);
-      }
-      return updated;
-    });
+    setUsers((prev) => [...prev, user]);
+    // Switch to the newly created profile: a new profile starts with its own (empty)
+    // CrewLink session and its own roster, so the next download uses the right
+    // credentials instead of inheriting the previous user's.
+    setActiveUserId(user.id);
+    setActiveUser(user);
+    activeUserRef.current = user;
+    setSessionTokenState(null);
+    setRoster(null);
+    setError(null);
+    setWarnings([]);
+    const r = await loadRoster(user.id);
+    setRoster(r ?? null);
     return user;
   }, []);
 
@@ -92,12 +116,15 @@ export function RosterProvider({ children }: { children: ReactNode }) {
   const deleteUserFn = useCallback(async (userId: string) => {
     await deleteUserDB(userId);
     clearUserGCalData(userId);
+    sessionsByUser.current.delete(userId);
     setUsers((prev) => {
       const updated = prev.filter((u) => u.id !== userId);
       if (activeUser?.id === userId) {
         const next = updated[0] ?? null;
         setActiveUserId(next?.id ?? null);
         setActiveUser(next);
+        activeUserRef.current = next;
+        setSessionTokenState(next ? sessionsByUser.current.get(next.id) ?? null : null);
         if (next) {
           loadRoster(next.id).then((r) => setRoster(r ?? null));
         } else {
