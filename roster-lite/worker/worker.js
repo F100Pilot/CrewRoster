@@ -293,10 +293,8 @@ function needsNotification(html) {
 }
 
 // Ações candidatas para obter/confirmar a notificação pendente, por ordem de
-// preferência: qualquer link ou formulário explícito da página que mencione
-// "notification", seguido de serviços de notificação prováveis do NetLine.
-// Nota: usar crewlinkService=individualDutyPlan com op getNotification/etc. não
-// funciona — o módulo de notificações é um serviço separado no NetLine.
+// preferência. O trail confirmou que crewlinkService=notifications é o serviço
+// certo; as operações específicas abaixo são as mais prováveis para confirmar.
 function notificationCandidates(html, dates) {
   const forms = extractForms(html);
   const cands = [];
@@ -314,11 +312,28 @@ function notificationCandidates(html, dates) {
     cands.push({ via: 'form', method: isGet ? 'GET' : 'POST', url: resolveUrl(notifForm.action), body: buildFormBody(notifForm) });
   }
 
-  // 3. Serviços de notificação do NetLine (módulo separado do individualDutyPlan).
-  //    Cada candidato é visitado e, se devolver uma página com formulário de
-  //    confirmação, esse formulário também é submetido (ver loop em handleRoster).
-  for (const svc of ['notifications', 'crewNotification', 'individualNotification',
-                      'crewlinkNotification', 'crewNotifications', 'systemNotification']) {
+  // 3. Serviço 'notifications' com a operação default e depois operações específicas.
+  //    O trail confirmou que este é o serviço correto. A página default é um frameset
+  //    — o worker segue os frames automaticamente (ver loop em handleRoster).
+  cands.push({
+    via: 'svc:notifications',
+    method: 'POST',
+    url: `${CREWLINK_BASE}${CREWLINK_APP_PATH}`,
+    body: formEncode({ crewlinkService: 'notifications', crewlinkOperation: 'default' }),
+  });
+  for (const op of ['getNotification', 'showNotification', 'readNotification',
+                     'acknowledgeNotification', 'acknowledge', 'acknowledgeAll', 'confirmNotification']) {
+    cands.push({
+      via: `svc:notifications:${op}`,
+      method: 'POST',
+      url: `${CREWLINK_BASE}${CREWLINK_APP_PATH}`,
+      body: formEncode({ crewlinkService: 'notifications', crewlinkOperation: op }),
+    });
+  }
+
+  // 4. Outros serviços possíveis (menos provável após o diagnóstico)
+  for (const svc of ['crewNotification', 'individualNotification', 'crewlinkNotification',
+                      'crewNotifications', 'systemNotification']) {
     cands.push({
       via: `svc:${svc}`,
       method: 'POST',
@@ -327,7 +342,7 @@ function notificationCandidates(html, dates) {
     });
   }
 
-  // 4. Operações do serviço individualDutyPlan (tentativa de último recurso)
+  // 5. Operações no individualDutyPlan (último recurso)
   for (const op of ['getNotification', 'showNotification', 'readNotification',
                      'acknowledgeNotification', 'confirmNotification']) {
     cands.push({
@@ -567,11 +582,37 @@ async function handleRoster(request) {
 
     // Se a resposta não é a mesma página de erro (não é o duty plan nem outra
     // notificação bloqueante), procurar um formulário de confirmação e submetê-lo.
+    // Caso a página seja um frameset (padrão NetLine), seguir cada <frame src> para
+    // encontrar o formulário de confirmação dentro das frames.
     let ackStatus = null;
     const isRealNotifPage = !needsNotification(notifHtml) && !looksLikeDutyPlan(notifHtml);
     if (isRealNotifPage) {
-      const notifForms = extractForms(notifHtml);
-      const ackForm = pickAckForm(notifForms);
+      let ackForm = pickAckForm(extractForms(notifHtml));
+
+      // Frameset: a página de notificações do NetLine é um frameset que não tem
+      // formulários no documento raiz — eles estão dentro de <frame src="...">.
+      if (!ackForm) {
+        const frameRe = /<(?:i?frame)\b[^>]+src\s*=\s*['"]([^'"]+)['"]/gi;
+        let fm;
+        while ((fm = frameRe.exec(notifHtml)) !== null && !ackForm) {
+          const rawSrc = fm[1];
+          const frameUrl = rawSrc.startsWith('http')
+            ? rawSrc
+            : `${CREWLINK_BASE}${rawSrc.startsWith('/') ? rawSrc : `/crewlink/${rawSrc}`}`;
+          const frameRes = await fetch(frameUrl, {
+            headers: {
+              'User-Agent': userAgent,
+              Cookie: sessionCookie,
+              Referer: `${CREWLINK_BASE}${CREWLINK_APP_PATH}`,
+            },
+            redirect: 'follow',
+          });
+          updateCookie(frameRes);
+          const frameHtml = await frameRes.text();
+          ackForm = pickAckForm(extractForms(frameHtml));
+        }
+      }
+
       if (ackForm) {
         const ackBody = buildFormBody(ackForm);
         const ackRes = await fetch(resolveUrl(ackForm.action), {
@@ -598,7 +639,7 @@ async function handleRoster(request) {
       status: notifRes.status,
       isRealNotifPage,
       ackStatus,
-      bodySnippet: notifHtml.substring(0, 500),
+      bodySnippet: notifHtml.substring(0, 1000),
     });
 
     result = await runReport();
