@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Box, CircularProgress, Tooltip, Typography } from '@mui/material';
 import { fetchAirportWeather, describeWeatherCode, windCardinal, type AirportWeather as AW } from '../utils/airportWeather';
+import { AIRPORT_COORD } from '../domain/airports';
+import { sunTimes, isDaylight } from '../utils/sun';
 
 // Compact expected-weather block for one airport at a given time. Forecast only —
 // shown alongside the route map; never a substitute for the official METAR/TAF.
@@ -27,6 +29,11 @@ export default function AirportWeather({
   const desc = wx ? describeWeatherCode(wx.weatherCode) : null;
   const gust = wx && wx.gustKt >= wx.windKt + 8 ? ` G${wx.gustKt}` : '';
 
+  // Sunrise/sunset (computed locally, works for any date) + day/night at flight time.
+  const coord = icao ? AIRPORT_COORD[icao.toUpperCase()] : undefined;
+  const sun = coord ? sunTimes(coord.lat, coord.lon, dateISO) : null;
+  const daylight = coord && timeUtc ? isDaylight(coord.lat, coord.lon, dateISO, timeUtc) : null;
+
   return (
     <Box
       sx={{
@@ -43,6 +50,13 @@ export default function AirportWeather({
         </Typography>
         {timeUtc && (
           <Typography variant="caption" color="text.secondary">{timeUtc}z</Typography>
+        )}
+        {daylight !== null && (
+          <Tooltip title={daylight ? 'Dia à hora do voo' : 'Noite à hora do voo'}>
+            <Typography component="span" sx={{ fontSize: 13, lineHeight: 1 }}>
+              {daylight ? '☀️' : '🌙'}
+            </Typography>
+          </Tooltip>
         )}
       </Box>
 
@@ -66,6 +80,18 @@ export default function AirportWeather({
       ) : (
         <Typography variant="caption" color="text.secondary">
           Previsão indisponível (&gt;16 dias ou aeroporto desconhecido).
+        </Typography>
+      )}
+
+      {/* Sunrise/sunset is computed locally, so it shows even when the forecast is
+          out of range. UTC, to compare with the flight times. */}
+      {sun && (
+        <Typography variant="caption" color="text.secondary" noWrap>
+          {sun.polarDay
+            ? '☀️ Sol permanente'
+            : sun.polarNight
+            ? '🌙 Noite polar'
+            : `🌅 ${sun.sunriseUtc}z · 🌇 ${sun.sunsetUtc}z`}
         </Typography>
       )}
     </Box>
