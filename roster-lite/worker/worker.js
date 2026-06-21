@@ -575,8 +575,11 @@ async function handleRoster(request) {
       href.startsWith('http') ? href : `${CREWLINK_BASE}${href.startsWith('/') ? href : `/crewlink/${href}`}`;
 
     // Descobre os links de navegação seguindo o frameset principal até 2 níveis.
+    // Recolhe também o HTML em bruto de cada frame para diagnóstico (o menu do
+    // CrewLink pode ser construído por JavaScript em vez de <a href>).
     const seen = new Set();
     const menuLinks = [];
+    const frameDump = [];
     const addLinks = (html) => {
       for (const l of extractAppLinks(html)) {
         if (!seen.has(l.href)) { seen.add(l.href); menuLinks.push(l); }
@@ -588,15 +591,19 @@ async function handleRoster(request) {
       crewlinkSourcePage: 'spStartup',
     });
     addLinks(fsHtml);
+    frameDump.push({ url: 'loadMainFrameSet', frameSrcs: extractFrameSrcs(fsHtml), snippet: fsHtml.substring(0, 1500) });
     for (const u of extractFrameSrcs(fsHtml).slice(0, 6)) {
       const { html: fh } = await getHtml(u);
       addLinks(fh);
-      for (const u2 of extractFrameSrcs(fh).slice(0, 6)) {
+      const nested = extractFrameSrcs(fh);
+      frameDump.push({ url: u, frameSrcs: nested, snippet: fh.substring(0, 1500) });
+      for (const u2 of nested.slice(0, 6)) {
         const { html: fh2 } = await getHtml(u2);
         addLinks(fh2);
+        frameDump.push({ url: u2, frameSrcs: extractFrameSrcs(fh2), snippet: fh2.substring(0, 1500) });
       }
     }
-    trail.push({ step: 'menu', linkCount: menuLinks.length, links: menuLinks.slice(0, 50) });
+    trail.push({ step: 'menu', linkCount: menuLinks.length, links: menuLinks.slice(0, 50), frameDump });
 
     // Candidatos: links do menu que pareçam de notificações/mensagens.
     const linkCandidates = menuLinks.filter(looksLikeNotificationLink);
