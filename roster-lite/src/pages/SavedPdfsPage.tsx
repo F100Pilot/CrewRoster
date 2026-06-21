@@ -14,6 +14,7 @@ import { useNavigate } from 'react-router-dom';
 import type { SavedPdf } from '../domain/types';
 import { listPdfs, deletePdf } from '../storage/rosterStore';
 import { downloadBlob } from '../utils/download';
+import { useRoster } from '../state/useRoster';
 
 function formatRange(pdf: SavedPdf): string {
   const fmt = (iso: string | null) => (iso ? format(parseISO(iso), 'dd/MM/yyyy') : null);
@@ -26,17 +27,18 @@ function formatRange(pdf: SavedPdf): string {
 
 export default function SavedPdfsPage() {
   const navigate = useNavigate();
+  const { activeUser } = useRoster();
   const [pdfs, setPdfs] = useState<SavedPdf[]>([]);
   const [loading, setLoading] = useState(true);
 
   const refresh = () => {
     setLoading(true);
-    listPdfs()
+    listPdfs(activeUser?.id)
       .then(setPdfs)
       .finally(() => setLoading(false));
   };
 
-  useEffect(refresh, []);
+  useEffect(refresh, [activeUser?.id]);
 
   const handleDelete = async (id: string) => {
     await deletePdf(id);

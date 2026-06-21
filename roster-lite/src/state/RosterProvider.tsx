@@ -3,7 +3,7 @@ import type { CrewRole, Roster, UserProfile } from '../domain/types';
 import { parseRosterFile } from '../parsing';
 import { diffRosters } from '../domain/rosterDiff';
 import {
-  clearRoster, deleteUser as deleteUserDB, getActiveUserId,
+  assignOrphanPdfs, clearRoster, deleteUser as deleteUserDB, getActiveUserId,
   listUsers, loadRoster, migrateLegacySingleUser,
   saveRoster, saveUser, setActiveUserId,
 } from '../storage/rosterStore';
@@ -44,6 +44,10 @@ export function RosterProvider({ children }: { children: ReactNode }) {
         setUsers(allUsers);
 
         if (allUsers.length === 0) return;
+
+        // Claim PDFs saved before history was per-user for the original (oldest)
+        // profile, so they stop showing up under newer profiles.
+        await assignOrphanPdfs(allUsers[0].id);
 
         const savedId = getActiveUserId();
         const active = allUsers.find((u) => u.id === savedId) ?? allUsers[0];

@@ -41,7 +41,7 @@ interface LastDownload {
 }
 
 export default function ImportPage() {
-  const { sessionToken, roster, importFile, importing } = useRoster();
+  const { sessionToken, roster, importFile, importing, activeUser } = useRoster();
   const navigate = useNavigate();
 
   const today = new Date();
@@ -74,6 +74,7 @@ export default function ImportPage() {
       // Persist the PDF in the history (registered by download time + date range).
       await savePdf({
         id,
+        userId: activeUser?.id,
         fileName,
         blob,
         downloadedAt: new Date().toISOString(),

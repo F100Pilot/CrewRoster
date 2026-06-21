@@ -75,6 +75,7 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
       const fileName = `escala-${format(new Date(), 'yyyyMMdd-HHmm')}.pdf`;
       await savePdf({
         id,
+        userId: activeUser?.id,
         fileName,
         blob,
         downloadedAt: new Date().toISOString(),

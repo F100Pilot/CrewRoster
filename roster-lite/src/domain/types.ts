@@ -59,6 +59,7 @@ export interface ParseResult {
 // re-download, or delete it. Registered by download time and date range.
 export interface SavedPdf {
   id: string;
+  userId?: string; // the crew member this PDF belongs to (per-user history)
   fileName: string;
   blob: Blob;
   downloadedAt: string; // ISO timestamp of when it was fetched

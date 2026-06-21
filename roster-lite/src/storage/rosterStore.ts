@@ -123,10 +123,24 @@ export async function savePdf(pdf: SavedPdf): Promise<void> {
   await db.put('pdfs', pdf);
 }
 
-export async function listPdfs(): Promise<SavedPdf[]> {
+export async function listPdfs(userId?: string): Promise<SavedPdf[]> {
   const db = await getDb();
   const all = await db.getAll('pdfs');
-  return all.sort((a, b) => b.downloadedAt.localeCompare(a.downloadedAt));
+  const mine = userId ? all.filter((p) => p.userId === userId) : all;
+  return mine.sort((a, b) => b.downloadedAt.localeCompare(a.downloadedAt));
+}
+
+// Adopt any PDFs saved before history became per-user (no userId) for the given
+// user — the oldest profile, i.e. the original owner. Idempotent: once claimed they
+// have a userId and are skipped. Stops one user's PDFs leaking into another profile.
+export async function assignOrphanPdfs(userId: string): Promise<void> {
+  const db = await getDb();
+  const all = await db.getAll('pdfs');
+  const orphans = all.filter((p) => !p.userId);
+  if (orphans.length === 0) return;
+  const tx = db.transaction('pdfs', 'readwrite');
+  for (const pdf of orphans) tx.store.put({ ...pdf, userId });
+  await tx.done;
 }
 
 export async function getPdf(id: string): Promise<SavedPdf | undefined> {
