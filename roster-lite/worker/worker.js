@@ -94,41 +94,56 @@ async function handleLogin(request) {
 
   const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36';
 
+  // Priming GET: o NetLine atribui o JSESSIONID no primeiro contacto. Um POST de login
+  // "a frio" (sem cookie prévio) por vezes devolve a página de login outra vez sem
+  // Set-Cookie → "Sessão não obtida". Um browser real faz GET da página de login antes
+  // de submeter, por isso fazemos o mesmo e usamos esse cookie no POST.
+  let sessionId = null;
+  try {
+    const prime = await fetch(`${CREWLINK_BASE}/crewlink/`, {
+      method: 'GET',
+      headers: { 'User-Agent': userAgent, Referer: `${CREWLINK_BASE}/crewlink/` },
+      redirect: 'manual',
+    });
+    sessionId = extractSessionId(prime);
+  } catch {
+    // best-effort; se falhar seguimos sem cookie primed
+  }
+
   const upstream = await fetch(`${CREWLINK_BASE}${CREWLINK_APP_PATH}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
       'User-Agent': userAgent,
+      Referer: `${CREWLINK_BASE}/crewlink/`,
+      Origin: CREWLINK_BASE,
+      ...(sessionId ? { Cookie: `JSESSIONID=${sessionId}` } : {}),
     },
     body: formData,
     redirect: 'manual',
   });
+  sessionId = extractSessionId(upstream) ?? sessionId;
 
-  const sessionId = extractSessionId(upstream);
-  if (!sessionId) {
+  // Determinar se autenticou. Como o priming já nos deu um JSESSIONID, a presença do
+  // cookie deixa de indicar sucesso — em vez disso, uma falha devolve outra vez a
+  // página de login (formulário com crewlinkUserName), enquanto um sucesso redireciona
+  // para a app ou devolve o frameset.
+  const redirectUrl = upstream.headers.get('Location');
+  const isRedirect = upstream.status >= 300 && upstream.status < 400;
+  let authed = isRedirect;
+  if (!isRedirect) {
     const html = await upstream.text();
-    const loginFailed =
-      /invalid|incorrect|error/i.test(html) || upstream.status >= 400;
-    return jsonResponse(
-      {
-        error: loginFailed
-          ? 'Credenciais inválidas ou servidor indisponível.'
-          : 'Sessão não obtida. Tenta novamente.',
-        upstreamStatus: upstream.status,
-      },
-      401,
-      request,
-    );
+    const isLoginForm = /name\s*=\s*['"]crewlinkUserName['"]/i.test(html);
+    authed = !isLoginForm;
   }
 
-  // Follow the login redirect to finalize session state on the server.
-  // Java/NetLine apps often require the redirect GET to complete session initialization.
-  const redirectUrl = upstream.headers.get('Location');
-  if (redirectUrl) {
+  // Seguir o redirect do login para finalizar a sessão no servidor (apps Java exigem o
+  // GET de redirect para completar a inicialização) e captar um cookie rotacionado.
+  if (redirectUrl && sessionId) {
     const fullUrl = redirectUrl.startsWith('http')
       ? redirectUrl
       : `${CREWLINK_BASE}${redirectUrl.startsWith('/') ? '' : '/crewlink/'}${redirectUrl}`;
-    await fetch(fullUrl, {
+    const followed = await fetch(fullUrl, {
       method: 'GET',
       headers: {
         'User-Agent': userAgent,
@@ -137,6 +152,20 @@ async function handleLogin(request) {
       },
       redirect: 'follow',
     });
+    sessionId = extractSessionId(followed) ?? sessionId;
+  }
+
+  if (!sessionId || !authed) {
+    return jsonResponse(
+      {
+        error: !authed
+          ? 'Credenciais inválidas ou servidor indisponível.'
+          : 'Sessão não obtida. Tenta novamente.',
+        upstreamStatus: upstream.status,
+      },
+      401,
+      request,
+    );
   }
 
   return jsonResponse({ sessionToken: sessionId }, 200, request);
