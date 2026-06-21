@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Box, Chip, CircularProgress, Typography } from '@mui/material';
 import { Air } from '@mui/icons-material';
 import { fetchTurbulence, windyEmbedUrl, type TurbulenceForecast, type TurbulenceLevel } from '../utils/turbulence';
+import AirportWeather from './AirportWeather';
 import type { ParsedDuty } from '../domain/types';
 
 const LEVEL: Record<TurbulenceLevel, { label: string; color: string }> = {
@@ -48,6 +49,12 @@ export default function FlightWeather({ duty, date }: { duty: ParsedDuty; date: 
         ) : (
           <Chip size="small" variant="outlined" label="Estimativa indisponível" />
         )}
+      </Box>
+
+      {/* Expected surface weather at each airport, at its scheduled time. */}
+      <Box display="flex" gap={1} mb={1} flexWrap="wrap">
+        <AirportWeather icao={duty.departureAirport} label="Partida" dateISO={date} timeUtc={duty.departureTime} />
+        <AirportWeather icao={duty.arrivalAirport} label="Chegada" dateISO={date} timeUtc={duty.arrivalTime} />
       </Box>
 
       <Box sx={{ borderRadius: 2, overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}>
