@@ -11,9 +11,11 @@ const tk = (text: string, x: number, y: number): PositionedToken => ({ text, x, 
 // 2026-05-01 is a Friday (Jan 1 2026 is Thursday; +120 days → Friday), so the day
 // columns Fri01..Mon04 map onto May 1–4.
 const tokens: PositionedToken[] = [
-  // Period header: "01Jan26 -" immediately followed by the end date.
+  // Period header anchored on the start. A misleading early date sits right after it
+  // (the kind of token that used to truncate the calendar to ~February); it must be
+  // ignored so May still parses.
   tk('01Jan26 -', 60, 800),
-  tk('31Jul26', 140, 800),
+  tk('28Feb26', 140, 800),
   // Grid header row (day columns + right-margin "date" label).
   tk('Fri01', 100, 500),
   tk('Sat02', 130, 500),

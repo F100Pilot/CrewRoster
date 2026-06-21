@@ -46,32 +46,24 @@ function clusterRows(tokens: PositionedToken[], tol = 2.5): Row[] {
 // across months (collisions). Instead we reconstruct the period's full calendar and
 // resolve each grid band by matching its consecutive day columns against that calendar.
 
-const DDMMMYY = /^(\d{2})([A-Za-z]{3})(\d{2})$/;
-const MAX_PERIOD_DAYS = 420; // safety cap (> a full year would be unusual)
+const MAX_PERIOD_DAYS = 420; // calendar window from the period start (> a year is unusual)
 
 interface CalDay { key: string; date: string }
 
-// The duty-plan header prints the period as "<start> -" immediately followed by the
-// end date (e.g. "01Jan26 -" then "31Jul26"). Pairing the dash-start with the very
-// next bare date avoids picking up unrelated dates (licence validity, etc.).
+// The duty-plan header prints the period start as "<start> -" (e.g. "01Jan26 -").
+// We anchor the calendar on that start and extend it a generous window — we do NOT
+// trust a paired "end" date, because the layout can place an unrelated date next to
+// the start (which would truncate the calendar and silently drop later months). Each
+// grid band is then placed by sequence matching, so a calendar longer than the real
+// roster is harmless (no band matches the empty tail).
 function periodRange(tokens: PositionedToken[]): { start: Date; end: Date } {
   const ref = new Date();
   let start: Date | undefined;
-  let end: Date | undefined;
   for (let i = 0; i < tokens.length; i++) {
     const m = tokens[i].text.match(/^(\d{2})([A-Za-z]{3})(\d{2})\s*-\s*$/);
     if (!m) continue;
     const s = parseDate(`${m[1]}${m[2]}${m[3]}`, 'ddMMMyy', ref);
-    if (!isValid(s)) continue;
-    start = s;
-    for (let j = i + 1; j < Math.min(i + 6, tokens.length); j++) {
-      const e = tokens[j].text.match(DDMMMYY);
-      if (e) {
-        const d = parseDate(`${e[1]}${e[2]}${e[3]}`, 'ddMMMyy', ref);
-        if (isValid(d)) { end = d; break; }
-      }
-    }
-    if (start && end) break;
+    if (isValid(s)) { start = s; break; }
   }
   // Fallback: earliest weekday+dd-style period token as the start.
   if (!start || !isValid(start)) {
@@ -83,9 +75,7 @@ function periodRange(tokens: PositionedToken[]): { start: Date; end: Date } {
       .sort((a, b) => a.getTime() - b.getTime());
     start = periods[0] ?? new Date();
   }
-  if (!end || !isValid(end) || end < start) end = addDays(start, 200);
-  if ((end.getTime() - start.getTime()) / 86400000 > MAX_PERIOD_DAYS) end = addDays(start, MAX_PERIOD_DAYS);
-  return { start, end };
+  return { start, end: addDays(start, MAX_PERIOD_DAYS) };
 }
 
 function buildCalendar(start: Date, end: Date): CalDay[] {
