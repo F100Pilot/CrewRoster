@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import {
   Alert, Box, Button, Card, CardContent, Chip, Divider, IconButton, Stack,
-  Table, TableBody, TableCell, TableHead, TableRow, Typography,
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography,
 } from '@mui/material';
 import { ArrowBack, Download, FlightTakeoff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -79,28 +79,30 @@ export default function LogbookPage() {
         <Alert severity="info">Sem setores voados na escala importada.</Alert>
       ) : (
         <Card variant="outlined">
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>Data</TableCell>
-                <TableCell>Voo</TableCell>
-                <TableCell>Rota</TableCell>
-                <TableCell align="right">Bloco</TableCell>
-                <TableCell>Avião</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {entries.map((e, i) => (
-                <TableRow key={i}>
-                  <TableCell>{format(parseISO(e.date), 'dd/MM')}</TableCell>
-                  <TableCell>{e.flightNumber}</TableCell>
-                  <TableCell>{e.from}–{e.to}</TableCell>
-                  <TableCell align="right">{formatDuration(e.blockMinutes)}</TableCell>
-                  <TableCell>{e.aircraft}</TableCell>
+          <TableContainer sx={{ overflowX: 'auto' }}>
+            <Table size="small" sx={{ '& td, & th': { px: 1, whiteSpace: 'nowrap' } }}>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Data</TableCell>
+                  <TableCell>Voo</TableCell>
+                  <TableCell>Rota</TableCell>
+                  <TableCell align="right">Bloco</TableCell>
+                  <TableCell>Avião</TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHead>
+              <TableBody>
+                {entries.map((e, i) => (
+                  <TableRow key={i}>
+                    <TableCell>{format(parseISO(e.date), 'dd/MM')}</TableCell>
+                    <TableCell>{e.flightNumber}</TableCell>
+                    <TableCell>{e.from}–{e.to}</TableCell>
+                    <TableCell align="right">{formatDuration(e.blockMinutes)}</TableCell>
+                    <TableCell>{e.aircraft}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
         </Card>
       )}
 
