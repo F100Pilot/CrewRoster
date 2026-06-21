@@ -26,6 +26,7 @@ export default function PdfCanvasViewer({ blob }: { blob: Blob }) {
   const fitWidthRef = useRef(320);
   const renderTokenRef = useRef(0);
   const taskRef = useRef<pdfjs.RenderTask | null>(null);
+  const zoomRef = useRef(1); // mirrors `zoom` so touch handlers read it without resubscribing
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
@@ -94,6 +95,7 @@ export default function PdfCanvasViewer({ blob }: { blob: Blob }) {
         if (cancelled) return;
         docRef.current = doc;
         fitWidthRef.current = scrollRef.current?.clientWidth || 320;
+        zoomRef.current = 1;
         setZoom(1);
         await renderAll(1);
         if (!cancelled) setLoading(false);
@@ -121,21 +123,24 @@ export default function PdfCanvasViewer({ blob }: { blob: Blob }) {
   }, [zoom]);
 
   // Apply a zoom change while keeping the focal point fixed (scroll grows with layout).
+  // Reads the live zoom from a ref (not state) so it works inside stable handlers.
   const applyZoom = (next: number, focalX: number, focalY: number) => {
+    const prev = zoomRef.current;
+    const clamped = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, next));
+    if (clamped === prev) return;
     const el = scrollRef.current;
-    setZoom((prev) => {
-      const clamped = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, next));
-      if (el && clamped !== prev) {
-        const ratio = clamped / prev;
-        el.scrollLeft = (el.scrollLeft + focalX) * ratio - focalX;
-        el.scrollTop = (el.scrollTop + focalY) * ratio - focalY;
-      }
-      return clamped;
-    });
+    if (el) {
+      const ratio = clamped / prev;
+      el.scrollLeft = (el.scrollLeft + focalX) * ratio - focalX;
+      el.scrollTop = (el.scrollTop + focalY) * ratio - focalY;
+    }
+    zoomRef.current = clamped;
+    setZoom(clamped);
   };
 
-  // Pinch-to-zoom (two fingers), attached non-passively to prevent the browser's own
-  // page zoom during the gesture.
+  // Pinch-to-zoom (two fingers). Attached ONCE (empty deps) so the gesture isn't
+  // interrupted by re-subscription on every zoom change — handlers read zoomRef. Bound
+  // non-passively to prevent the browser's own page zoom during the gesture.
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
@@ -144,7 +149,7 @@ export default function PdfCanvasViewer({ blob }: { blob: Blob }) {
     const dist = (t: TouchList) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
 
     const onStart = (e: TouchEvent) => {
-      if (e.touches.length === 2) { startDist = dist(e.touches); startZoom = zoom; }
+      if (e.touches.length === 2) { startDist = dist(e.touches); startZoom = zoomRef.current; }
     };
     const onMove = (e: TouchEvent) => {
       if (e.touches.length === 2 && startDist > 0) {
@@ -165,13 +170,15 @@ export default function PdfCanvasViewer({ blob }: { blob: Blob }) {
       el.removeEventListener('touchmove', onMove);
       el.removeEventListener('touchend', onEnd);
     };
-  }, [zoom]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const stepZoom = (delta: number) => {
     const el = scrollRef.current;
     applyZoom(zoom + delta, (el?.clientWidth ?? 0) / 2, (el?.clientHeight ?? 0) / 2);
   };
   const resetZoom = () => {
+    zoomRef.current = 1;
     setZoom(1);
     const el = scrollRef.current;
     if (el) { el.scrollLeft = 0; el.scrollTop = 0; }
