@@ -93,88 +93,107 @@ async function handleLogin(request) {
   });
 
   const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36';
+  const loginPageUrl = `${CREWLINK_BASE}/crewlink/crewlink.jsp?crewlinkOperation=crewlinkForCrew`;
+  const resolveLoc = (loc) =>
+    loc.startsWith('http') ? loc : `${CREWLINK_BASE}${loc.startsWith('/') ? '' : '/crewlink/'}${loc}`;
+  const trailHops = [];
 
-  // Priming GET: o NetLine atribui o JSESSIONID no primeiro contacto. Um POST de login
-  // "a frio" (sem cookie prévio) por vezes devolve a página de login outra vez sem
-  // Set-Cookie → "Sessão não obtida". Um browser real faz GET da página de login antes
-  // de submeter, por isso fazemos o mesmo e usamos esse cookie no POST.
+  // Priming: o NetLine cria a sessão (JSESSIONID) quando se abre a PÁGINA DE LOGIN
+  // (crewlink.jsp) — não em /crewlink/. Um browser real abre essa página antes de
+  // submeter, recebendo o cookie, e só depois faz POST das credenciais COM o cookie.
+  // Sem isso, o servidor não consegue ligar o POST a uma sessão e devolve-nos ao login.
+  // Seguimos os redirects manualmente para captar o cookie em qualquer salto.
   let sessionId = null;
-  try {
-    const prime = await fetch(`${CREWLINK_BASE}/crewlink/`, {
-      method: 'GET',
-      headers: { 'User-Agent': userAgent, Referer: `${CREWLINK_BASE}/crewlink/` },
-      redirect: 'manual',
-    });
-    sessionId = extractSessionId(prime);
-  } catch {
-    // best-effort; se falhar seguimos sem cookie primed
+  {
+    let current = loginPageUrl;
+    for (let i = 0; i < 4; i++) {
+      const res = await fetch(current, {
+        method: 'GET',
+        headers: {
+          'User-Agent': userAgent,
+          Referer: `${CREWLINK_BASE}/crewlink/`,
+          ...(sessionId ? { Cookie: `JSESSIONID=${sessionId}` } : {}),
+        },
+        redirect: 'manual',
+      });
+      sessionId = extractSessionId(res) ?? sessionId;
+      trailHops.push({ phase: 'prime', url: current, status: res.status, gotCookie: !!sessionId });
+      const loc = res.headers.get('Location');
+      if (loc && res.status >= 300 && res.status < 400) { current = resolveLoc(loc); continue; }
+      break;
+    }
   }
 
+  // POST das credenciais com o cookie de priming (e Referer da página de login, como
+  // um browser). A operação é loadMainFrameSet: em sucesso o servidor devolve/redireciona
+  // para o frameset da app; em falha devolve a página de login outra vez.
   const upstream = await fetch(`${CREWLINK_BASE}${CREWLINK_APP_PATH}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
       'User-Agent': userAgent,
-      Referer: `${CREWLINK_BASE}/crewlink/`,
-      Origin: CREWLINK_BASE,
+      Referer: loginPageUrl,
       ...(sessionId ? { Cookie: `JSESSIONID=${sessionId}` } : {}),
     },
     body: formData,
     redirect: 'manual',
   });
   sessionId = extractSessionId(upstream) ?? sessionId;
+  trailHops.push({ phase: 'post', url: CREWLINK_APP_PATH, status: upstream.status, location: upstream.headers.get('Location') ?? null, gotCookie: !!sessionId });
 
-  // Determinar se autenticou. Como o priming já nos deu um JSESSIONID, a presença do
-  // cookie deixa de indicar sucesso — em vez disso, uma falha devolve outra vez a
-  // página de login (formulário com crewlinkUserName), enquanto um sucesso redireciona
-  // para a app ou devolve o frameset.
-  const redirectUrl = upstream.headers.get('Location');
-  const isRedirect = upstream.status >= 300 && upstream.status < 400;
-  let authed = isRedirect;
-  let postSnippet = '';
-  let isLoginForm = false;
-  if (!isRedirect) {
-    const html = await upstream.text();
-    isLoginForm = /name\s*=\s*['"]crewlinkUserName['"]/i.test(html);
-    authed = !isLoginForm;
-    postSnippet = extractBody(html).substring(0, 1500);
+  // Seguir a resposta do POST até à página final (com o cookie), para finalizar a
+  // sessão e descobrir onde aterrámos: a app (sucesso) ou o login (falha).
+  let finalHtml = '';
+  let finalUrl = '';
+  {
+    let status = upstream.status;
+    let loc = upstream.headers.get('Location');
+    if (!(status >= 300 && status < 400)) {
+      finalHtml = await upstream.text();
+      finalUrl = CREWLINK_APP_PATH;
+    } else {
+      for (let i = 0; i < 5 && loc && status >= 300 && status < 400; i++) {
+        finalUrl = resolveLoc(loc);
+        const res = await fetch(finalUrl, {
+          method: 'GET',
+          headers: {
+            'User-Agent': userAgent,
+            ...(sessionId ? { Cookie: `JSESSIONID=${sessionId}` } : {}),
+            Referer: loginPageUrl,
+          },
+          redirect: 'manual',
+        });
+        sessionId = extractSessionId(res) ?? sessionId;
+        status = res.status;
+        loc = res.headers.get('Location');
+        trailHops.push({ phase: 'follow', url: finalUrl, status, location: loc ?? null });
+        if (!(status >= 300 && status < 400)) { finalHtml = await res.text(); break; }
+      }
+    }
   }
 
-  // Seguir o redirect do login para finalizar a sessão no servidor (apps Java exigem o
-  // GET de redirect para completar a inicialização) e captar um cookie rotacionado.
-  if (redirectUrl && sessionId) {
-    const fullUrl = redirectUrl.startsWith('http')
-      ? redirectUrl
-      : `${CREWLINK_BASE}${redirectUrl.startsWith('/') ? '' : '/crewlink/'}${redirectUrl}`;
-    const followed = await fetch(fullUrl, {
-      method: 'GET',
-      headers: {
-        'User-Agent': userAgent,
-        Cookie: `JSESSIONID=${sessionId}`,
-        Referer: `${CREWLINK_BASE}/crewlink/`,
-      },
-      redirect: 'follow',
-    });
-    sessionId = extractSessionId(followed) ?? sessionId;
-  }
+  // Autenticado se temos sessão E não aterrámos de volta na página de login (nem por
+  // URL — crewlinkForCrew — nem pelo formulário de login presente no HTML).
+  const onLoginByUrl = /crewlinkForCrew/i.test(finalUrl) || /crewlink\.jsp/i.test(finalUrl);
+  const onLoginByForm = /name\s*=\s*['"]crewlinkUserName['"]/i.test(finalHtml);
+  const authed = !!sessionId && !onLoginByUrl && !onLoginByForm;
 
-  if (!sessionId || !authed) {
+  if (!authed) {
     return jsonResponse(
       {
-        error: !authed
-          ? 'Credenciais inválidas ou servidor indisponível.'
+        error: onLoginByUrl || onLoginByForm
+          ? 'Credenciais inválidas. Verifica o código de tripulante e a password.'
           : 'Sessão não obtida. Tenta novamente.',
         upstreamStatus: upstream.status,
         trail: [
           {
             step: 'login',
-            primedCookie: !!sessionId,
-            postStatus: upstream.status,
-            isRedirect,
-            location: redirectUrl ?? null,
-            isLoginForm,
-            authed,
-            postSnippet,
+            hasSession: !!sessionId,
+            finalUrl,
+            onLoginByUrl,
+            onLoginByForm,
+            finalSnippet: extractBody(finalHtml).substring(0, 1200),
+            hops: trailHops,
           },
         ],
       },
