@@ -229,6 +229,54 @@ function extractBody(html) {
   return bodyMatch ? bodyMatch[1].substring(0, 3000) : html.substring(html.length - 2000);
 }
 
+// A página do duty plan é a que tem os campos de data begin/end. Se vier outra coisa
+// no lugar (uma notificação/aviso a confirmar), tem de ser limpa antes de gerar o
+// relatório.
+function looksLikeDutyPlan(html) {
+  return /name\s*=\s*['"]beginDate['"]/i.test(html) && /name\s*=\s*['"]endDate['"]/i.test(html);
+}
+
+// Resolve a action de um formulário (possivelmente relativa) contra a base CrewLink.
+function resolveUrl(action) {
+  if (!action) return `${CREWLINK_BASE}${CREWLINK_APP_PATH}`;
+  if (action.startsWith('http')) return action;
+  if (action.startsWith('/')) return `${CREWLINK_BASE}${action}`;
+  return `${CREWLINK_BASE}/crewlink/${action}`;
+}
+
+// Constrói o corpo de um formulário a partir dos campos: inputs hidden/text/submit
+// pelo value, selects pela opção selecionada (ou a primeira). Checkboxes/radios não
+// marcados são ignorados.
+function buildFormBody(form) {
+  const params = {};
+  for (const f of form.fields) {
+    if (!f.name) continue;
+    if (f.tag === 'select') {
+      const opts = f.options || [];
+      const sel = opts.find((o) => o.selected) ?? opts[0];
+      params[f.name] = (sel && sel.value) ?? '';
+    } else if (f.type === 'checkbox' || f.type === 'radio') {
+      continue;
+    } else {
+      params[f.name] = f.value ?? '';
+    }
+  }
+  return formEncode(params);
+}
+
+// Escolhe o formulário com maior probabilidade de dispensar uma página intermédia:
+// um com um botão submit cujo texto parece de confirmação; senão, o primeiro.
+function pickAckForm(forms) {
+  const ackRe = /ok|continue|acknowledg|confirm|proceed|\bread\b|close|accept|enter|main|next/i;
+  for (const f of forms) {
+    const hasAck = f.fields.some(
+      (fl) => (fl.type === 'submit' || fl.type === 'button') && ackRe.test(fl.value ?? '')
+    );
+    if (hasAck) return f;
+  }
+  return forms[0] ?? null;
+}
+
 async function handleRoster(request) {
   let body;
   try {
@@ -252,24 +300,66 @@ async function handleRoster(request) {
   const userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36';
   const trail = [];
 
-  // Passo 1: abrir o serviço "Individual Duty Plan" (como clicar no menu).
-  const step1 = await fetch(`${CREWLINK_BASE}${CREWLINK_APP_PATH}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'User-Agent': userAgent,
-      Cookie: sessionCookie,
-      Referer: `${CREWLINK_BASE}/crewlink/`,
-      Origin: CREWLINK_BASE,
-    },
-    body: formEncode({
-      crewlinkService: 'individualDutyPlan',
-      crewlinkOperation: 'default',
-    }),
-    redirect: 'follow',
-  });
-  const step1Html = await step1.text();
-  updateCookie(step1);
+  // Abrir o serviço "Individual Duty Plan" (como clicar no menu).
+  const openDutyPlan = async () => {
+    const response = await fetch(`${CREWLINK_BASE}${CREWLINK_APP_PATH}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': userAgent,
+        Cookie: sessionCookie,
+        Referer: `${CREWLINK_BASE}/crewlink/`,
+        Origin: CREWLINK_BASE,
+      },
+      body: formEncode({
+        crewlinkService: 'individualDutyPlan',
+        crewlinkOperation: 'default',
+      }),
+      redirect: 'follow',
+    });
+    const html = await response.text();
+    updateCookie(response);
+    return { response, html };
+  };
+
+  // Passo 1: abrir o duty plan. O CrewLink às vezes mostra primeiro uma página
+  // intermédia (notificação/aviso a confirmar) em vez do duty plan. Deteta isso (os
+  // campos de data estão em falta), confirma o formulário dessa página e volta a
+  // abrir o duty plan — até 3 vezes, para não entrar em loop.
+  let { response: step1, html: step1Html } = await openDutyPlan();
+  let ackAttempts = 0;
+  while (!looksLikeDutyPlan(step1Html) && ackAttempts < 3) {
+    const forms = extractForms(step1Html);
+    const ackForm = pickAckForm(forms);
+    trail.push({
+      step: 'interstitial',
+      attempt: ackAttempts + 1,
+      status: step1.status,
+      forms,
+      body: extractBody(step1Html),
+    });
+    if (!ackForm) break;
+
+    const isGet = (ackForm.method || 'POST').toUpperCase() === 'GET';
+    const ackBody = buildFormBody(ackForm);
+    const ackUrl = resolveUrl(ackForm.action);
+    const ackRes = await fetch(isGet ? `${ackUrl}?${ackBody}` : ackUrl, {
+      method: isGet ? 'GET' : 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'User-Agent': userAgent,
+        Cookie: sessionCookie,
+        Referer: `${CREWLINK_BASE}${CREWLINK_APP_PATH}`,
+        Origin: CREWLINK_BASE,
+      },
+      ...(isGet ? {} : { body: ackBody }),
+      redirect: 'follow',
+    });
+    updateCookie(ackRes);
+
+    ({ response: step1, html: step1Html } = await openDutyPlan());
+    ackAttempts++;
+  }
 
   // Usar os valores de data do formulário do servidor como fallback.
   // O servidor já sabe o intervalo de datas permitido (aba Filter).
@@ -287,6 +377,8 @@ async function handleRoster(request) {
     status: step1.status,
     contentType: step1.headers.get('Content-Type') ?? '',
     cookieRotated: extractSessionId(step1) !== null,
+    interstitialsCleared: ackAttempts,
+    dutyPlanReady: looksLikeDutyPlan(step1Html),
     datesUsed: dates,
     forms: step1Forms,
   });
@@ -392,7 +484,11 @@ async function handleRoster(request) {
 
   return jsonResponse(
     {
-      error: 'Não foi possível obter o PDF da escala.',
+      error:
+        ackAttempts > 0
+          ? 'O CrewLink mostrou uma notificação que não foi possível confirmar automaticamente. ' +
+            'Abre o CrewLink, confirma a notificação pendente e tenta de novo.'
+          : 'Não foi possível obter o PDF da escala.',
       pdfUrlFound: pdfUrl ?? null,
       trail,
     },
