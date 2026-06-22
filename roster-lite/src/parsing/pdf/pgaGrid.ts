@@ -290,10 +290,11 @@ interface CollectedBand {
   offset?: number;
 }
 
-export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
+// Phases 1 + 2: collect every roster band from the pages, then tile them onto the
+// period calendar by date contiguity. Shared by interpretPgaGrid and diagnosePgaGrid.
+function prepareBands(tokens: PositionedToken[]): { calendar: CalDay[]; bands: CollectedBand[] } {
   const { start, end } = periodRange(tokens);
   const calendar = buildCalendar(start, end);
-  const byDate = new Map<string, ParsedDuty[]>();
 
   const pages = new Map<number, PositionedToken[]>();
   for (const t of tokens) {
@@ -301,20 +302,13 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
     pages.get(t.page)!.push(t);
   }
 
-  // ── Phase 1: collect every roster band with its columns, sub-columns and the
-  // calendar offsets it could occupy. ────────────────────────────────────────────────
+  // ── Phase 1: collect bands with columns, sub-columns and candidate offsets. ──────────
   const bands: CollectedBand[] = [];
   for (const pageTokens of pages.values()) {
     const rows = clusterRows(pageTokens);
     const dowCount = (r: Row) => r.cells.filter((c) => DOW.test(c.text) && c.x < 500).length;
     const hasDateLabel = (r: Row) => r.cells.some((c) => /^date$/i.test(c.text.trim()) && c.x >= 494);
-    // A roster band is any row carrying the right-margin "date" label (which the
-    // summary/licence/stats tables lack) plus at least one weekday column. Requiring the
-    // label — not a high weekday count — keeps SHORT trailing rows (the last 1–3 days,
-    // e.g. "30Jul/31Jul") that a ">=4 columns" rule dropped.
     const headers = rows.filter((r) => hasDateLabel(r) && dowCount(r) >= 1);
-    // For delimiting the vertical bands we still use every wide weekday row (summary
-    // tables included), plus the roster headers themselves so short bands bound cleanly.
     const allHeaders = rows.filter((r) => dowCount(r) >= 4 || headers.includes(r));
 
     headers.forEach((h) => {
@@ -324,19 +318,9 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
         .sort((a, b) => a.x - b.x);
 
       const yTop = h.y;
-      // A band ends at the NEXT header row below it — counting summary/legend headers
-      // too. Bounding by the next *parsed* header instead would let a real grid's band
-      // run to the page bottom and swallow the summary tables underneath.
-      const yBot = Math.max(
-        ...allHeaders.filter((r) => r.y < yTop - 2).map((r) => r.y),
-        -Infinity
-      );
+      const yBot = Math.max(...allHeaders.filter((r) => r.y < yTop - 2).map((r) => r.y), -Infinity);
       const data = pageTokens.filter((t) => t.x < 494 && t.y < yTop - 2 && t.y > yBot && t.text.trim());
 
-      // A day spans a RANGE of x: each of its flights/duties is drawn in its own narrow
-      // sub-column, and the day's header label sits at the right-most (largest-x)
-      // sub-column. Cluster data tokens into sub-columns by x (tight tolerance — adjacent
-      // flights can be only ~5px apart).
       const subs: { x: number; tokens: PositionedToken[] }[] = [];
       for (const t of [...data].sort((a, b) => a.x - b.x)) {
         const s = subs.find((s) => Math.abs(s.x - t.x) <= 3);
@@ -353,14 +337,9 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
     });
   }
 
-  // ── Phase 2: tile the bands onto the calendar by date contiguity, starting at the
-  // period start. This is mostly independent of page order (a multi-page roster may not
-  // present bands in chronological order) and resolves recurring-week collisions because
-  // each band continues where the previous ended. When two bands share the SAME
-  // weekday+dd pattern (e.g. an April and a July week are identical by columns), they
-  // both match a position; we then place the one that appears EARLIER in the document,
-  // which is chronologically earlier, and leave the other for its next slot. `bands` is
-  // already in document order (page order, top to bottom). ────────────────────────────
+  // ── Phase 2: tile bands by date contiguity from the period start. Order-independent
+  // for uniquely-keyed bands; identical-pattern bands (an April week vs a July week) are
+  // placed in document order (earlier in the document → earlier slot). ─────────────────
   const placed = new Array<boolean>(bands.length).fill(false);
   let remaining = bands.filter((b) => b.cand.offsets.length > 0).length;
   let cursor = 0;
@@ -373,7 +352,6 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
       remaining--;
       cursor += bands[idx].cand.len;
     } else {
-      // No unplaced band starts exactly here — jump to the next candidate start (gap).
       let next = Infinity;
       bands.forEach((b, i) => {
         if (placed[i]) return;
@@ -383,9 +361,14 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
       cursor = next;
     }
   }
-  // Any band the tiler couldn't place: fall back to its earliest candidate so its days
-  // aren't silently dropped.
   bands.forEach((b, i) => { if (!placed[i] && b.cand.offsets.length > 0) b.offset = b.cand.offsets[0]; });
+
+  return { calendar, bands };
+}
+
+export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
+  const { calendar, bands } = prepareBands(tokens);
+  const byDate = new Map<string, ParsedDuty[]>();
 
   // ── Phase 3: turn each placed band's sub-columns into dated duties. ─────────────────
   for (const b of bands) {
@@ -428,3 +411,52 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
 
   return [...byDate.values()].flat().sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
 }
+
+// Human-readable diagnosis of how each grid band was placed onto the calendar. Used by
+// the Debug page to investigate missing/misplaced days without exposing internals.
+export function diagnosePgaGrid(tokens: PositionedToken[]): string {
+  const { calendar, bands } = prepareBands(tokens);
+  const out: string[] = [];
+  const calStart = calendar[0]?.date ?? '?';
+  out.push(`Calendário: ${calStart} … +${calendar.length}d`);
+  out.push(`Bandas: ${bands.length}`);
+  out.push('');
+
+  const fmtOffsets = (cand: BandCandidates) =>
+    cand.offsets.slice(0, 6).map((o) => calendar[o]?.date ?? `#${o}`).join(', ') +
+    (cand.offsets.length > 6 ? ` …(+${cand.offsets.length - 6})` : '');
+
+  bands.forEach((b, i) => {
+    const first = b.colKeys[0] ?? '';
+    const last = b.colKeys[b.colKeys.length - 1] ?? '';
+    let range = '—';
+    if (b.offset !== undefined) {
+      const s = bandColumnDate(b.cand, b.offset, b.cand.reversed ? b.colKeys.length - 1 : 0, calendar);
+      const e = bandColumnDate(b.cand, b.offset, b.cand.reversed ? 0 : b.colKeys.length - 1, calendar);
+      range = `${s} … ${e}`;
+    }
+    out.push(
+      `#${i} [${first}…${last}] len=${b.cand.len} rev=${b.cand.reversed ? 'Y' : 'N'} ` +
+      `cand=[${fmtOffsets(b.cand)}] -> ${range}`,
+    );
+  });
+
+  // Coverage: gaps inside the parsed date span.
+  const duties = interpretPgaGrid(tokens);
+  const dates = [...new Set(duties.map((d) => d.date))].sort();
+  if (dates.length > 0) {
+    out.push('');
+    out.push(`Dias com registo: ${dates.length} (${dates[0]} … ${dates[dates.length - 1]})`);
+    const present = new Set(dates);
+    const missing: string[] = [];
+    const startIdx = calendar.findIndex((c) => c.date === dates[0]);
+    const endIdx = calendar.findIndex((c) => c.date === dates[dates.length - 1]);
+    for (let i = startIdx; i >= 0 && i <= endIdx; i++) {
+      if (!present.has(calendar[i].date)) missing.push(calendar[i].date);
+    }
+    out.push(missing.length ? `Dias EM FALTA no intervalo: ${missing.join(', ')}` : 'Sem buracos no intervalo.');
+  }
+
+  return out.join('\n');
+}
+
