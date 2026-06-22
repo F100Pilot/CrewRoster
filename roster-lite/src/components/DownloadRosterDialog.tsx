@@ -259,7 +259,7 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
               disabled={downloading || importing}
               startIcon={downloading ? <CircularProgress size={18} color="inherit" /> : <CloudDownload />}
             >
-              {downloading ? status || 'A descarregar…' : 'Descarregar escala'}
+              Descarregar escala
             </Button>
             <Link
               component="button"
