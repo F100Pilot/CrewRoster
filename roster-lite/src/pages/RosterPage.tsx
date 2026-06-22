@@ -9,7 +9,7 @@ import {
 } from '@mui/icons-material';
 import { alpha } from '@mui/material/styles';
 import { addMonths, format, isSameMonth, parseISO, subMonths } from 'date-fns';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import UploadDropzone from '../components/UploadDropzone';
 import DutyChip from '../components/DutyChip';
@@ -70,7 +70,12 @@ function matchesQuery(d: ParsedDuty, q: string): boolean {
 export default function RosterPage() {
   const { roster, loading, warnings, error, dismissChanges, activeUser } = useRoster();
   const navigate = useNavigate();
-  const [month, setMonth] = useState(new Date());
+  const location = useLocation();
+  // Restore the month the user was viewing when they return from a day detail page.
+  const [month, setMonth] = useState<Date>(() => {
+    const s = (location.state as { month?: string } | null)?.month;
+    return s ? parseISO(s) : new Date();
+  });
   const [infoAnchor, setInfoAnchor] = useState<null | HTMLElement>(null);
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
@@ -267,7 +272,7 @@ export default function RosterPage() {
               bgcolor: (t) => alpha(t.palette.primary.main, 0.06),
             }),
           }}
-          onClick={() => navigate(`/day/${date}`)}
+          onClick={() => navigate(`/day/${date}`, { state: { month: format(month, 'yyyy-MM-dd') } })}
         >
           <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
             <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
