@@ -1,24 +1,27 @@
 import { useEffect, useState } from 'react';
 import {
   Alert, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle,
-  IconButton, InputAdornment, Link, Stack, TextField, Typography,
+  Divider, IconButton, InputAdornment, Link, Stack, TextField, Typography,
 } from '@mui/material';
-import { Close, Visibility, VisibilityOff, CheckCircle, Science } from '@mui/icons-material';
+import { Close, Visibility, VisibilityOff, CheckCircle, Science, CalendarMonth, DeleteOutline } from '@mui/icons-material';
 import { API_KEY_PATTERN, getAeroDataBoxKey, setAeroDataBoxKey } from '../storage/settings';
 import { fetchFlightInfo } from '../services/crewlinkApi';
 import { operatedFlights } from '../domain/flightTime';
+import { downloadIcs } from '../utils/icsExport';
+import GoogleCalendarSync from './GoogleCalendarSync';
 import { useRoster } from '../state/useRoster';
 
 // In-app settings: lets the user paste their own AeroDataBox (RapidAPI) key so the day
 // view can show aircraft registration, gate/terminal and status. The key is stored on
 // this device only and forwarded to the proxy per request — never committed or shared.
 export default function SettingsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { roster } = useRoster();
+  const { roster, clear, activeUser } = useRoster();
   const [key, setKey] = useState('');
   const [show, setShow] = useState(false);
   const [saved, setSaved] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [confirmClear, setConfirmClear] = useState(false);
 
   // Load the stored key whenever the dialog opens.
   useEffect(() => {
@@ -27,8 +30,18 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
       setSaved(false);
       setShow(false);
       setTestResult(null);
+      setConfirmClear(false);
     }
   }, [open]);
+
+  // Wiping the roster is destructive, so the first tap arms a confirm and the second
+  // actually clears and closes the dialog.
+  function handleClear() {
+    if (!confirmClear) { setConfirmClear(true); return; }
+    clear();
+    setConfirmClear(false);
+    onClose();
+  }
 
   const trimmed = key.trim();
   const invalid = trimmed !== '' && !API_KEY_PATTERN.test(trimmed);
@@ -149,6 +162,47 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
           {testResult && (
             <Alert severity={testResult.ok ? 'success' : 'warning'}>{testResult.msg}</Alert>
           )}
+
+          <Divider />
+
+          {/* Roster actions, moved here from the list's overflow menu. */}
+          <Box>
+            <Typography variant="subtitle2" gutterBottom>Escala</Typography>
+            <Stack spacing={1} alignItems="flex-start">
+              {roster && activeUser && (
+                <GoogleCalendarSync
+                  roster={roster}
+                  userId={activeUser.id}
+                  variant="outlined"
+                  label="Sincronizar com Google Calendar"
+                />
+              )}
+              <Button
+                onClick={() => roster && downloadIcs(roster)}
+                disabled={!roster}
+                startIcon={<CalendarMonth />}
+                size="small"
+                variant="outlined"
+              >
+                Exportar .ics
+              </Button>
+              <Button
+                onClick={handleClear}
+                disabled={!roster}
+                startIcon={<DeleteOutline />}
+                size="small"
+                variant="outlined"
+                color="error"
+              >
+                {confirmClear ? 'Confirmar — apagar escala?' : 'Limpar escala'}
+              </Button>
+              {!roster && (
+                <Typography variant="caption" color="text.secondary">
+                  Sem escala importada.
+                </Typography>
+              )}
+            </Stack>
+          </Box>
         </Stack>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>

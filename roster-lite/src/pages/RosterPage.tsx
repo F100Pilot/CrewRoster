@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Alert, Box, Button, Card, CardContent, Chip, Divider, IconButton, InputAdornment,
-  ListItemIcon, ListItemText, Menu, MenuItem, Popover, Stack, TextField, Typography,
+  Popover, Stack, TextField, Typography,
 } from '@mui/material';
 import {
-  ChevronLeft, ChevronRight, Delete, Login, Today, CalendarMonth, MoreVert, InfoOutlined,
-  EditCalendar, Search, Clear, MenuBook,
+  ChevronLeft, ChevronRight, Login, Today, InfoOutlined,
+  EditCalendar, Search, Clear,
 } from '@mui/icons-material';
 import { alpha } from '@mui/material/styles';
 import { addMonths, format, isSameMonth, parseISO, subMonths } from 'date-fns';
@@ -16,8 +16,6 @@ import DutyChip from '../components/DutyChip';
 import NextDutyCard from '../components/NextDutyCard';
 import MonthStatsCard from '../components/MonthStatsCard';
 import FtlCard from '../components/FtlCard';
-import GoogleCalendarSync from '../components/GoogleCalendarSync';
-import { downloadIcs } from '../utils/icsExport';
 import { autoCaptureRecent } from '../domain/aircraftRegs';
 import { getAeroDataBoxKey } from '../storage/settings';
 import { toLocalTime } from '../utils/localTime';
@@ -70,10 +68,9 @@ function matchesQuery(d: ParsedDuty, q: string): boolean {
 }
 
 export default function RosterPage() {
-  const { roster, loading, warnings, error, clear, dismissChanges, activeUser } = useRoster();
+  const { roster, loading, warnings, error, dismissChanges, activeUser } = useRoster();
   const navigate = useNavigate();
   const [month, setMonth] = useState(new Date());
-  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const [infoAnchor, setInfoAnchor] = useState<null | HTMLElement>(null);
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
@@ -208,44 +205,6 @@ export default function RosterPage() {
             </Typography>
           </Box>
         </Popover>
-
-        <Box flexGrow={1} />
-
-        {activeUser && (
-          <GoogleCalendarSync
-            roster={roster}
-            userId={activeUser.id}
-            variant="contained"
-            label="Sincronizar"
-          />
-        )}
-
-        <IconButton size="small" onClick={(e) => setMenuAnchor(e.currentTarget)} title="Mais ações">
-          <MoreVert />
-        </IconButton>
-        <Menu
-          anchorEl={menuAnchor}
-          open={Boolean(menuAnchor)}
-          onClose={() => setMenuAnchor(null)}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-          transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        >
-          {activeUser?.role !== 'cabin' && (
-            <MenuItem onClick={() => { navigate('/logbook'); setMenuAnchor(null); }}>
-              <ListItemIcon><MenuBook fontSize="small" /></ListItemIcon>
-              <ListItemText>Diário de bordo</ListItemText>
-            </MenuItem>
-          )}
-          <MenuItem onClick={() => { downloadIcs(roster); setMenuAnchor(null); }}>
-            <ListItemIcon><CalendarMonth fontSize="small" /></ListItemIcon>
-            <ListItemText>Exportar .ics</ListItemText>
-          </MenuItem>
-          <Divider />
-          <MenuItem onClick={() => { clear(); setMenuAnchor(null); }} sx={{ color: 'error.main' }}>
-            <ListItemIcon><Delete fontSize="small" color="error" /></ListItemIcon>
-            <ListItemText>Limpar escala</ListItemText>
-          </MenuItem>
-        </Menu>
       </Box>
 
       <TextField

@@ -1,6 +1,6 @@
 import { type ReactNode, useState } from 'react';
 import { AppBar, Box, Container, IconButton, Paper, Toolbar, Tooltip, Typography, BottomNavigation, BottomNavigationAction } from '@mui/material';
-import { CalendarMonth, FormatListBulleted, BugReport, CloudDownload, PictureAsPdf, Logout, HelpOutline, Settings } from '@mui/icons-material';
+import { CalendarMonth, FormatListBulleted, BugReport, CloudDownload, PictureAsPdf, Logout, HelpOutline, Settings, MenuBook } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import UserSwitcher from './UserSwitcher';
@@ -8,9 +8,12 @@ import DownloadRosterDialog from './DownloadRosterDialog';
 import NotificationBanner from './NotificationBanner';
 import SettingsDialog from './SettingsDialog';
 
-const NAV = [
+interface NavItem { label: string; icon: ReactNode; path: string }
+
+const BASE_NAV: NavItem[] = [
   { label: 'Lista', icon: <FormatListBulleted />, path: '/' },
   { label: 'Calendário', icon: <CalendarMonth />, path: '/calendar' },
+  { label: 'Diário', icon: <MenuBook />, path: '/logbook' },
   { label: 'PDFs', icon: <PictureAsPdf />, path: '/pdfs' },
   { label: 'Debug', icon: <BugReport />, path: '/debug' },
 ];
@@ -18,8 +21,12 @@ const NAV = [
 export default function Layout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { sessionToken, setSessionToken, activeUser } = useRoster();
+  // The logbook is for flight crew only — hide its tab for cabin crew.
+  const NAV = activeUser?.role === 'cabin'
+    ? BASE_NAV.filter((n) => n.path !== '/logbook')
+    : BASE_NAV;
   const current = NAV.findIndex((n) => n.path === location.pathname);
-  const { sessionToken, setSessionToken } = useRoster();
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
