@@ -10,6 +10,8 @@ describe('inferDutyType', () => {
     ['A3', 'Standby Home'],
     ['SBY-H', 'Standby Home'],
     ['OFF', 'Day Off'],
+    ['OFF_RQST', 'Day Off'],
+    ['PLS_RQST', 'Day Off'],
     ['VAC', 'Vacation'],
     ['SIM', 'Simulator'],
     ['OFD', 'Office Duty'],

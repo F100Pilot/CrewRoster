@@ -147,6 +147,9 @@ function classifyDuty(name: string): { dutyType: string; dutyCode: string } | nu
   // still reads "X" (the crew member recognises it as a free day outside the base).
   if (n === 'X') return { dutyType: 'Day Off', dutyCode: 'X' };
   if (/^W?_?OFF$/.test(n)) return { dutyType: 'Day Off', dutyCode: 'OFF' };
+  // Requested days off — OFF_RQST (day off requested) and PLS_RQST — are free days too.
+  // Keep the exact code so the chip still reads "OFF_RQST"/"PLS_RQST".
+  if (/^(OFF|PLS)_RQST$/.test(n)) return { dutyType: 'Day Off', dutyCode: n };
   if (/^E\d{2}-[A-Z]{3}-\d$/.test(n)) return { dutyType: 'Simulator', dutyCode: n }; // E90-VIE-1
   if (/^GAB\d$/.test(n)) return { dutyType: 'Office Duty', dutyCode: n };
   if (/^SIM/.test(n)) return { dutyType: 'Simulator', dutyCode: 'SIM' };
