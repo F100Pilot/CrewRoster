@@ -57,6 +57,20 @@ export interface ParseResult {
   warnings: string[];
 }
 
+// A flown aircraft registration, recorded per crew member + day + flight. Kept apart
+// from the roster so it survives roster re-downloads and powers the logbook.
+export interface AircraftReg {
+  key: string; // `${userId}|${date}|${flightNumber}`
+  userId: string;
+  date: string; // YYYY-MM-DD
+  flightNumber: string;
+  dep: string | null;
+  arr: string | null;
+  reg: string; // e.g. CS-TPU
+  model: string | null;
+  recordedAt: string; // ISO timestamp
+}
+
 // A PDF downloaded from CrewLink, kept in IndexedDB so the user can re-open,
 // re-download, or delete it. Registered by download time and date range.
 export interface SavedPdf {

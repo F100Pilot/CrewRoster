@@ -94,6 +94,8 @@ export interface FlightInfoResult {
   /** false when the proxy has no AeroDataBox key configured (feature off). */
   configured: boolean;
   flights: FlightInfo[];
+  /** upstream issue (e.g. "upstream_429" when the API quota is exhausted), if any. */
+  error?: string;
 }
 
 /**
@@ -110,9 +112,9 @@ export async function fetchFlightInfo(number: string, date: string): Promise<Fli
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ number, date, ...(apiKey ? { apiKey } : {}) }),
   });
-  if (!res.ok) return { configured: true, flights: [] };
+  if (!res.ok) return { configured: true, flights: [], error: `http_${res.status}` };
   const data = (await res.json()) as Partial<FlightInfoResult>;
-  return { configured: data.configured ?? false, flights: data.flights ?? [] };
+  return { configured: data.configured ?? false, flights: data.flights ?? [], error: data.error };
 }
 
 // ---------------------------------------------------------------------------

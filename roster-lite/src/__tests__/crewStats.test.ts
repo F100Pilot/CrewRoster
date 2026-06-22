@@ -83,7 +83,7 @@ describe('logbook', () => {
   it('exports CSV with a header row', () => {
     const csv = logbookCsv(logbookEntries([flight({ date: '2026-06-01', flightNumber: 'TP1' })]));
     const lines = csv.split('\r\n');
-    expect(lines[0]).toBe('Data,Voo,De,Para,Off (UTC),On (UTC),Bloco,Aeronave');
+    expect(lines[0]).toBe('Data,Voo,De,Para,Off (UTC),On (UTC),Bloco,Aeronave,Matrícula');
     expect(lines[1]).toContain('TP1');
   });
 

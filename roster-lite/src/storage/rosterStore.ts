@@ -1,5 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import type { Roster, SavedPdf, UserProfile } from '../domain/types';
+import type { AircraftReg, Roster, SavedPdf, UserProfile } from '../domain/types';
 
 interface RosterDB extends DBSchema {
   rosters: { key: string; value: Roster };
@@ -9,13 +9,16 @@ interface RosterDB extends DBSchema {
     indexes: { downloadedAt: string };
   };
   users: { key: string; value: UserProfile };
+  // Aircraft registrations flown, kept apart from the roster so re-downloads (which
+  // replace duties per-day) never erase the logbook's recorded tails.
+  regs: { key: string; value: AircraftReg; indexes: { userId: string } };
 }
 
 let dbPromise: Promise<IDBPDatabase<RosterDB>> | null = null;
 
 function getDb() {
   if (!dbPromise) {
-    dbPromise = openDB<RosterDB>('crewroster-lite', 3, {
+    dbPromise = openDB<RosterDB>('crewroster-lite', 4, {
       upgrade(db, oldVersion) {
         if (oldVersion < 2) {
           if (!db.objectStoreNames.contains('rosters'))
@@ -28,6 +31,12 @@ function getDb() {
         if (oldVersion < 3) {
           if (!db.objectStoreNames.contains('users'))
             db.createObjectStore('users', { keyPath: 'id' });
+        }
+        if (oldVersion < 4) {
+          if (!db.objectStoreNames.contains('regs')) {
+            const s = db.createObjectStore('regs', { keyPath: 'key' });
+            s.createIndex('userId', 'userId');
+          }
         }
       },
     });
@@ -52,6 +61,10 @@ export async function deleteUser(id: string): Promise<void> {
   const db = await getDb();
   await db.delete('users', id);
   await db.delete('rosters', id);
+  // Drop this profile's recorded aircraft registrations too.
+  const tx = db.transaction('regs', 'readwrite');
+  for (const key of await tx.store.index('userId').getAllKeys(id)) await tx.store.delete(key);
+  await tx.done;
 }
 
 // ── Active user (localStorage) ─────────────────────────────────────────────────────
@@ -151,4 +164,21 @@ export async function getPdf(id: string): Promise<SavedPdf | undefined> {
 export async function deletePdf(id: string): Promise<void> {
   const db = await getDb();
   await db.delete('pdfs', id);
+}
+
+// ── Aircraft registrations (per user) ───────────────────────────────────────────────
+// Stable key per crew member + day + flight, so re-recording the same sector updates in
+// place instead of duplicating.
+export function regKey(userId: string, date: string, flightNumber: string): string {
+  return `${userId}|${date}|${flightNumber}`;
+}
+
+export async function saveReg(entry: AircraftReg): Promise<void> {
+  const db = await getDb();
+  await db.put('regs', entry);
+}
+
+export async function loadRegs(userId: string): Promise<AircraftReg[]> {
+  const db = await getDb();
+  return db.getAllFromIndex('regs', 'userId', userId);
 }

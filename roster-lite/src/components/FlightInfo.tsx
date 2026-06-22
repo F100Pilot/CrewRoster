@@ -2,6 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { Box, Chip, CircularProgress, IconButton, Tooltip, Typography } from '@mui/material';
 import { AirplaneTicket, Refresh } from '@mui/icons-material';
 import { fetchFlightInfo, type FlightInfo as FlightInfoData } from '../services/crewlinkApi';
+import { matchLeg, recordReg } from '../domain/aircraftRegs';
+import { loadRegs } from '../storage/rosterStore';
+import { useRoster } from '../state/useRoster';
 import type { ParsedDuty } from '../domain/types';
 
 // Colour the operational status so cancellations/diversions stand out at a glance.
@@ -13,26 +16,31 @@ function statusColor(status: string | null): string {
   return '#5c6bc0';
 }
 
-// Pick the leg that matches this duty's route (same number can fly several sectors on a
-// day); fall back to the departure match, then the first leg.
-function matchLeg(flights: FlightInfoData[], dep: string | null, arr: string | null): FlightInfoData | null {
-  if (flights.length === 0) return null;
-  return (
-    flights.find((f) => f.departure.iata === dep && f.arrival.iata === arr) ??
-    flights.find((f) => f.departure.iata === dep) ??
-    flights[0]
-  );
-}
-
 // Live operational data for a flight — aircraft registration, terminal/gate and status —
 // pulled from AeroDataBox through the proxy. It refreshes every time the day is opened
-// (no API caching) and offers a manual refresh. Silent when the feature isn't configured
-// or there's simply no data yet (normal for flights not near their date).
+// (no API caching) and offers a manual refresh. A successful registration lookup is
+// saved to the logbook store. Silent when the feature isn't configured or there's simply
+// no data yet (normal for flights not near their date).
 export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: string }) {
+  const { activeUser } = useRoster();
   const [leg, setLeg] = useState<FlightInfoData | null>(null);
+  const [savedReg, setSavedReg] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [configured, setConfigured] = useState(true);
   const flightNumber = duty.flightNumber;
+  const userId = activeUser?.id;
+
+  // Show any previously-recorded registration immediately (even with no live data).
+  useEffect(() => {
+    let alive = true;
+    if (!userId || !flightNumber) return;
+    loadRegs(userId).then((regs) => {
+      if (!alive) return;
+      const hit = regs.find((r) => r.date === date && r.flightNumber === flightNumber);
+      setSavedReg(hit?.reg ?? null);
+    });
+    return () => { alive = false; };
+  }, [userId, flightNumber, date]);
 
   const load = useCallback(() => {
     if (!flightNumber) return;
@@ -40,11 +48,15 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
     fetchFlightInfo(flightNumber, date)
       .then((r) => {
         setConfigured(r.configured);
-        setLeg(matchLeg(r.flights, duty.departureAirport, duty.arrivalAirport));
+        const m = matchLeg(r.flights, duty.departureAirport, duty.arrivalAirport);
+        setLeg(m);
+        if (m?.reg && userId) {
+          recordReg(userId, duty, m).then(() => setSavedReg(m.reg));
+        }
       })
       .catch(() => setLeg(null))
       .finally(() => setLoading(false));
-  }, [flightNumber, date, duty.departureAirport, duty.arrivalAirport]);
+  }, [flightNumber, date, duty.departureAirport, duty.arrivalAirport, userId, duty]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -55,7 +67,8 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
   }, [load]);
 
   // Feature off (no API key) → render nothing, so the banner stays clean.
-  if (!configured) return null;
+  // Feature off and nothing recorded → stay out of the way entirely.
+  if (!configured && !savedReg) return null;
 
   return (
     <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px dashed', borderColor: 'divider' }}>
@@ -66,16 +79,21 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
         </Typography>
         {loading ? (
           <CircularProgress size={14} />
-        ) : (
+        ) : configured ? (
           <Tooltip title="Atualizar">
             <IconButton size="small" onClick={load} sx={{ p: 0.25 }}>
               <Refresh sx={{ fontSize: 16 }} />
             </IconButton>
           </Tooltip>
-        )}
+        ) : null}
       </Box>
 
-      {!loading && !leg && (
+      {/* No live leg but we recorded the tail before — show it (e.g. feature now off). */}
+      {!leg && savedReg && (
+        <Chip size="small" label={savedReg} sx={{ fontWeight: 700 }} />
+      )}
+
+      {!loading && !leg && !savedReg && (
         <Typography variant="caption" color="text.secondary">
           Sem dados ainda (ficam disponíveis perto do voo).
         </Typography>

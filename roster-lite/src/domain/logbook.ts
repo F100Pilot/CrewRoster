@@ -1,4 +1,4 @@
-import type { ParsedDuty } from './types';
+import type { AircraftReg, ParsedDuty } from './types';
 import { operatedFlights } from './flightTime';
 import { diffMinutes, formatDuration } from '../utils/duration';
 
@@ -13,9 +13,13 @@ export interface LogbookEntry {
   on: string; // arrival time, UTC "HH:mm"
   blockMinutes: number;
   aircraft: string;
+  reg: string; // aircraft registration (recorded from flight info), or ''
 }
 
-export function logbookEntries(duties: ParsedDuty[]): LogbookEntry[] {
+// `regs` maps "date|flightNumber" → recorded registration; pass it to fill the tail.
+export function logbookEntries(
+  duties: ParsedDuty[], regs?: Map<string, AircraftReg>,
+): LogbookEntry[] {
   return operatedFlights(duties).map((d) => ({
     date: d.date,
     flightNumber: d.flightNumber ?? '',
@@ -25,6 +29,7 @@ export function logbookEntries(duties: ParsedDuty[]): LogbookEntry[] {
     on: d.arrivalTime!,
     blockMinutes: diffMinutes(d.departureTime!, d.arrivalTime!),
     aircraft: d.aircraftType ?? '',
+    reg: regs?.get(`${d.date}|${d.flightNumber ?? ''}`)?.reg ?? '',
   }));
 }
 
@@ -34,7 +39,7 @@ function csvCell(value: string): string {
 
 // CSV with a header row, CRLF line endings (spreadsheet-friendly).
 export function logbookCsv(entries: LogbookEntry[]): string {
-  const header = ['Data', 'Voo', 'De', 'Para', 'Off (UTC)', 'On (UTC)', 'Bloco', 'Aeronave'];
+  const header = ['Data', 'Voo', 'De', 'Para', 'Off (UTC)', 'On (UTC)', 'Bloco', 'Aeronave', 'Matrícula'];
   const rows = entries.map((e) => [
     e.date,
     e.flightNumber,
@@ -44,6 +49,7 @@ export function logbookCsv(entries: LogbookEntry[]): string {
     e.on,
     formatDuration(e.blockMinutes),
     e.aircraft,
+    e.reg,
   ]);
   return [header, ...rows].map((r) => r.map(csvCell).join(',')).join('\r\n');
 }
