@@ -282,20 +282,19 @@ function parseSubColumn(colTokens: PositionedToken[], date: string): ParsedDuty[
     }
   }
 
-  // Safety net: a sub-column that has content but no recognised starter would drop the
-  // day entirely. Surface a generic duty from the first code-like token so a day is
-  // never silently lost and the unknown code is visible on the chip (e.g. "FAL").
+  // Safety net: a sub-column with a genuine but unrecognised duty would drop the day.
+  // To avoid FABRICATING duties from stray markers (hotels like "NH FRA", crew, etc.),
+  // we only surface one when there is a real reporting TIME and the code is >=3 chars.
+  // We would rather lose an uncertain entry than show a wrong one.
   if (duties.length === 0) {
     const code = ordered.find((w) =>
-      /[A-Za-z]/.test(w) && w.length >= 2 &&
+      /[A-Za-z]/.test(w) && w.length >= 3 &&
       !isAnnotation(w) && !DOW.test(w) && !TIME.test(w) &&
       !/^\[/.test(w) && !/\]$/.test(w) && !/^DH$/i.test(w) && !isCrewName(w)
     );
     const times = code ? ordered.map(toTime).filter((t): t is string => !!t) : [];
     const airports = code ? ordered.filter((w) => AIRPORT.test(w) && w !== code && !CARRIER.test(w)) : [];
-    // Only surface it as a duty if there's supporting structure (a time or an airport),
-    // so a stray token in an otherwise-empty sub-column doesn't invent a duty.
-    if (code && (times.length > 0 || airports.length > 0)) {
+    if (code && times.length > 0) {
       duties.push({
         date,
         dutyCode: code.toUpperCase(),
