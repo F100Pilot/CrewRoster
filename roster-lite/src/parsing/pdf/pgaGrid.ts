@@ -480,9 +480,11 @@ export function diagnosePgaGrid(tokens: PositionedToken[]): string {
       const e = bandColumnDate(b.cand, b.offset, b.cand.reversed ? 0 : b.colKeys.length - 1, calendar);
       range = `${s} … ${e}`;
     }
+    const toks = b.subs.reduce((s, sub) => s + sub.tokens.length, 0);
+    const colXs = b.cols.map((c) => Math.round(c.x)).join(',');
     out.push(
       `#${i} [${first}…${last}] len=${b.cand.len} rev=${b.cand.reversed ? 'Y' : 'N'} ` +
-      `cand=[${fmtOffsets(b.cand)}] -> ${range}`,
+      `subs=${b.subs.length} toks=${toks} colX=[${colXs}] cand=[${fmtOffsets(b.cand)}] -> ${range}`,
     );
   });
 
@@ -535,6 +537,18 @@ export function diagnosePgaGrid(tokens: PositionedToken[]): string {
   out.push('--- Tokens por dia ---');
   for (const d of [...rawByDate.keys()].sort()) {
     out.push(`${d}: ${(rawByDate.get(d) ?? []).join(' | ')}`);
+  }
+
+  // Raw geometry of the LAST page (x,y per token, top to bottom). Reveals where the
+  // trailing days' content actually sits when a band is placed but captures no data.
+  const lastPage = Math.max(...tokens.map((t) => t.page));
+  const pageToks = tokens
+    .filter((t) => t.page === lastPage && t.text.trim())
+    .sort((a, b) => b.y - a.y);
+  out.push('');
+  out.push(`--- Última página (p${lastPage}), ${pageToks.length} tokens (x,y) ---`);
+  for (const t of pageToks.slice(0, 160)) {
+    out.push(`  x${Math.round(t.x)} y${Math.round(t.y)}  ${t.text}`);
   }
 
   return out.join('\n');
