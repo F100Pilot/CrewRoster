@@ -1,0 +1,31 @@
+name: Deploy worker to Cloudflare
+
+# Auto-deploys the CrewLink proxy worker whenever worker.js (or this workflow) changes on
+# master, so you never have to paste it into the Cloudflare dashboard again. Also runnable
+# by hand from the Actions tab (workflow_dispatch) — handy from a phone.
+#
+# One-time setup (do this once, from a phone is fine):
+#   1. Cloudflare → My Profile → API Tokens → Create Token → "Edit Cloudflare Workers"
+#      template → Create. Copy the token.
+#   2. GitHub repo → Settings → Secrets and variables → Actions → New repository secret:
+#        - CLOUDFLARE_API_TOKEN  = the token from step 1
+#        - CLOUDFLARE_ACCOUNT_ID = your Cloudflare account id (Workers & Pages → right
+#          sidebar "Account ID"). Optional if the token sees only one account.
+# After that, deploying the worker = pushing to master (or pressing "Run workflow").
+
+on:
+  push:
+    branches: [master]
+    paths: ['roster-lite/worker/worker.js', '.github/workflows/deploy-worker.yml']
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: roster-lite/worker

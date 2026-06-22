@@ -55,12 +55,19 @@ que categoria pertence (voo, folga, standby, formação, férias, ausência…).
 ## Deploy do worker (Cloudflare)
 
 A app (GitHub Pages) atualiza-se sozinha. O **worker** (proxy para o CrewLink) é um
-ficheiro separado — sempre que `roster-lite/worker/worker.js` mudar, tens de fazer
-deploy:
+ficheiro separado — sempre que `roster-lite/worker/worker.js` mudar, é preciso fazer
+deploy. Há três formas:
 
+- **Automático (recomendado):** o workflow `.github/workflows/deploy-worker.yml` faz
+  deploy sozinho a cada push que altere o worker. Setup único (dá para fazer no
+  telemóvel): cria um *API Token* em Cloudflare → My Profile → API Tokens → template
+  *"Edit Cloudflare Workers"*, e adiciona-o em GitHub → Settings → Secrets → Actions
+  como `CLOUDFLARE_API_TOKEN` (e `CLOUDFLARE_ACCOUNT_ID`, da barra lateral de Workers &
+  Pages). Depois disso nunca mais colas nada — também podes correr à mão em
+  **Actions → Deploy worker to Cloudflare → Run workflow**.
 - **Dashboard:** dash.cloudflare.com → Workers & Pages → `crewroster-proxy` →
   *Edit code* → apaga tudo → cola o conteúdo de `roster-lite/worker/worker.js` →
-  *Deploy*.
+  *Deploy*. (No telemóvel é incómodo colar um ficheiro grande.)
 - **CLI:** a partir de `roster-lite/worker/`, corre `./deploy.sh` (usa `wrangler deploy`).
 
 ## Dados de voo (matrícula, porta) — AeroDataBox
