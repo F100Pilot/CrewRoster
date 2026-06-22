@@ -24,6 +24,7 @@ const CODES: { code: string; dutyType: string; label: string }[] = [
   { code: 'FP1_INST / FP2_INST', dutyType: 'Training', label: 'Instrução (sou instrutor)' },
   { code: 'VAC / F / PLIC / SLIC', dutyType: 'Vacation', label: 'Férias / licenças' },
   { code: 'RLIC', dutyType: 'Vacation', label: 'Licença de casamento' },
+  { code: 'FAL', dutyType: 'Absence', label: 'Falta (ausência)' },
 ];
 
 export default function CodesPage() {

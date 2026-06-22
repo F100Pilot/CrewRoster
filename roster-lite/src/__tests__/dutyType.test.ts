@@ -35,6 +35,7 @@ describe('inferDutyType', () => {
     ['OFD', 'Office Duty'],
     ['TRG', 'Training'],
     ['MED', 'Medical'],
+    ['FAL', 'Absence'],
     ['RSV', 'Reserve'],
     ['POS', 'Positioning'],
     ['ZZZ', 'Other'],

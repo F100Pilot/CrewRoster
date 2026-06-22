@@ -35,6 +35,7 @@ export const DUTY_COLORS: Record<string, string> = {
   Simulator: '#00838f',
   Training: '#2e7d32',
   Medical: '#c62828',
+  Absence: '#b71c1c',
   Vacation: '#00c853',
   'Day Off': '#9e9e9e',
   Reserve: '#5c6bc0',

@@ -157,18 +157,35 @@ describe('interpretPgaGrid — deadhead on another airline', () => {
   });
 });
 
-// An unrecognised code (e.g. FAL) must still produce a duty so the day is not dropped.
-const unknownCode: PositionedToken[] = [
+// FAL = Falta (absence). Recognised as its own type; the 3-letter code must not be
+// read as an airport.
+const falta: PositionedToken[] = [
   tk('01Jul26 -', 60, 900),
   tk('Wed01', 100, 600), tk('Thu02', 130, 600), tk('Fri03', 160, 600), tk('Sat04', 190, 600),
   tk('Sun05', 220, 600), tk('Mon06', 250, 600), tk('Tue07', 280, 600), tk('date', 500, 600),
   tk('FAL', 100, 560), tk('LIS', 100, 550),
 ];
 
+describe('interpretPgaGrid — FAL (Falta)', () => {
+  const duties = interpretPgaGrid(falta);
+  it('classifies FAL as Absence (not an airport)', () => {
+    expect(duties.find((x) => x.date === '2026-07-01')).toMatchObject({ dutyCode: 'FAL', dutyType: 'Absence' });
+  });
+});
+
+// A truly unrecognised code with supporting structure (a time) must still produce a
+// duty so the day is not dropped.
+const unknownCode: PositionedToken[] = [
+  tk('01Jul26 -', 60, 900),
+  tk('Wed01', 100, 600), tk('Thu02', 130, 600), tk('Fri03', 160, 600), tk('Sat04', 190, 600),
+  tk('Sun05', 220, 600), tk('Mon06', 250, 600), tk('Tue07', 280, 600), tk('date', 500, 600),
+  tk('GS1', 100, 560), tk('LIS', 100, 550), tk('0900', 100, 540),
+];
+
 describe('interpretPgaGrid — unknown code safety net', () => {
   const duties = interpretPgaGrid(unknownCode);
   it('keeps the day with a generic Other duty showing the code', () => {
     const d = duties.find((x) => x.date === '2026-07-01');
-    expect(d).toMatchObject({ dutyCode: 'FAL', dutyType: 'Other' });
+    expect(d).toMatchObject({ dutyCode: 'GS1', dutyType: 'Other' });
   });
 });

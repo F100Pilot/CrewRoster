@@ -175,6 +175,7 @@ function classifyDuty(name: string): { dutyType: string; dutyCode: string } | nu
   // ("FP-Elearning CA-MEL ...") that sits in an adjacent sub-column is NOT mistaken
   // for a second training duty.
   if (/^FP\w*-LEARN$/.test(n)) return { dutyType: 'Training', dutyCode: n };
+  if (n === 'FAL') return { dutyType: 'Absence', dutyCode: 'FAL' }; // Falta (ausência)
   return null;
 }
 
@@ -222,7 +223,9 @@ function parseSubColumn(colTokens: PositionedToken[], date: string): ParsedDuty[
   const duties: ParsedDuty[] = [];
   for (const seg of segments) {
     const words = seg.tokens;
-    const airports = words.filter((w) => AIRPORT.test(w) && !CARRIER.test(w));
+    // Skip index 0 (the starter: carrier or duty code) so a 3-letter code like "FAL"
+    // or "OFF" isn't mistaken for an airport.
+    const airports = words.filter((w, i) => i > 0 && AIRPORT.test(w) && !CARRIER.test(w));
     const aircraft = words.find((w, i) => i > 0 && AIRCRAFT.test(w) && !AIRPORT.test(w)) ?? null;
 
     const carrierIdx = words.findIndex((w) => CARRIER.test(w));
