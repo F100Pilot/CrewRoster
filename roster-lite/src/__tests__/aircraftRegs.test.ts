@@ -10,6 +10,11 @@ const leg = (dep: string, arr: string, reg: string): FlightInfo => ({
   arrival: { iata: arr, icao: null, terminal: null, gate: null, scheduledUtc: null },
 });
 
+// A route-matching record that carries no tail (AeroDataBox sometimes returns one).
+const regless = (dep: string, arr: string): FlightInfo => ({
+  ...leg(dep, arr, ''), reg: null,
+});
+
 describe('matchLeg', () => {
   it('prefers the leg matching both endpoints', () => {
     const flights = [leg('LIS', 'OPO', 'CS-AAA'), leg('LIS', 'FRA', 'CS-BBB')];
@@ -20,6 +25,11 @@ describe('matchLeg', () => {
     expect(matchLeg(flights, 'LIS', 'NCE')?.reg).toBe('CS-AAA'); // departure match
     expect(matchLeg(flights, 'XXX', 'YYY')?.reg).toBe('CS-AAA'); // first leg
     expect(matchLeg([], 'LIS', 'FRA')).toBeNull();
+  });
+  it('prefers a route-matching leg that has a tail over a regless duplicate', () => {
+    // Real case: TP940 LIS-GVA returned twice, the first without a registration.
+    const flights = [regless('LIS', 'GVA'), leg('LIS', 'GVA', 'CS-TPU')];
+    expect(matchLeg(flights, 'LIS', 'GVA')?.reg).toBe('CS-TPU');
   });
 });
 

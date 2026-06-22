@@ -4,15 +4,20 @@ import { operatedFlights } from './flightTime';
 import { loadRegs, regKey, saveReg } from '../storage/rosterStore';
 
 // Pick the leg matching a duty's route (the same flight number can fly several sectors
-// on a day); fall back to the departure match, then the first leg.
+// on a day, and AeroDataBox sometimes returns more than one record per number/date —
+// e.g. a scheduled entry without a tail plus an operated one with it). Within each
+// candidate tier (exact route → same departure → anything) prefer a leg that actually
+// carries a registration, so a regless duplicate never shadows the real one.
 export function matchLeg(
   flights: FlightInfo[], dep: string | null, arr: string | null,
 ): FlightInfo | null {
   if (flights.length === 0) return null;
+  const pick = (list: FlightInfo[]): FlightInfo | null =>
+    list.length === 0 ? null : (list.find((f) => f.reg) ?? list[0]);
   return (
-    flights.find((f) => f.departure.iata === dep && f.arrival.iata === arr) ??
-    flights.find((f) => f.departure.iata === dep) ??
-    flights[0]
+    pick(flights.filter((f) => f.departure.iata === dep && f.arrival.iata === arr)) ??
+    pick(flights.filter((f) => f.departure.iata === dep)) ??
+    pick(flights)
   );
 }
 
