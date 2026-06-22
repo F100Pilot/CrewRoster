@@ -76,9 +76,14 @@ export default function LogbookPage() {
   const hasKey = !!getAeroDataBoxKey();
   const backfillMsg = (r: BackfillResult): string => {
     const base = `${r.found} matrícula(s) registada(s).`;
-    if (r.stopped === 'quota') return `${base} Limite da API atingido — tenta mais tarde.`;
+    if (r.stopped === 'quota') return `${base} Limite mensal da API atingido — tenta mais tarde.`;
+    if (r.stopped === 'auth') return 'Chave recusada (sem subscrição/acesso). Confirma a chave e a subscrição AeroDataBox no RapidAPI.';
     if (r.stopped === 'not_configured') return 'Define a chave AeroDataBox nas Definições (⚙️) primeiro.';
     if (r.stopped === 'cancelled') return `${base} Cancelado.`;
+    // Finished, but several flights returned no data at all → almost always the free
+    // plan not covering older flights.
+    if (r.found === 0 && r.emptyCount > 0)
+      return 'Sem dados para estes voos. O plano gratuito da AeroDataBox normalmente não inclui voos antigos (só recentes/próximos).';
     return `${base} Concluído.`;
   };
 

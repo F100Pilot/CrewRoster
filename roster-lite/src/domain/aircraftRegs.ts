@@ -49,13 +49,18 @@ export interface BackfillResult {
   found: number;
   processed: number;
   total: number;
-  // why it ended early, if it did: 'quota' (API limit), 'not_configured', 'cancelled'.
-  stopped?: 'quota' | 'not_configured' | 'cancelled';
+  // why it ended early, if it did: 'quota' (API limit), 'auth' (not subscribed/forbidden),
+  // 'not_configured' (no key), 'cancelled'.
+  stopped?: 'quota' | 'auth' | 'not_configured' | 'cancelled';
+  // the last upstream error seen (e.g. "upstream_400"), to explain a 0-found run.
+  lastError?: string;
+  // how many lookups returned no flight at all (typically: history not in the plan).
+  emptyCount: number;
 }
 
 // Look up and store registrations for every operated sector that doesn't have one yet,
 // up to today (AeroDataBox only has data for past/near flights). Sequential and gently
-// throttled to respect the API; stops cleanly when the quota is hit or on cancel.
+// throttled to respect the API; stops cleanly when the quota/auth fails or on cancel.
 export async function backfillRegs(
   userId: string,
   duties: ParsedDuty[],
@@ -69,16 +74,22 @@ export async function backfillRegs(
   );
 
   let found = 0;
+  let emptyCount = 0;
+  let lastError: string | undefined;
   for (let i = 0; i < pending.length; i++) {
-    if (shouldStop?.()) return { found, processed: i, total: pending.length, stopped: 'cancelled' };
+    if (shouldStop?.()) return { found, processed: i, total: pending.length, stopped: 'cancelled', emptyCount, lastError };
     const d = pending[i];
     const r = await fetchFlightInfo(d.flightNumber!, d.date);
-    if (!r.configured) return { found, processed: i, total: pending.length, stopped: 'not_configured' };
-    if (r.error === 'upstream_429') return { found, processed: i, total: pending.length, stopped: 'quota' };
+    if (!r.configured) return { found, processed: i, total: pending.length, stopped: 'not_configured', emptyCount, lastError };
+    if (r.error) lastError = r.error;
+    // Quota or auth problems won't fix themselves on the next call — stop and report.
+    if (/_429$/.test(r.error ?? '')) return { found, processed: i, total: pending.length, stopped: 'quota', emptyCount, lastError };
+    if (/_40[13]$/.test(r.error ?? '')) return { found, processed: i, total: pending.length, stopped: 'auth', emptyCount, lastError };
     const leg = matchLeg(r.flights, d.departureAirport, d.arrivalAirport);
     if (leg?.reg) { await recordReg(userId, d, leg); found++; }
+    else if (r.flights.length === 0) emptyCount++;
     onProgress?.({ done: i + 1, total: pending.length, found });
     await new Promise((res) => setTimeout(res, 250)); // be gentle with the API
   }
-  return { found, processed: pending.length, total: pending.length };
+  return { found, processed: pending.length, total: pending.length, emptyCount, lastError };
 }
