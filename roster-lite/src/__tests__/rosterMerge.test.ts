@@ -35,12 +35,13 @@ describe('mergeDuties', () => {
     expect(merged.find((d) => d.date === '2026-02-10')?.flightNumber).toBe('TP999');
   });
 
-  it('removes a day cleared within the incoming window', () => {
+  it('keeps a day the new download is silent about (never wipes good data)', () => {
     const previous = [duty('2026-02-01'), duty('2026-02-02'), duty('2026-02-03')];
-    // New download of the same window no longer has Feb 2.
+    // New download of the same span no longer lists Feb 2 (a partial/incomplete parse).
+    // Feb 2 must be KEPT — a missing date means "not parsed", not "day removed".
     const incoming = [duty('2026-02-01'), duty('2026-02-03')];
     const merged = mergeDuties(previous, incoming);
-    expect(dates(merged)).toEqual(['2026-02-01', '2026-02-03']);
+    expect(dates(merged)).toEqual(['2026-02-01', '2026-02-02', '2026-02-03']);
   });
 
   it('returns previous unchanged when incoming is empty', () => {

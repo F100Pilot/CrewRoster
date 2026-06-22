@@ -81,9 +81,11 @@ export function parseIcs(content: string): ParsedDuty[] {
       date: start.split(' ')[0],
       dutyCode: dutyCode === 'UNK' ? (flightNumber ? 'FLT' : 'UNK') : dutyCode,
       dutyType: inferFromSummary(ev.summary || ''),
+      // All time fields must be "HH:mm" — downstream block/rest/FTL math splits on ":".
+      // Storing the full "YYYY-MM-DD HH:mm:ss" here corrupted every time calculation.
       reportingTime: isAllDay ? null : startFull?.split(' ')[1]?.slice(0, 5) || null,
-      departureTime: startFull,
-      arrivalTime: endFull,
+      departureTime: isAllDay ? null : startFull?.split(' ')[1]?.slice(0, 5) || null,
+      arrivalTime: isAllDay ? null : endFull?.split(' ')[1]?.slice(0, 5) || null,
       flightNumber,
       departureAirport: departureAirport || (ev.location || null),
       arrivalAirport,

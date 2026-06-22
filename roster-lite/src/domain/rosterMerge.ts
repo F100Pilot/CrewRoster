@@ -1,26 +1,25 @@
 import type { ParsedDuty } from './types';
 
-// Merge a freshly downloaded roster into the one already stored, so separate
-// downloads (e.g. one month, then another) accumulate into a single list/calendar.
+// Merge a freshly downloaded roster into the one already stored, so separate downloads
+// (e.g. one month, then another) accumulate into a single list/calendar.
 //
-// The incoming download is authoritative for the contiguous date range it covers
-// [min..max]: within that window its duties win (handling additions, changes AND
-// removals — a day cleared in the new download is cleared here too). Dates outside
-// the incoming window keep whatever was stored before. This lets you build up the
-// year from partial downloads while still picking up roster changes on re-download.
+// Strategy: PER-DAY override. For every date the incoming download contains, its duties
+// replace whatever was stored for that date (so changes and cancellations are picked
+// up). Dates the incoming download does NOT contain are kept verbatim — even if they
+// fall "inside" the new download's date span.
+//
+// Why not wipe the whole [min..max] window: a real roster day always has at least one
+// entry (a flight, a day off, standby…), so a date absent from the incoming set means
+// the parse simply didn't produce it, NOT that the day became empty. Wiping the window
+// would then delete previously-good days whenever a download/parse is partial — the
+// "old data got mixed up / I had to clear everything" symptom. Keeping silent days is
+// strictly safer and identical for a complete download (which covers every date in its
+// range).
 export function mergeDuties(previous: ParsedDuty[], incoming: ParsedDuty[]): ParsedDuty[] {
   if (incoming.length === 0) return [...previous];
 
-  let min = incoming[0].date;
-  let max = incoming[0].date;
-  for (const d of incoming) {
-    if (d.date < min) min = d.date;
-    if (d.date > max) max = d.date;
-  }
-
-  // Keep previous duties strictly outside the incoming window; drop the rest (the
-  // incoming download replaces everything within [min..max]).
-  const kept = previous.filter((d) => d.date < min || d.date > max);
+  const incomingDates = new Set(incoming.map((d) => d.date));
+  const kept = previous.filter((d) => !incomingDates.has(d.date));
 
   return [...kept, ...incoming].sort((a, b) =>
     a.date < b.date ? -1 : a.date > b.date ? 1 : 0,

@@ -1,5 +1,6 @@
 import type { ParsedDuty } from '../../domain/types';
 import { inferDutyType } from '../../domain/dutyType';
+import { normalizeTime } from '../shared/patterns';
 
 // Minimal, dependency-free CSV parser (handles quoted fields and commas/semicolons).
 // Ported in spirit from backend/src/services/csvParser.ts, which used csv-parse.
@@ -57,9 +58,11 @@ export function parseCsv(content: string): ParsedDuty[] {
       date,
       dutyCode,
       dutyType: inferDutyType(dutyCode),
-      reportingTime: pick(row, ['ReportingTime', 'reporting_time', 'Report']),
-      departureTime: pick(row, ['DepartureTime', 'departure_time', 'STD']),
-      arrivalTime: pick(row, ['ArrivalTime', 'arrival_time', 'STA']),
+      // Normalize to "HH:mm" so downstream block/rest/FTL math (which splits on ":")
+      // works regardless of the CSV's time format (0630, 06h30, 6:30…).
+      reportingTime: normalizeTime(pick(row, ['ReportingTime', 'reporting_time', 'Report'])),
+      departureTime: normalizeTime(pick(row, ['DepartureTime', 'departure_time', 'STD'])),
+      arrivalTime: normalizeTime(pick(row, ['ArrivalTime', 'arrival_time', 'STA'])),
       flightNumber: pick(row, ['FlightNumber', 'flight_number', 'Flight']),
       departureAirport: pick(row, ['DepartureAirport', 'departure_airport', 'Dep']),
       arrivalAirport: pick(row, ['ArrivalAirport', 'arrival_airport', 'Arr']),
