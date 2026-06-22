@@ -137,3 +137,38 @@ describe('interpretPgaGrid — standalone DH deadhead', () => {
     expect(f).toMatchObject({ dutyCode: 'DH', dutyType: 'Positioning', departureAirport: 'LIS', arrivalAirport: 'OPO' });
   });
 });
+
+// DH/AY = deadhead on another airline (AY = Finnair). The carrier matcher must accept
+// "DH/" + any airline, not only DH/TP|LH|NI|S4.
+const dhOther: PositionedToken[] = [
+  tk('01Jul26 -', 60, 900),
+  tk('Wed01', 100, 600), tk('Thu02', 130, 600), tk('Fri03', 160, 600), tk('Sat04', 190, 600),
+  tk('Sun05', 220, 600), tk('Mon06', 250, 600), tk('Tue07', 280, 600), tk('date', 500, 600),
+  tk('DH/AY', 100, 560), tk('1740', 100, 550), tk('LIS', 100, 540), tk('1610', 100, 530),
+  tk('2050', 100, 520), tk('HEL', 100, 510),
+];
+
+describe('interpretPgaGrid — deadhead on another airline', () => {
+  const duties = interpretPgaGrid(dhOther);
+  it('parses DH/AY as a positioning sector LIS-HEL', () => {
+    expect(duties.find((d) => d.dutyType === 'Positioning')).toMatchObject({
+      dutyCode: 'DH', departureAirport: 'LIS', arrivalAirport: 'HEL', flightNumber: 'AY1740',
+    });
+  });
+});
+
+// An unrecognised code (e.g. FAL) must still produce a duty so the day is not dropped.
+const unknownCode: PositionedToken[] = [
+  tk('01Jul26 -', 60, 900),
+  tk('Wed01', 100, 600), tk('Thu02', 130, 600), tk('Fri03', 160, 600), tk('Sat04', 190, 600),
+  tk('Sun05', 220, 600), tk('Mon06', 250, 600), tk('Tue07', 280, 600), tk('date', 500, 600),
+  tk('FAL', 100, 560), tk('LIS', 100, 550),
+];
+
+describe('interpretPgaGrid — unknown code safety net', () => {
+  const duties = interpretPgaGrid(unknownCode);
+  it('keeps the day with a generic Other duty showing the code', () => {
+    const d = duties.find((x) => x.date === '2026-07-01');
+    expect(d).toMatchObject({ dutyCode: 'FAL', dutyType: 'Other' });
+  });
+});

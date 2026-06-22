@@ -16,7 +16,7 @@ const PERIOD = /(\d{2})([A-Za-z]{3})(\d{2})/; // 15Jun26 (may have surrounding t
 const AIRPORT = /^[A-Z]{3}$/;
 const TIME = /^([0-2]\d)([0-5]\d)$/; // 0440 -> 04:40
 const AIRCRAFT = /^(E\d{2}|A\d{3}|B\d{3})$/i; // E90, E95, A320...
-const CARRIER = /^(DH\/)?(TP|LH|NI|S4)$/i; // carrier or deadhead prefix
+const CARRIER = /^(TP|LH|NI|S4|DH\/[A-Z0-9]{2,3})$/i; // own carrier, or deadhead on ANY airline (DH/TP, DH/AY…)
 
 interface Row {
   y: number;
@@ -169,6 +169,8 @@ function classifyDuty(name: string): { dutyType: string; dutyCode: string } | nu
   // the role on the chip.
   if (/_INST$/.test(n)) return { dutyType: 'Training', dutyCode: n };
   if (/^FP\d$/.test(n)) return { dutyType: 'Training', dutyCode: n };
+  // Recurrent ground instruction (as trainee), e.g. RGTC1 / RGTC2 — usually two sessions.
+  if (/^RGTC\d*$/.test(n)) return { dutyType: 'Training', dutyCode: n };
   // Training duty code, e.g. "FPE-LEARN". Anchored so the longer descriptive token
   // ("FP-Elearning CA-MEL ...") that sits in an adjacent sub-column is NOT mistaken
   // for a second training duty.
@@ -273,6 +275,36 @@ function parseSubColumn(colTokens: PositionedToken[], date: string): ParsedDuty[
         arrivalAirport: null,
         aircraftType: aircraft,
         observations: seg.notes.join(', ') || null,
+      });
+    }
+  }
+
+  // Safety net: a sub-column that has content but no recognised starter would drop the
+  // day entirely. Surface a generic duty from the first code-like token so a day is
+  // never silently lost and the unknown code is visible on the chip (e.g. "FAL").
+  if (duties.length === 0) {
+    const code = ordered.find((w) =>
+      /[A-Za-z]/.test(w) && w.length >= 2 &&
+      !isAnnotation(w) && !DOW.test(w) && !TIME.test(w) &&
+      !/^\[/.test(w) && !/\]$/.test(w) && !/^DH$/i.test(w) && !isCrewName(w)
+    );
+    const times = code ? ordered.map(toTime).filter((t): t is string => !!t) : [];
+    const airports = code ? ordered.filter((w) => AIRPORT.test(w) && w !== code && !CARRIER.test(w)) : [];
+    // Only surface it as a duty if there's supporting structure (a time or an airport),
+    // so a stray token in an otherwise-empty sub-column doesn't invent a duty.
+    if (code && (times.length > 0 || airports.length > 0)) {
+      duties.push({
+        date,
+        dutyCode: code.toUpperCase(),
+        dutyType: 'Other',
+        reportingTime: times[0] ?? null,
+        departureTime: null,
+        arrivalTime: null,
+        flightNumber: null,
+        departureAirport: airports[0] ?? null,
+        arrivalAirport: null,
+        aircraftType: null,
+        observations: null,
       });
     }
   }

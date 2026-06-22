@@ -28,6 +28,8 @@ describe('inferDutyType', () => {
     ['FP2_INST', 'Training'],
     ['FP1', 'Training'],
     ['FP2', 'Training'],
+    ['RGTC1', 'Training'],
+    ['RGTC2', 'Training'],
     ['RLIC', 'Vacation'],
     ['SIM', 'Simulator'],
     ['OFD', 'Office Duty'],

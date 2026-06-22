@@ -19,6 +19,8 @@ const CODES: { code: string; dutyType: string; label: string }[] = [
   { code: 'WPNC / VPNC', dutyType: 'Training', label: 'Verificação de linha PNC (verificado / verificador)' },
   { code: 'W_EXAM / V_EXAM', dutyType: 'Training', label: 'Voo de exame PNC (verificado / verificador)' },
   { code: 'FP1 / FP2', dutyType: 'Training', label: 'Instrução (sou instruendo)' },
+  { code: 'RGTC1 / RGTC2', dutyType: 'Training', label: 'Instrução recorrente (instruendo)' },
+  { code: 'DH/… (DH/TP, DH/AY)', dutyType: 'Positioning', label: 'Deadhead (passageiro), própria ou outra companhia' },
   { code: 'FP1_INST / FP2_INST', dutyType: 'Training', label: 'Instrução (sou instrutor)' },
   { code: 'VAC / F / PLIC / SLIC', dutyType: 'Vacation', label: 'Férias / licenças' },
   { code: 'RLIC', dutyType: 'Vacation', label: 'Licença de casamento' },
