@@ -18,7 +18,8 @@ const CODES: { code: string; dutyType: string; label: string }[] = [
   { code: 'H7+ / H9+ / H12+ / H509 / R24…', dutyType: 'Standby Home', label: 'Assistência (pilotos e cabina) — reserva com janela horária' },
   { code: 'WPNC / VPNC', dutyType: 'Training', label: 'Verificação de linha PNC (verificado / verificador)' },
   { code: 'W_EXAM / V_EXAM', dutyType: 'Training', label: 'Voo de exame PNC (verificado / verificador)' },
-  { code: 'FP1_INST / FP2_INST', dutyType: 'Training', label: 'Instrução ground' },
+  { code: 'FP1 / FP2', dutyType: 'Training', label: 'Instrução (sou instruendo)' },
+  { code: 'FP1_INST / FP2_INST', dutyType: 'Training', label: 'Instrução (sou instrutor)' },
   { code: 'VAC / F / PLIC / SLIC', dutyType: 'Vacation', label: 'Férias / licenças' },
   { code: 'RLIC', dutyType: 'Vacation', label: 'Licença de casamento' },
 ];

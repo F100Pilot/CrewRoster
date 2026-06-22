@@ -163,9 +163,12 @@ function classifyDuty(name: string): { dutyType: string; dutyCode: string } | nu
   if (/^(VAC|AN|F|PLIC|SLIC|RLIC)$/.test(n)) return { dutyType: 'Vacation', dutyCode: n };
   // Cabin line checks / exam flights: verified (WPNC/W_EXAM) and verifier (VPNC/V_EXAM).
   if (/^(WPNC|VPNC|W_EXAM|V_EXAM)$/.test(n)) return { dutyType: 'Training', dutyCode: n };
-  // Ground instruction, e.g. FP1_INST / FP2_INST. Note: this ends in "_INST" (with a T),
-  // so it is NOT caught by the "_INS" line-training annotation rule.
+  // Instruction. FP1_INST / FP2_INST = the crew member is the INSTRUCTOR (ends in "_INST",
+  // with a T, so it's not caught by the "_INS" line-training annotation rule). FP1 / FP2 =
+  // the crew member is the TRAINEE. Both classify as Training; the exact code distinguishes
+  // the role on the chip.
   if (/_INST$/.test(n)) return { dutyType: 'Training', dutyCode: n };
+  if (/^FP\d$/.test(n)) return { dutyType: 'Training', dutyCode: n };
   // Training duty code, e.g. "FPE-LEARN". Anchored so the longer descriptive token
   // ("FP-Elearning CA-MEL ...") that sits in an adjacent sub-column is NOT mistaken
   // for a second training duty.
