@@ -86,43 +86,50 @@ function buildCalendar(start: Date, end: Date): CalDay[] {
   return cal;
 }
 
-// Best contiguous offset where `keys` align with `calKeys`, plus the match score.
-function bestMatch(keys: string[], calKeys: string[]): { off: number; score: number } {
-  let off = -1;
+// All contiguous offsets where `keys` align with `calKeys`, sharing the top score.
+// A weekly band's weekday+dd run is ambiguous (e.g. a July week also fits an April
+// week), so several offsets can tie — the caller disambiguates by proximity to the
+// running chronological cursor.
+function matchOffsets(keys: string[], calKeys: string[]): { score: number; offsets: number[] } {
   let score = -1;
+  let offsets: number[] = [];
   for (let o = 0; o + keys.length <= calKeys.length; o++) {
     let s = 0;
     for (let i = 0; i < keys.length; i++) if (calKeys[o + i] === keys[i]) s++;
-    if (s > score) { score = s; off = o; }
-    if (s === keys.length) break;
+    if (s > score) { score = s; offsets = [o]; }
+    else if (s === score) offsets.push(o);
   }
-  return { off, score };
+  return { score, offsets };
 }
 
 // Resolve a band's day columns to real dates by matching its consecutive weekday+dd
 // sequence against the period calendar. The PGA grid draws days right-to-left (columns
 // run in DESCENDING date order by x), so we try both orientations and keep the better.
-// Sequence matching is far less ambiguous than a single weekday+dd key, so it
-// disambiguates recurring days across a long roster.
-function resolveBandDates(colKeys: string[], calendar: CalDay[]): Map<string, string> {
+// Among equally-scoring offsets (recurring weeks across the year), pick the one closest
+// to `cursor` — the expected chronological position — and report where the next band
+// should resume.
+function resolveBandDates(
+  colKeys: string[], calendar: CalDay[], cursor: number,
+): { map: Map<string, string>; nextCursor: number } {
   const map = new Map<string, string>();
-  if (colKeys.length === 0) return map;
+  if (colKeys.length === 0) return { map, nextCursor: cursor };
   const calKeys = calendar.map((c) => c.key);
 
-  const fwd = bestMatch(colKeys, calKeys);
-  const rev = bestMatch([...colKeys].reverse(), calKeys);
+  const fwd = matchOffsets(colKeys, calKeys);
+  const rev = matchOffsets([...colKeys].reverse(), calKeys);
   const reversed = rev.score > fwd.score;
-  const { off, score } = reversed ? rev : fwd;
+  const { score, offsets } = reversed ? rev : fwd;
 
   const required = Math.max(2, Math.ceil(colKeys.length * 0.6));
-  if (off < 0 || score < required) return map;
+  if (score < required || offsets.length === 0) return { map, nextCursor: cursor };
 
+  const off = offsets.reduce((best, o) => (Math.abs(o - cursor) < Math.abs(best - cursor) ? o : best), offsets[0]);
   const n = colKeys.length;
   for (let i = 0; i < n; i++) {
     const cal = reversed ? calendar[off + (n - 1 - i)] : calendar[off + i];
     if (cal) map.set(colKeys[i], cal.date);
   }
-  return map;
+  return { map, nextCursor: off + n };
 }
 
 function toTime(token: string): string | null {
@@ -274,6 +281,11 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
     pages.get(t.page)!.push(t);
   }
 
+  // Bands are read in document order (page by page, top to bottom), which is
+  // chronological in this PDF. `cursor` tracks the expected calendar position so
+  // ambiguous (recurring) weekly bands land on the right month.
+  let cursor = 0;
+
   for (const pageTokens of pages.values()) {
     const rows = clusterRows(pageTokens);
     // Any row with several weekday columns is a grid header — whether it's the real
@@ -295,7 +307,9 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
       // Resolve this band's columns to real dates by matching its consecutive
       // weekday+dd sequence against the period calendar (handles long ranges and
       // recurring days that a global map would collide).
-      const bandDate = resolveBandDates(cols.map((c) => c.token), calendar);
+      const resolved = resolveBandDates(cols.map((c) => c.token), calendar, cursor);
+      const bandDate = resolved.map;
+      cursor = resolved.nextCursor;
 
       const yTop = h.y;
       // A band ends at the NEXT header row below it — counting summary/legend headers

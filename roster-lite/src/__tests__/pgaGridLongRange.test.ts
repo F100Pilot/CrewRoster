@@ -46,3 +46,34 @@ describe('interpretPgaGrid — long range (>70 days)', () => {
     });
   });
 });
+
+// A July week (Mon06..Sun12) has the same weekday+dd pattern as an April week, so a
+// naive "earliest match" placed July duties in April — leaving July past day 1 empty.
+// Processing bands in document order with a chronological cursor fixes it.
+const collide: PositionedToken[] = [
+  tk('01Jan26 -', 60, 900),
+  // Band A (read first): week of Mon 22 Jun — unique, advances the cursor into late June.
+  tk('Mon22', 100, 600), tk('Tue23', 130, 600), tk('Wed24', 160, 600), tk('Thu25', 190, 600),
+  tk('Fri26', 220, 600), tk('Sat27', 250, 600), tk('Sun28', 280, 600), tk('date', 500, 600),
+  tk('TP', 100, 560), tk('200', 100, 550), tk('LIS', 100, 540), tk('OPO', 100, 530),
+  tk('0900', 100, 520), tk('0945', 100, 510), tk('E95', 100, 505),
+  // Band B (read second): week of Mon 06 Jul — collides with Mon 06 Apr.
+  tk('Mon06', 100, 300), tk('Tue07', 130, 300), tk('Wed08', 160, 300), tk('Thu09', 190, 300),
+  tk('Fri10', 220, 300), tk('Sat11', 250, 300), tk('Sun12', 280, 300), tk('date', 500, 300),
+  tk('TP', 100, 260), tk('300', 100, 250), tk('LIS', 100, 240), tk('FAO', 100, 230),
+  tk('1000', 100, 220), tk('1050', 100, 210), tk('E90', 100, 205),
+];
+
+describe('interpretPgaGrid — recurring weekly band collision', () => {
+  const duties = interpretPgaGrid(collide);
+
+  it('places the July week in July, not the colliding April week', () => {
+    const tp300 = duties.find((d) => d.flightNumber === 'TP300');
+    expect(tp300?.date).toBe('2026-07-06');
+    expect(duties.some((d) => d.date === '2026-04-06')).toBe(false);
+  });
+
+  it('still places the preceding June week correctly', () => {
+    expect(duties.find((d) => d.flightNumber === 'TP200')?.date).toBe('2026-06-22');
+  });
+});
