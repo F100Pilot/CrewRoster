@@ -7,7 +7,7 @@ export function inferDutyType(dutyCode: string): string {
   if (/^A\d{1,2}$/.test(code)) return 'Standby Home'; // PGA home standby slots A1, A2, A3…
   if (['SBY-H', 'STH'].includes(code)) return 'Standby Home';
   if (['OFF', 'DO', 'DOF'].includes(code)) return 'Day Off';
-  if (/^(OFF|PLS)_RQST$/.test(code)) return 'Day Off'; // requested days off
+  if (/_RQST$/.test(code)) return 'Day Off'; // requested days off (OFF_RQST, …)
   if (['VAC', 'VACATION', 'AN'].includes(code)) return 'Vacation';
   if (['SIM', 'SIMU', 'TRN'].includes(code)) return 'Simulator';
   if (['OFD', 'OFFICE', 'GRD'].includes(code)) return 'Office Duty';

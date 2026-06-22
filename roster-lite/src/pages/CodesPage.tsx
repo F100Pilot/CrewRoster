@@ -8,7 +8,7 @@ const CODES: { code: string; dutyType: string; label: string }[] = [
   { code: 'DH', dutyType: 'Positioning', label: 'Posicionamento / deadhead (viagem como passageiro)' },
   { code: 'X', dutyType: 'Day Off', label: 'Folga fora da base' },
   { code: 'W_OFF / OFF', dutyType: 'Day Off', label: 'Folga' },
-  { code: 'OFF_RQST / PLS_RQST', dutyType: 'Day Off', label: 'Folga pedida' },
+  { code: '…_RQST (OFF_RQST)', dutyType: 'Day Off', label: 'Folga pedida' },
   { code: 'GAB1 / GAB2', dutyType: 'Office Duty', label: 'Serviço de gabinete (escritório)' },
   { code: 'FPE-LEARN', dutyType: 'Training', label: 'Formação (e-learning)' },
   { code: 'SIM / E90-…', dutyType: 'Simulator', label: 'Simulador' },
