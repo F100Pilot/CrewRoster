@@ -9,7 +9,7 @@ import {
 } from '@mui/icons-material';
 import { alpha } from '@mui/material/styles';
 import { addMonths, format, isSameMonth, parseISO, subMonths } from 'date-fns';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import UploadDropzone from '../components/UploadDropzone';
 import DutyChip from '../components/DutyChip';
@@ -41,6 +41,11 @@ const FILTERS: { key: Filter; label: string }[] = [
 // second one before the first resolves (module-level: survives component remounts).
 const autoRegInFlight = new Set<string>();
 
+// Remembers the last month the user was browsing, so returning from a day detail (via
+// the back arrow) lands on that month instead of the current calendar month. Module-level
+// so it survives the page unmount/remount that navigation causes.
+let lastViewedMonth: Date | null = null;
+
 function matchesFilter(d: ParsedDuty, f: Filter): boolean {
   switch (f) {
     case 'flights':
@@ -70,12 +75,9 @@ function matchesQuery(d: ParsedDuty, q: string): boolean {
 export default function RosterPage() {
   const { roster, loading, warnings, error, dismissChanges, activeUser } = useRoster();
   const navigate = useNavigate();
-  const location = useLocation();
-  // Restore the month the user was viewing when they return from a day detail page.
-  const [month, setMonth] = useState<Date>(() => {
-    const s = (location.state as { month?: string } | null)?.month;
-    return s ? parseISO(s) : new Date();
-  });
+  const [month, setMonth] = useState<Date>(() => lastViewedMonth ?? new Date());
+  // Keep the remembered month in sync so a later return restores the right month.
+  useEffect(() => { lastViewedMonth = month; }, [month]);
   const [infoAnchor, setInfoAnchor] = useState<null | HTMLElement>(null);
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
@@ -272,7 +274,7 @@ export default function RosterPage() {
               bgcolor: (t) => alpha(t.palette.primary.main, 0.06),
             }),
           }}
-          onClick={() => navigate(`/day/${date}`, { state: { month: format(month, 'yyyy-MM-dd') } })}
+          onClick={() => navigate(`/day/${date}`)}
         >
           <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
             <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
