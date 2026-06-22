@@ -77,3 +77,29 @@ describe('interpretPgaGrid — recurring weekly band collision', () => {
     expect(duties.find((d) => d.flightNumber === 'TP200')?.date).toBe('2026-06-22');
   });
 });
+
+// The PGA grid packs a variable number of days per row; the final row is the
+// remainder and can be short (1–3 days). A ">=4 columns" header rule dropped it, so
+// the period appeared to stop a couple of days early (e.g. July ending on the 29th).
+const trailing: PositionedToken[] = [
+  tk('01Jul26 -', 60, 900),
+  // Normal band: Wed 01 – Tue 07 Jul.
+  tk('Wed01', 100, 600), tk('Thu02', 130, 600), tk('Fri03', 160, 600), tk('Sat04', 190, 600),
+  tk('Sun05', 220, 600), tk('Mon06', 250, 600), tk('Tue07', 280, 600), tk('date', 500, 600),
+  tk('TP', 100, 560), tk('400', 100, 550), tk('LIS', 100, 540), tk('OPO', 100, 530),
+  tk('0700', 100, 520), tk('0745', 100, 510), tk('E95', 100, 505),
+  // Short trailing band: Thu 30 – Fri 31 Jul (only 2 day columns).
+  tk('Thu30', 100, 300), tk('Fri31', 130, 300), tk('date', 500, 300),
+  tk('TP', 100, 260), tk('500', 100, 250), tk('LIS', 100, 240), tk('FNC', 100, 230),
+  tk('2000', 100, 220), tk('2130', 100, 210), tk('E90', 100, 205),
+];
+
+describe('interpretPgaGrid — short trailing band', () => {
+  const duties = interpretPgaGrid(trailing);
+
+  it('parses the last 2-day band (30–31 Jul) that a >=4-column rule dropped', () => {
+    // The flight sits under the Thu30 column (x=100), so it lands on 30 Jul; the key
+    // point is the short trailing band is no longer dropped.
+    expect(duties.find((d) => d.flightNumber === 'TP500')?.date).toBe('2026-07-30');
+  });
+});

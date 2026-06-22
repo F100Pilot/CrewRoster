@@ -120,7 +120,9 @@ function resolveBandDates(
   const reversed = rev.score > fwd.score;
   const { score, offsets } = reversed ? rev : fwd;
 
-  const required = Math.max(2, Math.ceil(colKeys.length * 0.6));
+  // Short trailing bands (1–2 days) are legitimate; the cursor disambiguates them, so
+  // allow a floor of 1 matched column rather than forcing at least 2.
+  const required = Math.max(1, Math.ceil(colKeys.length * 0.6));
   if (score < required || offsets.length === 0) return { map, nextCursor: cursor };
 
   const off = offsets.reduce((best, o) => (Math.abs(o - cursor) < Math.abs(best - cursor) ? o : best), offsets[0]);
@@ -288,15 +290,16 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
 
   for (const pageTokens of pages.values()) {
     const rows = clusterRows(pageTokens);
-    // Any row with several weekday columns is a grid header — whether it's the real
-    // chronological roster OR a non-plan summary/legend table (per-flight statistics,
-    // the licences page, etc.). We use ALL of them to delimit the vertical bands…
-    const allHeaders = rows.filter((r) => r.cells.filter((c) => DOW.test(c.text) && c.x < 500).length >= 4);
-    // …but only PARSE the ones that also carry the right-margin "date" label, which the
-    // summary/licences tables lack. (Page 3 even has "VAC" = vaccine, "LPC", "IM"…)
-    const headers = allHeaders.filter((r) =>
-      r.cells.some((c) => /^date$/i.test(c.text.trim()) && c.x >= 494)
-    );
+    const dowCount = (r: Row) => r.cells.filter((c) => DOW.test(c.text) && c.x < 500).length;
+    const hasDateLabel = (r: Row) => r.cells.some((c) => /^date$/i.test(c.text.trim()) && c.x >= 494);
+    // A roster band is any row carrying the right-margin "date" label (which the
+    // summary/licence/stats tables lack) plus at least one weekday column. Requiring
+    // the label — not a high weekday count — lets us keep SHORT trailing rows (e.g. the
+    // last 1–3 days of the period, "30Jul/31Jul"), which a ">=4 columns" rule dropped.
+    const headers = rows.filter((r) => hasDateLabel(r) && dowCount(r) >= 1);
+    // For delimiting the vertical bands we still use every wide weekday row (summary
+    // tables included), plus the roster headers themselves so short bands bound cleanly.
+    const allHeaders = rows.filter((r) => dowCount(r) >= 4 || headers.includes(r));
 
     headers.forEach((h) => {
       const cols: Column[] = h.cells
