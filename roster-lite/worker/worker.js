@@ -751,8 +751,12 @@ async function handleFlightInfo(request, env) {
     return jsonResponse({ error: 'number (flight) and date (YYYY-MM-DD) are required' }, 400, request);
   }
 
+  // Key precedence: the one set in-app (sent per request) wins, else a Worker secret.
+  // Constrain the client value to safe header characters so it can't inject a header.
+  // The host is NEVER taken from the client (would be an SSRF vector) — fixed/secret only.
+  const clientKey = typeof body.apiKey === 'string' ? body.apiKey.trim() : '';
+  const key = /^[A-Za-z0-9._-]{8,200}$/.test(clientKey) ? clientKey : env && env.AERODATABOX_KEY;
   // No key configured → respond cleanly so the SPA stays silent instead of erroring.
-  const key = env && env.AERODATABOX_KEY;
   if (!key) return jsonResponse({ configured: false, flights: [] }, 200, request);
   const host = (env && env.AERODATABOX_HOST) || 'aerodatabox.p.rapidapi.com';
 

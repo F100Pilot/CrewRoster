@@ -6,6 +6,8 @@
  * - The session token is kept in memory only — never written to localStorage/cookies.
  */
 
+import { getAeroDataBoxKey } from '../storage/settings';
+
 const API_BASE = import.meta.env.VITE_API_URL as string | undefined;
 
 function baseUrl(): string {
@@ -100,10 +102,13 @@ export interface FlightInfoResult {
  * carrier+number as shown on the roster (e.g. "TP574"); the date is YYYY-MM-DD.
  */
 export async function fetchFlightInfo(number: string, date: string): Promise<FlightInfoResult> {
+  // The AeroDataBox key is configured in-app (Settings) and kept on this device. Send it
+  // per request so the proxy can use it; it falls back to a Worker secret if unset.
+  const apiKey = getAeroDataBoxKey();
   const res = await fetch(`${baseUrl()}/api/flightinfo`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ number, date }),
+    body: JSON.stringify({ number, date, ...(apiKey ? { apiKey } : {}) }),
   });
   if (!res.ok) return { configured: true, flights: [] };
   const data = (await res.json()) as Partial<FlightInfoResult>;

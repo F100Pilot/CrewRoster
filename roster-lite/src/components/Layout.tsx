@@ -1,11 +1,12 @@
 import { type ReactNode, useState } from 'react';
 import { AppBar, Box, Container, IconButton, Paper, Toolbar, Tooltip, Typography, BottomNavigation, BottomNavigationAction } from '@mui/material';
-import { CalendarMonth, FormatListBulleted, BugReport, CloudDownload, PictureAsPdf, Logout, HelpOutline } from '@mui/icons-material';
+import { CalendarMonth, FormatListBulleted, BugReport, CloudDownload, PictureAsPdf, Logout, HelpOutline, Settings } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import UserSwitcher from './UserSwitcher';
 import DownloadRosterDialog from './DownloadRosterDialog';
 import NotificationBanner from './NotificationBanner';
+import SettingsDialog from './SettingsDialog';
 
 const NAV = [
   { label: 'Lista', icon: <FormatListBulleted />, path: '/' },
@@ -20,6 +21,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   const current = NAV.findIndex((n) => n.path === location.pathname);
   const { sessionToken, setSessionToken } = useRoster();
   const [downloadOpen, setDownloadOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
     <Box sx={{ pb: 8, minHeight: '100vh', bgcolor: 'background.default' }}>
@@ -46,6 +48,11 @@ export default function Layout({ children }: { children: ReactNode }) {
           >
             <HelpOutline />
           </IconButton>
+          <Tooltip title="Definições">
+            <IconButton color="inherit" onClick={() => setSettingsOpen(true)}>
+              <Settings />
+            </IconButton>
+          </Tooltip>
           <Tooltip title="Descarregar / atualizar escala">
             <IconButton color="inherit" onClick={() => setDownloadOpen(true)}>
               <CloudDownload />
@@ -58,6 +65,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         {children}
       </Container>
       <DownloadRosterDialog open={downloadOpen} onClose={() => setDownloadOpen(false)} />
+      <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }} elevation={3}>
         <BottomNavigation
           showLabels

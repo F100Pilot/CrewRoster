@@ -48,6 +48,12 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
 
   useEffect(() => { load(); }, [load]);
 
+  // Re-fetch when the AeroDataBox key is added/changed in Settings while this day is open.
+  useEffect(() => {
+    window.addEventListener('aerodatabox-key-changed', load);
+    return () => window.removeEventListener('aerodatabox-key-changed', load);
+  }, [load]);
+
   // Feature off (no API key) → render nothing, so the banner stays clean.
   if (!configured) return null;
 
