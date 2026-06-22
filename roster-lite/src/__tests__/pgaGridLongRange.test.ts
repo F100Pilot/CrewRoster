@@ -118,3 +118,22 @@ describe('interpretPgaGrid — short trailing band', () => {
     expect(duties.find((d) => d.flightNumber === 'TP500')?.date).toBe('2026-07-30');
   });
 });
+
+// A standalone "DH" token above the carrier code marks the sector as deadhead crew
+// (positioning as a passenger), distinct from the "DH/TP" combined prefix.
+const deadhead: PositionedToken[] = [
+  tk('01Jul26 -', 60, 900),
+  tk('Wed01', 100, 600), tk('Thu02', 130, 600), tk('Fri03', 160, 600), tk('Sat04', 190, 600),
+  tk('Sun05', 220, 600), tk('Mon06', 250, 600), tk('Tue07', 280, 600), tk('date', 500, 600),
+  // DH above TP -> deadhead flight TP950 LIS-OPO on Wed 01 Jul.
+  tk('DH', 100, 565), tk('TP', 100, 555), tk('950', 100, 545), tk('LIS', 100, 535),
+  tk('OPO', 100, 525), tk('0700', 100, 515), tk('0745', 100, 505), tk('E95', 100, 500),
+];
+
+describe('interpretPgaGrid — standalone DH deadhead', () => {
+  const duties = interpretPgaGrid(deadhead);
+  it('marks a flight preceded by a DH token as positioning/deadhead', () => {
+    const f = duties.find((d) => d.flightNumber === 'TP950');
+    expect(f).toMatchObject({ dutyCode: 'DH', dutyType: 'Positioning', departureAirport: 'LIS', arrivalAirport: 'OPO' });
+  });
+});

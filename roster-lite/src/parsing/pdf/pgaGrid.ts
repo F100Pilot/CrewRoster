@@ -188,6 +188,7 @@ function isCrewName(w: string): boolean {
 interface Segment {
   tokens: string[];
   notes: string[];
+  dh?: boolean; // a standalone "DH" appeared above this flight → deadhead crew
 }
 
 // Parse a single sub-column's tokens into duties. Each flight/duty occupies its own
@@ -198,11 +199,16 @@ function parseSubColumn(colTokens: PositionedToken[], date: string): ParsedDuty[
   const ordered = [...colTokens].sort((a, b) => b.y - a.y).map((t) => t.text);
   const segments: Segment[] = [];
   let cur: Segment | null = null;
+  let pendingDH = false; // a "DH" token seen above the next flight marks it deadhead
 
   for (const w of ordered) {
+    // A standalone "DH" before the flight code means the sector is flown as deadhead
+    // (positioning as a passenger). It applies to the NEXT flight starter.
+    if (/^DH$/i.test(w)) { pendingDH = true; continue; }
     const starter = CARRIER.test(w) || classifyDuty(w) !== null;
     if (starter) {
-      cur = { tokens: [w], notes: [] };
+      cur = { tokens: [w], notes: [], dh: pendingDH };
+      pendingDH = false;
       segments.push(cur);
     } else if (isAnnotation(w) || isCrewName(w)) {
       if (cur && /_INS$/.test(w)) cur.notes.push(w);
@@ -219,7 +225,8 @@ function parseSubColumn(colTokens: PositionedToken[], date: string): ParsedDuty[
 
     const carrierIdx = words.findIndex((w) => CARRIER.test(w));
     if (carrierIdx >= 0) {
-      const isDeadhead = /^DH\//i.test(words[carrierIdx]);
+      // Deadhead either as a "DH/TP" combined prefix or a standalone "DH" above the code.
+      const isDeadhead = /^DH\//i.test(words[carrierIdx]) || seg.dh === true;
       // The flight number sits in the row directly below the carrier code (next token
       // by y). Identify it structurally rather than by value, because numbers like
       // "1455" are indistinguishable from a 14:55 clock time.
