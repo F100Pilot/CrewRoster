@@ -102,36 +102,30 @@ function matchOffsets(keys: string[], calKeys: string[]): { score: number; offse
   return { score, offsets };
 }
 
-// Resolve a band's day columns to real dates by matching its consecutive weekday+dd
-// sequence against the period calendar. The PGA grid draws days right-to-left (columns
-// run in DESCENDING date order by x), so we try both orientations and keep the better.
-// Among equally-scoring offsets (recurring weeks across the year), pick the one closest
-// to `cursor` — the expected chronological position — and report where the next band
-// should resume.
-function resolveBandDates(
-  colKeys: string[], calendar: CalDay[], cursor: number,
-): { map: Map<string, string>; nextCursor: number } {
-  const map = new Map<string, string>();
-  if (colKeys.length === 0) return { map, nextCursor: cursor };
-  const calKeys = calendar.map((c) => c.key);
+interface BandCandidates { reversed: boolean; offsets: number[]; len: number }
 
+// Where a band's day columns can sit in the period calendar. The PGA grid draws days
+// right-to-left (columns run in DESCENDING date order by x), so we try both
+// orientations and keep the better. `offsets` is every calendar index (ascending) where
+// the band's EARLIEST date could begin; the tiler picks the consistent one.
+function bandCandidates(colKeys: string[], calendar: CalDay[]): BandCandidates {
+  const len = colKeys.length;
+  if (len === 0) return { reversed: false, offsets: [], len };
+  const calKeys = calendar.map((c) => c.key);
   const fwd = matchOffsets(colKeys, calKeys);
   const rev = matchOffsets([...colKeys].reverse(), calKeys);
   const reversed = rev.score > fwd.score;
   const { score, offsets } = reversed ? rev : fwd;
+  // Allow a floor of 1 matched column so short trailing bands (1–2 days) still resolve.
+  const required = Math.max(1, Math.ceil(len * 0.6));
+  if (score < required) return { reversed, offsets: [], len };
+  return { reversed, offsets: [...offsets].sort((a, b) => a - b), len };
+}
 
-  // Short trailing bands (1–2 days) are legitimate; the cursor disambiguates them, so
-  // allow a floor of 1 matched column rather than forcing at least 2.
-  const required = Math.max(1, Math.ceil(colKeys.length * 0.6));
-  if (score < required || offsets.length === 0) return { map, nextCursor: cursor };
-
-  const off = offsets.reduce((best, o) => (Math.abs(o - cursor) < Math.abs(best - cursor) ? o : best), offsets[0]);
-  const n = colKeys.length;
-  for (let i = 0; i < n; i++) {
-    const cal = reversed ? calendar[off + (n - 1 - i)] : calendar[off + i];
-    if (cal) map.set(colKeys[i], cal.date);
-  }
-  return { map, nextCursor: off + n };
+// Date for a band column given its assigned offset and orientation.
+function bandColumnDate(cand: BandCandidates, offset: number, i: number, calendar: CalDay[]): string | undefined {
+  const idx = cand.reversed ? offset + (cand.len - 1 - i) : offset + i;
+  return calendar[idx]?.date;
 }
 
 function toTime(token: string): string | null {
@@ -169,6 +163,9 @@ function classifyDuty(name: string): { dutyType: string; dutyCode: string } | nu
   if (/^(VAC|AN|F|PLIC|SLIC|RLIC)$/.test(n)) return { dutyType: 'Vacation', dutyCode: n };
   // Cabin line checks / exam flights: verified (WPNC/W_EXAM) and verifier (VPNC/V_EXAM).
   if (/^(WPNC|VPNC|W_EXAM|V_EXAM)$/.test(n)) return { dutyType: 'Training', dutyCode: n };
+  // Ground instruction, e.g. FP1_INST / FP2_INST. Note: this ends in "_INST" (with a T),
+  // so it is NOT caught by the "_INS" line-training annotation rule.
+  if (/_INST$/.test(n)) return { dutyType: 'Training', dutyCode: n };
   // Training duty code, e.g. "FPE-LEARN". Anchored so the longer descriptive token
   // ("FP-Elearning CA-MEL ...") that sits in an adjacent sub-column is NOT mistaken
   // for a second training duty.
@@ -285,6 +282,14 @@ function sameDuty(a: ParsedDuty, b: ParsedDuty): boolean {
   return a.flightNumber === b.flightNumber && a.dutyCode === b.dutyCode && a.departureTime === b.departureTime;
 }
 
+interface CollectedBand {
+  cols: Column[];
+  colKeys: string[];
+  subs: { x: number; tokens: PositionedToken[] }[];
+  cand: BandCandidates;
+  offset?: number;
+}
+
 export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
   const { start, end } = periodRange(tokens);
   const calendar = buildCalendar(start, end);
@@ -296,19 +301,17 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
     pages.get(t.page)!.push(t);
   }
 
-  // Bands are read in document order (page by page, top to bottom), which is
-  // chronological in this PDF. `cursor` tracks the expected calendar position so
-  // ambiguous (recurring) weekly bands land on the right month.
-  let cursor = 0;
-
+  // ── Phase 1: collect every roster band with its columns, sub-columns and the
+  // calendar offsets it could occupy. ────────────────────────────────────────────────
+  const bands: CollectedBand[] = [];
   for (const pageTokens of pages.values()) {
     const rows = clusterRows(pageTokens);
     const dowCount = (r: Row) => r.cells.filter((c) => DOW.test(c.text) && c.x < 500).length;
     const hasDateLabel = (r: Row) => r.cells.some((c) => /^date$/i.test(c.text.trim()) && c.x >= 494);
     // A roster band is any row carrying the right-margin "date" label (which the
-    // summary/licence/stats tables lack) plus at least one weekday column. Requiring
-    // the label — not a high weekday count — lets us keep SHORT trailing rows (e.g. the
-    // last 1–3 days of the period, "30Jul/31Jul"), which a ">=4 columns" rule dropped.
+    // summary/licence/stats tables lack) plus at least one weekday column. Requiring the
+    // label — not a high weekday count — keeps SHORT trailing rows (the last 1–3 days,
+    // e.g. "30Jul/31Jul") that a ">=4 columns" rule dropped.
     const headers = rows.filter((r) => hasDateLabel(r) && dowCount(r) >= 1);
     // For delimiting the vertical bands we still use every wide weekday row (summary
     // tables included), plus the roster headers themselves so short bands bound cleanly.
@@ -320,18 +323,10 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
         .map((c) => ({ x: c.x, token: c.text }))
         .sort((a, b) => a.x - b.x);
 
-      // Resolve this band's columns to real dates by matching its consecutive
-      // weekday+dd sequence against the period calendar (handles long ranges and
-      // recurring days that a global map would collide).
-      const resolved = resolveBandDates(cols.map((c) => c.token), calendar, cursor);
-      const bandDate = resolved.map;
-      cursor = resolved.nextCursor;
-
       const yTop = h.y;
       // A band ends at the NEXT header row below it — counting summary/legend headers
       // too. Bounding by the next *parsed* header instead would let a real grid's band
-      // run to the page bottom and swallow the summary tables underneath (June flights
-      // leaking onto late-July days), so we scan over allHeaders here.
+      // run to the page bottom and swallow the summary tables underneath.
       const yBot = Math.max(
         ...allHeaders.filter((r) => r.y < yTop - 2).map((r) => r.y),
         -Infinity
@@ -340,8 +335,8 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
 
       // A day spans a RANGE of x: each of its flights/duties is drawn in its own narrow
       // sub-column, and the day's header label sits at the right-most (largest-x)
-      // sub-column. So we cluster data tokens into sub-columns by x (a tight tolerance —
-      // adjacent flights can be only ~5px apart) and assign each sub-column to a day.
+      // sub-column. Cluster data tokens into sub-columns by x (tight tolerance — adjacent
+      // flights can be only ~5px apart).
       const subs: { x: number; tokens: PositionedToken[] }[] = [];
       for (const t of [...data].sort((a, b) => a.x - b.x)) {
         const s = subs.find((s) => Math.abs(s.x - t.x) <= 3);
@@ -353,22 +348,66 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
         }
       }
 
-      // A sub-column belongs to the day with the smallest label-x that is >= its x
-      // (the label marks the day's right edge; the day owns everything up to it).
-      const dayFor = (x: number): Column => {
-        for (const c of cols) if (c.x >= x - 4) return c;
-        return cols[cols.length - 1];
-      };
-
-      for (const s of subs) {
-        const date = bandDate.get(dayFor(s.x).token);
-        if (!date) continue;
-        const entries = parseSubColumn(s.tokens, date);
-        if (!byDate.has(date)) byDate.set(date, []);
-        const arr = byDate.get(date)!;
-        for (const d of entries) if (!arr.some((e) => sameDuty(e, d))) arr.push(d);
-      }
+      const colKeys = cols.map((c) => c.token);
+      bands.push({ cols, colKeys, subs, cand: bandCandidates(colKeys, calendar) });
     });
+  }
+
+  // ── Phase 2: tile the bands onto the calendar by date contiguity, starting at the
+  // period start. This is mostly independent of page order (a multi-page roster may not
+  // present bands in chronological order) and resolves recurring-week collisions because
+  // each band continues where the previous ended. When two bands share the SAME
+  // weekday+dd pattern (e.g. an April and a July week are identical by columns), they
+  // both match a position; we then place the one that appears EARLIER in the document,
+  // which is chronologically earlier, and leave the other for its next slot. `bands` is
+  // already in document order (page order, top to bottom). ────────────────────────────
+  const placed = new Array<boolean>(bands.length).fill(false);
+  let remaining = bands.filter((b) => b.cand.offsets.length > 0).length;
+  let cursor = 0;
+  let guard = 0;
+  while (remaining > 0 && guard++ < bands.length * 4 + 8) {
+    const idx = bands.findIndex((b, i) => !placed[i] && b.cand.offsets.length > 0 && b.cand.offsets.includes(cursor));
+    if (idx >= 0) {
+      bands[idx].offset = cursor;
+      placed[idx] = true;
+      remaining--;
+      cursor += bands[idx].cand.len;
+    } else {
+      // No unplaced band starts exactly here — jump to the next candidate start (gap).
+      let next = Infinity;
+      bands.forEach((b, i) => {
+        if (placed[i]) return;
+        for (const o of b.cand.offsets) if (o > cursor && o < next) next = o;
+      });
+      if (next === Infinity) break;
+      cursor = next;
+    }
+  }
+  // Any band the tiler couldn't place: fall back to its earliest candidate so its days
+  // aren't silently dropped.
+  bands.forEach((b, i) => { if (!placed[i] && b.cand.offsets.length > 0) b.offset = b.cand.offsets[0]; });
+
+  // ── Phase 3: turn each placed band's sub-columns into dated duties. ─────────────────
+  for (const b of bands) {
+    if (b.offset === undefined) continue;
+    const bandDate = new Map<string, string>();
+    b.colKeys.forEach((key, i) => {
+      const d = bandColumnDate(b.cand, b.offset!, i, calendar);
+      if (d) bandDate.set(key, d);
+    });
+    // A sub-column belongs to the day with the smallest label-x that is >= its x.
+    const dayFor = (x: number): Column => {
+      for (const c of b.cols) if (c.x >= x - 4) return c;
+      return b.cols[b.cols.length - 1];
+    };
+    for (const s of b.subs) {
+      const date = bandDate.get(dayFor(s.x).token);
+      if (!date) continue;
+      const entries = parseSubColumn(s.tokens, date);
+      if (!byDate.has(date)) byDate.set(date, []);
+      const arr = byDate.get(date)!;
+      for (const d of entries) if (!arr.some((e) => sameDuty(e, d))) arr.push(d);
+    }
   }
 
   // Order duties within each day chronologically (by departure/reporting time),

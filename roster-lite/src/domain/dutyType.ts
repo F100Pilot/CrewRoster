@@ -15,6 +15,7 @@ export function inferDutyType(dutyCode: string): string {
   if (['VAC', 'VACATION', 'AN', 'F', 'PLIC', 'SLIC', 'RLIC'].includes(code)) return 'Vacation';
   if (['SIM', 'SIMU', 'TRN'].includes(code)) return 'Simulator';
   if (['WPNC', 'VPNC', 'W_EXAM', 'V_EXAM'].includes(code)) return 'Training'; // line checks / exams
+  if (/_INST$/.test(code)) return 'Training'; // ground instruction (FP1_INST, …)
   if (['OFD', 'OFFICE', 'GRD'].includes(code)) return 'Office Duty';
   if (['TRG', 'TRNG', 'TR'].includes(code)) return 'Training';
   if (['MED', 'MC', 'MEDICAL'].includes(code)) return 'Medical';
