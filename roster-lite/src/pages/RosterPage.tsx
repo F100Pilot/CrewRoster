@@ -179,33 +179,33 @@ export default function RosterPage() {
             <ChevronRight />
           </IconButton>
         </Box>
-        <Button size="small" startIcon={<Today />} onClick={() => setMonth(new Date())}>
-          Hoje
-        </Button>
+        <Box display="flex" alignItems="center" gap={0.5}>
+          <IconButton size="small" onClick={(e) => setInfoAnchor(e.currentTarget)} title="Detalhes da escala">
+            <InfoOutlined fontSize="small" />
+          </IconButton>
+          <Popover
+            open={Boolean(infoAnchor)}
+            anchorEl={infoAnchor}
+            onClose={() => setInfoAnchor(null)}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+          >
+            <Box sx={{ p: 1.5, maxWidth: 280 }}>
+              <Typography variant="caption" color="text.secondary" sx={{ wordBreak: 'break-word' }}>
+                {roster.fileName} · {roster.duties.length} dias · importado{' '}
+                {format(parseISO(roster.importedAt), 'dd/MM/yyyy HH:mm')}
+              </Typography>
+            </Box>
+          </Popover>
+          <Button size="small" startIcon={<Today />} onClick={() => setMonth(new Date())}>
+            Hoje
+          </Button>
+        </Box>
       </Box>
 
       <MonthStatsCard duties={monthDuties} />
 
       <FtlCard duties={roster.duties} />
-
-      <Box display="flex" alignItems="center" gap={1}>
-        <IconButton size="small" onClick={(e) => setInfoAnchor(e.currentTarget)} title="Detalhes da escala">
-          <InfoOutlined fontSize="small" />
-        </IconButton>
-        <Popover
-          open={Boolean(infoAnchor)}
-          anchorEl={infoAnchor}
-          onClose={() => setInfoAnchor(null)}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-        >
-          <Box sx={{ p: 1.5, maxWidth: 280 }}>
-            <Typography variant="caption" color="text.secondary" sx={{ wordBreak: 'break-word' }}>
-              {roster.fileName} · {roster.duties.length} dias · importado{' '}
-              {format(parseISO(roster.importedAt), 'dd/MM/yyyy HH:mm')}
-            </Typography>
-          </Box>
-        </Popover>
-      </Box>
 
       <TextField
         size="small"

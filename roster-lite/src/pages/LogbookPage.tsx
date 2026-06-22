@@ -184,14 +184,14 @@ export default function LogbookPage() {
             size="small"
             sx={{
               tableLayout: 'fixed',
-              '& td, & th': { px: 1, verticalAlign: 'top' },
+              '& td, & th': { px: 1, verticalAlign: 'top', textAlign: 'center' },
             }}
           >
             <TableHead>
               <TableRow>
                 <TableCell sx={{ width: '15%' }}>Data</TableCell>
                 <TableCell>Voo / Rota</TableCell>
-                <TableCell align="right" sx={{ width: '18%' }}>Bloco</TableCell>
+                <TableCell sx={{ width: '18%' }}>Bloco</TableCell>
                 <TableCell sx={{ width: '32%' }}>Avião</TableCell>
               </TableRow>
             </TableHead>
@@ -203,7 +203,7 @@ export default function LogbookPage() {
                     <Box sx={{ fontWeight: 600 }}>{e.flightNumber}</Box>
                     <Box sx={{ color: 'text.secondary', fontSize: '0.8rem' }}>{e.from}–{e.to}</Box>
                   </TableCell>
-                  <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>{formatDuration(e.blockMinutes)}</TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap' }}>{formatDuration(e.blockMinutes)}</TableCell>
                   <TableCell>
                     <Box>{e.aircraft || '—'}</Box>
                     <Box sx={{ color: 'text.secondary', fontSize: '0.8rem' }}>{e.reg || '—'}</Box>
