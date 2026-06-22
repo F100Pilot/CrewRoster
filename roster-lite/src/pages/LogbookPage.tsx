@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert, Box, Button, Card, CardContent, Chip, Divider, IconButton, LinearProgress, Stack,
-  Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography,
+  Table, TableBody, TableCell, TableHead, TableRow, Typography,
 } from '@mui/material';
 import { ArrowBack, Download, FlightTakeoff, Sync } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -178,32 +178,40 @@ export default function LogbookPage() {
         <Alert severity="info">Sem setores voados na escala importada.</Alert>
       ) : (
         <Card variant="outlined">
-          <TableContainer sx={{ overflowX: 'auto' }}>
-            <Table size="small" sx={{ '& td, & th': { px: 1, whiteSpace: 'nowrap' } }}>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Data</TableCell>
-                  <TableCell>Voo</TableCell>
-                  <TableCell>Rota</TableCell>
-                  <TableCell align="right">Bloco</TableCell>
-                  <TableCell>Avião</TableCell>
-                  <TableCell>Matrícula</TableCell>
+          {/* Compact 4-column layout: Voo+Rota and Avião+Matrícula are stacked two-per-cell
+              so the whole logbook fits a phone screen without horizontal scrolling. */}
+          <Table
+            size="small"
+            sx={{
+              tableLayout: 'fixed',
+              '& td, & th': { px: 1, verticalAlign: 'top' },
+            }}
+          >
+            <TableHead>
+              <TableRow>
+                <TableCell sx={{ width: '15%' }}>Data</TableCell>
+                <TableCell>Voo / Rota</TableCell>
+                <TableCell align="right" sx={{ width: '18%' }}>Bloco</TableCell>
+                <TableCell sx={{ width: '32%' }}>Avião</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {entries.map((e, i) => (
+                <TableRow key={i}>
+                  <TableCell sx={{ whiteSpace: 'nowrap' }}>{format(parseISO(e.date), 'dd/MM')}</TableCell>
+                  <TableCell>
+                    <Box sx={{ fontWeight: 600 }}>{e.flightNumber}</Box>
+                    <Box sx={{ color: 'text.secondary', fontSize: '0.8rem' }}>{e.from}–{e.to}</Box>
+                  </TableCell>
+                  <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>{formatDuration(e.blockMinutes)}</TableCell>
+                  <TableCell>
+                    <Box>{e.aircraft || '—'}</Box>
+                    <Box sx={{ color: 'text.secondary', fontSize: '0.8rem' }}>{e.reg || '—'}</Box>
+                  </TableCell>
                 </TableRow>
-              </TableHead>
-              <TableBody>
-                {entries.map((e, i) => (
-                  <TableRow key={i}>
-                    <TableCell>{format(parseISO(e.date), 'dd/MM')}</TableCell>
-                    <TableCell>{e.flightNumber}</TableCell>
-                    <TableCell>{e.from}–{e.to}</TableCell>
-                    <TableCell align="right">{formatDuration(e.blockMinutes)}</TableCell>
-                    <TableCell>{e.aircraft}</TableCell>
-                    <TableCell>{e.reg || '—'}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+              ))}
+            </TableBody>
+          </Table>
         </Card>
       )}
 
