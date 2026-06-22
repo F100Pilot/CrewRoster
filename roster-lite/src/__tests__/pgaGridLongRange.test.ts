@@ -189,3 +189,26 @@ describe('interpretPgaGrid — unknown code safety net', () => {
     expect(d).toMatchObject({ dutyCode: 'GS1', dutyType: 'Other' });
   });
 });
+
+// A hotel/place marker bleeding into a day (a separate sub-column) must NEVER be turned
+// into a duty by the safety net — only codes that look like real duty codes (letters
+// then a digit) qualify. Here Wed 01 Jul is OFF; a hotel block sits in another sub-column.
+const hotelBleed: PositionedToken[] = [
+  tk('01Jul26 -', 60, 900),
+  tk('Wed01', 100, 600), tk('Thu02', 130, 600), tk('Fri03', 160, 600), tk('Sat04', 190, 600),
+  tk('Sun05', 220, 600), tk('Mon06', 250, 600), tk('Tue07', 280, 600), tk('date', 500, 600),
+  // OFF on Wed 01 (sub-column at x=100).
+  tk('OFF', 100, 560),
+  // Hotel marker bleeding from an adjacent flight into another sub-column (x=108) on the
+  // same day: name + airport + a stray time. Must NOT become a duty.
+  tk('STEIGENBERG', 108, 545), tk('FRA', 108, 535), tk('0800', 108, 525),
+];
+
+describe('interpretPgaGrid — hotel marker never fabricates a duty', () => {
+  const duties = interpretPgaGrid(hotelBleed);
+  it('keeps only the OFF duty on the day (no hotel/place duty)', () => {
+    const day = duties.filter((d) => d.date === '2026-07-01');
+    expect(day.every((d) => d.dutyType === 'Day Off')).toBe(true);
+    expect(duties.some((d) => /STEIGENBERG/i.test(d.dutyCode))).toBe(false);
+  });
+});

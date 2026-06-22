@@ -283,15 +283,16 @@ function parseSubColumn(colTokens: PositionedToken[], date: string): ParsedDuty[
   }
 
   // Safety net: a sub-column with a genuine but unrecognised duty would drop the day.
-  // To avoid FABRICATING duties from stray markers (hotels like "NH FRA", crew, etc.),
-  // we only surface one when there is a real reporting TIME and the code is >=3 chars.
+  // To never FABRICATE a duty from a stray marker (hotel names like "STEIGENBERG"/"NH
+  // Hotel", place names, crew names, summary cells…), we require ALL of:
+  //   • the code looks like a real PGA duty code: uppercase letters then a digit
+  //     (GS1, RGTC3, H7…) — hotel/place/crew tokens have no embedded digit, so they
+  //     are excluded;
+  //   • a real reporting TIME is present in the same sub-column.
   // We would rather lose an uncertain entry than show a wrong one.
   if (duties.length === 0) {
-    const code = ordered.find((w) =>
-      /[A-Za-z]/.test(w) && w.length >= 3 &&
-      !isAnnotation(w) && !DOW.test(w) && !TIME.test(w) &&
-      !/^\[/.test(w) && !/\]$/.test(w) && !/^DH$/i.test(w) && !isCrewName(w)
-    );
+    const looksLikeDutyCode = (w: string) => /^[A-Z]{1,5}\d[A-Z0-9+]*$/.test(w);
+    const code = ordered.find((w) => looksLikeDutyCode(w) && !DOW.test(w) && !TIME.test(w));
     const times = code ? ordered.map(toTime).filter((t): t is string => !!t) : [];
     const airports = code ? ordered.filter((w) => AIRPORT.test(w) && w !== code && !CARRIER.test(w)) : [];
     if (code && times.length > 0) {
@@ -526,6 +527,14 @@ export function diagnosePgaGrid(tokens: PositionedToken[]): string {
       const toks = rawByDate.get(d);
       out.push(`  ${d}: ${toks && toks.length ? toks.join(' | ') : '(sem tokens nesse dia)'}`);
     }
+  }
+
+  // Full per-day token dump — share the days you suspect are wrong (e.g. a hotel marker
+  // on an OFF day) so they can be turned into a permanent test fixture.
+  out.push('');
+  out.push('--- Tokens por dia ---');
+  for (const d of [...rawByDate.keys()].sort()) {
+    out.push(`${d}: ${(rawByDate.get(d) ?? []).join(' | ')}`);
   }
 
   return out.join('\n');
