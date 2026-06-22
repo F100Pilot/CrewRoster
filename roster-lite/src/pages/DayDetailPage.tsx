@@ -1,5 +1,6 @@
 import { Box, Card, CardContent, Chip, Divider, IconButton, Stack, Typography } from '@mui/material';
-import { ArrowBack, FlightLand, FlightTakeoff, IosShare } from '@mui/icons-material';
+import { ArrowBack, FlightLand, FlightTakeoff, Hotel, IosShare, Phone } from '@mui/icons-material';
+import { Link } from '@mui/material';
 import { format, parseISO } from 'date-fns';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
@@ -130,6 +131,14 @@ export default function DayDetailPage() {
                       .join(' · ')}
                   </Typography>
                 )}
+                {duty.hotel && <HotelLine hotel={duty.hotel} />}
+              </Box>
+            )}
+
+            {/* Layover hotel on a non-flight day (e.g. a day off mid-rotation). */}
+            {!duty.flightNumber && duty.hotel && (
+              <Box sx={{ bgcolor: 'grey.50', borderRadius: 2, p: 1.5, mb: 2 }}>
+                <HotelLine hotel={duty.hotel} />
               </Box>
             )}
 
@@ -176,6 +185,31 @@ export default function DayDetailPage() {
         </Card>
       ))}
     </Stack>
+  );
+}
+
+// Layover hotel for a duty: name plus a tap-to-call phone number. Shown in the flight
+// banner (and on a layover day off), resolved from the roster's "Hn" hotel markers.
+function HotelLine({ hotel }: { hotel: { name: string; phone: string | null } }) {
+  return (
+    <Box display="flex" alignItems="center" justifyContent="center" gap={0.75} mt={1.25} flexWrap="wrap">
+      <Hotel fontSize="small" sx={{ color: 'text.secondary' }} />
+      <Typography variant="body2" fontWeight={600}>
+        {hotel.name}
+      </Typography>
+      {hotel.phone && (
+        <Link
+          href={`tel:${hotel.phone.replace(/\s+/g, '')}`}
+          underline="hover"
+          sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25, ml: 0.5 }}
+        >
+          <Phone fontSize="inherit" />
+          <Typography variant="body2" component="span">
+            {hotel.phone}
+          </Typography>
+        </Link>
+      )}
+    </Box>
   );
 }
 

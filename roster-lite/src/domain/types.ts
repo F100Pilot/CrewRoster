@@ -12,6 +12,8 @@ export interface ParsedDuty {
   arrivalAirport: string | null;
   aircraftType: string | null;
   observations: string | null;
+  /** Layover hotel for this duty's overnight (resolved from a day's "Hn" marker). */
+  hotel?: { name: string; phone: string | null } | null;
 }
 
 export type SourceType = 'pdf' | 'csv' | 'ics';

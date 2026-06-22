@@ -188,30 +188,70 @@ function isCrewName(w: string): boolean {
   return /^[A-Z]{5,}$/.test(w) && !AIRPORT.test(w) && !CARRIER.test(w);
 }
 
+export interface HotelInfo { name: string; phone: string | null }
+
+// Parse the layover-hotel reference table printed in the roster (a "Hotels" header with
+// H1, H2, … column labels; each hotel's name and phone stack vertically in its own
+// narrow x-column). Returns a map "H2" -> { name, phone } so a day's "Hn" marker can be
+// resolved to the actual hotel + phone.
+export function parseHotels(tokens: PositionedToken[]): Map<string, HotelInfo> {
+  const map = new Map<string, HotelInfo>();
+  const isPhone = (s: string) => /^[+\d][\d +]*$/.test(s.trim());
+
+  for (const header of tokens.filter((t) => /^hotels$/i.test(t.text.trim()))) {
+    const labels = tokens.filter(
+      (t) => t.page === header.page && Math.abs(t.y - header.y) <= 3 && /^H\d$/.test(t.text),
+    );
+    for (const lab of labels) {
+      // The hotel's name/phone sit just below the label, in a narrow column at the label's
+      // x (±3 keeps adjacent ~6px-apart columns from bleeding into each other).
+      const col = tokens
+        .filter((t) => t.page === lab.page && Math.abs(t.x - lab.x) <= 3 &&
+          t.y < lab.y - 1 && t.y > lab.y - 240 && t.text.trim())
+        .sort((a, b) => b.y - a.y);
+      const name = col.filter((t) => !isPhone(t.text)).map((t) => t.text.trim())
+        .join(' ').replace(/\s+/g, ' ').replace(/[,\s]+$/, '').trim();
+      const phone = col.filter((t) => isPhone(t.text)).map((t) => t.text.trim())
+        .join(' ').replace(/\s+/g, ' ').trim() || null;
+      if (name && !map.has(lab.text)) map.set(lab.text, { name, phone });
+    }
+  }
+  return map;
+}
+
 interface Segment {
   tokens: string[];
   notes: string[];
   dh?: boolean; // a standalone "DH" appeared above this flight → deadhead crew
+  hotelRef?: string; // an "Hn" marker above this duty → layover hotel reference
 }
 
 // Parse a single sub-column's tokens into duties. Each flight/duty occupies its own
 // narrow x sub-column with its attributes stacked vertically (one per y-line), so we
 // walk top→bottom and segment on each "starter" (a carrier prefix or a duty-name);
 // everything else accrues to the current entry. A clean sub-column yields one duty.
-function parseSubColumn(colTokens: PositionedToken[], date: string): ParsedDuty[] {
+function parseSubColumn(
+  colTokens: PositionedToken[], date: string, hotels?: Map<string, HotelInfo>,
+): ParsedDuty[] {
   const ordered = [...colTokens].sort((a, b) => b.y - a.y).map((t) => t.text);
   const segments: Segment[] = [];
   let cur: Segment | null = null;
   let pendingDH = false; // a "DH" token seen above the next flight marks it deadhead
+  let pendingHotel: string | undefined; // an "Hn" marker above the next duty (layover)
 
   for (const w of ordered) {
+    // A single-digit "Hn" is the layover-hotel marker for this day; it applies to the
+    // NEXT duty starter (the overnighting flight). H7+/H509 are standby codes (handled
+    // by classifyDuty), not hotels, so /^H\d$/ only catches the hotel markers.
+    if (/^H\d$/.test(w)) { pendingHotel = w; continue; }
     // A standalone "DH" before the flight code means the sector is flown as deadhead
     // (positioning as a passenger). It applies to the NEXT flight starter.
     if (/^DH$/i.test(w)) { pendingDH = true; continue; }
     const starter = CARRIER.test(w) || classifyDuty(w) !== null;
     if (starter) {
-      cur = { tokens: [w], notes: [], dh: pendingDH };
+      cur = { tokens: [w], notes: [], dh: pendingDH, hotelRef: pendingHotel };
       pendingDH = false;
+      pendingHotel = undefined;
       segments.push(cur);
     } else if (isAnnotation(w) || isCrewName(w)) {
       if (cur && /_INS$/.test(w)) cur.notes.push(w);
@@ -219,6 +259,9 @@ function parseSubColumn(colTokens: PositionedToken[], date: string): ParsedDuty[
       cur.tokens.push(w);
     }
   }
+
+  const resolveHotel = (seg: Segment): HotelInfo | null =>
+    seg.hotelRef && hotels?.has(seg.hotelRef) ? hotels.get(seg.hotelRef)! : null;
 
   const duties: ParsedDuty[] = [];
   for (const seg of segments) {
@@ -256,6 +299,7 @@ function parseSubColumn(colTokens: PositionedToken[], date: string): ParsedDuty[
         arrivalAirport: airports[1] ?? null,
         aircraftType: aircraft,
         observations: seg.notes.join(', ') || null,
+        hotel: resolveHotel(seg),
       });
       continue;
     }
@@ -278,6 +322,7 @@ function parseSubColumn(colTokens: PositionedToken[], date: string): ParsedDuty[
         arrivalAirport: null,
         aircraftType: aircraft,
         observations: seg.notes.join(', ') || null,
+        hotel: resolveHotel(seg),
       });
     }
   }
@@ -413,9 +458,13 @@ function prepareBands(tokens: PositionedToken[]): { calendar: CalDay[]; bands: C
 
 export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
   const { calendar, bands } = prepareBands(tokens);
+  const hotels = parseHotels(tokens); // "Hn" marker -> { name, phone }
   const byDate = new Map<string, ParsedDuty[]>();
 
   // ── Phase 3: turn each placed band's sub-columns into dated duties. ─────────────────
+  // The "Hn" hotel marker is drawn in its own narrow sub-column, separate from the
+  // flight's, so we record it per DAY and attach it after the day's duties are built.
+  const hotelRefByDate = new Map<string, string>();
   for (const b of bands) {
     if (b.offset === undefined) continue;
     const bandDate = new Map<string, string>();
@@ -431,11 +480,21 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
     for (const s of b.subs) {
       const date = bandDate.get(dayFor(s.x).token);
       if (!date) continue;
-      const entries = parseSubColumn(s.tokens, date);
+      const hn = s.tokens.find((t) => /^H\d$/.test(t.text));
+      if (hn && !hotelRefByDate.has(date)) hotelRefByDate.set(date, hn.text);
+      const entries = parseSubColumn(s.tokens, date, hotels);
       if (!byDate.has(date)) byDate.set(date, []);
       const arr = byDate.get(date)!;
       for (const d of entries) if (!arr.some((e) => sameDuty(e, d))) arr.push(d);
     }
+  }
+
+  // Attach each day's layover hotel to its flight/positioning duty.
+  for (const [date, arr] of byDate) {
+    const info = hotels.get(hotelRefByDate.get(date) ?? '');
+    if (!info) continue;
+    const target = arr.find((d) => d.dutyType === 'Flight Duty' || d.dutyType === 'Positioning') ?? arr[0];
+    if (target && !target.hotel) target.hotel = info;
   }
 
   // Order duties within each day chronologically (by departure/reporting time),
