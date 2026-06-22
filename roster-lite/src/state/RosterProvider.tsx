@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import type { CrewRole, Roster, UserProfile } from '../domain/types';
 import { parseRosterFile } from '../parsing';
 import { diffRosters } from '../domain/rosterDiff';
+import { mergeDuties } from '../domain/rosterMerge';
 import {
   assignOrphanPdfs, clearRoster, deleteUser as deleteUserDB, getActiveUserId,
   listUsers, loadRoster, migrateLegacySingleUser,
@@ -146,15 +147,18 @@ export function RosterProvider({ children }: { children: ReactNode }) {
     setWarnings([]);
     try {
       const result = await parseRosterFile(file);
-      // Diff against whatever the user had before, so we can highlight what changed.
+      // Merge into whatever the user had before so separate downloads accumulate, then
+      // diff old-vs-merged to highlight what changed (only dates inside the new
+      // download's window can differ, since the rest is kept verbatim).
       const previous = await loadRoster(activeUser.id);
-      const changes = previous ? diffRosters(previous.duties, result.duties) : [];
+      const mergedDuties = mergeDuties(previous?.duties ?? [], result.duties);
+      const changes = previous ? diffRosters(previous.duties, mergedDuties) : [];
       const next: Roster = {
         id: activeUser.id,
         fileName: file.name,
         sourceType: result.sourceType,
         importedAt: new Date().toISOString(),
-        duties: result.duties,
+        duties: mergedDuties,
         rawText: result.rawText,
         changes,
       };
