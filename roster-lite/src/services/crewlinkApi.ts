@@ -86,7 +86,7 @@ export interface FetchRosterOptions {
  * user must read and explicitly confirm before the roster can be generated.
  */
 export type FetchRosterResult =
-  | { type: 'pdf'; buffer: ArrayBuffer }
+  | { type: 'pdf'; buffer: ArrayBuffer; sessionToken?: string }
   | { type: 'notification'; text: string };
 
 /**
@@ -141,5 +141,8 @@ export async function fetchRoster(options: FetchRosterOptions): Promise<FetchRos
     throw new Error('O servidor não devolveu um PDF. A navegação CrewLink pode precisar de calibração.');
   }
 
-  return { type: 'pdf', buffer: await res.arrayBuffer() };
+  // The worker echoes the (possibly rotated) session id so the next download reuses a
+  // live session instead of a stale one.
+  const rotated = res.headers.get('X-Session-Token') || undefined;
+  return { type: 'pdf', buffer: await res.arrayBuffer(), sessionToken: rotated };
 }

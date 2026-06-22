@@ -46,9 +46,10 @@ export function RosterProvider({ children }: { children: ReactNode }) {
 
         if (allUsers.length === 0) return;
 
-        // Claim PDFs saved before history was per-user for the original (oldest)
-        // profile, so they stop showing up under newer profiles.
-        await assignOrphanPdfs(allUsers[0].id);
+        // Claim PDFs saved before history was per-user — but ONLY when a single profile
+        // exists, so we never hand one crew member's downloads to another. With multiple
+        // profiles the owner is ambiguous, so orphans are left unclaimed.
+        if (allUsers.length === 1) await assignOrphanPdfs(allUsers[0].id);
 
         const savedId = getActiveUserId();
         const active = allUsers.find((u) => u.id === savedId) ?? allUsers[0];
@@ -76,7 +77,9 @@ export function RosterProvider({ children }: { children: ReactNode }) {
     // Restore this user's own CrewLink session (if they signed in this tab).
     setSessionTokenState(sessionsByUser.current.get(userId) ?? null);
     const r = await loadRoster(userId);
-    setRoster(r ?? null);
+    // Guard against a stale load: if the user switched again while we awaited, don't
+    // clobber the now-active user's view with this (older) result.
+    if (activeUserRef.current?.id === userId) setRoster(r ?? null);
   }, [users]);
 
   const createUser = useCallback(async (name: string, crewCode?: string, role: CrewRole = 'pilot'): Promise<UserProfile> => {

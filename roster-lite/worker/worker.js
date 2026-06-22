@@ -38,8 +38,27 @@ function corsHeaders(request) {
     'Access-Control-Allow-Origin': match,
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
+    // Let the SPA read the rotated session token after a roster download.
+    'Access-Control-Expose-Headers': 'X-Session-Token',
     'Access-Control-Max-Age': '86400',
   };
+}
+
+// Only our own SPA origins may use the credential-forwarding endpoints. Browsers
+// already block disallowed origins via CORS, but that does not stop a non-browser
+// client (curl/server) from abusing the proxy — so we reject server-side too.
+function originAllowed(request) {
+  return ALLOWED_ORIGINS.includes(request.headers.get('Origin') ?? '');
+}
+
+// Strip anything sensitive (session ids, echoed crew code/password) from diagnostic
+// text before it is returned to the client / logged. Defense in depth: the proxy must
+// never surface credentials, even in error trails.
+function redact(s) {
+  if (s == null) return s;
+  return String(s)
+    .replace(/JSESSIONID=[^;,\s"'&]+/gi, 'JSESSIONID=<redacted>')
+    .replace(/(crewlink(?:UserName|Password)\D{0,6})[^&"'<>\s]+/gi, '$1<redacted>');
 }
 
 function preflight(request) {
@@ -289,10 +308,12 @@ function findPdfUrl(html) {
   return null;
 }
 
-// Extract the body portion of an HTML page for diagnostic output.
+// Extract the body portion of an HTML page for diagnostic output (redacted: any
+// session id / echoed credentials are masked before leaving the worker).
 function extractBody(html) {
   const bodyMatch = html.match(/<body[^>]*>([\s\S]*)/i);
-  return bodyMatch ? bodyMatch[1].substring(0, 3000) : html.substring(html.length - 2000);
+  const raw = bodyMatch ? bodyMatch[1].substring(0, 3000) : html.substring(html.length - 2000);
+  return redact(raw);
 }
 
 // Converte uma página HTML em texto legível: remove head/scripts/styles, troca
@@ -567,8 +588,15 @@ async function handleRoster(request) {
     return { html, pdfUrl };
   };
 
-  const pdfOk = (buf) =>
-    new Response(buf, { status: 200, headers: { 'Content-Type': 'application/pdf', ...corsHeaders(request) } });
+  const pdfOk = (buf) => {
+    // Return the (possibly rotated) session id so the SPA keeps a live session for the
+    // next download instead of getting a spurious "Sessão expirada".
+    const sid = (sessionCookie.match(/JSESSIONID=([^;]+)/) || [])[1] ?? '';
+    return new Response(buf, {
+      status: 200,
+      headers: { 'Content-Type': 'application/pdf', 'X-Session-Token': sid, ...corsHeaders(request) },
+    });
+  };
 
   // Passo 2: gerar o relatório.
   let result = await runReport();
@@ -680,6 +708,11 @@ export default {
 
     if (request.method !== 'POST') {
       return jsonResponse({ error: 'Method not allowed' }, 405, request);
+    }
+
+    // The /api/* endpoints forward credentials to NetLine — only allow our SPA origins.
+    if (url.pathname.startsWith('/api/') && !originAllowed(request)) {
+      return jsonResponse({ error: 'Forbidden' }, 403, request);
     }
 
     switch (url.pathname) {

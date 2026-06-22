@@ -54,6 +54,7 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
     try {
       const token = await login(crewCode, password);
       setSessionToken(token);
+      setPassword(''); // don't keep the password in memory longer than needed
     } catch (e) {
       setAuthError(e instanceof Error ? e.message : 'Erro de autenticação.');
     } finally {
@@ -87,7 +88,7 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
   // confirmNotification: when true, the worker acknowledges the pending CrewLink
   // notification before generating the PDF (the user pressed "Confirmar").
   async function runDownload(confirmNotification: boolean) {
-    if (!sessionToken) return;
+    if (!sessionToken || !activeUser) return; // never save a PDF without a concrete owner
     setDownloading(true);
     setError(null);
     setDone(false);
@@ -108,6 +109,8 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
         setStatus('');
         return;
       }
+      // Keep the session alive if NetLine rotated the JSESSIONID during the download.
+      if (result.sessionToken && result.sessionToken !== sessionToken) setSessionToken(result.sessionToken);
       // result.type === 'pdf' — record the notification text in the banner if this
       // download was the confirmation step.
       await processPdf(result.buffer, confirmNotification ? pendingNotification ?? undefined : undefined);
