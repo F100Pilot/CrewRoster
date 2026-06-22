@@ -407,9 +407,27 @@ function prepareBands(tokens: PositionedToken[]): { calendar: CalDay[]; bands: C
         .map((c) => ({ x: c.x, token: c.text }))
         .sort((a, b) => a.x - b.x);
 
+      // Bound the band's data to its columns' x-span. The PGA grid packs bands side by
+      // side, so a narrow band (e.g. the last 2 days of a month) sits to the right of a
+      // wider band at nearly the same y. Without an x-bound, that neighbour's header
+      // truncates this band's data slab to nothing (dropping those days), and this band
+      // would otherwise swallow the neighbour's columns. Margin covers a sub-column
+      // sitting slightly off its day-header cell.
+      const xMin = cols[0].x - 9;
+      const xMax = Math.min(cols[cols.length - 1].x + 9, 493);
+
       const yTop = h.y;
-      const yBot = Math.max(...allHeaders.filter((r) => r.y < yTop - 2).map((r) => r.y), -Infinity);
-      const data = pageTokens.filter((t) => t.x < 494 && t.y < yTop - 2 && t.y > yBot && t.text.trim());
+      // Only a LOWER header row that horizontally overlaps this band's columns bounds its
+      // data slab; a side-by-side band (same y-ish, different x) must not cut it short.
+      const overlapsX = (r: Row) =>
+        r.cells.some((c) => DOW.test(c.text) && c.x < 500 && c.x >= xMin && c.x <= xMax);
+      const yBot = Math.max(
+        ...allHeaders.filter((r) => r.y < yTop - 2 && overlapsX(r)).map((r) => r.y),
+        -Infinity,
+      );
+      const data = pageTokens.filter(
+        (t) => t.x >= xMin && t.x <= xMax && t.y < yTop - 2 && t.y > yBot && t.text.trim(),
+      );
 
       const subs: { x: number; tokens: PositionedToken[] }[] = [];
       for (const t of [...data].sort((a, b) => a.x - b.x)) {
