@@ -1,6 +1,6 @@
 import { type ReactNode, useState } from 'react';
 import { AppBar, Box, Container, IconButton, Paper, Toolbar, Tooltip, Typography, BottomNavigation, BottomNavigationAction } from '@mui/material';
-import { CalendarMonth, FormatListBulleted, BugReport, CloudDownload, PictureAsPdf, Logout, HelpOutline, Settings, MenuBook } from '@mui/icons-material';
+import { CalendarMonth, FormatListBulleted, CloudDownload, PictureAsPdf, Logout, HelpOutline, Settings, MenuBook } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import UserSwitcher from './UserSwitcher';
@@ -15,7 +15,6 @@ const BASE_NAV: NavItem[] = [
   { label: 'Calendário', icon: <CalendarMonth />, path: '/calendar' },
   { label: 'Diário', icon: <MenuBook />, path: '/logbook' },
   { label: 'PDFs', icon: <PictureAsPdf />, path: '/pdfs' },
-  { label: 'Debug', icon: <BugReport />, path: '/debug' },
 ];
 
 export default function Layout({ children }: { children: ReactNode }) {

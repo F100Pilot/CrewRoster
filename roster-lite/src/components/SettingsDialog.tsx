@@ -3,7 +3,8 @@ import {
   Alert, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle,
   Divider, IconButton, InputAdornment, Link, Stack, TextField, Typography,
 } from '@mui/material';
-import { Close, Visibility, VisibilityOff, CheckCircle, Science, CalendarMonth, DeleteOutline } from '@mui/icons-material';
+import { Close, Visibility, VisibilityOff, CheckCircle, Science, CalendarMonth, DeleteOutline, BugReport } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import { API_KEY_PATTERN, getAeroDataBoxKey, setAeroDataBoxKey } from '../storage/settings';
 import { fetchFlightInfo } from '../services/crewlinkApi';
 import { operatedFlights } from '../domain/flightTime';
@@ -16,6 +17,7 @@ import { useRoster } from '../state/useRoster';
 // this device only and forwarded to the proxy per request — never committed or shared.
 export default function SettingsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { roster, clear, activeUser } = useRoster();
+  const navigate = useNavigate();
   const [key, setKey] = useState('');
   const [show, setShow] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -202,6 +204,21 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
                 </Typography>
               )}
             </Stack>
+          </Box>
+
+          <Divider />
+
+          {/* Diagnostics — moved out of the bottom bar into Settings. */}
+          <Box>
+            <Typography variant="subtitle2" gutterBottom>Diagnóstico</Typography>
+            <Button
+              onClick={() => { onClose(); navigate('/debug'); }}
+              startIcon={<BugReport />}
+              size="small"
+              variant="outlined"
+            >
+              Abrir Debug
+            </Button>
           </Box>
         </Stack>
       </DialogContent>
