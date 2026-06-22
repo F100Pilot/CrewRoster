@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Alert, Box, Button, Card, CardContent, Chip, Divider, IconButton, InputAdornment,
   ListItemIcon, ListItemText, Menu, MenuItem, Popover, Stack, TextField, Typography,
@@ -18,6 +18,8 @@ import MonthStatsCard from '../components/MonthStatsCard';
 import FtlCard from '../components/FtlCard';
 import GoogleCalendarSync from '../components/GoogleCalendarSync';
 import { downloadIcs } from '../utils/icsExport';
+import { autoCaptureRecent } from '../domain/aircraftRegs';
+import { getAeroDataBoxKey } from '../storage/settings';
 import { toLocalTime } from '../utils/localTime';
 import type { ParsedDuty, ChangeType } from '../domain/types';
 
@@ -83,6 +85,17 @@ export default function RosterPage() {
     () => (roster ? roster.duties.filter((d) => isSameMonth(parseISO(d.date), month)) : []),
     [roster, month]
   );
+
+  // "Going forward": once a day, silently record the registrations of recent flights (the
+  // window the free API covers), so the logbook fills itself without opening each day.
+  useEffect(() => {
+    if (!activeUser || !roster || !getAeroDataBoxKey()) return;
+    const stampKey = `crewroster.autoreg.${activeUser.id}`;
+    const today = new Date().toISOString().slice(0, 10);
+    if (localStorage.getItem(stampKey) === today) return;
+    localStorage.setItem(stampKey, today); // before await: avoid duplicate runs on remount
+    autoCaptureRecent(activeUser.id, roster.duties).catch(() => {});
+  }, [activeUser, roster]);
 
   const dutiesByDay = useMemo(() => {
     const map = new Map<string, ParsedDuty[]>();

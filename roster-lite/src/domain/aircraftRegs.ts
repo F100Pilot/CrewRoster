@@ -93,3 +93,19 @@ export async function backfillRegs(
   }
   return { found, processed: pending.length, total: pending.length, emptyCount, lastError };
 }
+
+// Quietly capture registrations for the last `windowDays` of flights — the window where
+// the free AeroDataBox plan actually has data. Best-effort and bounded (a handful of
+// requests), meant to run once a day so the logbook fills itself "going forward" without
+// the user opening each day. Returns how many tails it recorded.
+export async function autoCaptureRecent(
+  userId: string, duties: ParsedDuty[], windowDays = 10,
+): Promise<number> {
+  const from = new Date();
+  from.setUTCDate(from.getUTCDate() - windowDays);
+  const fromISO = from.toISOString().slice(0, 10);
+  const recent = duties.filter((d) => d.date >= fromISO);
+  if (recent.length === 0) return 0;
+  const res = await backfillRegs(userId, recent);
+  return res.found;
+}
