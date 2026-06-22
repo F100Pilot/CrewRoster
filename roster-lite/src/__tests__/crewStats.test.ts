@@ -96,3 +96,30 @@ describe('logbook', () => {
     expect(landingsInWindow(duties, '2026-06-19', 90)).toBe(2);
   });
 });
+
+import { peak28FlightTime } from '../domain/flightTime';
+
+describe('peak28FlightTime', () => {
+  const flt = (date: string, dep: string, arr: string) => ({
+    date, dutyCode: 'FLT', dutyType: 'Flight Duty', reportingTime: null,
+    departureTime: dep, arrivalTime: arr, flightNumber: 'TP1', departureAirport: 'LIS',
+    arrivalAirport: 'OPO', aircraftType: null, observations: null,
+  });
+
+  it('finds the heaviest 28-day window including future flights', () => {
+    // 3h trailing now, but a future cluster of 3×3h within 28 days = 9h peak.
+    const duties = [
+      flt('2026-01-01', '08:00', '11:00'),
+      flt('2026-03-10', '08:00', '11:00'),
+      flt('2026-03-20', '08:00', '11:00'),
+      flt('2026-03-25', '08:00', '11:00'),
+    ];
+    const peak = peak28FlightTime(duties);
+    expect(peak.minutes).toBe(9 * 60);
+    expect(peak.endDate).toBe('2026-03-25');
+  });
+
+  it('returns zero for no operated flights', () => {
+    expect(peak28FlightTime([]).minutes).toBe(0);
+  });
+});

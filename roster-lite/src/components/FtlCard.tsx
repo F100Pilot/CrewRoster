@@ -1,18 +1,10 @@
 import { useMemo } from 'react';
 import { Box, Card, CardContent, LinearProgress, Tooltip, Typography } from '@mui/material';
 import { Timer } from '@mui/icons-material';
-import { cumulativeFlightTime, FTL_LIMITS } from '../domain/flightTime';
+import { cumulativeFlightTime, peak28FlightTime, FTL_LIMITS } from '../domain/flightTime';
 import { formatDuration } from '../utils/duration';
+import { format, parseISO } from 'date-fns';
 import type { ParsedDuty } from '../domain/types';
-
-// Accumulated flight time against the EASA FTL caps, ending today. A trailing-to-date
-// view of what's already been flown — indicative, since it depends on the full
-// duty history being present in the roster.
-const ROWS: { key: keyof typeof FTL_LIMITS; label: string }[] = [
-  { key: 'days28', label: '28 dias' },
-  { key: 'months12', label: '12 meses' },
-  { key: 'calendarYear', label: 'Ano civil' },
-];
 
 function barColor(pct: number): 'success' | 'warning' | 'error' {
   if (pct >= 90) return 'error';
@@ -20,19 +12,34 @@ function barColor(pct: number): 'success' | 'warning' | 'error' {
   return 'success';
 }
 
+// Flight time against the EASA FTL caps. The 28-day bar shows the WORST 28-consecutive-day
+// window across the whole roster (including future-rostered flights) — that is the actual
+// EASA test, so it warns before a breach. The 12-month / calendar-year bars are
+// trailing-to-today. Indicative — depends on the imported history being complete.
 export default function FtlCard({ duties }: { duties: ParsedDuty[] }) {
-  const totals = useMemo(
-    () => cumulativeFlightTime(duties, new Date().toISOString().slice(0, 10)),
-    [duties]
-  );
+  const { totals, peak } = useMemo(() => ({
+    totals: cumulativeFlightTime(duties, new Date().toISOString().slice(0, 10)),
+    peak: peak28FlightTime(duties),
+  }), [duties]);
+
+  const rows: { label: string; used: number; limit: number; note?: string }[] = [
+    {
+      label: '28 dias (pico)',
+      used: peak.minutes,
+      limit: FTL_LIMITS.days28,
+      note: peak.endDate ? `Pior janela de 28 dias até ${format(parseISO(peak.endDate), 'dd/MM')}` : undefined,
+    },
+    { label: '12 meses (até hoje)', used: totals.months12, limit: FTL_LIMITS.months12 },
+    { label: 'Ano civil (até hoje)', used: totals.calendarYear, limit: FTL_LIMITS.calendarYear },
+  ];
 
   return (
     <Card variant="outlined">
       <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
         <Box display="flex" alignItems="center" gap={1} mb={1}>
           <Timer fontSize="small" color="action" />
-          <Typography variant="subtitle2">Tempo de voo acumulado</Typography>
-          <Tooltip title="Limites EASA, até hoje. Indicativo — depende do histórico importado.">
+          <Typography variant="subtitle2">Tempo de voo</Typography>
+          <Tooltip title="Limites EASA. A barra de 28 dias é o pico de qualquer janela de 28 dias consecutivos (inclui escala futura). Indicativo — depende do histórico importado.">
             <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto' }}>
               EASA
             </Typography>
@@ -40,12 +47,10 @@ export default function FtlCard({ duties }: { duties: ParsedDuty[] }) {
         </Box>
 
         <Box>
-          {ROWS.map(({ key, label }) => {
-            const used = totals[key];
-            const limit = FTL_LIMITS[key];
+          {rows.map(({ label, used, limit, note }) => {
             const pct = Math.min(100, Math.round((used / limit) * 100));
-            return (
-              <Box key={key} sx={{ mb: 1 }}>
+            const bar = (
+              <Box sx={{ mb: 1 }}>
                 <Box display="flex" justifyContent="space-between" mb={0.25}>
                   <Typography variant="caption" color="text.secondary">{label}</Typography>
                   <Typography variant="caption" fontWeight={600}>
@@ -59,6 +64,11 @@ export default function FtlCard({ duties }: { duties: ParsedDuty[] }) {
                   sx={{ height: 6, borderRadius: 3 }}
                 />
               </Box>
+            );
+            return note ? (
+              <Tooltip key={label} title={note}>{bar}</Tooltip>
+            ) : (
+              <Box key={label}>{bar}</Box>
             );
           })}
         </Box>

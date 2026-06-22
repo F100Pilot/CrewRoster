@@ -75,7 +75,13 @@ export default function PdfViewerPage() {
 
       <Button
         startIcon={<OpenInNew />}
-        onClick={() => window.open(url, '_blank', 'noopener')}
+        onClick={() => {
+          // Open a FRESH object URL (the shared `url` is revoked on unmount, which left
+          // the opened tab pointing at a dead blob).
+          const fresh = URL.createObjectURL(pdf.blob);
+          window.open(fresh, '_blank', 'noopener');
+          setTimeout(() => URL.revokeObjectURL(fresh), 60_000);
+        }}
         variant="text"
         size="small"
         sx={{ alignSelf: 'center' }}

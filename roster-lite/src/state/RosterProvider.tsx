@@ -26,6 +26,8 @@ export function RosterProvider({ children }: { children: ReactNode }) {
   const sessionsByUser = useRef<Map<string, string>>(new Map());
   const activeUserRef = useRef<UserProfile | null>(null);
   activeUserRef.current = activeUser;
+  // Serializes imports so concurrent merges don't clobber each other.
+  const importLock = useRef<Promise<unknown>>(Promise.resolve());
 
   // Set/clear the CrewLink session for whoever is active right now.
   const setSessionToken = useCallback((token: string | null) => {
@@ -145,34 +147,42 @@ export function RosterProvider({ children }: { children: ReactNode }) {
 
   const importFile = useCallback(async (file: File) => {
     if (!activeUser) return;
+    const userId = activeUser.id;
     setImporting(true);
     setError(null);
     setWarnings([]);
-    try {
-      const result = await parseRosterFile(file);
-      // Merge into whatever the user had before so separate downloads accumulate, then
-      // diff old-vs-merged to highlight what changed (only dates inside the new
-      // download's window can differ, since the rest is kept verbatim).
-      const previous = await loadRoster(activeUser.id);
-      const mergedDuties = mergeDuties(previous?.duties ?? [], result.duties);
-      const changes = previous ? diffRosters(previous.duties, mergedDuties) : [];
-      const next: Roster = {
-        id: activeUser.id,
-        fileName: file.name,
-        sourceType: result.sourceType,
-        importedAt: new Date().toISOString(),
-        duties: mergedDuties,
-        rawText: result.rawText,
-        changes,
-      };
-      await saveRoster(activeUser.id, next);
-      setRoster(next);
-      setWarnings(result.warnings);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Falha ao ler o ficheiro.');
-    } finally {
-      setImporting(false);
-    }
+    // Serialize imports: two concurrent downloads/imports must not both read the same
+    // stored roster and have the second overwrite the first's merge (lost download).
+    const run = importLock.current.then(async () => {
+      try {
+        const result = await parseRosterFile(file);
+        // Merge into whatever the user had before so separate downloads accumulate, then
+        // diff old-vs-merged to highlight what changed (only dates inside the new
+        // download's window can differ, since the rest is kept verbatim).
+        const previous = await loadRoster(userId);
+        const mergedDuties = mergeDuties(previous?.duties ?? [], result.duties);
+        const changes = previous ? diffRosters(previous.duties, mergedDuties) : [];
+        const next: Roster = {
+          id: userId,
+          fileName: file.name,
+          sourceType: result.sourceType,
+          importedAt: new Date().toISOString(),
+          duties: mergedDuties,
+          rawText: result.rawText,
+          changes,
+        };
+        await saveRoster(userId, next);
+        if (activeUserRef.current?.id === userId) {
+          setRoster(next);
+          setWarnings(result.warnings);
+        }
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Falha ao ler o ficheiro.');
+      }
+    });
+    importLock.current = run.catch(() => {});
+    await run;
+    setImporting(false);
   }, [activeUser]);
 
   const clear = useCallback(async () => {

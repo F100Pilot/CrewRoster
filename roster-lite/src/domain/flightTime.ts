@@ -40,6 +40,34 @@ export interface FlightTimeTotals {
   calendarYear: number; // 1 Jan of the reference year → reference date
 }
 
+export interface Peak28 {
+  minutes: number; // flight time in the worst 28-consecutive-day window in the roster
+  endDate: string | null; // the day that window ends on
+}
+
+// The heaviest 28 consecutive days ANYWHERE in the roster — past or future. EASA limits
+// flight time over "any 28 consecutive days", so a trailing-to-today total can read green
+// while next week's rostered flights already breach 100h. This surfaces that worst case.
+// The peak window always ends on a day that has a flight, so we only test those.
+export function peak28FlightTime(duties: ParsedDuty[]): Peak28 {
+  const flights = operatedFlights(duties).map((f) => ({
+    date: f.date,
+    min: diffMinutes(f.departureTime!, f.arrivalTime!),
+  }));
+  if (flights.length === 0) return { minutes: 0, endDate: null };
+
+  let best: Peak28 = { minutes: 0, endDate: flights[0].date };
+  for (const end of flights) {
+    const start = new Date(`${end.date}T00:00:00Z`);
+    start.setUTCDate(start.getUTCDate() - 27);
+    const startISO = isoDate(start);
+    let sum = 0;
+    for (const f of flights) if (f.date >= startISO && f.date <= end.date) sum += f.min;
+    if (sum > best.minutes) best = { minutes: sum, endDate: end.date };
+  }
+  return best;
+}
+
 // Accumulated flight time in the windows that the FTL limits are measured over,
 // each ending at refISO (typically "today"). These are trailing-to-date views of
 // what's already been flown, which is the conservative number a crew member tracks.
