@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Box, IconButton, Paper, Stack, Typography } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { ChevronLeft, ChevronRight } from '@mui/icons-material';
 import {
   addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, isToday,
@@ -58,6 +59,7 @@ export default function CalendarPage() {
           const key = format(day, 'yyyy-MM-dd');
           const dayDuties = dutiesByDay.get(key) ?? [];
           const inMonth = isSameMonth(day, month);
+          const today = isToday(day);
           return (
             <Paper
               key={key}
@@ -66,13 +68,25 @@ export default function CalendarPage() {
               sx={{
                 minHeight: 64, minWidth: 0, p: 0.5, cursor: dayDuties.length ? 'pointer' : 'default',
                 opacity: inMonth ? 1 : 0.4,
-                borderColor: isToday(day) ? 'primary.main' : 'divider',
-                borderWidth: isToday(day) ? 2 : 1,
+                borderColor: today ? 'primary.main' : 'divider',
+                borderWidth: today ? 2 : 1,
+                bgcolor: today ? (t) => alpha(t.palette.primary.main, 0.08) : undefined,
               }}
             >
-              <Typography variant="caption" fontWeight={isToday(day) ? 700 : 400}>
-                {format(day, 'd')}
-              </Typography>
+              {today ? (
+                <Box
+                  sx={{
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                    width: 18, height: 18, borderRadius: '50%',
+                    bgcolor: 'primary.main', color: '#fff',
+                    fontSize: '0.6rem', fontWeight: 700,
+                  }}
+                >
+                  {format(day, 'd')}
+                </Box>
+              ) : (
+                <Typography variant="caption">{format(day, 'd')}</Typography>
+              )}
               <Stack spacing={0.25} mt={0.25}>
                 {dayDuties.slice(0, 2).map((d, i) => (
                   <Box

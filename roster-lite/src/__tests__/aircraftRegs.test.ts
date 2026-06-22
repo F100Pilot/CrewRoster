@@ -38,6 +38,6 @@ describe('logbookEntries with registrations', () => {
     expect(entries[0].reg).toBe('CS-TPU');
   });
   it('leaves the tail empty when nothing is recorded', () => {
-    expect(logbookEntries([flight({})]).at(0)?.reg).toBe('');
+    expect(logbookEntries([flight({})])[0].reg).toBe('');
   });
 });

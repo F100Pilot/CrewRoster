@@ -7,6 +7,7 @@ import {
   ChevronLeft, ChevronRight, Delete, Login, Today, CalendarMonth, MoreVert, InfoOutlined,
   EditCalendar, Search, Clear, MenuBook,
 } from '@mui/icons-material';
+import { alpha } from '@mui/material/styles';
 import { addMonths, format, isSameMonth, parseISO, subMonths } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
@@ -70,6 +71,7 @@ export default function RosterPage() {
   const [infoAnchor, setInfoAnchor] = useState<null | HTMLElement>(null);
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
+  const todayISO = format(new Date(), 'yyyy-MM-dd');
 
   const changeByDate = useMemo(() => {
     const map = new Map<string, ChangeType>();
@@ -266,6 +268,7 @@ export default function RosterPage() {
 
       {[...dutiesByDay.entries()].map(([date, duties]) => {
         const change = changeByDate.get(date);
+        const isToday = date === todayISO;
         return (
         <Card
           key={date}
@@ -275,13 +278,28 @@ export default function RosterPage() {
             ...(change && {
               borderLeft: `4px solid ${CHANGE_STYLE[change].color}`,
             }),
+            ...(isToday && {
+              borderColor: 'primary.main',
+              borderWidth: 2,
+              bgcolor: (t) => alpha(t.palette.primary.main, 0.06),
+            }),
           }}
           onClick={() => navigate(`/day/${date}`)}
         >
           <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
             <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
               <Box display="flex" alignItems="center" gap={1}>
-                <Typography variant="subtitle2">{format(parseISO(date), 'EEE, dd MMM')}</Typography>
+                <Typography variant="subtitle2" fontWeight={isToday ? 700 : 600} color={isToday ? 'primary.main' : 'text.primary'}>
+                  {format(parseISO(date), 'EEE, dd MMM')}
+                </Typography>
+                {isToday && (
+                  <Chip
+                    size="small"
+                    color="primary"
+                    label="Hoje"
+                    sx={{ height: 18, fontSize: '0.65rem', fontWeight: 700 }}
+                  />
+                )}
                 {change && (
                   <Chip
                     size="small"
