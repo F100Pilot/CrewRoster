@@ -1,7 +1,8 @@
 import { Box, Card, CardContent, Chip, Divider, IconButton, Stack, Typography } from '@mui/material';
-import { ArrowBack, FlightLand, FlightTakeoff, Hotel, IosShare, Phone } from '@mui/icons-material';
+import { ArrowBack, ChevronLeft, ChevronRight, FlightLand, FlightTakeoff, Hotel, IosShare, Phone } from '@mui/icons-material';
 import { Link } from '@mui/material';
 import { format, parseISO } from 'date-fns';
+import { useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import { dutyColor } from '../theme';
@@ -22,15 +23,53 @@ export default function DayDetailPage() {
   const stats = dayStats(duties);
   const rest = date ? restBefore(roster?.duties ?? [], date) : null;
 
+  // Adjacent days with entries, so swiping (or the header arrows) flips through the
+  // roster without landing on empty days.
+  const allDates = useMemo(
+    () => Array.from(new Set((roster?.duties ?? []).map((d) => d.date))).sort(),
+    [roster],
+  );
+  const idx = date ? allDates.indexOf(date) : -1;
+  const prevDate = idx > 0 ? allDates[idx - 1] : null;
+  const nextDate = idx >= 0 && idx < allDates.length - 1 ? allDates[idx + 1] : null;
+  // replace:true keeps the back button returning to the list rather than walking back
+  // through every day swiped to.
+  const goTo = (d: string | null) => { if (d) navigate(`/day/${d}`, { replace: true }); };
+
+  // Horizontal swipe to change day: left → next, right → previous. Ignores mostly-
+  // vertical drags so it never fights the page scroll.
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const onTouchStart = (e: React.TouchEvent) => {
+    const t = e.touches[0];
+    touchStart.current = { x: t.clientX, y: t.clientY };
+  };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const start = touchStart.current;
+    touchStart.current = null;
+    if (!start) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - start.x;
+    const dy = t.clientY - start.y;
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    if (dx < 0) goTo(nextDate);
+    else goTo(prevDate);
+  };
+
   return (
-    <Stack spacing={2}>
-      <Box display="flex" alignItems="center" gap={1}>
+    <Stack spacing={2} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      <Box display="flex" alignItems="center" gap={0.5}>
         <IconButton onClick={() => navigate(-1)}>
           <ArrowBack />
         </IconButton>
-        <Typography variant="h6" sx={{ flexGrow: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <IconButton size="small" onClick={() => goTo(prevDate)} disabled={!prevDate} title="Dia anterior">
+          <ChevronLeft />
+        </IconButton>
+        <Typography variant="h6" sx={{ flexGrow: 1, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {date ? format(parseISO(date), 'EEE, dd MMM yyyy') : ''}
         </Typography>
+        <IconButton size="small" onClick={() => goTo(nextDate)} disabled={!nextDate} title="Dia seguinte">
+          <ChevronRight />
+        </IconButton>
         {date && duties.length > 0 && (
           <IconButton
             color="primary"
