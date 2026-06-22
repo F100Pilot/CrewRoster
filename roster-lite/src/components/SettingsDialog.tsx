@@ -1,18 +1,24 @@
 import { useEffect, useState } from 'react';
 import {
-  Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton,
-  InputAdornment, Link, Stack, TextField, Typography,
+  Alert, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle,
+  IconButton, InputAdornment, Link, Stack, TextField, Typography,
 } from '@mui/material';
-import { Close, Visibility, VisibilityOff, CheckCircle } from '@mui/icons-material';
+import { Close, Visibility, VisibilityOff, CheckCircle, Science } from '@mui/icons-material';
 import { API_KEY_PATTERN, getAeroDataBoxKey, setAeroDataBoxKey } from '../storage/settings';
+import { fetchFlightInfo } from '../services/crewlinkApi';
+import { operatedFlights } from '../domain/flightTime';
+import { useRoster } from '../state/useRoster';
 
 // In-app settings: lets the user paste their own AeroDataBox (RapidAPI) key so the day
 // view can show aircraft registration, gate/terminal and status. The key is stored on
 // this device only and forwarded to the proxy per request — never committed or shared.
 export default function SettingsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const { roster } = useRoster();
   const [key, setKey] = useState('');
   const [show, setShow] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
 
   // Load the stored key whenever the dialog opens.
   useEffect(() => {
@@ -20,6 +26,7 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
       setKey(getAeroDataBoxKey());
       setSaved(false);
       setShow(false);
+      setTestResult(null);
     }
   }, [open]);
 
@@ -36,6 +43,48 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
     setAeroDataBoxKey('');
     setKey('');
     setSaved(true);
+  }
+
+  // Live end-to-end check: look up the most recent past flight and report exactly where
+  // it fails (key not reaching the proxy, proxy/endpoint missing, API rejecting the key,
+  // or simply no data) so we stop guessing.
+  async function handleTest() {
+    setTesting(true);
+    setTestResult(null);
+    // Save the current key first, so the test uses what's in the box.
+    if (!invalid) setAeroDataBoxKey(trimmed);
+    const today = new Date().toISOString().slice(0, 10);
+    const sample = operatedFlights(roster?.duties ?? [])
+      .filter((d) => d.flightNumber && d.date <= today)
+      .sort((a, b) => (a.date < b.date ? 1 : -1))[0];
+    if (!sample) {
+      setTestResult({ ok: false, msg: 'Sem voos passados na escala para testar. Importa a escala primeiro.' });
+      setTesting(false);
+      return;
+    }
+    try {
+      const r = await fetchFlightInfo(sample.flightNumber!, sample.date);
+      const ref = `${sample.flightNumber} (${sample.date})`;
+      if (!r.configured) {
+        setTestResult({ ok: false, msg: `A chave não chegou ao proxy. Guarda a chave e confirma que o worker tem o endpoint /api/flightinfo (precisa de deploy do worker).` });
+      } else if (r.error === 'http_404') {
+        setTestResult({ ok: false, msg: `O worker respondeu 404 — não tem o endpoint /api/flightinfo. Faz deploy do worker atualizado.` });
+      } else if (r.error?.startsWith('upstream_40')) {
+        setTestResult({ ok: false, msg: `A AeroDataBox recusou a chave (${r.error.replace('upstream_', '')}). Confirma a chave e a subscrição no RapidAPI.` });
+      } else if (r.error) {
+        setTestResult({ ok: false, msg: `Erro do servidor (${r.error}) ao consultar ${ref}.` });
+      } else if (r.flights.length === 0) {
+        setTestResult({ ok: false, msg: `Ligação OK, mas a AeroDataBox não tem dados para ${ref}. Tenta um voo mais recente.` });
+      } else {
+        const reg = r.flights.find((f) => f.reg)?.reg;
+        setTestResult(reg
+          ? { ok: true, msg: `✅ Funciona: ${ref} → matrícula ${reg}.` }
+          : { ok: false, msg: `${r.flights.length} voo(s) devolvido(s) para ${ref}, mas sem matrícula.` });
+      }
+    } catch (e) {
+      setTestResult({ ok: false, msg: `Falha de rede: ${e instanceof Error ? e.message : 'erro'}.` });
+    }
+    setTesting(false);
   }
 
   return (
@@ -84,6 +133,22 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
               ),
             }}
           />
+
+          {/* Diagnose end-to-end so a "no matrícula" symptom points at the real cause. */}
+          <Box>
+            <Button
+              onClick={handleTest}
+              disabled={testing || invalid || !trimmed}
+              startIcon={testing ? <CircularProgress size={16} /> : <Science />}
+              size="small"
+              variant="outlined"
+            >
+              Testar ligação
+            </Button>
+          </Box>
+          {testResult && (
+            <Alert severity={testResult.ok ? 'success' : 'warning'}>{testResult.msg}</Alert>
+          )}
         </Stack>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
