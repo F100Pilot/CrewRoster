@@ -39,6 +39,10 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: 'off', label: 'Folgas' },
 ];
 
+// Tracks which users have an auto-capture run in flight, so a quick remount can't fire a
+// second one before the first resolves (module-level: survives component remounts).
+const autoRegInFlight = new Set<string>();
+
 function matchesFilter(d: ParsedDuty, f: Filter): boolean {
   switch (f) {
     case 'flights':
@@ -90,11 +94,18 @@ export default function RosterPage() {
   // window the free API covers), so the logbook fills itself without opening each day.
   useEffect(() => {
     if (!activeUser || !roster || !getAeroDataBoxKey()) return;
-    const stampKey = `crewroster.autoreg.${activeUser.id}`;
+    const userId = activeUser.id;
+    const stampKey = `crewroster.autoreg.${userId}`;
     const today = new Date().toISOString().slice(0, 10);
     if (localStorage.getItem(stampKey) === today) return;
-    localStorage.setItem(stampKey, today); // before await: avoid duplicate runs on remount
-    autoCaptureRecent(activeUser.id, roster.duties).catch(() => {});
+    // Guard against duplicate concurrent runs on remount, but only mark "done for today"
+    // once it actually resolves — a transient failure should be retried, not skipped.
+    if (autoRegInFlight.has(userId)) return;
+    autoRegInFlight.add(userId);
+    autoCaptureRecent(userId, roster.duties)
+      .then(() => localStorage.setItem(stampKey, today))
+      .catch(() => {})
+      .finally(() => autoRegInFlight.delete(userId));
   }, [activeUser, roster]);
 
   const dutiesByDay = useMemo(() => {

@@ -61,10 +61,12 @@ export async function deleteUser(id: string): Promise<void> {
   const db = await getDb();
   await db.delete('users', id);
   await db.delete('rosters', id);
-  // Drop this profile's recorded aircraft registrations too.
+  // Drop this profile's recorded aircraft registrations too. Read the keys first, then
+  // issue all deletes synchronously within the write tx — awaiting between the read and
+  // the writes could let the transaction auto-commit and close (TransactionInactiveError).
+  const keys = await db.getAllKeysFromIndex('regs', 'userId', id);
   const tx = db.transaction('regs', 'readwrite');
-  for (const key of await tx.store.index('userId').getAllKeys(id)) await tx.store.delete(key);
-  await tx.done;
+  await Promise.all([...keys.map((k) => tx.store.delete(k)), tx.done]);
 }
 
 // ── Active user (localStorage) ─────────────────────────────────────────────────────
@@ -167,10 +169,14 @@ export async function deletePdf(id: string): Promise<void> {
 }
 
 // ── Aircraft registrations (per user) ───────────────────────────────────────────────
-// Stable key per crew member + day + flight, so re-recording the same sector updates in
-// place instead of duplicating.
-export function regKey(userId: string, date: string, flightNumber: string): string {
-  return `${userId}|${date}|${flightNumber}`;
+// Stable key per crew member + day + flight + route, so re-recording the same sector
+// updates in place — while two sectors of the same flight number on one day (e.g. a
+// round trip) stay distinct instead of overwriting each other.
+export function regKey(
+  userId: string, date: string, flightNumber: string,
+  dep: string | null, arr: string | null,
+): string {
+  return `${userId}|${date}|${flightNumber}|${dep ?? ''}-${arr ?? ''}`;
 }
 
 export async function saveReg(entry: AircraftReg): Promise<void> {

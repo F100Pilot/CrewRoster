@@ -16,13 +16,25 @@ export function matchLeg(
   );
 }
 
+// The in-memory lookup key for a recorded reg: date + flight + route. Matches the storage
+// key (minus userId, since the map is already scoped to one user) and keeps two sectors of
+// the same flight number on a day distinct.
+export function regMapKey(
+  date: string, flightNumber: string, dep: string | null, arr: string | null,
+): string {
+  return `${date}|${flightNumber}|${dep ?? ''}-${arr ?? ''}`;
+}
+
+// The fields of a duty needed to record/identify its tail.
+type RegDuty = Pick<ParsedDuty, 'date' | 'flightNumber' | 'departureAirport' | 'arrivalAirport'>;
+
 // Record (or update) the registration flown on a duty. No-op without a reg/flight number.
 export async function recordReg(
-  userId: string, duty: ParsedDuty, leg: FlightInfo,
+  userId: string, duty: RegDuty, leg: FlightInfo,
 ): Promise<AircraftReg | null> {
   if (!leg.reg || !duty.flightNumber) return null;
   const entry: AircraftReg = {
-    key: regKey(userId, duty.date, duty.flightNumber),
+    key: regKey(userId, duty.date, duty.flightNumber, duty.departureAirport, duty.arrivalAirport),
     userId,
     date: duty.date,
     flightNumber: duty.flightNumber,
@@ -36,11 +48,11 @@ export async function recordReg(
   return entry;
 }
 
-// A lookup of recorded registrations keyed by "date|flightNumber" for the logbook/day view.
+// A lookup of recorded registrations keyed by date+flight+route for the logbook/day view.
 export async function regMap(userId: string): Promise<Map<string, AircraftReg>> {
   const all = await loadRegs(userId);
   const m = new Map<string, AircraftReg>();
-  for (const r of all) m.set(`${r.date}|${r.flightNumber}`, r);
+  for (const r of all) m.set(regMapKey(r.date, r.flightNumber, r.dep, r.arr), r);
   return m;
 }
 

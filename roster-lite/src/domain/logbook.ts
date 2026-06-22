@@ -1,5 +1,6 @@
 import type { AircraftReg, ParsedDuty } from './types';
 import { operatedFlights } from './flightTime';
+import { regMapKey } from './aircraftRegs';
 import { diffMinutes, formatDuration } from '../utils/duration';
 
 // A pilot's logbook row, one per operated sector. Built straight from the roster so
@@ -29,7 +30,7 @@ export function logbookEntries(
     on: d.arrivalTime!,
     blockMinutes: diffMinutes(d.departureTime!, d.arrivalTime!),
     aircraft: d.aircraftType ?? '',
-    reg: regs?.get(`${d.date}|${d.flightNumber ?? ''}`)?.reg ?? '',
+    reg: regs?.get(regMapKey(d.date, d.flightNumber ?? '', d.departureAirport, d.arrivalAirport))?.reg ?? '',
   }));
 }
 

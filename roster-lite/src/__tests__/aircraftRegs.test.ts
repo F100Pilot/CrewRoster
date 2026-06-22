@@ -32,12 +32,28 @@ describe('logbookEntries with registrations', () => {
   });
   it('fills the tail from the regs map keyed by date|flightNumber', () => {
     const regs = new Map<string, AircraftReg>([
-      ['2026-06-01|TP574', { key: 'u|2026-06-01|TP574', userId: 'u', date: '2026-06-01', flightNumber: 'TP574', dep: 'LIS', arr: 'FRA', reg: 'CS-TPU', model: 'E90', recordedAt: '' }],
+      ['2026-06-01|TP574|LIS-FRA', { key: 'u|2026-06-01|TP574|LIS-FRA', userId: 'u', date: '2026-06-01', flightNumber: 'TP574', dep: 'LIS', arr: 'FRA', reg: 'CS-TPU', model: 'E90', recordedAt: '' }],
     ]);
     const entries = logbookEntries([flight({})], regs);
     expect(entries[0].reg).toBe('CS-TPU');
   });
   it('leaves the tail empty when nothing is recorded', () => {
     expect(logbookEntries([flight({})])[0].reg).toBe('');
+  });
+
+  it('keeps two sectors of the same flight number on a day distinct', () => {
+    const mk = (route: string, dep: string, arr: string, reg: string): [string, AircraftReg] => [
+      `2026-06-01|TP574|${route}`,
+      { key: `u|2026-06-01|TP574|${route}`, userId: 'u', date: '2026-06-01', flightNumber: 'TP574', dep, arr, reg, model: null, recordedAt: '' },
+    ];
+    const regs = new Map<string, AircraftReg>([
+      mk('LIS-OPO', 'LIS', 'OPO', 'CS-AAA'),
+      mk('OPO-LIS', 'OPO', 'LIS', 'CS-BBB'),
+    ]);
+    const entries = logbookEntries([
+      flight({ departureAirport: 'LIS', arrivalAirport: 'OPO', departureTime: '08:00', arrivalTime: '09:00' }),
+      flight({ departureAirport: 'OPO', arrivalAirport: 'LIS', departureTime: '10:00', arrivalTime: '11:00' }),
+    ], regs);
+    expect(entries.map((e) => e.reg)).toEqual(['CS-AAA', 'CS-BBB']);
   });
 });

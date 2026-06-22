@@ -70,6 +70,19 @@ function redact(s) {
     .replace(/(crewlink(?:UserName|Password)\D{0,6})[^&"'<>\s]+/gi, '$1<redacted>');
 }
 
+// Apply redact() to every string in a nested structure (used for diagnostic trails,
+// whose form-field values are raw upstream HTML and may carry session ids/credentials).
+function redactDeep(value) {
+  if (typeof value === 'string') return redact(value);
+  if (Array.isArray(value)) return value.map(redactDeep);
+  if (value && typeof value === 'object') {
+    const out = {};
+    for (const [k, v] of Object.entries(value)) out[k] = redactDeep(v);
+    return out;
+  }
+  return value;
+}
+
 function preflight(request) {
   return new Response(null, { status: 204, headers: corsHeaders(request) });
 }
@@ -700,7 +713,9 @@ async function handleRoster(request) {
           '(app ou site), lê/confirma a notificação pendente e tenta novamente.'
         : 'Não foi possível obter o PDF da escala.',
       pdfUrlFound: result.pdfUrl ?? null,
-      trail,
+      // Redact the whole trail: extractForms() carries raw HTML field values which could
+      // include a JSESSIONID or echoed credential from a hidden field on an error page.
+      trail: redactDeep(trail),
     },
     502,
     request,

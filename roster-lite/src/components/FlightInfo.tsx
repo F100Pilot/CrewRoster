@@ -28,6 +28,8 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
   const [loading, setLoading] = useState(true);
   const [configured, setConfigured] = useState(true);
   const flightNumber = duty.flightNumber;
+  const dep = duty.departureAirport;
+  const arr = duty.arrivalAirport;
   const userId = activeUser?.id;
 
   // Show any previously-recorded registration immediately (even with no live data).
@@ -36,11 +38,13 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
     if (!userId || !flightNumber) return;
     loadRegs(userId).then((regs) => {
       if (!alive) return;
-      const hit = regs.find((r) => r.date === date && r.flightNumber === flightNumber);
+      const hit = regs.find(
+        (r) => r.date === date && r.flightNumber === flightNumber && r.dep === dep && r.arr === arr,
+      );
       setSavedReg(hit?.reg ?? null);
     });
     return () => { alive = false; };
-  }, [userId, flightNumber, date]);
+  }, [userId, flightNumber, date, dep, arr]);
 
   const load = useCallback(() => {
     if (!flightNumber) return;
@@ -48,15 +52,16 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
     fetchFlightInfo(flightNumber, date)
       .then((r) => {
         setConfigured(r.configured);
-        const m = matchLeg(r.flights, duty.departureAirport, duty.arrivalAirport);
+        const m = matchLeg(r.flights, dep, arr);
         setLeg(m);
         if (m?.reg && userId) {
-          recordReg(userId, duty, m).then(() => setSavedReg(m.reg));
+          recordReg(userId, { date, flightNumber, departureAirport: dep, arrivalAirport: arr }, m)
+            .then(() => setSavedReg(m.reg));
         }
       })
       .catch(() => setLeg(null))
       .finally(() => setLoading(false));
-  }, [flightNumber, date, duty.departureAirport, duty.arrivalAirport, userId, duty]);
+  }, [flightNumber, date, dep, arr, userId]);
 
   useEffect(() => { load(); }, [load]);
 
