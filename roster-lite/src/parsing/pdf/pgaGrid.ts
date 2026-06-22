@@ -157,9 +157,10 @@ function classifyDuty(name: string): { dutyType: string; dutyCode: string } | nu
   if (/^GAB\d$/.test(n)) return { dutyType: 'Office Duty', dutyCode: n };
   if (/^SIM/.test(n)) return { dutyType: 'Simulator', dutyCode: 'SIM' };
   if (/^(SBY|STBY)/.test(n)) return { dutyType: 'Standby Airport', dutyCode: 'SBY' };
-  // Assistances (standby/reserve with a time window). Pilots: H7+, H9+, H12+, H14+,
-  // H23+, H509, H616 and R24. Cabin: A1, A2, A2+, A3, A3++, A4, A4+, A5, A5+, A6, A8.
-  // The "+" variants never collide with aircraft (A\d{3}) or hotel markers (H\d).
+  // Assistances (standby/reserve with a time window), for BOTH pilots and cabin crew.
+  // H-codes/R24: H7+, H9+, H12+, H14+, H23+, H509, H616, R24. A-codes: A1, A2, A2+, A3,
+  // A3++, A4, A4+, A5, A5+, A6, A8 (used across ranks, not cabin-only). The "+"/3-digit
+  // forms never collide with aircraft (A\d{3}) or hotel markers (H\d).
   if (/^H(\d+\+|\d{3})$/.test(n)) return { dutyType: 'Standby Home', dutyCode: n };
   if (n === 'R24') return { dutyType: 'Standby Home', dutyCode: n };
   if (/^A\d\+{0,2}$/.test(n)) return { dutyType: 'Standby Home', dutyCode: n };

@@ -5,7 +5,8 @@ export function inferDutyType(dutyCode: string): string {
   if (['FLT', 'FDP', 'FP', 'FD'].includes(code)) return 'Flight Duty';
   if (['SBY', 'SBY-A', 'STA'].includes(code)) return 'Standby Airport';
   if (['SBY-H', 'STH'].includes(code)) return 'Standby Home';
-  // Assistances (standby with a time window): cabin A1/A2+/A3++…, pilot H7+/H509/R24.
+  // Assistances (standby with a time window), used by both pilots and cabin crew:
+  // A1/A2+/A3++…, H7+/H509/R24.
   if (/^A\d\+{0,2}$/.test(code)) return 'Standby Home';
   if (/^H(\d+\+|\d{3})$/.test(code) || code === 'R24') return 'Standby Home';
   if (['OFF', 'DO', 'DOF'].includes(code)) return 'Day Off';
