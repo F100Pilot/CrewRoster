@@ -70,6 +70,16 @@ export interface BackfillResult {
   emptyCount: number;
 }
 
+// How many API requests a backfill would send — shown to the user before they confirm,
+// so they can judge the cost against the 100 req/month free-tier allowance.
+export async function pendingBackfillCount(userId: string, duties: ParsedDuty[]): Promise<number> {
+  const today = new Date().toISOString().slice(0, 10);
+  const existing = await regMap(userId);
+  return operatedFlights(duties).filter(
+    (d) => d.flightNumber && d.date <= today && !existing.has(regMapKey(d.date, d.flightNumber, d.departureAirport, d.arrivalAirport)),
+  ).length;
+}
+
 // Look up and store registrations for every operated sector that doesn't have one yet,
 // up to today (AeroDataBox only has data for past/near flights). Sequential and gently
 // throttled to respect the API; stops cleanly when the quota/auth fails or on cancel.
@@ -82,7 +92,7 @@ export async function backfillRegs(
   const today = new Date().toISOString().slice(0, 10);
   const existing = await regMap(userId);
   const pending = operatedFlights(duties).filter(
-    (d) => d.flightNumber && d.date <= today && !existing.has(`${d.date}|${d.flightNumber}`),
+    (d) => d.flightNumber && d.date <= today && !existing.has(regMapKey(d.date, d.flightNumber, d.departureAirport, d.arrivalAirport)),
   );
 
   let found = 0;
@@ -101,7 +111,8 @@ export async function backfillRegs(
     if (leg?.reg) { await recordReg(userId, d, leg); found++; }
     else if (r.flights.length === 0) emptyCount++;
     onProgress?.({ done: i + 1, total: pending.length, found });
-    await new Promise((res) => setTimeout(res, 250)); // be gentle with the API
+    // AeroDataBox free tier: hard limit of 1 req/s — wait 1.1 s between calls.
+    if (i < pending.length - 1) await new Promise((res) => setTimeout(res, 1100));
   }
   return { found, processed: pending.length, total: pending.length, emptyCount, lastError };
 }

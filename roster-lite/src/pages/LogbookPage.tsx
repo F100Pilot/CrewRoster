@@ -7,7 +7,7 @@ import { ArrowBack, Download, FlightTakeoff, Sync } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import { logbookEntries, logbookCsv, landingsInWindow } from '../domain/logbook';
-import { backfillRegs, regMap, type BackfillResult } from '../domain/aircraftRegs';
+import { backfillRegs, pendingBackfillCount, regMap, type BackfillResult } from '../domain/aircraftRegs';
 import { flightMinutes } from '../domain/flightTime';
 import { getAeroDataBoxKey } from '../storage/settings';
 import type { AircraftReg } from '../domain/types';
@@ -48,7 +48,15 @@ export default function LogbookPage() {
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number; found: number } | null>(null);
   const [result, setResult] = useState<BackfillResult | null>(null);
+  const [pendingCount, setPendingCount] = useState<number | null>(null);
   const cancelRef = useRef(false);
+
+  // Load pending count whenever entries or regs change, so the user knows how many
+  // API requests "Buscar matrículas" will consume before they click.
+  useEffect(() => {
+    if (!userId || entries.length === 0) { setPendingCount(null); return; }
+    pendingBackfillCount(userId, duties).then(setPendingCount);
+  }, [userId, duties, entries.length, regs]);
 
   async function runBackfill() {
     if (!userId || running) return;
@@ -163,6 +171,13 @@ export default function LogbookPage() {
             {!running && result && (
               <Alert severity={result.stopped === 'quota' || result.stopped === 'not_configured' ? 'warning' : 'success'} sx={{ mt: 1, py: 0 }}>
                 {backfillMsg(result)}
+              </Alert>
+            )}
+            {/* Warn before the user spends quota — free tier: 100 req/month, 1 req/s. */}
+            {!running && !result && hasKey && pendingCount != null && pendingCount > 0 && (
+              <Alert severity="info" sx={{ mt: 1, py: 0, fontSize: '0.78rem' }}>
+                Vai usar <strong>{pendingCount} pedido{pendingCount !== 1 ? 's' : ''}</strong> da API
+                (plano gratuito: ~100/mês · 1/s). Duração ~{Math.ceil(pendingCount * 1.1)}s.
               </Alert>
             )}
             {!hasKey && (
