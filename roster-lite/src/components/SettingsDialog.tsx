@@ -170,13 +170,14 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
           {/* Roster actions, moved here from the list's overflow menu. */}
           <Box>
             <Typography variant="subtitle2" gutterBottom>Escala</Typography>
-            <Stack spacing={1} alignItems="flex-start">
+            <Stack spacing={1}>
               {roster && activeUser && (
                 <GoogleCalendarSync
                   roster={roster}
                   userId={activeUser.id}
                   variant="outlined"
                   label="Sincronizar com Google Calendar"
+                  fullWidth
                 />
               )}
               <Button
@@ -185,6 +186,7 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
                 startIcon={<CalendarMonth />}
                 size="small"
                 variant="outlined"
+                fullWidth
               >
                 Exportar .ics
               </Button>
@@ -195,6 +197,7 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
                 size="small"
                 variant="outlined"
                 color="error"
+                fullWidth
               >
                 {confirmClear ? 'Confirmar — apagar escala?' : 'Limpar escala'}
               </Button>

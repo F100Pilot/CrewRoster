@@ -17,9 +17,10 @@ interface Props {
   userId: string;
   variant?: 'text' | 'outlined' | 'contained';
   label?: string;
+  fullWidth?: boolean;
 }
 
-export default function GoogleCalendarSync({ roster, userId, variant = 'text', label = 'Calendar' }: Props) {
+export default function GoogleCalendarSync({ roster, userId, variant = 'text', label = 'Calendar', fullWidth = false }: Props) {
   const [open, setOpen] = useState(false);
   const [phase, setPhase] = useState<Phase>('idle');
   const [clientIdInput, setClientIdInput] = useState('');
@@ -79,7 +80,7 @@ export default function GoogleCalendarSync({ roster, userId, variant = 'text', l
 
   return (
     <>
-      <Button size="small" variant={variant} startIcon={<Google />} onClick={openDialog}>
+      <Button size="small" variant={variant} startIcon={<Google />} onClick={openDialog} fullWidth={fullWidth}>
         {label}
       </Button>
 
