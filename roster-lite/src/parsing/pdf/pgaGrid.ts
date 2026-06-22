@@ -150,15 +150,24 @@ function classifyDuty(name: string): { dutyType: string; dutyCode: string } | nu
   // Requested days off end in "_RQST" (e.g. OFF_RQST). Match the suffix generically so
   // any prefix variant counts, and keep the exact code on the chip.
   if (/_RQST$/.test(n)) return { dutyType: 'Day Off', dutyCode: n };
+  // PLS = "Período Livre de Serviço" (service-free period): PLS_IRREG, PLS_RECOV,
+  // PLS_TEIA/TEIC, PLS_ROST, PLS_TRACK. Treated as a free (non-flying) day.
+  if (/^PLS_/.test(n)) return { dutyType: 'Day Off', dutyCode: n };
   if (/^E\d{2}-[A-Z]{3}-\d$/.test(n)) return { dutyType: 'Simulator', dutyCode: n }; // E90-VIE-1
   if (/^GAB\d$/.test(n)) return { dutyType: 'Office Duty', dutyCode: n };
   if (/^SIM/.test(n)) return { dutyType: 'Simulator', dutyCode: 'SIM' };
   if (/^(SBY|STBY)/.test(n)) return { dutyType: 'Standby Airport', dutyCode: 'SBY' };
-  // Home standby slots are coded A1, A2, A3, … in the PGA roster (single/double
-  // digit, so they never collide with aircraft like A320 which is A\d{3}). Keep the
-  // exact code so the chip still reads "A1".
-  if (/^A\d{1,2}$/.test(n)) return { dutyType: 'Standby Home', dutyCode: n };
-  if (/^(VAC|AN)$/.test(n)) return { dutyType: 'Vacation', dutyCode: 'VAC' };
+  // Assistances (standby/reserve with a time window). Pilots: H7+, H9+, H12+, H14+,
+  // H23+, H509, H616 and R24. Cabin: A1, A2, A2+, A3, A3++, A4, A4+, A5, A5+, A6, A8.
+  // The "+" variants never collide with aircraft (A\d{3}) or hotel markers (H\d).
+  if (/^H(\d+\+|\d{3})$/.test(n)) return { dutyType: 'Standby Home', dutyCode: n };
+  if (n === 'R24') return { dutyType: 'Standby Home', dutyCode: n };
+  if (/^A\d\+{0,2}$/.test(n)) return { dutyType: 'Standby Home', dutyCode: n };
+  // Vacation: F (carried-over, working days), PLIC/SLIC/RLIC (calendar days), plus the
+  // older VAC/AN.
+  if (/^(VAC|AN|F|PLIC|SLIC|RLIC)$/.test(n)) return { dutyType: 'Vacation', dutyCode: n };
+  // Cabin line checks / exam flights: verified (WPNC/W_EXAM) and verifier (VPNC/V_EXAM).
+  if (/^(WPNC|VPNC|W_EXAM|V_EXAM)$/.test(n)) return { dutyType: 'Training', dutyCode: n };
   // Training duty code, e.g. "FPE-LEARN". Anchored so the longer descriptive token
   // ("FP-Elearning CA-MEL ...") that sits in an adjacent sub-column is NOT mistaken
   // for a second training duty.
