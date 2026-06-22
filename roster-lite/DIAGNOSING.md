@@ -62,3 +62,24 @@ deploy:
   *Edit code* → apaga tudo → cola o conteúdo de `roster-lite/worker/worker.js` →
   *Deploy*.
 - **CLI:** a partir de `roster-lite/worker/`, corre `./deploy.sh` (usa `wrangler deploy`).
+
+## Dados de voo (matrícula, porta) — AeroDataBox
+
+No detalhe de um dia de voo, a app mostra a **matrícula da aeronave**, **terminal/porta**
+e **estado** do voo. Estes dados vêm da **AeroDataBox** e só existem **perto do voo**
+(horas antes / no próprio dia) — para voos distantes aparece "Sem dados ainda".
+
+A chave da API fica **só no worker** (nunca no browser). Para ativar:
+
+1. Cria conta em [RapidAPI](https://rapidapi.com) e subscreve a **AeroDataBox** (tem
+   plano gratuito). Copia a tua *X-RapidAPI-Key*.
+2. No worker Cloudflare, adiciona-a como **segredo** (encriptado), com o nome
+   `AERODATABOX_KEY`:
+   - **Dashboard:** `crewroster-proxy` → *Settings* → *Variables and Secrets* → *Add* →
+     tipo *Secret* → nome `AERODATABOX_KEY`, valor = a chave → *Deploy*.
+   - **CLI:** `wrangler secret put AERODATABOX_KEY` (a partir de `roster-lite/worker/`).
+3. Sem a chave, o endpoint responde `configured:false` e a app simplesmente **não
+   mostra** a secção — não dá erro.
+
+> O **estacionamento (stand)** exato muitas vezes não é publicado pela API; nesse caso
+> mostra-se a **porta/terminal**, que é o mais próximo disponível.

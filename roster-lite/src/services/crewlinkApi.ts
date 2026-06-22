@@ -68,6 +68,49 @@ export async function login(crewCode: string, password: string): Promise<string>
 }
 
 // ---------------------------------------------------------------------------
+// Flight info (aircraft registration, gate/terminal, status) via AeroDataBox
+// ---------------------------------------------------------------------------
+
+export interface FlightInfoSide {
+  iata: string | null;
+  icao: string | null;
+  terminal: string | null;
+  gate: string | null;
+  scheduledUtc: string | null;
+}
+
+export interface FlightInfo {
+  number: string | null;
+  status: string | null;
+  reg: string | null; // aircraft registration (e.g. CS-TPU)
+  model: string | null;
+  departure: FlightInfoSide;
+  arrival: FlightInfoSide;
+}
+
+export interface FlightInfoResult {
+  /** false when the proxy has no AeroDataBox key configured (feature off). */
+  configured: boolean;
+  flights: FlightInfo[];
+}
+
+/**
+ * Fetch live operational data for a flight (by number + date) through the proxy.
+ * Never throws on "no data" — returns an empty list. The flight number should be the
+ * carrier+number as shown on the roster (e.g. "TP574"); the date is YYYY-MM-DD.
+ */
+export async function fetchFlightInfo(number: string, date: string): Promise<FlightInfoResult> {
+  const res = await fetch(`${baseUrl()}/api/flightinfo`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ number, date }),
+  });
+  if (!res.ok) return { configured: true, flights: [] };
+  const data = (await res.json()) as Partial<FlightInfoResult>;
+  return { configured: data.configured ?? false, flights: data.flights ?? [] };
+}
+
+// ---------------------------------------------------------------------------
 // Roster fetch
 // ---------------------------------------------------------------------------
 

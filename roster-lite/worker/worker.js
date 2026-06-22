@@ -7,12 +7,21 @@
  * está hardcoded em baixo — não são precisas variáveis de ambiente.
  *
  * Endpoints:
- *   POST /api/login   — autentica, devolve o JSESSIONID
- *   POST /api/roster  — usa a sessão para descarregar o PDF da escala
- *   GET  /health      — verificação de estado
+ *   POST /api/login       — autentica, devolve o JSESSIONID
+ *   POST /api/roster      — usa a sessão para descarregar o PDF da escala
+ *   POST /api/flightinfo  — dados operacionais do voo (matrícula, porta) via AeroDataBox
+ *   GET  /health          — verificação de estado
  *
  * Segurança: as credenciais são reenviadas para netline.pga.pt por HTTPS e
  * nunca são guardadas, registadas ou colocadas em cache pelo worker.
+ *
+ * Variáveis/segredos (opcional — só para /api/flightinfo):
+ *   AERODATABOX_KEY   — chave da API AeroDataBox (RapidAPI). Define como SECRET:
+ *                       dashboard → Settings → Variables → "Add" (Encrypt), ou
+ *                       `wrangler secret put AERODATABOX_KEY`. Sem ela, /api/flightinfo
+ *                       responde { configured:false } e a app simplesmente não mostra
+ *                       a info do voo. A chave NUNCA chega ao browser.
+ *   AERODATABOX_HOST  — (opcional) host da API; default "aerodatabox.p.rapidapi.com".
  *
  * COMO FAZER DEPLOY — escolhe UM dos métodos:
  *   A) Dashboard: dash.cloudflare.com → Workers & Pages → o worker "crewroster-proxy"
@@ -698,9 +707,83 @@ async function handleRoster(request) {
   );
 }
 
+// --- POST /api/flightinfo --------------------------------------------------
+// Live operational data for one flight (aircraft registration, departure/arrival
+// terminal+gate, status) from AeroDataBox. The API key is a Worker secret and never
+// reaches the browser. Best-effort: this data only exists close to the flight day, so
+// an empty result is normal for flights far in the future or past.
+function normalizeFlight(f) {
+  if (!f || typeof f !== 'object') return null;
+  const side = (key) => {
+    const s = f[key] || {};
+    const airport = s.airport || {};
+    const sched = s.scheduledTime || s.scheduledTimeUtc || {};
+    return {
+      iata: airport.iata || null,
+      icao: airport.icao || null,
+      terminal: s.terminal || null,
+      gate: s.gate || null,
+      scheduledUtc: typeof sched === 'object' ? sched.utc || null : sched || null,
+    };
+  };
+  const aircraft = f.aircraft || {};
+  return {
+    number: (f.number || '').replace(/\s+/g, '') || null,
+    status: f.status || null,
+    reg: aircraft.reg || null,
+    model: aircraft.model || null,
+    departure: side('departure'),
+    arrival: side('arrival'),
+  };
+}
+
+async function handleFlightInfo(request, env) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return jsonResponse({ error: 'Invalid JSON body' }, 400, request);
+  }
+
+  const number = String(body.number || '').replace(/\s+/g, '').toUpperCase();
+  const date = String(body.date || '');
+  if (!/^[A-Z0-9]{2,8}$/.test(number) || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return jsonResponse({ error: 'number (flight) and date (YYYY-MM-DD) are required' }, 400, request);
+  }
+
+  // No key configured → respond cleanly so the SPA stays silent instead of erroring.
+  const key = env && env.AERODATABOX_KEY;
+  if (!key) return jsonResponse({ configured: false, flights: [] }, 200, request);
+  const host = (env && env.AERODATABOX_HOST) || 'aerodatabox.p.rapidapi.com';
+
+  const url =
+    `https://${host}/flights/number/${encodeURIComponent(number)}/${date}` +
+    `?withAircraftImage=false&withLocation=false`;
+
+  let upstream;
+  try {
+    upstream = await fetch(url, { headers: { 'x-rapidapi-key': key, 'x-rapidapi-host': host } });
+  } catch {
+    return jsonResponse({ configured: true, flights: [], error: 'upstream_unreachable' }, 200, request);
+  }
+  // 204/404 = nothing scheduled for that number/date — a normal, non-error outcome.
+  if (upstream.status === 204 || upstream.status === 404) {
+    return jsonResponse({ configured: true, flights: [] }, 200, request);
+  }
+  if (!upstream.ok) {
+    return jsonResponse({ configured: true, flights: [], error: `upstream_${upstream.status}` }, 200, request);
+  }
+
+  let data = null;
+  try { data = await upstream.json(); } catch { data = null; }
+  const arr = Array.isArray(data) ? data : data && Array.isArray(data.flights) ? data.flights : [];
+  const flights = arr.map(normalizeFlight).filter(Boolean);
+  return jsonResponse({ configured: true, flights }, 200, request);
+}
+
 // --- Router ----------------------------------------------------------------
 export default {
-  async fetch(request) {
+  async fetch(request, env) {
     const url = new URL(request.url);
 
     if (request.method === 'OPTIONS') return preflight(request);
@@ -720,6 +803,8 @@ export default {
         return handleLogin(request);
       case '/api/roster':
         return handleRoster(request);
+      case '/api/flightinfo':
+        return handleFlightInfo(request, env);
       default:
         return jsonResponse({ error: 'Not found' }, 404, request);
     }

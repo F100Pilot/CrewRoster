@@ -11,6 +11,7 @@ import { dayStats } from '../domain/dutyStats';
 import { restBefore } from '../domain/restPeriods';
 import { shareDayImage } from '../utils/shareDay';
 import FlightWeather from '../components/FlightWeather';
+import FlightInfo from '../components/FlightInfo';
 
 export default function DayDetailPage() {
   const { date } = useParams<{ date: string }>();
@@ -141,6 +142,8 @@ export default function DayDetailPage() {
                 <HotelLine hotel={duty.hotel} />
               </Box>
             )}
+
+            {duty.flightNumber && date && <FlightInfo duty={duty} date={date} />}
 
             {duty.flightNumber && date && <FlightWeather duty={duty} date={date} />}
 
