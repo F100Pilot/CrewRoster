@@ -451,6 +451,28 @@ export function diagnosePgaGrid(tokens: PositionedToken[]): string {
     );
   });
 
+  // Map every band's sub-columns to dates, collecting the RAW tokens that land on each
+  // day — so missing days can be inspected (unrecognised code? wrong day? no tokens?).
+  const rawByDate = new Map<string, string[]>();
+  for (const b of bands) {
+    if (b.offset === undefined) continue;
+    const bandDate = new Map<string, string>();
+    b.colKeys.forEach((key, i) => {
+      const d = bandColumnDate(b.cand, b.offset!, i, calendar);
+      if (d) bandDate.set(key, d);
+    });
+    const dayFor = (x: number): Column => {
+      for (const c of b.cols) if (c.x >= x - 4) return c;
+      return b.cols[b.cols.length - 1];
+    };
+    for (const s of b.subs) {
+      const date = bandDate.get(dayFor(s.x).token);
+      if (!date) continue;
+      const texts = [...s.tokens].sort((p, q) => q.y - p.y).map((t) => t.text);
+      rawByDate.set(date, [...(rawByDate.get(date) ?? []), ...texts]);
+    }
+  }
+
   // Coverage: gaps inside the parsed date span.
   const duties = interpretPgaGrid(tokens);
   const dates = [...new Set(duties.map((d) => d.date))].sort();
@@ -464,7 +486,12 @@ export function diagnosePgaGrid(tokens: PositionedToken[]): string {
     for (let i = startIdx; i >= 0 && i <= endIdx; i++) {
       if (!present.has(calendar[i].date)) missing.push(calendar[i].date);
     }
-    out.push(missing.length ? `Dias EM FALTA no intervalo: ${missing.join(', ')}` : 'Sem buracos no intervalo.');
+    out.push(missing.length ? `Dias EM FALTA: ${missing.length}` : 'Sem buracos no intervalo.');
+    // Show the raw tokens that landed on each missing day.
+    for (const d of missing) {
+      const toks = rawByDate.get(d);
+      out.push(`  ${d}: ${toks && toks.length ? toks.join(' | ') : '(sem tokens nesse dia)'}`);
+    }
   }
 
   return out.join('\n');
