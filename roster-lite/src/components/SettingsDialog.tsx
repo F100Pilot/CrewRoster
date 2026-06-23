@@ -218,6 +218,11 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
                 RapidAPI
               </Link>, tem plano gratuito).
             </Typography>
+            <Alert severity="info" sx={{ mt: 1, py: 0, fontSize: '0.78rem' }}>
+              A chave é <strong>pessoal e gratuita</strong> (~100 pedidos/mês). Cada
+              utilizador deve usar a <strong>sua própria</strong> — assim cada um tem a
+              sua quota. Fica só neste dispositivo.
+            </Alert>
           </Box>
 
           {saved && (

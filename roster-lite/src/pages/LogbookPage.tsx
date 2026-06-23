@@ -3,7 +3,7 @@ import {
   Alert, Box, Button, Card, CardContent, Chip, Divider, IconButton, LinearProgress, Stack,
   Table, TableBody, TableCell, TableHead, TableRow, Typography,
 } from '@mui/material';
-import { Add, ArrowBack, Download, Edit, FlightTakeoff, Sync } from '@mui/icons-material';
+import { Add, ArrowBack, Download, Edit, ExpandLess, ExpandMore, FlightTakeoff, Sync } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import { logbookCsvRows, landingsInRows, mergeLogbook, rowBlock, sortLogbook } from '../domain/logbook';
@@ -72,6 +72,14 @@ export default function LogbookPage() {
     }
     return groups;
   }, [entries]);
+
+  // Collapsible months: a set of collapsed month keys (all expanded by default).
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const toggleMonth = (key: string) => setCollapsed((prev) => {
+    const next = new Set(prev);
+    if (next.has(key)) next.delete(key); else next.add(key);
+    return next;
+  });
   const totalBlock = useMemo(() => entries.reduce((sum, r) => sum + rowBlock(r), 0), [entries]);
   const landings90 = useMemo(() => landingsInRows(entries, today, RECENCY_DAYS), [entries, today]);
   const recencyOk = landings90 >= RECENCY_REQUIRED;
@@ -270,18 +278,26 @@ export default function LogbookPage() {
             </TableHead>
             <TableBody>
               {monthGroups.map((g) => [
-                <TableRow key={`h-${g.key}`} sx={{ bgcolor: 'action.hover' }}>
+                <TableRow
+                  key={`h-${g.key}`}
+                  hover
+                  sx={{ bgcolor: 'action.hover', cursor: 'pointer' }}
+                  onClick={() => toggleMonth(g.key)}
+                >
                   <TableCell
                     colSpan={5}
                     sx={{ textAlign: 'left !important', py: 0.5, fontWeight: 600, whiteSpace: 'nowrap' }}
                   >
+                    <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', verticalAlign: 'middle' }}>
+                      {collapsed.has(g.key) ? <ExpandMore sx={{ fontSize: 18 }} /> : <ExpandLess sx={{ fontSize: 18 }} />}
+                    </Box>
                     {g.label}
                     <Box component="span" sx={{ color: 'text.secondary', fontWeight: 400, ml: 1, fontSize: '0.8rem' }}>
                       · {g.rows.length} setor{g.rows.length !== 1 ? 'es' : ''} · {formatDuration(g.block)}
                     </Box>
                   </TableCell>
                 </TableRow>,
-                ...g.rows.map((e) => (
+                ...(collapsed.has(g.key) ? [] : g.rows.map((e) => (
                   <TableRow key={e.key} hover sx={{ cursor: 'pointer' }} onClick={() => openEdit(e)}>
                     <TableCell sx={{ whiteSpace: 'nowrap' }}>{format(parseISO(e.date), 'dd/MM')}</TableCell>
                     <TableCell>
@@ -301,7 +317,7 @@ export default function LogbookPage() {
                       </IconButton>
                     </TableCell>
                   </TableRow>
-                )),
+                ))),
               ])}
             </TableBody>
           </Table>
