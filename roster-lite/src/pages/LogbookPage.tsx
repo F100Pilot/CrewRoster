@@ -21,6 +21,12 @@ import LogbookEditDialog, { type LogbookEditResult } from '../components/Logbook
 const RECENCY_REQUIRED = 3;
 const RECENCY_DAYS = 90;
 
+// Restore the persisted set of collapsed month keys for a user.
+function loadCollapsed(key: string | null): Set<string> {
+  if (!key) return new Set();
+  try { return new Set(JSON.parse(localStorage.getItem(key) || '[]') as string[]); } catch { return new Set(); }
+}
+
 export default function LogbookPage() {
   const navigate = useNavigate();
   const { roster, activeUser } = useRoster();
@@ -73,11 +79,17 @@ export default function LogbookPage() {
     return groups;
   }, [entries]);
 
-  // Collapsible months: a set of collapsed month keys (all expanded by default).
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  // Collapsible months: a set of collapsed month keys, persisted per user so the chosen
+  // layout (which months are folded) survives navigation and reloads.
+  const collapseKey = userId ? `crewroster.logbook.collapsed.${userId}` : null;
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => loadCollapsed(collapseKey));
+  useEffect(() => { setCollapsed(loadCollapsed(collapseKey)); }, [collapseKey]);
   const toggleMonth = (key: string) => setCollapsed((prev) => {
     const next = new Set(prev);
     if (next.has(key)) next.delete(key); else next.add(key);
+    if (collapseKey) {
+      try { localStorage.setItem(collapseKey, JSON.stringify([...next])); } catch { /* ignore */ }
+    }
     return next;
   });
   const totalBlock = useMemo(() => entries.reduce((sum, r) => sum + rowBlock(r), 0), [entries]);

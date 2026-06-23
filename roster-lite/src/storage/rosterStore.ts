@@ -82,6 +82,7 @@ export function clearUserLocalData(userId: string): void {
   try {
     clearNotifications(userId);
     localStorage.removeItem(`crewroster.autoreg.${userId}`);
+    localStorage.removeItem(`crewroster.logbook.collapsed.${userId}`);
   } catch {
     // ignore (storage disabled)
   }
