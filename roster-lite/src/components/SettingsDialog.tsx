@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Alert, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle,
   Divider, IconButton, InputAdornment, Link, Stack, TextField, ToggleButton,
   ToggleButtonGroup, Typography,
 } from '@mui/material';
-import { Close, Visibility, VisibilityOff, CheckCircle, Science, CalendarMonth, DeleteOutline, BugReport, DarkMode, LightMode, InfoOutlined } from '@mui/icons-material';
+import { Close, Visibility, VisibilityOff, CheckCircle, Science, CalendarMonth, DeleteOutline, BugReport, DarkMode, LightMode, InfoOutlined, Backup, Restore } from '@mui/icons-material';
 import readmeText from '../../README.md?raw';
 import { useNavigate } from 'react-router-dom';
 import { useColorMode } from '../state/colorMode';
@@ -17,6 +17,9 @@ import { APP_NAME, APP_VERSION_LABEL } from '../version';
 import { operatedFlights } from '../domain/flightTime';
 import { downloadIcs } from '../utils/icsExport';
 import { useRoster } from '../state/useRoster';
+import {
+  downloadBackup, readBackupFile, restoreBackup, BackupError, type BackupSummary,
+} from '../storage/backup';
 
 // In-app settings: lets the user paste their own AeroDataBox (RapidAPI) key so the day
 // view can show aircraft registration, gate/terminal and status. The key is stored on
@@ -33,6 +36,9 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
   const [confirmClear, setConfirmClear] = useState(false);
   const [lead, setLead] = useState(getCheckinLeadMinutes());
   const [readmeOpen, setReadmeOpen] = useState(false);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [backupBusy, setBackupBusy] = useState(false);
+  const [backupMsg, setBackupMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   // Load the stored key whenever the dialog opens.
   useEffect(() => {
@@ -53,6 +59,45 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
     clear();
     setConfirmClear(false);
     onClose();
+  }
+
+  function summaryText(s: BackupSummary): string {
+    return `${s.users} perfil(is), ${s.sectors} sectores, ${s.documents} documento(s), ${s.pdfs} PDF(s).`;
+  }
+
+  // Export everything (all profiles, rosters, logbook, documents, saved PDFs, settings)
+  // to a single JSON file the user can keep and re-import after reinstalling.
+  async function handleExport() {
+    setBackupBusy(true);
+    setBackupMsg(null);
+    try {
+      const s = await downloadBackup();
+      setBackupMsg({ ok: true, text: `Cópia de segurança criada — ${summaryText(s)}` });
+    } catch (e) {
+      setBackupMsg({ ok: false, text: `Falha a exportar: ${e instanceof Error ? e.message : 'erro'}.` });
+    }
+    setBackupBusy(false);
+  }
+
+  // Import replaces all current data, then reloads so the app picks up the restored state.
+  async function handleImportFile(file: File) {
+    setBackupBusy(true);
+    setBackupMsg(null);
+    try {
+      const { backup, summary } = await readBackupFile(file);
+      const ok = window.confirm(
+        `Importar esta cópia de segurança vai SUBSTITUIR todos os dados atuais.\n\n` +
+        `Conteúdo: ${summaryText(summary)}\nCriada em ${new Date(backup.createdAt).toLocaleString('pt-PT')}.\n\nContinuar?`,
+      );
+      if (!ok) { setBackupBusy(false); return; }
+      await restoreBackup(backup, true);
+      setBackupMsg({ ok: true, text: 'Dados importados. A recarregar…' });
+      setTimeout(() => window.location.reload(), 800);
+    } catch (e) {
+      const msg = e instanceof BackupError ? e.message : `Falha a importar: ${e instanceof Error ? e.message : 'erro'}.`;
+      setBackupMsg({ ok: false, text: msg });
+      setBackupBusy(false);
+    }
   }
 
   const trimmed = key.trim();
@@ -252,6 +297,56 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
                 </Typography>
               )}
             </Stack>
+          </Box>
+
+          <Divider />
+
+          {/* Full backup / restore — survives uninstalling or clearing browser data. */}
+          <Box>
+            <Typography variant="subtitle2" gutterBottom>Cópia de segurança</Typography>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              Guarda <strong>tudo</strong> (perfis, escalas, diário, documentos, PDFs e
+              definições) num ficheiro. Antes de desinstalar, exporta; depois de
+              reinstalar, importa esse ficheiro para recuperares tudo.
+            </Typography>
+            <input
+              ref={fileInput}
+              type="file"
+              accept="application/json,.json"
+              hidden
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                e.target.value = ''; // allow re-selecting the same file
+                if (f) handleImportFile(f);
+              }}
+            />
+            <Stack spacing={1}>
+              <Button
+                onClick={handleExport}
+                disabled={backupBusy}
+                startIcon={backupBusy ? <CircularProgress size={16} /> : <Backup />}
+                size="small"
+                variant="outlined"
+                fullWidth
+              >
+                Exportar para ficheiro
+              </Button>
+              <Button
+                onClick={() => fileInput.current?.click()}
+                disabled={backupBusy}
+                startIcon={<Restore />}
+                size="small"
+                variant="outlined"
+                fullWidth
+              >
+                Importar de ficheiro
+              </Button>
+            </Stack>
+            {backupMsg && (
+              <Alert severity={backupMsg.ok ? 'success' : 'warning'} sx={{ mt: 1 }}>
+                {backupMsg.text}
+              </Alert>
+            )}
           </Box>
 
           <Divider />

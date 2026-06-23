@@ -259,3 +259,33 @@ export async function deleteDocument(id: string): Promise<void> {
   const db = await getDb();
   await db.delete('documents', id);
 }
+
+// ── Full backup / restore ────────────────────────────────────────────────────────────
+// Every object store, so the user can export the whole app to a file and restore it
+// after reinstalling. 'pdfs' rows carry a Blob — the backup layer (de)serializes those.
+export const BACKUP_STORES = ['users', 'rosters', 'regs', 'logbook', 'documents', 'pdfs'] as const;
+export type BackupStore = (typeof BACKUP_STORES)[number];
+
+export async function exportAllStores(): Promise<Record<BackupStore, unknown[]>> {
+  const db = await getDb();
+  const out = {} as Record<BackupStore, unknown[]>;
+  for (const name of BACKUP_STORES) out[name] = await db.getAll(name);
+  return out;
+}
+
+// Write rows back. When `replace` is true each store is cleared first, so the imported
+// file becomes the exact state; otherwise rows are merged (upsert by key).
+export async function importAllStores(
+  data: Partial<Record<BackupStore, unknown[]>>,
+  replace: boolean,
+): Promise<void> {
+  const db = await getDb();
+  for (const name of BACKUP_STORES) {
+    const rows = data[name];
+    if (!Array.isArray(rows)) continue;
+    const tx = db.transaction(name, 'readwrite');
+    if (replace) await tx.store.clear();
+    for (const row of rows) tx.store.put(row as never);
+    await tx.done;
+  }
+}
