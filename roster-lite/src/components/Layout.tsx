@@ -1,11 +1,11 @@
 import { type ReactNode, useState } from 'react';
 import {
   AppBar, Box, Container, IconButton, Paper, Toolbar, Tooltip, Typography, BottomNavigation,
-  BottomNavigationAction, Menu, MenuItem, ListItemIcon, ListItemText,
+  BottomNavigationAction,
 } from '@mui/material';
 import {
   CalendarMonth, FormatListBulleted, CloudDownload, PictureAsPdf, Logout, HelpOutline,
-  Settings, MenuBook, MoreVert, QueryStats, Public, Badge,
+  Settings, MenuBook, QueryStats, Public, Badge,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
@@ -21,6 +21,9 @@ const BASE_NAV: NavItem[] = [
   { label: 'Lista', icon: <FormatListBulleted />, path: '/' },
   { label: 'Calendário', icon: <CalendarMonth />, path: '/calendar' },
   { label: 'Diário', icon: <MenuBook />, path: '/logbook' },
+  { label: 'Estatísticas', icon: <QueryStats />, path: '/stats' },
+  { label: 'Mapa', icon: <Public />, path: '/map' },
+  { label: 'Documentos', icon: <Badge />, path: '/documents' },
   { label: 'PDFs', icon: <PictureAsPdf />, path: '/pdfs' },
 ];
 
@@ -35,18 +38,17 @@ export default function Layout({ children }: { children: ReactNode }) {
   const current = NAV.findIndex((n) => n.path === location.pathname);
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [moreAnchor, setMoreAnchor] = useState<null | HTMLElement>(null);
-  const go = (path: string) => { setMoreAnchor(null); navigate(path); };
 
   return (
     <Box sx={{ pb: 8, minHeight: '100vh', bgcolor: 'background.default' }}>
       <AppBar position="sticky" elevation={0}>
         <Toolbar variant="dense">
-          <Box display="flex" alignItems="baseline" gap={0.75} sx={{ flexGrow: 1, minWidth: 0 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700 }} noWrap>
+          {/* App name with the version stacked underneath. */}
+          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.15 }} noWrap>
               {APP_NAME}
             </Typography>
-            <Typography variant="caption" sx={{ opacity: 0.7, whiteSpace: 'nowrap' }}>
+            <Typography variant="caption" sx={{ opacity: 0.7, display: 'block', lineHeight: 1 }}>
               {APP_VERSION_LABEL}
             </Typography>
           </Box>
@@ -78,31 +80,6 @@ export default function Layout({ children }: { children: ReactNode }) {
               <CloudDownload />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Mais">
-            <IconButton color="inherit" onClick={(e) => setMoreAnchor(e.currentTarget)}>
-              <MoreVert />
-            </IconButton>
-          </Tooltip>
-          <Menu
-            anchorEl={moreAnchor}
-            open={Boolean(moreAnchor)}
-            onClose={() => setMoreAnchor(null)}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-          >
-            <MenuItem onClick={() => go('/stats')}>
-              <ListItemIcon><QueryStats fontSize="small" /></ListItemIcon>
-              <ListItemText>Estatísticas</ListItemText>
-            </MenuItem>
-            <MenuItem onClick={() => go('/map')}>
-              <ListItemIcon><Public fontSize="small" /></ListItemIcon>
-              <ListItemText>Mapa de voos</ListItemText>
-            </MenuItem>
-            <MenuItem onClick={() => go('/documents')}>
-              <ListItemIcon><Badge fontSize="small" /></ListItemIcon>
-              <ListItemText>Documentos</ListItemText>
-            </MenuItem>
-          </Menu>
         </Toolbar>
       </AppBar>
       <Container maxWidth="md" sx={{ py: 2 }}>
@@ -111,14 +88,24 @@ export default function Layout({ children }: { children: ReactNode }) {
       </Container>
       <DownloadRosterDialog open={downloadOpen} onClose={() => setDownloadOpen(false)} />
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
-      <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0 }} elevation={3}>
+      {/* Seven tabs don't fit a phone width, so the bar scrolls horizontally. */}
+      <Paper
+        sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, overflowX: 'auto' }}
+        elevation={3}
+      >
         <BottomNavigation
           showLabels
           value={current === -1 ? 0 : current}
           onChange={(_, idx) => navigate(NAV[idx].path)}
+          sx={{ width: 'max-content', minWidth: '100%' }}
         >
           {NAV.map((n) => (
-            <BottomNavigationAction key={n.path} label={n.label} icon={n.icon} />
+            <BottomNavigationAction
+              key={n.path}
+              label={n.label}
+              icon={n.icon}
+              sx={{ minWidth: 72, px: 1 }}
+            />
           ))}
         </BottomNavigation>
       </Paper>
