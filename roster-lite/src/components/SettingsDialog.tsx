@@ -6,7 +6,10 @@ import {
 import { Close, Visibility, VisibilityOff, CheckCircle, Science, CalendarMonth, DeleteOutline, BugReport, DarkMode, LightMode } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useColorMode } from '../state/colorMode';
-import { API_KEY_PATTERN, getAeroDataBoxKey, setAeroDataBoxKey } from '../storage/settings';
+import {
+  API_KEY_PATTERN, getAeroDataBoxKey, setAeroDataBoxKey,
+  CHECKIN_LEAD_OPTIONS, getCheckinLeadMinutes, setCheckinLeadMinutes,
+} from '../storage/settings';
 import { fetchFlightInfo } from '../services/crewlinkApi';
 import { operatedFlights } from '../domain/flightTime';
 import { downloadIcs } from '../utils/icsExport';
@@ -26,6 +29,7 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [lead, setLead] = useState(getCheckinLeadMinutes());
 
   // Load the stored key whenever the dialog opens.
   useEffect(() => {
@@ -35,6 +39,7 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
       setShow(false);
       setTestResult(null);
       setConfirmClear(false);
+      setLead(getCheckinLeadMinutes());
     }
   }, [open]);
 
@@ -118,6 +123,28 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
               <Typography variant="body2" color="text.secondary">Modo escuro</Typography>
             </Box>
             <Switch checked={mode === 'dark'} onChange={toggle} icon={<LightMode fontSize="small" />} checkedIcon={<DarkMode fontSize="small" />} />
+          </Box>
+
+          <Divider />
+
+          <Box>
+            <Typography variant="subtitle2" gutterBottom>Lembrete de check-in</Typography>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              Alarme antes do check-in, aplicado ao exportar <strong>.ics</strong> e ao
+              sincronizar com o Google Calendar.
+            </Typography>
+            <TextField
+              select
+              size="small"
+              value={lead}
+              onChange={(e) => { const v = Number(e.target.value); setLead(v); setCheckinLeadMinutes(v); }}
+              SelectProps={{ native: true }}
+              sx={{ mt: 0.5 }}
+            >
+              {CHECKIN_LEAD_OPTIONS.map((m) => (
+                <option key={m} value={m}>{m === 0 ? 'Desligado' : `${m} min antes`}</option>
+              ))}
+            </TextField>
           </Box>
 
           <Divider />

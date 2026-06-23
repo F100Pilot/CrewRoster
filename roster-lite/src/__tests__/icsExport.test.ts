@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildIcs } from '../utils/icsExport';
+import { buildIcs, alarmLeadMinutes } from '../utils/icsExport';
 import type { ParsedDuty, Roster } from '../domain/types';
 
 const duty = (over: Partial<ParsedDuty>): ParsedDuty => ({
@@ -24,6 +24,20 @@ const roster = (duties: ParsedDuty[]): Roster => ({
   importedAt: '2026-06-19T00:00:00.000Z',
   duties,
   rawText: '',
+});
+
+describe('alarmLeadMinutes', () => {
+  const flt = duty({ departureTime: '07:00', arrivalTime: '08:30', reportingTime: '06:00' });
+  it('is off with lead 0 or no timed start', () => {
+    expect(alarmLeadMinutes(flt, 0)).toBeNull();
+    expect(alarmLeadMinutes(duty({ dutyType: 'Day Off' }), 30)).toBeNull();
+  });
+  it('counts from report time plus the lead', () => {
+    expect(alarmLeadMinutes(flt, 30)).toBe(90); // 60 (report→dep) + 30
+  });
+  it('falls back to lead before departure when there is no report time', () => {
+    expect(alarmLeadMinutes(duty({ departureTime: '07:00', arrivalTime: '08:30' }), 30)).toBe(30);
+  });
 });
 
 describe('buildIcs', () => {

@@ -5,6 +5,8 @@
 
 import { addDays, format, parseISO } from 'date-fns';
 import type { ParsedDuty, Roster } from '../domain/types';
+import { alarmLeadMinutes } from './icsExport';
+import { getCheckinLeadMinutes } from '../storage/settings';
 
 const CALENDAR_API = 'https://www.googleapis.com/calendar/v3';
 const SCOPES = 'https://www.googleapis.com/auth/calendar';
@@ -246,6 +248,12 @@ function dutyToEvent(duty: ParsedDuty): Record<string, unknown> {
 
   const colorId = DUTY_COLOR[duty.dutyType];
   if (colorId) event.colorId = colorId;
+
+  // Check-in reminder: a popup a configurable time before report/departure.
+  const lead = alarmLeadMinutes(duty, getCheckinLeadMinutes());
+  event.reminders = lead !== null
+    ? { useDefault: false, overrides: [{ method: 'popup', minutes: lead }] }
+    : { useDefault: false, overrides: [] };
 
   return event;
 }
