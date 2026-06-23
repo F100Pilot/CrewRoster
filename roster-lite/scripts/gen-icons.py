@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
-"""Generate PNG app icons from public/icon.svg using Pillow + cairosvg (or Pillow-only fallback).
+"""Generate the app's PNG icons (and favicon.ico) from assets/icon-master.png.
 
-Run automatically by the GitHub Actions CI before `npm run build`.
-Output files are written to public/ so Vite picks them up as static assets.
+The master is the chosen artwork (a calendar + airplane on a blue gradient). This
+script trims it to the blue artwork, centres it on a square blue-gradient canvas,
+clips clean rounded corners and exports the sizes the manifest/index.html expect.
+
+Run automatically by the GitHub Actions CI before `npm run build`, so the icons
+are reproducible from the single master and never drift. Output goes to public/.
 """
 import os
 import sys
-import subprocess
 import struct
-import zlib
+import io
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PUBLIC = os.path.join(ROOT, 'public')
-SVG_SRC = os.path.join(PUBLIC, 'icon.svg')
+MASTER = os.path.join(ROOT, 'assets', 'icon-master.png')
 
 SIZES = [
     (512, 'icon-512.png'),
@@ -20,120 +23,93 @@ SIZES = [
     (180, 'icon-180.png'),
 ]
 
-# ── Try cairosvg first (best quality SVG render) ────────────────────────────────────────────────
+# Blue gradient used to pad the square canvas, sampled from the master artwork
+# (light blue at the top, darker blue at the bottom).
+GRAD_TOP = (81, 169, 240)
+GRAD_BOT = (1, 70, 176)
+CORNER_RATIO = 112 / 512  # rounded-corner radius, matching the iOS app-icon look
 
-def try_cairosvg():
-    try:
-        import cairosvg
-        for size, name in SIZES:
-            out = os.path.join(PUBLIC, name)
-            cairosvg.svg2png(url=SVG_SRC, write_to=out, output_width=size, output_height=size)
-            print(f'  cairosvg → {name}')
-        # favicon.ico from 32x32
-        tmp = os.path.join(PUBLIC, '_fav32.png')
-        cairosvg.svg2png(url=SVG_SRC, write_to=tmp, output_width=32, output_height=32)
-        make_ico(tmp)
-        os.remove(tmp)
-        return True
-    except ImportError:
-        return False
 
-# ── Fallback: Pillow-only drawing ─────────────────────────────────────────────────────────
+def build_square(crop, size):
+    from PIL import Image, ImageDraw
+    cw, ch = crop.size
 
-def try_pillow():
-    try:
-        from PIL import Image, ImageDraw, ImageFont
-    except ImportError:
-        print('ERROR: Pillow not installed. Run: pip install Pillow', file=sys.stderr)
-        sys.exit(1)
+    # Vertical blue gradient background.
+    bg = Image.new('RGBA', (size, size))
+    bgd = bg.load()
+    for y in range(size):
+        t = y / (size - 1)
+        c = tuple(int(GRAD_TOP[i] + (GRAD_BOT[i] - GRAD_TOP[i]) * t) for i in range(3)) + (255,)
+        for x in range(size):
+            bgd[x, y] = c
 
-    FONT_PATH = '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'
-    BG        = (26, 35, 126)
-    ACCENT    = (83, 75, 174)
-    WHITE     = (255, 255, 255)
-    WHITE_DIM = (200, 210, 255)
+    # Scale the artwork to fill the square (preserving aspect) and centre it.
+    scale = size / max(cw, ch)
+    nw, nh = int(cw * scale), int(ch * scale)
+    art = crop.resize((nw, nh), Image.LANCZOS)
+    bg.alpha_composite(art, ((size - nw) // 2, (size - nh) // 2))
 
-    def make_icon(size):
-        img  = Image.new('RGBA', (size, size), (0, 0, 0, 0))
-        draw = ImageDraw.Draw(img)
-        s    = size / 512
+    # Clip to rounded corners.
+    mask = Image.new('L', (size, size), 0)
+    ImageDraw.Draw(mask).rounded_rectangle([0, 0, size - 1, size - 1],
+                                           radius=int(size * CORNER_RATIO), fill=255)
+    out = Image.new('RGBA', (size, size), (0, 0, 0, 0))
+    out.paste(bg, (0, 0), mask)
+    return out
 
-        r = int(size * 0.22)
-        draw.rounded_rectangle([0, 0, size - 1, size - 1], radius=r, fill=BG)
 
-        hl_r = int(size * 0.55)
-        draw.ellipse([-hl_r // 2, -hl_r // 2, hl_r, hl_r], fill=(83, 75, 174, 40))
+def trim_to_artwork(im):
+    """Crop away the near-white border around the blue icon artwork."""
+    px = im.load()
+    w, h = im.size
+    minx, miny, maxx, maxy = w, h, 0, 0
+    for y in range(h):
+        for x in range(w):
+            r, g, b, a = px[x, y]
+            if a > 10 and not (r > 240 and g > 240 and b > 240):
+                minx = min(minx, x); maxx = max(maxx, x)
+                miny = min(miny, y); maxy = max(maxy, y)
+    if maxx < minx:  # no artwork found — use the whole image
+        return im
+    return im.crop((minx, miny, maxx + 1, maxy + 1))
 
-        if os.path.exists(FONT_PATH):
-            plane_size = int(size * 0.46)
-            plane_font = ImageFont.truetype(FONT_PATH, plane_size)
-            bbox = plane_font.getbbox('✈')
-            pw = bbox[2] - bbox[0]
-            ph = bbox[3] - bbox[1]
-            px = (size - pw) // 2 - bbox[0]
-            py = int(size * 0.10) - bbox[1]
-            draw.text((px, py), '✈', font=plane_font, fill=WHITE)
-        else:
-            cx, cy = size // 2, int(size * 0.35)
-            hs = int(size * 0.22)
-            draw.polygon([(cx, cy - hs), (cx + hs, cy + hs), (cx, cy + hs // 2), (cx - hs, cy + hs)], fill=WHITE)
 
-        lh  = int(size * 0.045)
-        gap = int(size * 0.075)
-        lx0 = int(size * 0.18)
-        lx1 = int(size * 0.82)
-        ly0 = int(size * 0.65)
-        r2  = lh // 2
-
-        draw.rounded_rectangle([lx0, ly0, lx1, ly0 + lh], radius=r2, fill=WHITE)
-
-        mid = int(size * 0.50)
-        y1  = ly0 + gap
-        draw.rounded_rectangle([lx0, y1, mid - int(size * 0.04), y1 + lh], radius=r2, fill=WHITE)
-        draw.rounded_rectangle([mid + int(size * 0.04), y1, lx1, y1 + lh], radius=r2, fill=ACCENT + (220,))
-
-        y2  = ly0 + gap * 2
-        draw.rounded_rectangle([lx0, y2, lx0 + int(size * 0.22), y2 + lh], radius=r2, fill=WHITE_DIM)
-        draw.rounded_rectangle([lx0 + int(size * 0.27), y2, lx1, y2 + lh], radius=r2, fill=WHITE_DIM)
-
-        return img
-
-    for size, name in SIZES:
-        ico = make_icon(size)
-        ico.save(os.path.join(PUBLIC, name))
-        print(f'  pillow → {name}')
-
-    fav = make_icon(512).resize((32, 32), Image.LANCZOS)
-    tmp = os.path.join(PUBLIC, '_fav32.png')
-    fav.save(tmp)
-    make_ico(tmp)
-    os.remove(tmp)
-
-# ── Build a minimal .ico from a 32×32 PNG ───────────────────────────────────────────────────
-
-def make_ico(png_path: str):
+def make_ico(png_path):
     from PIL import Image
     img = Image.open(png_path).convert('RGBA').resize((32, 32), Image.LANCZOS)
-    import io
     buf = io.BytesIO()
     img.save(buf, format='PNG')
     png_data = buf.getvalue()
-
-    ico_path = os.path.join(PUBLIC, 'favicon.ico')
-    with open(ico_path, 'wb') as f:
-        # ICONDIR header (6 bytes)
+    with open(os.path.join(PUBLIC, 'favicon.ico'), 'wb') as f:
         f.write(struct.pack('<HHH', 0, 1, 1))
-        # ICONDIRENTRY (16 bytes): w h colors reserved planes bpp size offset
         offset = 6 + 16
         f.write(struct.pack('<BBBBHHII', 32, 32, 0, 0, 1, 32, len(png_data), offset))
         f.write(png_data)
-    print(f'  favicon.ico')
+    print('  favicon.ico')
 
-# ── Main ──────────────────────────────────────────────────────────────
+
+def main():
+    print('Generating app icons from assets/icon-master.png…')
+    try:
+        from PIL import Image
+    except ImportError:
+        print('ERROR: Pillow not installed. Run: pip install Pillow', file=sys.stderr)
+        sys.exit(1)
+    if not os.path.exists(MASTER):
+        print(f'ERROR: master icon not found at {MASTER}', file=sys.stderr)
+        sys.exit(1)
+
+    crop = trim_to_artwork(Image.open(MASTER).convert('RGBA'))
+    for size, name in SIZES:
+        build_square(crop, size).save(os.path.join(PUBLIC, name))
+        print(f'  → {name}')
+
+    tmp = os.path.join(PUBLIC, '_fav32.png')
+    build_square(crop, 64).save(tmp)
+    make_ico(tmp)
+    os.remove(tmp)
+    print('Done.')
+
 
 if __name__ == '__main__':
-    print('Generating app icons…')
-    if not try_cairosvg():
-        print('  (cairosvg not found, using Pillow fallback)')
-        try_pillow()
-    print('Done.')
+    main()

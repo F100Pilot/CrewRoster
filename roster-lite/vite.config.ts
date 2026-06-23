@@ -18,7 +18,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
       manifest: false,
-      includeAssets: ['icon.svg', 'icon-192.png', 'icon-512.png', 'icon-180.png', 'favicon.ico'],
+      includeAssets: ['icon-192.png', 'icon-512.png', 'icon-180.png', 'favicon.ico'],
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,mjs}'],
         // The pdf.js worker is ~1.4 MB; raise the cache ceiling so it's precached too.

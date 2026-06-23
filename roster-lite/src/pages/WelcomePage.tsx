@@ -29,7 +29,7 @@ export default function WelcomePage() {
     >
       <Box
         component="img"
-        src="/CrewRoster/icon.svg"
+        src="/CrewRoster/icon-192.png"
         alt="CrewRoster"
         sx={{ width: 80, height: 80, mb: 3, borderRadius: 3 }}
       />
