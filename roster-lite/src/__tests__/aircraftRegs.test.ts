@@ -51,6 +51,34 @@ describe('logbookEntries with registrations', () => {
     expect(logbookEntries([flight({})])[0].reg).toBe('');
   });
 
+  it('infers the tail of the return leg from the captured outbound (same-day rotation)', () => {
+    // Only the outbound LIS→GVA was captured; the return GVA→LIS shares the airframe.
+    const regs = new Map<string, AircraftReg>([
+      ['2026-06-01|TP940|LIS-GVA', { key: 'u|2026-06-01|TP940|LIS-GVA', userId: 'u', date: '2026-06-01', flightNumber: 'TP940', dep: 'LIS', arr: 'GVA', reg: 'CS-TPU', model: null, recordedAt: '' }],
+    ]);
+    const entries = logbookEntries([
+      flight({ flightNumber: 'TP940', departureAirport: 'LIS', arrivalAirport: 'GVA', departureTime: '08:00', arrivalTime: '10:10' }),
+      flight({ flightNumber: 'TP941', departureAirport: 'GVA', arrivalAirport: 'LIS', departureTime: '11:00', arrivalTime: '13:00' }),
+    ], regs);
+    expect(entries.map((e) => e.reg)).toEqual(['CS-TPU', 'CS-TPU']);
+    expect(entries.map((e) => e.regInferred)).toEqual([false, true]);
+  });
+
+  it('does not infer across a break (separate same-day rotations)', () => {
+    // LIS→OPO→LIS is one rotation; a later LIS→FRA is a new one (no connecting leg).
+    const regs = new Map<string, AircraftReg>([
+      ['2026-06-01|TP100|LIS-OPO', { key: 'u|2026-06-01|TP100|LIS-OPO', userId: 'u', date: '2026-06-01', flightNumber: 'TP100', dep: 'LIS', arr: 'OPO', reg: 'CS-AAA', model: null, recordedAt: '' }],
+    ]);
+    const entries = logbookEntries([
+      flight({ flightNumber: 'TP100', departureAirport: 'LIS', arrivalAirport: 'OPO', departureTime: '06:00', arrivalTime: '07:00' }),
+      flight({ flightNumber: 'TP101', departureAirport: 'OPO', arrivalAirport: 'LIS', departureTime: '08:00', arrivalTime: '09:00' }),
+      flight({ flightNumber: 'TP200', departureAirport: 'LIS', arrivalAirport: 'FRA', departureTime: '15:00', arrivalTime: '18:00' }),
+    ], regs);
+    // OPO→LIS continues the first rotation → inferred; LIS→FRA is a fresh leg → no tail.
+    expect(entries.map((e) => e.reg)).toEqual(['CS-AAA', 'CS-AAA', '']);
+    expect(entries.map((e) => e.regInferred)).toEqual([false, true, false]);
+  });
+
   it('keeps two sectors of the same flight number on a day distinct', () => {
     const mk = (route: string, dep: string, arr: string, reg: string): [string, AircraftReg] => [
       `2026-06-01|TP574|${route}`,

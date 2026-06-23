@@ -1,7 +1,13 @@
 import type { AircraftReg, ParsedDuty } from './types';
 import { fetchFlightInfo, type FlightInfo } from '../services/crewlinkApi';
 import { operatedFlights } from './flightTime';
+import { diffMinutes } from '../utils/duration';
 import { loadRegs, regKey, saveReg } from '../storage/rosterStore';
+
+// Max ground time between two legs for them to count as the same continuous rotation
+// (and therefore the same airframe). A tight turnaround (e.g. LIS→GVA→LIS) is well under
+// this; a multi-hour sit at base is a separate rotation that may use a different aircraft.
+const MAX_TURNAROUND_MIN = 180;
 
 // Pick the leg matching a duty's route (the same flight number can fly several sectors
 // on a day, and AeroDataBox sometimes returns more than one record per number/date —
@@ -30,12 +36,14 @@ export function regMapKey(
   return `${date}|${flightNumber}|${dep ?? ''}-${arr ?? ''}`;
 }
 
-// The fields of a duty needed to record/identify its tail.
-type RegDuty = Pick<ParsedDuty, 'date' | 'flightNumber' | 'departureAirport' | 'arrivalAirport'>;
+// The fields needed to record/identify a duty's tail (route only).
+type RecordDuty = Pick<ParsedDuty, 'date' | 'flightNumber' | 'departureAirport' | 'arrivalAirport'>;
+// Adds the times needed to order legs within a same-day rotation.
+type RegDuty = RecordDuty & Pick<ParsedDuty, 'departureTime' | 'arrivalTime'>;
 
 // Record (or update) the registration flown on a duty. No-op without a reg/flight number.
 export async function recordReg(
-  userId: string, duty: RegDuty, leg: FlightInfo,
+  userId: string, duty: RecordDuty, leg: FlightInfo,
 ): Promise<AircraftReg | null> {
   if (!leg.reg || !duty.flightNumber) return null;
   const entry: AircraftReg = {
@@ -61,6 +69,69 @@ export async function regMap(userId: string): Promise<Map<string, AircraftReg>> 
   return m;
 }
 
+// A resolved registration for a leg: either captured from the API, or inferred from a
+// sibling leg of the same same-day rotation (same airframe).
+export interface RegLookup { reg: string; inferred: boolean }
+
+// Same-day continuous rotation: legs sorted by departure time where each leg's arrival
+// airport feeds the next leg's departure (e.g. LIS→GVA→LIS). The whole chain is flown by
+// one airframe, so a tail captured on any leg applies to the rest.
+export function rotationChains(legs: RegDuty[]): RegDuty[][] {
+  const byDate = new Map<string, RegDuty[]>();
+  for (const d of legs) {
+    const list = byDate.get(d.date) ?? [];
+    list.push(d);
+    byDate.set(d.date, list);
+  }
+  const chains: RegDuty[][] = [];
+  for (const list of byDate.values()) {
+    list.sort((a, b) => (a.departureTime ?? '').localeCompare(b.departureTime ?? ''));
+    let chain: RegDuty[] = [];
+    for (const leg of list) {
+      const prev = chain[chain.length - 1];
+      // Continue the chain only when the aircraft flows straight on: same airport AND a
+      // turnaround short enough to be the same airframe.
+      const connects =
+        prev && prev.arrivalAirport && prev.arrivalAirport === leg.departureAirport &&
+        prev.arrivalTime && leg.departureTime &&
+        diffMinutes(prev.arrivalTime, leg.departureTime) <= MAX_TURNAROUND_MIN;
+      if (connects) {
+        chain.push(leg);
+      } else {
+        if (chain.length) chains.push(chain);
+        chain = [leg];
+      }
+    }
+    if (chain.length) chains.push(chain);
+  }
+  return chains;
+}
+
+// Resolve a registration for every operated leg: confirmed tails from `confirmed`, plus
+// tails inferred across same-day rotation chains (one captured leg fills its siblings).
+// Inferred entries are flagged so the UI/logbook can mark them as "assumed same airframe".
+export function resolveRegs(
+  duties: ParsedDuty[], confirmed: Map<string, AircraftReg>,
+): Map<string, RegLookup> {
+  const out = new Map<string, RegLookup>();
+  const legs = operatedFlights(duties).filter((d) => d.flightNumber) as RegDuty[];
+  const keyOf = (d: RegDuty) => regMapKey(d.date, d.flightNumber!, d.departureAirport, d.arrivalAirport);
+
+  for (const d of legs) {
+    const hit = confirmed.get(keyOf(d));
+    if (hit) out.set(keyOf(d), { reg: hit.reg, inferred: false });
+  }
+  for (const chain of rotationChains(legs)) {
+    const known = chain.map((l) => confirmed.get(keyOf(l))).find(Boolean);
+    if (!known) continue;
+    for (const l of chain) {
+      const k = keyOf(l);
+      if (!out.has(k)) out.set(k, { reg: known.reg, inferred: true });
+    }
+  }
+  return out;
+}
+
 export interface BackfillProgress { done: number; total: number; found: number }
 export interface BackfillResult {
   found: number;
@@ -76,18 +147,22 @@ export interface BackfillResult {
 }
 
 // How many API requests a backfill would send — shown to the user before they confirm,
-// so they can judge the cost against the 100 req/month free-tier allowance.
+// so they can judge the cost against the 100 req/month free-tier allowance. Thanks to
+// rotation inference, only ONE leg per same-day chain needs a call (the siblings share
+// the airframe), so this counts chains still missing a confirmed tail, not raw legs.
 export async function pendingBackfillCount(userId: string, duties: ParsedDuty[]): Promise<number> {
   const today = new Date().toISOString().slice(0, 10);
-  const existing = await regMap(userId);
-  return operatedFlights(duties).filter(
-    (d) => d.flightNumber && d.date <= today && !existing.has(regMapKey(d.date, d.flightNumber, d.departureAirport, d.arrivalAirport)),
-  ).length;
+  const confirmed = await regMap(userId);
+  const keyOf = (d: RegDuty) => regMapKey(d.date, d.flightNumber!, d.departureAirport, d.arrivalAirport);
+  const legs = operatedFlights(duties).filter((d) => d.flightNumber && d.date <= today) as RegDuty[];
+  return rotationChains(legs).filter((chain) => !chain.some((l) => confirmed.has(keyOf(l)))).length;
 }
 
-// Look up and store registrations for every operated sector that doesn't have one yet,
-// up to today (AeroDataBox only has data for past/near flights). Sequential and gently
-// throttled to respect the API; stops cleanly when the quota/auth fails or on cancel.
+// Look up and store registrations for operated sectors that don't have one yet, up to
+// today (AeroDataBox only has data for past/near flights). Sequential and throttled to
+// respect the 1 req/s limit; stops cleanly on quota/auth failure or cancel. Optimised:
+// once any leg of a same-day rotation is captured, its siblings are inferred (same
+// airframe) and skipped, so a LIS→GVA→LIS day costs a single API call.
 export async function backfillRegs(
   userId: string,
   duties: ParsedDuty[],
@@ -95,17 +170,27 @@ export async function backfillRegs(
   shouldStop?: () => boolean,
 ): Promise<BackfillResult> {
   const today = new Date().toISOString().slice(0, 10);
-  const existing = await regMap(userId);
+  const confirmed = await regMap(userId);
+  const keyOf = (d: RegDuty) => regMapKey(d.date, d.flightNumber!, d.departureAirport, d.arrivalAirport);
   const pending = operatedFlights(duties).filter(
-    (d) => d.flightNumber && d.date <= today && !existing.has(regMapKey(d.date, d.flightNumber, d.departureAirport, d.arrivalAirport)),
+    (d) => d.flightNumber && d.date <= today && !confirmed.has(keyOf(d)),
   );
 
   let found = 0;
   let emptyCount = 0;
   let lastError: string | undefined;
+  let called = 0;
   for (let i = 0; i < pending.length; i++) {
     if (shouldStop?.()) return { found, processed: i, total: pending.length, stopped: 'cancelled', emptyCount, lastError };
     const d = pending[i];
+    // A sibling leg captured earlier this run already gives us this tail → no API call.
+    if (resolveRegs(duties, confirmed).has(keyOf(d))) {
+      onProgress?.({ done: i + 1, total: pending.length, found });
+      continue;
+    }
+    // Free tier: 1 req/s — space out actual calls (skipped legs don't count).
+    if (called > 0) await new Promise((res) => setTimeout(res, 1100));
+    called++;
     const r = await fetchFlightInfo(d.flightNumber!, d.date);
     if (!r.configured) return { found, processed: i, total: pending.length, stopped: 'not_configured', emptyCount, lastError };
     if (r.error) lastError = r.error;
@@ -113,11 +198,12 @@ export async function backfillRegs(
     if (/_429$/.test(r.error ?? '')) return { found, processed: i, total: pending.length, stopped: 'quota', emptyCount, lastError };
     if (/_40[13]$/.test(r.error ?? '')) return { found, processed: i, total: pending.length, stopped: 'auth', emptyCount, lastError };
     const leg = matchLeg(r.flights, d.departureAirport, d.arrivalAirport);
-    if (leg?.reg) { await recordReg(userId, d, leg); found++; }
-    else if (r.flights.length === 0) emptyCount++;
+    if (leg?.reg) {
+      const saved = await recordReg(userId, d, leg);
+      if (saved) confirmed.set(keyOf(d), saved); // so the sibling skips its call
+      found++;
+    } else if (r.flights.length === 0) emptyCount++;
     onProgress?.({ done: i + 1, total: pending.length, found });
-    // AeroDataBox free tier: hard limit of 1 req/s — wait 1.1 s between calls.
-    if (i < pending.length - 1) await new Promise((res) => setTimeout(res, 1100));
   }
   return { found, processed: pending.length, total: pending.length, emptyCount, lastError };
 }

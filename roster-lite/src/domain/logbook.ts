@@ -1,6 +1,6 @@
 import type { AircraftReg, ParsedDuty } from './types';
 import { operatedFlights } from './flightTime';
-import { regMapKey } from './aircraftRegs';
+import { regMapKey, resolveRegs } from './aircraftRegs';
 import { diffMinutes, formatDuration } from '../utils/duration';
 
 // A pilot's logbook row, one per operated sector. Built straight from the roster so
@@ -15,23 +15,30 @@ export interface LogbookEntry {
   blockMinutes: number;
   aircraft: string;
   reg: string; // aircraft registration (recorded from flight info), or ''
+  regInferred: boolean; // tail inferred from a same-day rotation sibling, not captured directly
 }
 
-// `regs` maps "date|flightNumber" → recorded registration; pass it to fill the tail.
+// `regs` maps date+flight+route → recorded registration; pass it to fill the tail. Tails
+// are resolved across same-day rotations too (one captured leg fills its siblings).
 export function logbookEntries(
   duties: ParsedDuty[], regs?: Map<string, AircraftReg>,
 ): LogbookEntry[] {
-  return operatedFlights(duties).map((d) => ({
-    date: d.date,
-    flightNumber: d.flightNumber ?? '',
-    from: d.departureAirport ?? '',
-    to: d.arrivalAirport ?? '',
-    off: d.departureTime!,
-    on: d.arrivalTime!,
-    blockMinutes: diffMinutes(d.departureTime!, d.arrivalTime!),
-    aircraft: d.aircraftType ?? '',
-    reg: regs?.get(regMapKey(d.date, d.flightNumber ?? '', d.departureAirport, d.arrivalAirport))?.reg ?? '',
-  }));
+  const resolved = resolveRegs(duties, regs ?? new Map());
+  return operatedFlights(duties).map((d) => {
+    const hit = resolved.get(regMapKey(d.date, d.flightNumber ?? '', d.departureAirport, d.arrivalAirport));
+    return {
+      date: d.date,
+      flightNumber: d.flightNumber ?? '',
+      from: d.departureAirport ?? '',
+      to: d.arrivalAirport ?? '',
+      off: d.departureTime!,
+      on: d.arrivalTime!,
+      blockMinutes: diffMinutes(d.departureTime!, d.arrivalTime!),
+      aircraft: d.aircraftType ?? '',
+      reg: hit?.reg ?? '',
+      regInferred: hit?.inferred ?? false,
+    };
+  });
 }
 
 function csvCell(value: string): string {

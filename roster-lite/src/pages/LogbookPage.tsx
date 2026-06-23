@@ -221,7 +221,9 @@ export default function LogbookPage() {
                   <TableCell sx={{ whiteSpace: 'nowrap' }}>{formatDuration(e.blockMinutes)}</TableCell>
                   <TableCell>
                     <Box>{e.aircraft || '—'}</Box>
-                    <Box sx={{ color: 'text.secondary', fontSize: '0.8rem' }}>{e.reg || '—'}</Box>
+                    <Box sx={{ color: 'text.secondary', fontSize: '0.8rem' }}>
+                      {e.reg || '—'}{e.reg && e.regInferred ? ' *' : ''}
+                    </Box>
                   </TableCell>
                 </TableRow>
               ))}
@@ -233,6 +235,9 @@ export default function LogbookPage() {
       <Divider />
       <Typography variant="caption" color="text.secondary">
         Gerado a partir da escala importada. Não substitui o teu logbook oficial.
+        {entries.some((e) => e.regInferred) && (
+          <> Matrículas com <strong>*</strong> foram inferidas da rotação do dia (mesmo avião), não confirmadas voo a voo.</>
+        )}
       </Typography>
     </Stack>
   );
