@@ -9,7 +9,7 @@ import {
   saveRoster, saveUser, setActiveUserId,
 } from '../storage/rosterStore';
 import { clearUserGCalData } from '../utils/googleCalendar';
-import { RosterContext, type RosterState } from './useRoster';
+import { RosterContext, type RosterState, type RosterImportPreview } from './useRoster';
 
 export function RosterProvider({ children }: { children: ReactNode }) {
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -185,6 +185,42 @@ export function RosterProvider({ children }: { children: ReactNode }) {
     setImporting(false);
   }, [activeUser]);
 
+  // Parse + merge + diff WITHOUT saving — for the "review changes first" flow. Returns
+  // what would become current, plus the changes it introduces.
+  const previewImport = useCallback(async (file: File): Promise<RosterImportPreview> => {
+    if (!activeUser) throw new Error('Sem utilizador ativo.');
+    const userId = activeUser.id;
+    const result = await parseRosterFile(file);
+    const previous = await loadRoster(userId);
+    const mergedDuties = mergeDuties(previous?.duties ?? [], result.duties);
+    const changes = previous ? diffRosters(previous.duties, mergedDuties) : [];
+    const next: Roster = {
+      id: userId,
+      fileName: file.name,
+      sourceType: result.sourceType,
+      importedAt: new Date().toISOString(),
+      duties: mergedDuties,
+      rawText: result.rawText,
+      changes,
+    };
+    return { next, changes, warnings: result.warnings };
+  }, [activeUser]);
+
+  // Commit a previewed import. Serialized through the same lock as importFile so a
+  // concurrent download can't clobber it.
+  const applyImport = useCallback(async (preview: RosterImportPreview) => {
+    const userId = preview.next.id;
+    const run = importLock.current.then(async () => {
+      await saveRoster(userId, preview.next);
+      if (activeUserRef.current?.id === userId) {
+        setRoster(preview.next);
+        setWarnings(preview.warnings);
+      }
+    });
+    importLock.current = run.catch(() => {});
+    await run;
+  }, []);
+
   const clear = useCallback(async () => {
     if (!activeUser) return;
     await clearRoster(activeUser.id);
@@ -204,12 +240,12 @@ export function RosterProvider({ children }: { children: ReactNode }) {
   const value = useMemo<RosterState>(
     () => ({
       roster, loading, importing, error, warnings, sessionToken,
-      importFile, clear, dismissChanges, setSessionToken,
+      importFile, previewImport, applyImport, clear, dismissChanges, setSessionToken,
       users, activeUser,
       switchUser, createUser, renameUser, deleteUser: deleteUserFn,
     }),
     [roster, loading, importing, error, warnings, sessionToken,
-     importFile, clear, dismissChanges, users, activeUser, switchUser, createUser, renameUser, deleteUserFn]
+     importFile, previewImport, applyImport, clear, dismissChanges, users, activeUser, switchUser, createUser, renameUser, deleteUserFn]
   );
 
   return <RosterContext.Provider value={value}>{children}</RosterContext.Provider>;

@@ -1,14 +1,21 @@
 import { useState } from 'react';
 import {
-  Alert, Box, Button, CircularProgress, Dialog, DialogContent, DialogTitle,
+  Alert, Box, Button, Chip, CircularProgress, Dialog, DialogContent, DialogTitle,
   IconButton, Link, Stack, TextField, Typography,
 } from '@mui/material';
 import { CloudDownload, Close, Login, CheckCircle, NotificationsActive } from '@mui/icons-material';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { login, fetchRoster, SessionExpiredError } from '../services/crewlinkApi';
-import { useRoster } from '../state/useRoster';
+import { useRoster, type RosterImportPreview } from '../state/useRoster';
 import { savePdf } from '../storage/rosterStore';
 import { addNotification } from '../storage/notifications';
+import type { ChangeType } from '../domain/types';
+
+const CHANGE_META: Record<ChangeType, { label: string; color: 'success' | 'warning' | 'error' }> = {
+  added: { label: 'Novo', color: 'success' },
+  modified: { label: 'Alterado', color: 'warning' },
+  removed: { label: 'Removido', color: 'error' },
+};
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 function toCrewLinkDate(iso: string): string {
@@ -20,7 +27,7 @@ function toCrewLinkDate(iso: string): string {
 // page: authenticate if needed, pick a date range, download → parse → the roster view
 // updates in place (and the diff banner fires if anything changed).
 export default function DownloadRosterDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { sessionToken, setSessionToken, importFile, importing, activeUser } = useRoster();
+  const { sessionToken, setSessionToken, previewImport, applyImport, importing, activeUser } = useRoster();
 
   const [crewCode, setCrewCode] = useState(activeUser?.crewCode ?? '');
   const [password, setPassword] = useState('');
@@ -36,6 +43,18 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
   // Pending CrewLink notification the user must read and confirm before the PDF
   // can be generated. While set, the dialog shows the notification phase.
   const [pendingNotification, setPendingNotification] = useState<string | null>(null);
+  // After a download, the parsed-but-not-saved roster + its diff, shown for review when it
+  // actually changes existing days. The buffer is kept so we can save the PDF on apply.
+  const [preview, setPreview] = useState<RosterImportPreview | null>(null);
+  const [pendingBuffer, setPendingBuffer] = useState<ArrayBuffer | null>(null);
+  // Notification text to record in the banner once the reviewed roster is applied.
+  const [recordNotifText, setRecordNotifText] = useState<string | null>(null);
+
+  function resetReview() {
+    setPreview(null);
+    setPendingBuffer(null);
+    setRecordNotifText(null);
+  }
 
   function handleClose() {
     if (downloading || authLoading) return;
@@ -44,6 +63,7 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
     setStatus('');
     setPassword('');
     setPendingNotification(null);
+    resetReview();
     onClose();
   }
 
@@ -62,27 +82,57 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
     }
   }
 
-  // Persist + parse the downloaded PDF. Shared by the normal and post-confirmation
-  // paths. `notificationText`, when given, is recorded in the top banner.
+  // Parse the downloaded PDF WITHOUT saving and decide what to do: if it changes existing
+  // days (modified/removed) show the diff for review; otherwise (first import, new period,
+  // or no change) apply straight away.
   async function processPdf(buffer: ArrayBuffer, notificationText?: string) {
-    setStatus('PDF recebido. A processar…');
-    const blob = new Blob([buffer], { type: 'application/pdf' });
-    const id = crypto.randomUUID();
+    setStatus('PDF recebido. A analisar alterações…');
     const fileName = `escala-${format(new Date(), 'yyyyMMdd-HHmm')}.pdf`;
+    const file = new File([new Blob([buffer], { type: 'application/pdf' })], fileName, { type: 'application/pdf' });
+    const pv = await previewImport(file);
+    const hasRealChanges = pv.changes.some((c) => c.type !== 'added');
+    setPendingNotification(null);
+    if (hasRealChanges) {
+      // Hold for review — nothing is written to the roster until the user applies.
+      setPendingBuffer(buffer);
+      setRecordNotifText(notificationText ?? null);
+      setPreview(pv);
+      setStatus('');
+    } else {
+      await commitPreview(buffer, pv, notificationText);
+    }
+  }
+
+  // Persist the PDF, apply the reviewed roster and record the notification (if any).
+  async function commitPreview(buffer: ArrayBuffer, pv: RosterImportPreview, notificationText?: string | null) {
+    setStatus('A guardar…');
+    const blob = new Blob([buffer], { type: 'application/pdf' });
     await savePdf({
-      id,
+      id: crypto.randomUUID(),
       userId: activeUser?.id,
-      fileName,
+      fileName: pv.next.fileName,
       blob,
       downloadedAt: new Date().toISOString(),
       beginDate: beginDate || null,
       endDate: endDate || null,
     });
-    await importFile(new File([blob], fileName, { type: 'application/pdf' }));
+    await applyImport(pv);
     if (notificationText && activeUser) addNotification(activeUser.id, notificationText);
+    resetReview();
     setStatus('');
-    setPendingNotification(null);
     setDone(true);
+  }
+
+  async function applyReviewed() {
+    if (!preview || !pendingBuffer) return;
+    setDownloading(true);
+    try {
+      await commitPreview(pendingBuffer, preview, recordNotifText);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Erro ao aplicar a escala.');
+    } finally {
+      setDownloading(false);
+    }
   }
 
   // confirmNotification: when true, the worker acknowledges the pending CrewLink
@@ -111,7 +161,7 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
       }
       // Keep the session alive if NetLine rotated the JSESSIONID during the download.
       if (result.sessionToken && result.sessionToken !== sessionToken) setSessionToken(result.sessionToken);
-      // result.type === 'pdf' — record the notification text in the banner if this
+      // result.type === 'pdf' — carry the notification text through to the banner if this
       // download was the confirmation step.
       await processPdf(result.buffer, confirmNotification ? pendingNotification ?? undefined : undefined);
     } catch (e) {
@@ -145,12 +195,51 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
             </Typography>
             <Button variant="contained" onClick={handleClose}>Ver escala</Button>
           </Stack>
+        ) : preview ? (
+          // ── Review phase: show the diff before writing anything ──────────────
+          <Stack spacing={2} pt={0.5}>
+            <Alert severity="info">
+              Escala descarregada. Revê as alterações — nada é guardado até carregares
+              em <strong>Aplicar</strong>.
+            </Alert>
+            {error && <Alert severity="error">{error}</Alert>}
+            <Box display="flex" gap={1} flexWrap="wrap">
+              {(['modified', 'removed', 'added'] as ChangeType[]).map((t) => {
+                const n = preview.changes.filter((c) => c.type === t).length;
+                return n ? (
+                  <Chip key={t} size="small" color={CHANGE_META[t].color} sx={{ color: '#fff' }}
+                    label={`${n} ${CHANGE_META[t].label.toLowerCase()}${n > 1 ? 's' : ''}`} />
+                ) : null;
+              })}
+            </Box>
+            <Box sx={{ maxHeight: 260, overflowY: 'auto', p: 1, borderRadius: 1, bgcolor: 'action.hover' }}>
+              <Stack spacing={0.5}>
+                {preview.changes.map((c) => (
+                  <Box key={c.date} display="flex" alignItems="center" gap={1}>
+                    <Chip size="small" color={CHANGE_META[c.type].color} sx={{ color: '#fff', minWidth: 82 }}
+                      label={CHANGE_META[c.type].label} />
+                    <Typography variant="body2">{format(parseISO(c.date), 'EEE, dd MMM yyyy')}</Typography>
+                  </Box>
+                ))}
+              </Stack>
+            </Box>
+            <Stack direction="row" spacing={1}>
+              <Button variant="contained" fullWidth onClick={applyReviewed} disabled={downloading}
+                startIcon={downloading ? <CircularProgress size={18} color="inherit" /> : <CheckCircle />}>
+                {downloading ? 'A aplicar…' : 'Aplicar à escala'}
+              </Button>
+              <Button variant="outlined" color="inherit" fullWidth onClick={handleClose} disabled={downloading}>
+                Descartar
+              </Button>
+            </Stack>
+          </Stack>
         ) : pendingNotification !== null ? (
           // ── Notification phase ───────────────────────────────────────────────
           <Stack spacing={2} pt={0.5}>
             <Alert severity="warning" icon={<NotificationsActive />}>
-              O CrewLink tem uma notificação por ler para este período. Lê-a abaixo. Só
-              depois de a confirmares é que a escala é descarregada.
+              O CrewLink tem uma notificação por ler para este período. Lê-a abaixo. O
+              CrewLink só liberta a escala depois de confirmares — mas a seguir mostramos
+              as alterações para reveres antes de aplicar.
             </Alert>
             {error && <Alert severity="error">{error}</Alert>}
             <Box
