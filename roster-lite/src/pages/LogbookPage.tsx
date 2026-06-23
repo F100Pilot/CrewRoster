@@ -14,6 +14,7 @@ import type { LogbookRow } from '../domain/types';
 import { formatDuration } from '../utils/duration';
 import { downloadBlob } from '../utils/download';
 import { format, parseISO } from 'date-fns';
+import { pt } from 'date-fns/locale';
 import LogbookEditDialog, { type LogbookEditResult } from '../components/LogbookEditDialog';
 
 // Recency requirement: 3 take-offs and landings in the preceding 90 days.
@@ -54,6 +55,23 @@ export default function LogbookPage() {
   }, [userId, duties, reload]);
 
   const entries = useMemo(() => sortLogbook(rows), [rows]);
+  // Group sectors by calendar month for a month-by-month logbook, each with its own
+  // sector count and block subtotal.
+  const monthGroups = useMemo(() => {
+    const groups: { key: string; label: string; rows: LogbookRow[]; block: number }[] = [];
+    for (const e of entries) {
+      const mk = e.date.slice(0, 7); // YYYY-MM
+      let g = groups[groups.length - 1];
+      if (!g || g.key !== mk) {
+        const name = format(parseISO(e.date), 'MMMM yyyy', { locale: pt });
+        g = { key: mk, label: name.charAt(0).toUpperCase() + name.slice(1), rows: [], block: 0 };
+        groups.push(g);
+      }
+      g.rows.push(e);
+      g.block += rowBlock(e);
+    }
+    return groups;
+  }, [entries]);
   const totalBlock = useMemo(() => entries.reduce((sum, r) => sum + rowBlock(r), 0), [entries]);
   const landings90 = useMemo(() => landingsInRows(entries, today, RECENCY_DAYS), [entries, today]);
   const recencyOk = landings90 >= RECENCY_REQUIRED;
@@ -251,27 +269,40 @@ export default function LogbookPage() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {entries.map((e) => (
-                <TableRow key={e.key} hover sx={{ cursor: 'pointer' }} onClick={() => openEdit(e)}>
-                  <TableCell sx={{ whiteSpace: 'nowrap' }}>{format(parseISO(e.date), 'dd/MM')}</TableCell>
-                  <TableCell>
-                    <Box sx={{ fontWeight: 600 }}>{e.flightNumber}{e.edited ? ' ✎' : ''}</Box>
-                    <Box sx={{ color: 'text.secondary', fontSize: '0.8rem' }}>{e.from}–{e.to}</Box>
-                  </TableCell>
-                  <TableCell sx={{ whiteSpace: 'nowrap' }}>{formatDuration(rowBlock(e))}</TableCell>
-                  <TableCell>
-                    <Box>{e.aircraft || '—'}</Box>
-                    <Box sx={{ color: 'text.secondary', fontSize: '0.8rem' }}>
-                      {e.reg || '—'}{e.reg && e.regInferred ? ' *' : ''}
+              {monthGroups.map((g) => [
+                <TableRow key={`h-${g.key}`} sx={{ bgcolor: 'action.hover' }}>
+                  <TableCell
+                    colSpan={5}
+                    sx={{ textAlign: 'left !important', py: 0.5, fontWeight: 600, whiteSpace: 'nowrap' }}
+                  >
+                    {g.label}
+                    <Box component="span" sx={{ color: 'text.secondary', fontWeight: 400, ml: 1, fontSize: '0.8rem' }}>
+                      · {g.rows.length} setor{g.rows.length !== 1 ? 'es' : ''} · {formatDuration(g.block)}
                     </Box>
                   </TableCell>
-                  <TableCell sx={{ p: 0 }}>
-                    <IconButton size="small" onClick={(ev) => { ev.stopPropagation(); openEdit(e); }}>
-                      <Edit sx={{ fontSize: 16 }} />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
+                </TableRow>,
+                ...g.rows.map((e) => (
+                  <TableRow key={e.key} hover sx={{ cursor: 'pointer' }} onClick={() => openEdit(e)}>
+                    <TableCell sx={{ whiteSpace: 'nowrap' }}>{format(parseISO(e.date), 'dd/MM')}</TableCell>
+                    <TableCell>
+                      <Box sx={{ fontWeight: 600 }}>{e.flightNumber}{e.edited ? ' ✎' : ''}</Box>
+                      <Box sx={{ color: 'text.secondary', fontSize: '0.8rem' }}>{e.from}–{e.to}</Box>
+                    </TableCell>
+                    <TableCell sx={{ whiteSpace: 'nowrap' }}>{formatDuration(rowBlock(e))}</TableCell>
+                    <TableCell>
+                      <Box>{e.aircraft || '—'}</Box>
+                      <Box sx={{ color: 'text.secondary', fontSize: '0.8rem' }}>
+                        {e.reg || '—'}{e.reg && e.regInferred ? ' *' : ''}
+                      </Box>
+                    </TableCell>
+                    <TableCell sx={{ p: 0 }}>
+                      <IconButton size="small" onClick={(ev) => { ev.stopPropagation(); openEdit(e); }}>
+                        <Edit sx={{ fontSize: 16 }} />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                )),
+              ])}
             </TableBody>
           </Table>
         </Card>
