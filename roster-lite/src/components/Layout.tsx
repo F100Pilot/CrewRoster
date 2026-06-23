@@ -31,9 +31,9 @@ export default function Layout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { sessionToken, setSessionToken, activeUser } = useRoster();
-  // The logbook is for flight crew only — hide its tab for cabin crew.
+  // Logbook and documents are flight-crew oriented — hide their tabs for cabin crew.
   const NAV = activeUser?.role === 'cabin'
-    ? BASE_NAV.filter((n) => n.path !== '/logbook')
+    ? BASE_NAV.filter((n) => n.path !== '/logbook' && n.path !== '/documents')
     : BASE_NAV;
   const current = NAV.findIndex((n) => n.path === location.pathname);
   const [downloadOpen, setDownloadOpen] = useState(false);
