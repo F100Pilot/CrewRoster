@@ -4,7 +4,7 @@ import {
   Divider, IconButton, InputAdornment, Link, Stack, TextField, ToggleButton,
   ToggleButtonGroup, Typography,
 } from '@mui/material';
-import { Close, Visibility, VisibilityOff, CheckCircle, Science, CalendarMonth, DeleteOutline, BugReport, DarkMode, LightMode } from '@mui/icons-material';
+import { Close, Visibility, VisibilityOff, CheckCircle, Science, CalendarMonth, DeleteOutline, BugReport, DarkMode, LightMode, InfoOutlined } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useColorMode } from '../state/colorMode';
 import {
@@ -12,6 +12,7 @@ import {
   CHECKIN_LEAD_OPTIONS, getCheckinLeadMinutes, setCheckinLeadMinutes,
 } from '../storage/settings';
 import { fetchFlightInfo } from '../services/crewlinkApi';
+import { APP_NAME, APP_VERSION_LABEL } from '../version';
 import { operatedFlights } from '../domain/flightTime';
 import { downloadIcs } from '../utils/icsExport';
 import GoogleCalendarSync from './GoogleCalendarSync';
@@ -274,6 +275,24 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
             >
               Abrir Debug
             </Button>
+          </Box>
+
+          <Divider />
+
+          <Box>
+            <Box display="flex" alignItems="center" gap={0.5} mb={0.5}>
+              <InfoOutlined fontSize="small" color="action" />
+              <Typography variant="subtitle2">Sobre</Typography>
+            </Box>
+            <Typography variant="body2" color="text.secondary">
+              {APP_NAME} {APP_VERSION_LABEL}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Criado por Paulo Morais
+            </Typography>
+            <Typography variant="body2">
+              <Link href="mailto:pflm.bet@gmail.com">pflm.bet@gmail.com</Link>
+            </Typography>
           </Box>
         </Stack>
       </DialogContent>

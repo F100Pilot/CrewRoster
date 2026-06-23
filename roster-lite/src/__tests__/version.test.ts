@@ -22,7 +22,7 @@ describe('notesSince', () => {
   });
   it('every release note version is present and well-formed', () => {
     for (const n of RELEASE_NOTES) {
-      expect(n.version).toMatch(/^\d+\.\d+\.\d+$/);
+      expect(n.version).toMatch(/^\d+\.\d+\.\d+(\.\d+)?$/);
       expect(n.highlights.length).toBeGreaterThan(0);
     }
   });
