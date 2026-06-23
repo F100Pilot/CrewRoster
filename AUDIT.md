@@ -26,7 +26,7 @@ importação), **(2)** `deleteUser` incompleto e não-atómico, **(3)** ausênci
 | 3 | React | Sem error boundary — qualquer erro de render dá ecrã branco (mau numa PWA instalada) | **Alta** | ✅ 0.8.3.2 |
 | 4 | Correção | Recência (`recencyStatus`): `validUntil` e `current` calculados de conjuntos inconsistentes | **Alta** | ✅ 0.8.3.3 |
 | 5 | Testes | Ambiente Vitest `node` bloqueia testar `backup.ts`/storage/estado/componentes | **Alta** | ✅ 0.8.3.4 |
-| 6 | Correção | Parser PDF: nº de voo vs hora resolvido só por posição (colisão `0845`/`2359`) | **Média** | Pendente (precisa de PDF real) |
+| 6 | Correção | Parser PDF: nº de voo vs hora resolvido só por posição (colisão `0845`/`2359`) | **Média** | ✅ Verificado + teste |
 | 7 | Correção | ICS ignora `Z`/`TZID` — trata tudo como UTC | **Média** | ✅ 0.8.3.3 |
 
 > **Vaga 1 concluída (0.8.3.2):** itens 1.1, 1.2 (validação/allow-list no restore + `dataUrlToBlob` endurecido),
@@ -52,8 +52,13 @@ importação), **(2)** `deleteUser` incompleto e não-atómico, **(3)** ausênci
 > (README corrige `worker/worker.js` e o caminho `src/__tests__/`). Sem alteração de comportamento da app
 > (sem bump de versão). **Pendente:** 2.5 (precisa de PDF real); upgrades de majors (4.13) ficam para quando
 > for oportuno.
-
----
+>
+> **2.5 verificado (com escala real de 7 meses):** uma escala real (01Jan–31Jul 2026, 12 páginas, 84 voos)
+> foi processada sem um único voo sem número ou sem horas. Os números de voo que são horas válidas
+> (TP1452=14:52, TP1438=14:38, TP1116=11:16…) ficam corretos porque o parser os identifica pela POSIÇÃO
+> (linha logo abaixo do transportador), não pelo valor. Adicionado teste de regressão dedicado
+> (`pgaGridFlightTime.test.ts`) modelado numa coluna real, sem dados pessoais. Nenhuma alteração de
+> heurística foi necessária — a abordagem estrutural já estava correta.
 
 ## 1. Segurança
 

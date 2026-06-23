@@ -230,7 +230,10 @@ interface Segment {
 // narrow x sub-column with its attributes stacked vertically (one per y-line), so we
 // walk top→bottom and segment on each "starter" (a carrier prefix or a duty-name);
 // everything else accrues to the current entry. A clean sub-column yields one duty.
-function parseSubColumn(
+// Exported for unit testing the per-day column parsing in isolation (notably the
+// flight-number-vs-time collision: a 4-digit number like 1452 is a valid 14:52 clock
+// time, so the number is identified by POSITION, not value).
+export function parseSubColumn(
   colTokens: PositionedToken[], date: string, hotels?: Map<string, HotelInfo>,
 ): ParsedDuty[] {
   const ordered = [...colTokens].sort((a, b) => b.y - a.y).map((t) => t.text);
