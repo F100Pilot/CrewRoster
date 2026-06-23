@@ -14,6 +14,7 @@ import UserSwitcher from './UserSwitcher';
 import DownloadRosterDialog from './DownloadRosterDialog';
 import NotificationBanner from './NotificationBanner';
 import SettingsDialog from './SettingsDialog';
+import WhatsNewDialog from './WhatsNewDialog';
 
 interface NavItem { label: string; icon: ReactNode; path: string }
 
@@ -88,6 +89,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       </Container>
       <DownloadRosterDialog open={downloadOpen} onClose={() => setDownloadOpen(false)} />
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <WhatsNewDialog />
       {/* Seven tabs don't fit a phone width, so the bar scrolls horizontally. */}
       <Paper
         sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, overflowX: 'auto' }}

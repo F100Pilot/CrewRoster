@@ -54,3 +54,22 @@ export function setCheckinLeadMinutes(min: number): void {
     // ignore
   }
 }
+
+// ── Last app version the user has acknowledged (for the "Novidades" pop-up) ──────────
+const LAST_SEEN_VERSION = 'crewroster.lastSeenVersion';
+
+export function getLastSeenVersion(): string | null {
+  try {
+    return localStorage.getItem(LAST_SEEN_VERSION);
+  } catch {
+    return null;
+  }
+}
+
+export function setLastSeenVersion(version: string): void {
+  try {
+    localStorage.setItem(LAST_SEEN_VERSION, version);
+  } catch {
+    // ignore
+  }
+}
