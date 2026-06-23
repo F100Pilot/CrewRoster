@@ -68,7 +68,7 @@ export default function FlightWeather({ duty, date }: { duty: ParsedDuty; date: 
           {!loading && fc && (
             <Chip size="small" label={LEVEL[fc.level].label} sx={{ bgcolor: LEVEL[fc.level].color, color: '#fff', fontWeight: 600 }} />
           )}
-          <IconButton onClick={() => setOpen(false)} size="small"><Close fontSize="small" /></IconButton>
+          <IconButton onClick={() => setOpen(false)} size="small" aria-label="Fechar"><Close fontSize="small" /></IconButton>
         </DialogTitle>
         <DialogContent dividers>
           {/* Expected surface weather at each airport, at its scheduled time. */}

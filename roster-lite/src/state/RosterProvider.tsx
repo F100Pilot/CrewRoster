@@ -249,7 +249,7 @@ export function RosterProvider({ children }: { children: ReactNode }) {
       users, activeUser,
       switchUser, createUser, renameUser, deleteUser: deleteUserFn,
     }),
-    [roster, loading, importing, error, loadError, warnings, sessionToken,
+    [roster, loading, importing, error, loadError, warnings, sessionToken, setSessionToken,
      importFile, previewImport, applyImport, clear, dismissChanges, users, activeUser, switchUser, createUser, renameUser, deleteUserFn]
   );
 

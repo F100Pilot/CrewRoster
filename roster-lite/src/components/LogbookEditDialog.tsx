@@ -75,7 +75,7 @@ export default function LogbookEditDialog({
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, pr: 1 }}>
         <Box flexGrow={1}>{initial ? 'Editar setor' : 'Adicionar setor'}</Box>
-        <IconButton onClick={onClose} size="small"><Close fontSize="small" /></IconButton>
+        <IconButton onClick={onClose} size="small" aria-label="Fechar"><Close fontSize="small" /></IconButton>
       </DialogTitle>
       <DialogContent dividers>
         <Stack spacing={2}>

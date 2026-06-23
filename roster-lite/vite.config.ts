@@ -8,6 +8,21 @@ const base = process.env.BASE ?? '/CrewRoster/';
 
 export default defineConfig({
   base,
+  build: {
+    rollupOptions: {
+      output: {
+        // Split heavy vendor libraries out of the main bundle so the app shell stays
+        // small; the map/stats/pdf routes are also lazy-loaded (see App.tsx).
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return;
+          if (id.includes('@mui') || id.includes('@emotion')) return 'mui';
+          if (id.includes('d3-geo') || id.includes('topojson') || id.includes('world-atlas')) return 'geo';
+          if (id.includes('pdfjs-dist')) return 'pdfjs';
+          if (id.includes('date-fns')) return 'datefns';
+        },
+      },
+    },
+  },
   plugins: [
     react(),
     // Installable PWA + offline. The roster itself already lives in IndexedDB; this
@@ -32,6 +47,7 @@ export default defineConfig({
   ],
   test: {
     globals: true,
-    environment: 'node',
+    environment: 'jsdom',
+    setupFiles: ['./vitest.setup.ts'],
   },
 });

@@ -93,13 +93,13 @@ export default function CalendarPage() {
     <Stack spacing={2} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       <Box display="flex" alignItems="center" gap={1}>
         <Box flex={1} />
-        <IconButton size="small" onClick={() => setMonth((m) => subMonths(m, 1))}>
+        <IconButton size="small" onClick={() => setMonth((m) => subMonths(m, 1))} aria-label="Mês anterior">
           <ChevronLeft />
         </IconButton>
         <Typography variant="h6" sx={{ minWidth: 150, textAlign: 'center' }}>
           {format(month, 'MMMM yyyy')}
         </Typography>
-        <IconButton size="small" onClick={() => setMonth((m) => addMonths(m, 1))}>
+        <IconButton size="small" onClick={() => setMonth((m) => addMonths(m, 1))} aria-label="Mês seguinte">
           <ChevronRight />
         </IconButton>
         <Box flex={1} display="flex" justifyContent="flex-end">

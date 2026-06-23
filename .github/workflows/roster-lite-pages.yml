@@ -27,6 +27,7 @@ jobs:
         working-directory: roster-lite
       - run: npm ci
       - run: npm run typecheck
+      - run: npm run lint
       - run: npm test
       - run: npm run build
         env:

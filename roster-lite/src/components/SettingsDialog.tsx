@@ -161,7 +161,7 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, pr: 1 }}>
         <Box flexGrow={1}>Definições</Box>
-        <IconButton onClick={onClose} size="small"><Close fontSize="small" /></IconButton>
+        <IconButton onClick={onClose} size="small" aria-label="Fechar definições"><Close fontSize="small" /></IconButton>
       </DialogTitle>
       <DialogContent dividers>
         <Stack spacing={2}>
@@ -369,7 +369,7 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
           <Box>
             <Box display="flex" alignItems="center" gap={0.5} mb={0.5}>
               <Typography variant="subtitle2" sx={{ flexGrow: 1 }}>Sobre</Typography>
-              <IconButton size="small" onClick={() => setReadmeOpen(true)} title="Documentação">
+              <IconButton size="small" onClick={() => setReadmeOpen(true)} title="Documentação" aria-label="Abrir documentação">
                 <InfoOutlined fontSize="small" />
               </IconButton>
             </Box>
@@ -398,7 +398,7 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
       <Dialog open={readmeOpen} onClose={() => setReadmeOpen(false)} maxWidth="md" fullWidth>
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', pr: 1 }}>
           <Box flexGrow={1}>Documentação</Box>
-          <IconButton onClick={() => setReadmeOpen(false)} size="small"><Close fontSize="small" /></IconButton>
+          <IconButton onClick={() => setReadmeOpen(false)} size="small" aria-label="Fechar documentação"><Close fontSize="small" /></IconButton>
         </DialogTitle>
         <DialogContent dividers sx={{ p: 0 }}>
           <Box

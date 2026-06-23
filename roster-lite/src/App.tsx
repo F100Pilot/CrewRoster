@@ -1,24 +1,36 @@
+import { lazy, Suspense } from 'react';
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
-import { Box, Button, Stack, Typography } from '@mui/material';
+import { Box, Button, CircularProgress, Stack, Typography } from '@mui/material';
 import { ErrorOutline, Refresh } from '@mui/icons-material';
 import ErrorBoundary from './components/ErrorBoundary';
 import Layout from './components/Layout';
 import RosterPage from './pages/RosterPage';
 import CalendarPage from './pages/CalendarPage';
 import DayDetailPage from './pages/DayDetailPage';
-import LogbookPage from './pages/LogbookPage';
-import StatsPage from './pages/StatsPage';
-import MapPage from './pages/MapPage';
-import DocumentsPage from './pages/DocumentsPage';
-import DebugPage from './pages/DebugPage';
-import CodesPage from './pages/CodesPage';
-import LoginPage from './pages/LoginPage';
-import ImportPage from './pages/ImportPage';
-import SavedPdfsPage from './pages/SavedPdfsPage';
-import PdfViewerPage from './pages/PdfViewerPage';
 import WelcomePage from './pages/WelcomePage';
 import { RosterProvider } from './state/RosterProvider';
 import { useRoster } from './state/useRoster';
+
+// Secondary routes are code-split so their heavy deps (d3-geo + world-atlas on the map,
+// pdf.js on the viewer, the stats/logbook math) don't weigh down the first load.
+const LogbookPage = lazy(() => import('./pages/LogbookPage'));
+const StatsPage = lazy(() => import('./pages/StatsPage'));
+const MapPage = lazy(() => import('./pages/MapPage'));
+const DocumentsPage = lazy(() => import('./pages/DocumentsPage'));
+const DebugPage = lazy(() => import('./pages/DebugPage'));
+const CodesPage = lazy(() => import('./pages/CodesPage'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const ImportPage = lazy(() => import('./pages/ImportPage'));
+const SavedPdfsPage = lazy(() => import('./pages/SavedPdfsPage'));
+const PdfViewerPage = lazy(() => import('./pages/PdfViewerPage'));
+
+function RouteFallback() {
+  return (
+    <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+      <CircularProgress />
+    </Box>
+  );
+}
 
 function LoadErrorScreen({ message }: { message: string }) {
   return (
@@ -64,22 +76,24 @@ function AppRoutes() {
 
   return (
     <Layout>
-      <Routes>
-        <Route path="/" element={<RosterPage />} />
-        <Route path="/import" element={<ImportPage />} />
-        <Route path="/pdfs" element={<SavedPdfsPage />} />
-        <Route path="/pdf/:id" element={<PdfViewerPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/calendar" element={<CalendarPage />} />
-        <Route path="/day/:date" element={<DayDetailPage />} />
-        <Route path="/logbook" element={<LogbookPage />} />
-        <Route path="/stats" element={<StatsPage />} />
-        <Route path="/map" element={<MapPage />} />
-        <Route path="/documents" element={<DocumentsPage />} />
-        <Route path="/debug" element={<DebugPage />} />
-        <Route path="/codes" element={<CodesPage />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <Suspense fallback={<RouteFallback />}>
+        <Routes>
+          <Route path="/" element={<RosterPage />} />
+          <Route path="/import" element={<ImportPage />} />
+          <Route path="/pdfs" element={<SavedPdfsPage />} />
+          <Route path="/pdf/:id" element={<PdfViewerPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/calendar" element={<CalendarPage />} />
+          <Route path="/day/:date" element={<DayDetailPage />} />
+          <Route path="/logbook" element={<LogbookPage />} />
+          <Route path="/stats" element={<StatsPage />} />
+          <Route path="/map" element={<MapPage />} />
+          <Route path="/documents" element={<DocumentsPage />} />
+          <Route path="/debug" element={<DebugPage />} />
+          <Route path="/codes" element={<CodesPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </Layout>
   );
 }

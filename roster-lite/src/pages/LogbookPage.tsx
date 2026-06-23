@@ -24,7 +24,8 @@ export default function LogbookPage() {
   const navigate = useNavigate();
   const { roster, activeUser } = useRoster();
 
-  const duties = roster?.duties ?? [];
+  // Memoised so the effects below don't re-run on every render (a fresh [] each time).
+  const duties = useMemo(() => roster?.duties ?? [], [roster]);
   const userId = activeUser?.id;
   const today = new Date().toISOString().slice(0, 10);
 

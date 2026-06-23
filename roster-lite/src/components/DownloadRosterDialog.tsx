@@ -303,7 +303,7 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, pr: 1 }}>
         <CloudDownload color="primary" />
         <Box flexGrow={1}>Descarregar escala</Box>
-        <IconButton onClick={handleClose} size="small" disabled={downloading || authLoading}>
+        <IconButton onClick={handleClose} size="small" disabled={downloading || authLoading} aria-label="Fechar">
           <Close fontSize="small" />
         </IconButton>
       </DialogTitle>

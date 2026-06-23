@@ -43,7 +43,7 @@ function pick(row: Record<string, string>, keys: string[]): string | null {
 }
 
 export function parseCsv(content: string): ParsedDuty[] {
-  const text = content.replace(/^﻿/, ''); // strip BOM
+  const text = content.replace(/^\uFEFF/, ''); // strip BOM
   // Detect the delimiter from the header (first physical line, before any quoted break).
   const firstLine = text.split(/\r?\n/, 1)[0] ?? '';
   const delimiter = (firstLine.match(/;/g)?.length ?? 0) > (firstLine.match(/,/g)?.length ?? 0) ? ';' : ',';

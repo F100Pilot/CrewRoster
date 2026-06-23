@@ -17,7 +17,6 @@ const H = 100;
 const PAD = 8;
 
 // World land/borders, decoded once from the bundled TopoJSON (offline, no map tiles).
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const WORLD = feature(worldTopo as any, (worldTopo as any).objects.countries) as unknown as FeatureCollection;
 
 export default function MapPage() {

@@ -170,7 +170,6 @@ export default function PdfCanvasViewer({ blob }: { blob: Blob }) {
       el.removeEventListener('touchmove', onMove);
       el.removeEventListener('touchend', onEnd);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const stepZoom = (delta: number) => {

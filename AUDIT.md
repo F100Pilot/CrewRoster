@@ -25,7 +25,7 @@ importação), **(2)** `deleteUser` incompleto e não-atómico, **(3)** ausênci
 | 2 | Armazenamento | `deleteUser` não apaga PDFs nem chaves localStorage do utilizador, e não é atómico | **Alta** | ✅ 0.8.3.2 |
 | 3 | React | Sem error boundary — qualquer erro de render dá ecrã branco (mau numa PWA instalada) | **Alta** | ✅ 0.8.3.2 |
 | 4 | Correção | Recência (`recencyStatus`): `validUntil` e `current` calculados de conjuntos inconsistentes | **Alta** | ✅ 0.8.3.3 |
-| 5 | Testes | Ambiente Vitest `node` bloqueia testar `backup.ts`/storage/estado/componentes | **Alta** | Vaga 3 |
+| 5 | Testes | Ambiente Vitest `node` bloqueia testar `backup.ts`/storage/estado/componentes | **Alta** | ✅ 0.8.3.4 |
 | 6 | Correção | Parser PDF: nº de voo vs hora resolvido só por posição (colisão `0845`/`2359`) | **Média** | Pendente (precisa de PDF real) |
 | 7 | Correção | ICS ignora `Z`/`TZID` — trata tudo como UTC | **Média** | ✅ 0.8.3.3 |
 
@@ -39,6 +39,12 @@ importação), **(2)** `deleteUser` incompleto e não-atómico, **(3)** ausênci
 > 2.8 (janela de 12 meses sem overflow de fim de mês), 2.9 (ano da notificação com fallback),
 > 2.10 (CSV com newlines dentro de aspas). +10 testes. **Adiado:** 2.5 (colisão nº de voo/hora) requer um
 > PDF real com um nº de voo que seja uma hora válida (ex. `TP0845`) para calibrar sem regredir o parser.
+>
+> **Vaga 3 concluída (0.8.3.4):** item 5 (testes em `jsdom` + `fake-indexeddb`) — desbloqueou e adicionou
+> testes a `backup.ts` e `rosterStore.ts` (incl. `deleteUser` completo), 162 testes no total; 4.4 (ESLint 9
+> com react-hooks + jsx-a11y, no CI antes do build); 4.5 (`aria-label` nos botões só-ícone); 4.3
+> (code-splitting: o bundle principal passou de ~1.17 MB para ~158 kB, com `mui`/`pdfjs`/`geo`/`datefns` em
+> chunks separados e as rotas pesadas em `React.lazy`).
 
 ---
 
