@@ -234,8 +234,8 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
   }
 
   // Initial download (no confirmation). If CrewLink blocks the period with an unread
-  // notification, its pop-up already carries the roster PDF — so we parse it and show the
-  // changes right there, before the user confirms.
+  // notification, show its message; the real changes are reviewed after confirming (the
+  // duty plan only exists once the notification is acknowledged).
   async function runDownload() {
     if (!sessionToken || !activeUser) return; // never save a PDF without a concrete owner
     setDownloading(true);
@@ -247,16 +247,6 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
       if (result.type === 'notification') {
         setPendingNotification(result.text || '(Sem texto na notificação.)');
         setStatus('');
-        // Pre-fetched PDF from the notification pop-up → preview the changes now.
-        if (result.buffer) {
-          try {
-            const fileName = `escala-${format(new Date(), 'yyyyMMdd-HHmm')}.pdf`;
-            const file = new File([new Blob([result.buffer], { type: 'application/pdf' })], fileName, { type: 'application/pdf' });
-            setPreview(await previewImport(file));
-            setPendingBuffer(result.buffer);
-            setRecordNotifText(result.text || null);
-          } catch { /* show the text even if the preview fails */ }
-        }
         return;
       }
       if (result.sessionToken && result.sessionToken !== sessionToken) setSessionToken(result.sessionToken);
@@ -268,9 +258,9 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
     }
   }
 
-  // Notification "Confirmar": acknowledge it on CrewLink (required there to clear it), then
-  // apply the roster the user just reviewed. The post-ack PDF is authoritative, so we use
-  // it rather than the pre-fetched preview.
+  // Notification "Confirmar": acknowledge it on CrewLink (required there to release the
+  // duty plan), download the real roster and route it through the review step so the
+  // actual changes are shown before they're applied.
   async function confirmNotification() {
     if (!sessionToken || !activeUser) return;
     setDownloading(true);
@@ -285,10 +275,9 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
         return;
       }
       if (result.sessionToken && result.sessionToken !== sessionToken) setSessionToken(result.sessionToken);
-      const fileName = `escala-${format(new Date(), 'yyyyMMdd-HHmm')}.pdf`;
-      const file = new File([new Blob([result.buffer], { type: 'application/pdf' })], fileName, { type: 'application/pdf' });
-      const pv = await previewImport(file);
-      await commitPreview(result.buffer, pv, pendingNotification ?? undefined);
+      const notifText = pendingNotification ?? undefined;
+      setPendingNotification(null);
+      await processPdf(result.buffer, notifText);
     } catch (e) {
       handleDownloadError(e);
     } finally {
@@ -315,39 +304,29 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
             <Button variant="contained" onClick={handleClose}>Ver escala</Button>
           </Stack>
         ) : pendingNotification !== null ? (
-          // ── Notification phase: message + (pre-confirmation) diff ────────────
+          // ── Notification phase: show the message; the real diff comes after confirm ──
           <Stack spacing={2} pt={0.5}>
             <Alert severity="warning" icon={<NotificationsActive />}>
-              O CrewLink tem uma notificação por ler para este período.{' '}
-              {preview ? 'Revê a mensagem e as alterações abaixo.' : 'Lê-a abaixo.'} Ao
-              confirmares, marcas a notificação como lida no CrewLink e a escala é aplicada.
+              O CrewLink tem uma notificação por ler para este período. Lê-a abaixo. Ao
+              confirmares, marca-la como lida no CrewLink e mostramos as alterações da
+              escala para reveres <strong>antes</strong> de aplicar.
             </Alert>
             {error && <Alert severity="error">{error}</Alert>}
             <Box
               sx={{
-                maxHeight: 200, overflowY: 'auto', p: 1.5, borderRadius: 1,
+                maxHeight: 220, overflowY: 'auto', p: 1.5, borderRadius: 1,
                 bgcolor: 'action.hover', whiteSpace: 'pre-wrap', fontSize: 13,
               }}
             >
               {cleanNotificationText(pendingNotification)}
             </Box>
-            {preview && (
-              <>
-                <Typography variant="subtitle2">Alterações nesta escala</Typography>
-                <DiffView
-                  changes={preview.changes}
-                  prevDuties={roster?.duties ?? []}
-                  nextDuties={preview.next.duties}
-                />
-              </>
-            )}
             <Stack direction="row" spacing={1}>
               <Button
                 variant="contained" color="primary" fullWidth
                 onClick={confirmNotification} disabled={downloading}
                 startIcon={downloading ? <CircularProgress size={18} color="inherit" /> : <CheckCircle />}
               >
-                {downloading ? 'A confirmar…' : 'Confirmar e aplicar'}
+                {downloading ? 'A confirmar…' : 'Confirmar'}
               </Button>
               <Button variant="outlined" color="inherit" fullWidth onClick={handleClose} disabled={downloading}>
                 Fechar
