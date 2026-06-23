@@ -21,7 +21,7 @@ export function describeWeatherCode(code: number): { label: string; emoji: strin
   const m: Record<number, { label: string; emoji: string }> = {
     0: { label: 'Céu limpo', emoji: '☀️' },
     1: { label: 'Pouco nublado', emoji: '🌤️' },
-    2: { label: 'Parcialmente nublado', emoji: '⛅' },
+    2: { label: 'P. nublado', emoji: '⛅' },
     3: { label: 'Nublado', emoji: '☁️' },
     45: { label: 'Nevoeiro', emoji: '🌫️' },
     48: { label: 'Nevoeiro gelado', emoji: '🌫️' },
