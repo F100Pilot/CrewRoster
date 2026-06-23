@@ -9,7 +9,7 @@ import { login, fetchRoster, SessionExpiredError } from '../services/crewlinkApi
 import { useRoster, type RosterImportPreview } from '../state/useRoster';
 import { savePdf } from '../storage/rosterStore';
 import { addNotification } from '../storage/notifications';
-import type { ChangeType, DayChange } from '../domain/types';
+import type { ChangeType, DayChange, ParsedDuty } from '../domain/types';
 
 const CHANGE_META: Record<ChangeType, { label: string; color: 'success' | 'warning' | 'error' }> = {
   added: { label: 'Novo', color: 'success' },
@@ -17,12 +17,36 @@ const CHANGE_META: Record<ChangeType, { label: string; color: 'success' | 'warni
   removed: { label: 'Removido', color: 'error' },
 };
 
-// Per-day diff: a count chip per change type, then the affected dates. Reused by the
-// notification (pre-confirmation) and the normal-download review phases.
-function DiffView({ changes }: { changes: DayChange[] }) {
+// One-line summary of a day's duties: flights as "TP123 LIS-OPO", other duties by code.
+function summarizeDay(duties: ParsedDuty[]): string {
+  if (duties.length === 0) return '—';
+  return duties
+    .map((d) => (d.flightNumber
+      ? `${d.flightNumber}${d.departureAirport ? ` ${d.departureAirport}-${d.arrivalAirport ?? ''}` : ''}`
+      : d.dutyCode))
+    .join(', ');
+}
+
+function groupByDate(list: ParsedDuty[]): Map<string, ParsedDuty[]> {
+  const m = new Map<string, ParsedDuty[]>();
+  for (const d of list) {
+    const arr = m.get(d.date) ?? [];
+    arr.push(d);
+    m.set(d.date, arr);
+  }
+  return m;
+}
+
+// Per-day diff: a count chip per change type, then each affected date with what changed
+// (before → after). Reused by the notification (pre-confirmation) and review phases.
+function DiffView({ changes, prevDuties, nextDuties }: {
+  changes: DayChange[]; prevDuties: ParsedDuty[]; nextDuties: ParsedDuty[];
+}) {
   if (changes.length === 0) {
     return <Alert severity="success" sx={{ py: 0 }}>Sem alterações face à escala atual.</Alert>;
   }
+  const prev = groupByDate(prevDuties);
+  const next = groupByDate(nextDuties);
   return (
     <>
       <Box display="flex" gap={1} flexWrap="wrap">
@@ -34,19 +58,43 @@ function DiffView({ changes }: { changes: DayChange[] }) {
           ) : null;
         })}
       </Box>
-      <Box sx={{ maxHeight: 220, overflowY: 'auto', p: 1, borderRadius: 1, bgcolor: 'action.hover' }}>
-        <Stack spacing={0.5}>
-          {changes.map((c) => (
-            <Box key={c.date} display="flex" alignItems="center" gap={1}>
-              <Chip size="small" color={CHANGE_META[c.type].color} sx={{ color: '#fff', minWidth: 82 }}
-                label={CHANGE_META[c.type].label} />
-              <Typography variant="body2">{format(parseISO(c.date), 'EEE, dd MMM yyyy')}</Typography>
-            </Box>
-          ))}
+      <Box sx={{ maxHeight: 240, overflowY: 'auto', p: 1, borderRadius: 1, bgcolor: 'action.hover' }}>
+        <Stack spacing={1}>
+          {changes.map((c) => {
+            const before = summarizeDay(prev.get(c.date) ?? []);
+            const after = summarizeDay(next.get(c.date) ?? []);
+            const detail = c.type === 'added' ? after : c.type === 'removed' ? before : `${before} → ${after}`;
+            return (
+              <Box key={c.date}>
+                <Box display="flex" alignItems="center" gap={1}>
+                  <Chip size="small" color={CHANGE_META[c.type].color} sx={{ color: '#fff', minWidth: 82 }}
+                    label={CHANGE_META[c.type].label} />
+                  <Typography variant="body2" fontWeight={600}>
+                    {format(parseISO(c.date), 'EEE, dd MMM yyyy')}
+                  </Typography>
+                </Box>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', pl: 0.5, mt: 0.25, wordBreak: 'break-word' }}>
+                  {detail}
+                </Typography>
+              </Box>
+            );
+          })}
         </Stack>
       </Box>
     </>
   );
+}
+
+// The CrewLink notification page embeds the report in an iframe, leaving "browser does
+// not support embedded frames…" fallback text. We already fetch and parse that report, so
+// strip the noise and keep the meaningful lines (e.g. the notification id to confirm).
+function cleanNotificationText(text: string): string {
+  return text
+    .split('\n')
+    .filter((l) => !/does not support embedded frames|open the report in an extra window|^\s*click here/i.test(l))
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -59,7 +107,7 @@ function toCrewLinkDate(iso: string): string {
 // page: authenticate if needed, pick a date range, download → parse → the roster view
 // updates in place (and the diff banner fires if anything changed).
 export default function DownloadRosterDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { sessionToken, setSessionToken, previewImport, applyImport, importing, activeUser } = useRoster();
+  const { roster, sessionToken, setSessionToken, previewImport, applyImport, importing, activeUser } = useRoster();
 
   const [crewCode, setCrewCode] = useState(activeUser?.crewCode ?? '');
   const [password, setPassword] = useState('');
@@ -281,12 +329,16 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
                 bgcolor: 'action.hover', whiteSpace: 'pre-wrap', fontSize: 13,
               }}
             >
-              {pendingNotification}
+              {cleanNotificationText(pendingNotification)}
             </Box>
             {preview && (
               <>
                 <Typography variant="subtitle2">Alterações nesta escala</Typography>
-                <DiffView changes={preview.changes} />
+                <DiffView
+                  changes={preview.changes}
+                  prevDuties={roster?.duties ?? []}
+                  nextDuties={preview.next.duties}
+                />
               </>
             )}
             <Stack direction="row" spacing={1}>
@@ -313,7 +365,11 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
               em <strong>Aplicar</strong>.
             </Alert>
             {error && <Alert severity="error">{error}</Alert>}
-            <DiffView changes={preview.changes} />
+            <DiffView
+              changes={preview.changes}
+              prevDuties={roster?.duties ?? []}
+              nextDuties={preview.next.duties}
+            />
             <Stack direction="row" spacing={1}>
               <Button variant="contained" fullWidth onClick={applyReviewed} disabled={downloading}
                 startIcon={downloading ? <CircularProgress size={18} color="inherit" /> : <CheckCircle />}>
