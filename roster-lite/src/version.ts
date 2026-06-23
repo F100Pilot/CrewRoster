@@ -1,12 +1,12 @@
 // Single source for the app's display name and version, shown in the header, the welcome
 // screen and the shared-day image.
 //
-// Versioning — 0.<decimal>.<centesimal>:
-//   • new features  → bump the DECIMAL (minor):   0.8.0 → 0.9.0
-//   • small fixes   → bump the CENTESIMAL (patch): 0.9.0 → 0.9.1
+// Versioning — 0.8.<centesimal>[.<milésima>]:
+//   • new features → bump the CENTESIMAL (3rd part): 0.8.2 → 0.8.3
+//   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.0';
+export const APP_VERSION = '0.8.2';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -19,7 +19,7 @@ export interface ReleaseNote {
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
-    version: '0.9.0',
+    version: '0.8.2',
     date: '2026-06-23',
     highlights: [
       'Notificações CrewLink: vê as alterações (antes → depois) antes de confirmar.',
