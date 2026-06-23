@@ -1,5 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import type { AircraftReg, Roster, SavedPdf, UserProfile } from '../domain/types';
+import type { AircraftReg, LogbookRow, Roster, SavedPdf, UserProfile } from '../domain/types';
 
 interface RosterDB extends DBSchema {
   rosters: { key: string; value: Roster };
@@ -12,13 +12,16 @@ interface RosterDB extends DBSchema {
   // Aircraft registrations flown, kept apart from the roster so re-downloads (which
   // replace duties per-day) never erase the logbook's recorded tails.
   regs: { key: string; value: AircraftReg; indexes: { userId: string } };
+  // The permanent logbook — accumulates operated sectors across rosters and survives
+  // clearing the roster. Editable by hand.
+  logbook: { key: string; value: LogbookRow; indexes: { userId: string } };
 }
 
 let dbPromise: Promise<IDBPDatabase<RosterDB>> | null = null;
 
 function getDb() {
   if (!dbPromise) {
-    dbPromise = openDB<RosterDB>('crewroster-lite', 4, {
+    dbPromise = openDB<RosterDB>('crewroster-lite', 5, {
       upgrade(db, oldVersion) {
         if (oldVersion < 2) {
           if (!db.objectStoreNames.contains('rosters'))
@@ -35,6 +38,12 @@ function getDb() {
         if (oldVersion < 4) {
           if (!db.objectStoreNames.contains('regs')) {
             const s = db.createObjectStore('regs', { keyPath: 'key' });
+            s.createIndex('userId', 'userId');
+          }
+        }
+        if (oldVersion < 5) {
+          if (!db.objectStoreNames.contains('logbook')) {
+            const s = db.createObjectStore('logbook', { keyPath: 'key' });
             s.createIndex('userId', 'userId');
           }
         }
@@ -67,6 +76,11 @@ export async function deleteUser(id: string): Promise<void> {
   const keys = await db.getAllKeysFromIndex('regs', 'userId', id);
   const tx = db.transaction('regs', 'readwrite');
   await Promise.all([...keys.map((k) => tx.store.delete(k)), tx.done]);
+  // The logbook belongs to the user, so deleting the user clears it too (clearing the
+  // roster does not — that's what keeps the logbook permanent).
+  const lkeys = await db.getAllKeysFromIndex('logbook', 'userId', id);
+  const ltx = db.transaction('logbook', 'readwrite');
+  await Promise.all([...lkeys.map((k) => ltx.store.delete(k)), ltx.done]);
 }
 
 // ── Active user (localStorage) ─────────────────────────────────────────────────────
@@ -187,4 +201,33 @@ export async function saveReg(entry: AircraftReg): Promise<void> {
 export async function loadRegs(userId: string): Promise<AircraftReg[]> {
   const db = await getDb();
   return db.getAllFromIndex('regs', 'userId', userId);
+}
+
+// ── Permanent logbook (per user) ─────────────────────────────────────────────────────
+// Stable key per crew member + day + flight + route — same scheme as regKey — so re-
+// importing a roster updates a sector in place instead of duplicating it.
+export function logbookRowKey(
+  userId: string, date: string, flightNumber: string,
+  dep: string | null, arr: string | null,
+): string {
+  return `${userId}|${date}|${flightNumber}|${dep ?? ''}-${arr ?? ''}`;
+}
+
+export async function loadLogbook(userId: string): Promise<LogbookRow[]> {
+  const db = await getDb();
+  return db.getAllFromIndex('logbook', 'userId', userId);
+}
+
+// Upsert a batch of rows (new sectors merged from a roster, or one edited by hand).
+export async function putLogbookRows(rows: LogbookRow[]): Promise<void> {
+  if (rows.length === 0) return;
+  const db = await getDb();
+  const tx = db.transaction('logbook', 'readwrite');
+  for (const r of rows) tx.store.put(r);
+  await tx.done;
+}
+
+export async function deleteLogbookRow(key: string): Promise<void> {
+  const db = await getDb();
+  await db.delete('logbook', key);
 }

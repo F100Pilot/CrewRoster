@@ -71,6 +71,24 @@ export interface AircraftReg {
   recordedAt: string; // ISO timestamp
 }
 
+// A permanent logbook row, one per operated sector. Persisted on its own (separate from
+// the roster) so it survives clearing the roster: new rosters merge new sectors in, and
+// the user can edit/add/remove rows by hand. Block time is derived from off/on.
+export interface LogbookRow {
+  key: string; // `${userId}|${date}|${flightNumber}|${dep}-${arr}`
+  userId: string;
+  date: string; // YYYY-MM-DD
+  flightNumber: string;
+  from: string; // departure airport
+  to: string; // arrival airport
+  off: string; // departure time, UTC "HH:mm"
+  on: string; // arrival time, UTC "HH:mm"
+  aircraft: string; // type, e.g. E90
+  reg: string; // tail, '' if unknown
+  regInferred?: boolean; // tail inferred from the day's rotation, not captured directly
+  edited?: boolean; // added/edited by hand → not overwritten by roster merges
+}
+
 // A PDF downloaded from CrewLink, kept in IndexedDB so the user can re-open,
 // re-download, or delete it. Registered by download time and date range.
 export interface SavedPdf {

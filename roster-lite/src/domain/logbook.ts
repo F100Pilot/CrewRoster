@@ -1,6 +1,7 @@
-import type { AircraftReg, ParsedDuty } from './types';
+import type { AircraftReg, LogbookRow, ParsedDuty } from './types';
 import { operatedFlights } from './flightTime';
 import { regMapKey, resolveRegs } from './aircraftRegs';
+import { logbookRowKey } from '../storage/rosterStore';
 import { diffMinutes, formatDuration } from '../utils/duration';
 
 // A pilot's logbook row, one per operated sector. Built straight from the roster so
@@ -39,6 +40,73 @@ export function logbookEntries(
       regInferred: hit?.inferred ?? false,
     };
   });
+}
+
+// ── Permanent logbook rows ───────────────────────────────────────────────────────────
+
+// Block minutes for a persisted row (derived, not stored, so an edit to off/on is enough).
+export function rowBlock(r: LogbookRow): number {
+  return diffMinutes(r.off, r.on);
+}
+
+// Chronological order: by date, then by off-block time within the day.
+export function sortLogbook(rows: LogbookRow[]): LogbookRow[] {
+  return [...rows].sort((a, b) => (a.date === b.date ? a.off.localeCompare(b.off) : a.date.localeCompare(b.date)));
+}
+
+// Merge a roster into the permanent logbook: returns the rows to upsert — brand-new
+// sectors, plus refreshes of non-edited rows whose roster data (times/aircraft) or
+// resolved tail changed. Hand-edited rows are never overwritten, and a known tail is
+// never wiped by a roster that lacks one.
+export function mergeLogbook(
+  existing: LogbookRow[], duties: ParsedDuty[], userId: string, regs?: Map<string, AircraftReg>,
+): LogbookRow[] {
+  const byKey = new Map(existing.map((r) => [r.key, r]));
+  const resolved = resolveRegs(duties, regs ?? new Map());
+  const upserts: LogbookRow[] = [];
+  for (const d of operatedFlights(duties)) {
+    if (!d.flightNumber) continue;
+    const key = logbookRowKey(userId, d.date, d.flightNumber, d.departureAirport, d.arrivalAirport);
+    const cur = byKey.get(key);
+    if (cur?.edited) continue; // respect manual edits
+    const lookup = resolved.get(regMapKey(d.date, d.flightNumber, d.departureAirport, d.arrivalAirport));
+    const next: LogbookRow = {
+      key, userId,
+      date: d.date,
+      flightNumber: d.flightNumber,
+      from: d.departureAirport ?? '',
+      to: d.arrivalAirport ?? '',
+      off: d.departureTime!,
+      on: d.arrivalTime!,
+      aircraft: d.aircraftType ?? '',
+      reg: lookup?.reg || cur?.reg || '', // never wipe a known tail with a blank
+      regInferred: lookup?.reg ? !!lookup.inferred : (cur?.regInferred ?? false),
+    };
+    if (!cur || cur.from !== next.from || cur.to !== next.to || cur.off !== next.off ||
+        cur.on !== next.on || cur.aircraft !== next.aircraft || cur.reg !== next.reg ||
+        !!cur.regInferred !== !!next.regInferred) {
+      upserts.push(next);
+    }
+  }
+  return upserts;
+}
+
+// CSV (CRLF, spreadsheet-friendly) straight from the persisted rows.
+export function logbookCsvRows(rows: LogbookRow[]): string {
+  const header = ['Data', 'Voo', 'De', 'Para', 'Off (UTC)', 'On (UTC)', 'Bloco', 'Aeronave', 'Matrícula'];
+  const body = sortLogbook(rows).map((r) => [
+    r.date, r.flightNumber, r.from, r.to, r.off, r.on, formatDuration(rowBlock(r)), r.aircraft, r.reg,
+  ]);
+  return [header, ...body].map((r) => r.map(csvCell).join(',')).join('\r\n');
+}
+
+// Landings (operated sectors) in the trailing `days`-day window ending at refISO.
+export function landingsInRows(rows: LogbookRow[], refISO: string, days = 90): number {
+  const ref = new Date(`${refISO}T00:00:00Z`);
+  const from = new Date(ref);
+  from.setUTCDate(from.getUTCDate() - (days - 1));
+  const fromISO = from.toISOString().slice(0, 10);
+  return rows.filter((r) => r.date >= fromISO && r.date <= refISO).length;
 }
 
 function csvCell(value: string): string {
