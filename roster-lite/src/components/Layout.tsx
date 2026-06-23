@@ -109,6 +109,21 @@ export default function Layout({ children }: { children: ReactNode }) {
           ))}
         </BottomNavigation>
       </Paper>
+      {/* Subtle edge fades hinting the bottom bar scrolls sideways. */}
+      <Box
+        sx={{
+          position: 'fixed', bottom: 0, left: 0, width: 24, height: 56, zIndex: 1300,
+          pointerEvents: 'none',
+          background: (t) => `linear-gradient(to right, ${t.palette.background.paper}, transparent)`,
+        }}
+      />
+      <Box
+        sx={{
+          position: 'fixed', bottom: 0, right: 0, width: 24, height: 56, zIndex: 1300,
+          pointerEvents: 'none',
+          background: (t) => `linear-gradient(to left, ${t.palette.background.paper}, transparent)`,
+        }}
+      />
     </Box>
   );
 }

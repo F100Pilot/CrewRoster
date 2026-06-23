@@ -3,19 +3,29 @@ import { Alert, Box, Card, CardContent, Chip, IconButton, Stack, Typography } fr
 import { useTheme } from '@mui/material/styles';
 import { ArrowBack } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { geoMercator, geoPath } from 'd3-geo';
+import { feature } from 'topojson-client';
+import worldTopo from 'world-atlas/countries-110m.json';
+import type { FeatureCollection } from 'geojson';
 import { useRoster } from '../state/useRoster';
 import { loadLogbook } from '../storage/rosterStore';
 import { buildFlightNetwork } from '../domain/flightMap';
 import type { LogbookRow } from '../domain/types';
 
-// Pad around the projected extent so dots/labels near the edge aren't clipped.
-const PAD = 6;
+const W = 100;
+const H = 100;
+const PAD = 8;
+
+// World land/borders, decoded once from the bundled TopoJSON (offline, no map tiles).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const WORLD = feature(worldTopo as any, (worldTopo as any).objects.countries) as unknown as FeatureCollection;
 
 export default function MapPage() {
   const navigate = useNavigate();
   const theme = useTheme();
   const { activeUser } = useRoster();
   const userId = activeUser?.id;
+  const dark = theme.palette.mode === 'dark';
 
   const [rows, setRows] = useState<LogbookRow[]>([]);
   const reload = useCallback(async () => {
@@ -28,28 +38,35 @@ export default function MapPage() {
     [rows],
   );
 
-  // Equirectangular projection with a cos(meanLat) correction so the regional map keeps a
-  // sensible aspect ratio. Normalised into a 0..100 (x) box; y scaled to match.
-  const projected = useMemo(() => {
-    if (net.airports.length === 0) return null;
-    const meanLat = net.airports.reduce((s, a) => s + a.lat, 0) / net.airports.length;
-    const k = Math.cos((meanLat * Math.PI) / 180);
-    const pts = net.airports.map((a) => ({ ...a, px: a.lon * k, py: -a.lat }));
-    const xs = pts.map((p) => p.px), ys = pts.map((p) => p.py);
-    const minX = Math.min(...xs), maxX = Math.max(...xs);
-    const minY = Math.min(...ys), maxY = Math.max(...ys);
-    const spanX = maxX - minX || 1, spanY = maxY - minY || 1;
-    const W = 100;
-    const H = (spanY / spanX) * W;
-    const sx = (px: number) => PAD + ((px - minX) / spanX) * (W - 2 * PAD);
-    const sy = (py: number) => PAD + ((py - minY) / spanY) * (H - 2 * PAD);
-    const byCode = new Map(pts.map((p) => [p.code, { x: sx(p.px), y: sy(p.py), visits: p.visits, code: p.code }]));
-    return { W, H, byCode: byCode };
-  }, [net]);
+  // Fit a Mercator projection to the airports flown (with padding), then use it for BOTH
+  // the country backdrop and the route overlay so everything lines up. Falls back to the
+  // PGA region when there are no flights yet.
+  const { projection, landPath } = useMemo(() => {
+    const lons = net.airports.map((a) => a.lon);
+    const lats = net.airports.map((a) => a.lat);
+    const bounds: [[number, number], [number, number]] = net.airports.length
+      ? [[Math.min(...lons), Math.min(...lats)], [Math.max(...lons), Math.max(...lats)]]
+      : [[-32, 27], [18, 56]]; // Azores → Central Europe / North Africa
+    const region: GeoJSON.GeoJSON = {
+      type: 'MultiPoint',
+      coordinates: [bounds[0], bounds[1]],
+    };
+    const proj = geoMercator().fitExtent([[PAD, PAD], [W - PAD, H - PAD]], region);
+    const path = geoPath(proj);
+    return { projection: proj, landPath: path(WORLD) ?? '' };
+  }, [net.airports]);
+
+  const point = (lon: number, lat: number): [number, number] | null => {
+    const p = projection([lon, lat]);
+    return p ? [p[0], p[1]] : null;
+  };
 
   const maxVisits = Math.max(1, ...net.airports.map((a) => a.visits));
-  const stroke = theme.palette.primary.main;
-  const labelColor = theme.palette.text.secondary;
+  const route = theme.palette.primary.main;
+  const dot = dark ? '#ffd54f' : theme.palette.primary.main;
+  const landFill = dark ? '#2b3a4a' : '#dfe6ec';
+  const landStroke = dark ? '#3f5266' : '#c2ccd6';
+  const sea = dark ? '#16202b' : '#eef3f7';
 
   return (
     <Stack spacing={2}>
@@ -68,7 +85,7 @@ export default function MapPage() {
         </CardContent>
       </Card>
 
-      {!projected ? (
+      {net.airports.length === 0 ? (
         <Alert severity="info">
           Sem voos no diário ainda. Importa a escala (preenche o diário) e o mapa aparece aqui.
         </Alert>
@@ -77,36 +94,44 @@ export default function MapPage() {
           <CardContent>
             <Box
               component="svg"
-              viewBox={`0 0 ${projected.W} ${projected.H}`}
-              sx={{ width: '100%', height: 'auto', display: 'block' }}
+              viewBox={`0 0 ${W} ${H}`}
+              sx={{ width: '100%', height: 'auto', display: 'block', borderRadius: 1 }}
             >
+              {/* Sea + land backdrop */}
+              <rect x={0} y={0} width={W} height={H} fill={sea} />
+              <path d={landPath} fill={landFill} stroke={landStroke} strokeWidth={0.2} />
+
               {/* Routes */}
               {net.routes.map((r) => {
-                const a = projected.byCode.get(r.from);
-                const b = projected.byCode.get(r.to);
+                const a = net.airports.find((x) => x.code === r.from);
+                const b = net.airports.find((x) => x.code === r.to);
                 if (!a || !b) return null;
+                const pa = point(a.lon, a.lat);
+                const pb = point(b.lon, b.lat);
+                if (!pa || !pb) return null;
                 return (
                   <line
                     key={`${r.from}-${r.to}`}
-                    x1={a.x} y1={a.y} x2={b.x} y2={b.y}
-                    stroke={stroke}
-                    strokeOpacity={0.35}
-                    strokeWidth={Math.min(1.4, 0.3 + r.count * 0.12)}
+                    x1={pa[0]} y1={pa[1]} x2={pb[0]} y2={pb[1]}
+                    stroke={route}
+                    strokeOpacity={0.45}
+                    strokeWidth={Math.min(1.2, 0.25 + r.count * 0.1)}
                     strokeLinecap="round"
                   />
                 );
               })}
+
               {/* Airports */}
-              {[...projected.byCode.values()].map((p) => {
-                const radius = 0.8 + (p.visits / maxVisits) * 1.8;
+              {net.airports.map((a) => {
+                const p = point(a.lon, a.lat);
+                if (!p) return null;
+                const radius = 0.7 + (a.visits / maxVisits) * 1.5;
                 return (
-                  <g key={p.code}>
-                    <circle cx={p.x} cy={p.y} r={radius} fill={stroke} />
-                    <text
-                      x={p.x} y={p.y - radius - 0.6}
-                      fontSize={2.2} textAnchor="middle" fill={labelColor}
-                    >
-                      {p.code}
+                  <g key={a.code}>
+                    <circle cx={p[0]} cy={p[1]} r={radius} fill={dot} stroke="#0008" strokeWidth={0.12} />
+                    <text x={p[0]} y={p[1] - radius - 0.5} fontSize={1.9} textAnchor="middle"
+                      fill={theme.palette.text.secondary}>
+                      {a.code}
                     </text>
                   </g>
                 );
