@@ -23,6 +23,15 @@ SIZES = [
     (180, 'icon-180.png'),
 ]
 
+# Maskable icons: Android crops them to a device-chosen shape (circle, squircle…),
+# so the artwork must sit inside the "safe zone" — the central 80% — on a full-bleed
+# background (no transparent/rounded corners).
+MASKABLE = [
+    (512, 'icon-maskable-512.png'),
+    (192, 'icon-maskable-192.png'),
+]
+MASKABLE_SAFE = 0.78  # artwork fills 78% of the canvas, leaving an 11% margin each side
+
 # Blue gradient used to pad the square canvas, sampled from the master artwork
 # (light blue at the top, darker blue at the bottom).
 GRAD_TOP = (81, 169, 240)
@@ -30,7 +39,7 @@ GRAD_BOT = (1, 70, 176)
 CORNER_RATIO = 112 / 512  # rounded-corner radius, matching the iOS app-icon look
 
 
-def build_square(crop, size):
+def build_square(crop, size, maskable=False):
     from PIL import Image, ImageDraw
     cw, ch = crop.size
 
@@ -43,13 +52,18 @@ def build_square(crop, size):
         for x in range(size):
             bgd[x, y] = c
 
-    # Scale the artwork to fill the square (preserving aspect) and centre it.
-    scale = size / max(cw, ch)
+    # Scale the artwork and centre it. Maskable icons shrink the artwork into the
+    # safe zone; "any" icons fill the canvas edge-to-edge.
+    fill = size * MASKABLE_SAFE if maskable else size
+    scale = fill / max(cw, ch)
     nw, nh = int(cw * scale), int(ch * scale)
     art = crop.resize((nw, nh), Image.LANCZOS)
     bg.alpha_composite(art, ((size - nw) // 2, (size - nh) // 2))
 
-    # Clip to rounded corners.
+    # Maskable icons must be full-bleed (Android applies its own mask); "any" icons
+    # get clean rounded corners over a transparent outside.
+    if maskable:
+        return bg
     mask = Image.new('L', (size, size), 0)
     ImageDraw.Draw(mask).rounded_rectangle([0, 0, size - 1, size - 1],
                                            radius=int(size * CORNER_RATIO), fill=255)
@@ -102,6 +116,9 @@ def main():
     crop = trim_to_artwork(Image.open(MASTER).convert('RGBA'))
     for size, name in SIZES:
         build_square(crop, size).save(os.path.join(PUBLIC, name))
+        print(f'  → {name}')
+    for size, name in MASKABLE:
+        build_square(crop, size, maskable=True).save(os.path.join(PUBLIC, name))
         print(f'  → {name}')
 
     tmp = os.path.join(PUBLIC, '_fav32.png')
