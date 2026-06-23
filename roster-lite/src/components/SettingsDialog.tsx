@@ -15,14 +15,13 @@ import { fetchFlightInfo } from '../services/crewlinkApi';
 import { APP_NAME, APP_VERSION_LABEL } from '../version';
 import { operatedFlights } from '../domain/flightTime';
 import { downloadIcs } from '../utils/icsExport';
-import GoogleCalendarSync from './GoogleCalendarSync';
 import { useRoster } from '../state/useRoster';
 
 // In-app settings: lets the user paste their own AeroDataBox (RapidAPI) key so the day
 // view can show aircraft registration, gate/terminal and status. The key is stored on
 // this device only and forwarded to the proxy per request — never committed or shared.
 export default function SettingsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { roster, clear, activeUser } = useRoster();
+  const { roster, clear } = useRoster();
   const { mode, setMode } = useColorMode();
   const navigate = useNavigate();
   const [key, setKey] = useState('');
@@ -224,15 +223,6 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
           <Box>
             <Typography variant="subtitle2" gutterBottom>Escala</Typography>
             <Stack spacing={1}>
-              {roster && activeUser && (
-                <GoogleCalendarSync
-                  roster={roster}
-                  userId={activeUser.id}
-                  variant="outlined"
-                  label="Sincronizar com Google Calendar"
-                  fullWidth
-                />
-              )}
               <Button
                 onClick={() => roster && downloadIcs(roster)}
                 disabled={!roster}
