@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import {
   Alert, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle,
-  Divider, IconButton, InputAdornment, Link, Stack, TextField, Typography,
+  Divider, IconButton, InputAdornment, Link, Stack, Switch, TextField, Typography,
 } from '@mui/material';
-import { Close, Visibility, VisibilityOff, CheckCircle, Science, CalendarMonth, DeleteOutline, BugReport } from '@mui/icons-material';
+import { Close, Visibility, VisibilityOff, CheckCircle, Science, CalendarMonth, DeleteOutline, BugReport, DarkMode, LightMode } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useColorMode } from '../state/colorMode';
 import { API_KEY_PATTERN, getAeroDataBoxKey, setAeroDataBoxKey } from '../storage/settings';
 import { fetchFlightInfo } from '../services/crewlinkApi';
 import { operatedFlights } from '../domain/flightTime';
@@ -17,6 +18,7 @@ import { useRoster } from '../state/useRoster';
 // this device only and forwarded to the proxy per request — never committed or shared.
 export default function SettingsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { roster, clear, activeUser } = useRoster();
+  const { mode, toggle } = useColorMode();
   const navigate = useNavigate();
   const [key, setKey] = useState('');
   const [show, setShow] = useState(false);
@@ -110,6 +112,16 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
       </DialogTitle>
       <DialogContent dividers>
         <Stack spacing={2}>
+          <Box display="flex" alignItems="center">
+            <Box flexGrow={1}>
+              <Typography variant="subtitle2">Aspeto</Typography>
+              <Typography variant="body2" color="text.secondary">Modo escuro</Typography>
+            </Box>
+            <Switch checked={mode === 'dark'} onChange={toggle} icon={<LightMode fontSize="small" />} checkedIcon={<DarkMode fontSize="small" />} />
+          </Box>
+
+          <Divider />
+
           <Box>
             <Typography variant="subtitle2" gutterBottom>Dados de voo (AeroDataBox)</Typography>
             <Typography variant="body2" color="text.secondary">
