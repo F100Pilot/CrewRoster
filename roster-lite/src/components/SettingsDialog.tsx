@@ -249,7 +249,7 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
           />
 
           {/* Diagnose end-to-end so a "no matrícula" symptom points at the real cause. */}
-          <Box>
+          <Box display="flex" gap={1} flexWrap="wrap">
             <Button
               onClick={handleTest}
               disabled={testing || invalid || !trimmed}
@@ -258,6 +258,16 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
               variant="outlined"
             >
               Testar ligação
+            </Button>
+            <Button
+              onClick={handleRemove}
+              disabled={!getAeroDataBoxKey()}
+              startIcon={<DeleteOutline />}
+              size="small"
+              variant="outlined"
+              color="error"
+            >
+              Remover chave
             </Button>
           </Box>
           {testResult && (
@@ -386,9 +396,6 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
         </Stack>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={handleRemove} color="inherit" disabled={!getAeroDataBoxKey()}>
-          Remover
-        </Button>
         <Box flexGrow={1} />
         <Button onClick={onClose} color="inherit">Fechar</Button>
         <Button onClick={handleSave} variant="contained" disabled={invalid}>Guardar</Button>
