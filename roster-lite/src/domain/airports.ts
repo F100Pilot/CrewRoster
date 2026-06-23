@@ -16,6 +16,7 @@ export const AIRPORT_COORD: Record<string, Coord> = {
   MAD: { lat: 40.498, lon: -3.568 }, BCN: { lat: 41.297, lon: 2.083 }, AGP: { lat: 36.675, lon: -4.499 },
   SVQ: { lat: 37.418, lon: -5.893 }, VLC: { lat: 39.489, lon: -0.482 }, BIO: { lat: 43.301, lon: -2.911 },
   VGO: { lat: 42.232, lon: -8.627 }, SCQ: { lat: 42.896, lon: -8.415 },
+  PMI: { lat: 39.552, lon: 2.739 }, IBZ: { lat: 38.873, lon: 1.373 }, MAH: { lat: 39.863, lon: 4.219 },
   LPA: { lat: 27.932, lon: -15.387 }, TFN: { lat: 28.483, lon: -16.342 },
   TFS: { lat: 28.044, lon: -16.572 }, ACE: { lat: 28.945, lon: -13.605 },
   // France

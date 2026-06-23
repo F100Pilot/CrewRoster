@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import {
   Alert, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle,
-  Divider, IconButton, InputAdornment, Link, Stack, Switch, TextField, Typography,
+  Divider, IconButton, InputAdornment, Link, Stack, TextField, ToggleButton,
+  ToggleButtonGroup, Typography,
 } from '@mui/material';
 import { Close, Visibility, VisibilityOff, CheckCircle, Science, CalendarMonth, DeleteOutline, BugReport, DarkMode, LightMode } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -21,7 +22,7 @@ import { useRoster } from '../state/useRoster';
 // this device only and forwarded to the proxy per request — never committed or shared.
 export default function SettingsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { roster, clear, activeUser } = useRoster();
-  const { mode, toggle } = useColorMode();
+  const { mode, setMode } = useColorMode();
   const navigate = useNavigate();
   const [key, setKey] = useState('');
   const [show, setShow] = useState(false);
@@ -117,12 +118,24 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
       </DialogTitle>
       <DialogContent dividers>
         <Stack spacing={2}>
-          <Box display="flex" alignItems="center">
+          <Box display="flex" alignItems="center" gap={1}>
             <Box flexGrow={1}>
               <Typography variant="subtitle2">Aspeto</Typography>
-              <Typography variant="body2" color="text.secondary">Modo escuro</Typography>
+              <Typography variant="body2" color="text.secondary">Tema da aplicação</Typography>
             </Box>
-            <Switch checked={mode === 'dark'} onChange={toggle} icon={<LightMode fontSize="small" />} checkedIcon={<DarkMode fontSize="small" />} />
+            <ToggleButtonGroup
+              size="small"
+              exclusive
+              value={mode}
+              onChange={(_, v) => { if (v) setMode(v); }}
+            >
+              <ToggleButton value="light" sx={{ gap: 0.5, px: 1.5 }}>
+                <LightMode fontSize="small" /> Claro
+              </ToggleButton>
+              <ToggleButton value="dark" sx={{ gap: 0.5, px: 1.5 }}>
+                <DarkMode fontSize="small" /> Escuro
+              </ToggleButton>
+            </ToggleButtonGroup>
           </Box>
 
           <Divider />

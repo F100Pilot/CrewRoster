@@ -11,6 +11,7 @@ const AIRPORT_TZ: Record<string, string> = {
   // Spain (peninsula + Canaries)
   MAD: 'Europe/Madrid', BCN: 'Europe/Madrid', AGP: 'Europe/Madrid', SVQ: 'Europe/Madrid',
   VLC: 'Europe/Madrid', BIO: 'Europe/Madrid', VGO: 'Europe/Madrid', SCQ: 'Europe/Madrid',
+  PMI: 'Europe/Madrid', IBZ: 'Europe/Madrid', MAH: 'Europe/Madrid',
   LPA: 'Atlantic/Canary', TFN: 'Atlantic/Canary', TFS: 'Atlantic/Canary', ACE: 'Atlantic/Canary',
   // France
   NCE: 'Europe/Paris', CDG: 'Europe/Paris', ORY: 'Europe/Paris', LYS: 'Europe/Paris',
