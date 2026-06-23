@@ -15,7 +15,7 @@ export const FTL_LIMITS = {
 export function operatedFlights(duties: ParsedDuty[]): ParsedDuty[] {
   return duties
     .filter((d) => d.dutyType === 'Flight Duty' && d.departureTime && d.arrivalTime)
-    .sort((a, b) => (a.date + a.departureTime! < b.date + b.departureTime! ? -1 : 1));
+    .sort((a, b) => (a.date + a.departureTime!).localeCompare(b.date + b.departureTime!));
 }
 
 // Total block (flight) minutes across the given duties — operated sectors only.
@@ -28,6 +28,18 @@ export function flightMinutes(duties: ParsedDuty[]): number {
 
 function isoDate(d: Date): string {
   return d.toISOString().slice(0, 10);
+}
+
+// `months` calendar months before a UTC date, clamping the day to the target month's
+// length (so 29 Feb − 12 months → 28 Feb, not a roll-over into March). Plain
+// Date.setUTCMonth overflows on month-end dates, which skewed the 12-month FTL window.
+function subMonthsUTC(date: Date, months: number): Date {
+  const y = date.getUTCFullYear();
+  const m = date.getUTCMonth() - months;
+  const target = new Date(Date.UTC(y, m, 1));
+  const daysInMonth = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0)).getUTCDate();
+  target.setUTCDate(Math.min(date.getUTCDate(), daysInMonth));
+  return target;
 }
 
 function blockInRange(duties: ParsedDuty[], fromISO: string, toISO: string): number {
@@ -77,9 +89,8 @@ export function cumulativeFlightTime(duties: ParsedDuty[], refISO: string): Flig
   const d28 = new Date(ref);
   d28.setUTCDate(d28.getUTCDate() - 27); // 28 days inclusive of the reference day
 
-  const m12 = new Date(ref);
-  m12.setUTCMonth(m12.getUTCMonth() - 12);
-  m12.setUTCDate(m12.getUTCDate() + 1); // 12 months inclusive
+  const m12 = subMonthsUTC(ref, 12);
+  m12.setUTCDate(m12.getUTCDate() + 1); // "any 12 consecutive months" = (ref − 12 months) + 1 day
 
   const yearStart = `${refISO.slice(0, 4)}-01-01`;
 

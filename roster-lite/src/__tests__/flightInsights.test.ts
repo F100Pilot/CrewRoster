@@ -52,4 +52,33 @@ describe('recencyStatus', () => {
     expect(r.current).toBe(false);
     expect(r.validUntil).toBeNull();
   });
+
+  it('does not count duplicate/re-imported rows as separate landings', () => {
+    const dup = { date: '2026-06-05', flightNumber: 'TP7', from: 'LIS', to: 'OPO', off: '08:00', on: '09:00' };
+    const r = recencyStatus([
+      row({ ...dup }), row({ ...dup }), row({ ...dup }), // same sector three times
+    ], '2026-06-10');
+    expect(r.landings90).toBe(1);
+    expect(r.current).toBe(false);
+  });
+
+  it('ignores rows with identical or missing endpoints', () => {
+    const r = recencyStatus([
+      row({ date: '2026-06-01', flightNumber: 'A', from: 'LIS', to: 'LIS' }), // ground/return-to-stand
+      row({ date: '2026-06-05', flightNumber: 'B', from: '', to: 'OPO' }),     // missing endpoint
+      row({ date: '2026-06-09', flightNumber: 'C', from: 'LIS', to: 'FNC' }),
+    ], '2026-06-10');
+    expect(r.landings90).toBe(1);
+  });
+
+  it('reports no validUntil when not current even with 3 landings spread beyond 90 days', () => {
+    const r = recencyStatus([
+      row({ date: '2026-01-01', flightNumber: 'A', to: 'OPO' }),
+      row({ date: '2026-02-01', flightNumber: 'B', to: 'FNC' }),
+      row({ date: '2026-03-01', flightNumber: 'C', to: 'FAO' }),
+    ], '2026-06-10'); // all >90 days before ref
+    expect(r.landings90).toBe(0);
+    expect(r.current).toBe(false);
+    expect(r.validUntil).toBeNull();
+  });
 });

@@ -79,6 +79,21 @@ describe('logbookEntries with registrations', () => {
     expect(entries.map((e) => e.regInferred)).toEqual([false, true, false]);
   });
 
+  it('still infers across a tiny schedule overlap (signed gap, not a 24h wrap)', () => {
+    // Return departs 10:05, one minute of overlap with the outbound arrival 10:10 (data
+    // rounding). The old HH:mm diff wrapped this to ~23h and broke the chain; the signed
+    // gap keeps it as one rotation, so the return inherits the captured tail.
+    const regs = new Map<string, AircraftReg>([
+      ['2026-06-01|TP940|LIS-GVA', { key: 'u|2026-06-01|TP940|LIS-GVA', userId: 'u', date: '2026-06-01', flightNumber: 'TP940', dep: 'LIS', arr: 'GVA', reg: 'CS-TPU', model: null, recordedAt: '' }],
+    ]);
+    const entries = logbookEntries([
+      flight({ flightNumber: 'TP940', departureAirport: 'LIS', arrivalAirport: 'GVA', departureTime: '08:00', arrivalTime: '10:10' }),
+      flight({ flightNumber: 'TP941', departureAirport: 'GVA', arrivalAirport: 'LIS', departureTime: '10:05', arrivalTime: '12:15' }),
+    ], regs);
+    expect(entries.map((e) => e.reg)).toEqual(['CS-TPU', 'CS-TPU']);
+    expect(entries[1].regInferred).toBe(true);
+  });
+
   it('keeps two sectors of the same flight number on a day distinct', () => {
     const mk = (route: string, dep: string, arr: string, reg: string): [string, AircraftReg] => [
       `2026-06-01|TP574|${route}`,

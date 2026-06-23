@@ -41,6 +41,17 @@ describe('cumulativeFlightTime', () => {
     expect(t.calendarYear).toBe(180); // both, same year
     expect(t.months12).toBe(180); // both within 12 months
   });
+
+  it('handles a month-end reference date without the setUTCMonth overflow', () => {
+    // Ref 2024-02-29: the 12-month window must start 2023-03-01 (29 Feb − 12m clamps to
+    // 28 Feb, +1 day). A flight on 2023-02-28 is just OUTSIDE; 2023-03-01 is just inside.
+    const duties = [
+      flight({ date: '2023-02-28', departureTime: '08:00', arrivalTime: '09:00' }), // out
+      flight({ date: '2023-03-01', departureTime: '08:00', arrivalTime: '09:00' }), // in
+    ];
+    const t = cumulativeFlightTime(duties, '2024-02-29');
+    expect(t.months12).toBe(60); // only the 2023-03-01 sector
+  });
 });
 
 describe('restPeriods', () => {

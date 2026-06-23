@@ -104,28 +104,44 @@ export function logbookCsvRows(rows: LogbookRow[]): string {
 // until 90 days after the 3rd-most-recent landing; below 3 landings ever, not current.
 export interface Recency { landings90: number; current: boolean; validUntil: string | null }
 
+// Dates of real landings (one operated sector = one landing), deduped by day+flight+route
+// so a duplicate or re-imported row can't inflate a safety-relevant count, and excluding
+// rows with missing or identical endpoints (not a flown sector).
+function landingDates(rows: LogbookRow[], refISO: string): string[] {
+  const seen = new Map<string, string>();
+  for (const r of rows) {
+    if (r.date > refISO || !r.from || !r.to || r.from === r.to) continue;
+    seen.set(`${r.date}|${r.flightNumber}|${r.from}-${r.to}`, r.date);
+  }
+  return [...seen.values()].sort((a, b) => b.localeCompare(a)); // most recent first
+}
+
+function windowStartISO(refISO: string, days: number): string {
+  const from = new Date(`${refISO}T00:00:00Z`);
+  from.setUTCDate(from.getUTCDate() - (days - 1));
+  return from.toISOString().slice(0, 10);
+}
+
 export function recencyStatus(rows: LogbookRow[], refISO: string, required = 3, days = 90): Recency {
-  const landings90 = landingsInRows(rows, refISO, days);
-  const recent = rows
-    .filter((r) => r.date <= refISO)
-    .map((r) => r.date)
-    .sort((a, b) => b.localeCompare(a)); // most recent first
+  const landings = landingDates(rows, refISO);
+  const fromISO = windowStartISO(refISO, days);
+  const landings90 = landings.filter((d) => d >= fromISO).length;
+  const current = landings90 >= required;
+  // "Valid until" is meaningful only while current: it's 90 days after the 3rd-most-recent
+  // landing (which, when current, lies inside the 90-day window — so the two are consistent).
   let validUntil: string | null = null;
-  if (recent.length >= required) {
-    const third = new Date(`${recent[required - 1]}T00:00:00Z`);
+  if (current) {
+    const third = new Date(`${landings[required - 1]}T00:00:00Z`);
     third.setUTCDate(third.getUTCDate() + days);
     validUntil = third.toISOString().slice(0, 10);
   }
-  return { landings90, current: landings90 >= required, validUntil };
+  return { landings90, current, validUntil };
 }
 
-// Landings (operated sectors) in the trailing `days`-day window ending at refISO.
+// Landings (deduped operated sectors) in the trailing `days`-day window ending at refISO.
 export function landingsInRows(rows: LogbookRow[], refISO: string, days = 90): number {
-  const ref = new Date(`${refISO}T00:00:00Z`);
-  const from = new Date(ref);
-  from.setUTCDate(from.getUTCDate() - (days - 1));
-  const fromISO = from.toISOString().slice(0, 10);
-  return rows.filter((r) => r.date >= fromISO && r.date <= refISO).length;
+  const fromISO = windowStartISO(refISO, days);
+  return landingDates(rows, refISO).filter((d) => d >= fromISO).length;
 }
 
 // ── Logbook statistics ───────────────────────────────────────────────────────────────

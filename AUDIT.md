@@ -24,14 +24,21 @@ importação), **(2)** `deleteUser` incompleto e não-atómico, **(3)** ausênci
 | 1 | Segurança | `restoreBackup` escreve qualquer chave de localStorage / linha de IndexedDB de um ficheiro importado, sem validação | **Alta** | ✅ 0.8.3.2 |
 | 2 | Armazenamento | `deleteUser` não apaga PDFs nem chaves localStorage do utilizador, e não é atómico | **Alta** | ✅ 0.8.3.2 |
 | 3 | React | Sem error boundary — qualquer erro de render dá ecrã branco (mau numa PWA instalada) | **Alta** | ✅ 0.8.3.2 |
-| 4 | Correção | Recência (`recencyStatus`): `validUntil` e `current` calculados de conjuntos inconsistentes | **Alta** | Vaga 2 |
+| 4 | Correção | Recência (`recencyStatus`): `validUntil` e `current` calculados de conjuntos inconsistentes | **Alta** | ✅ 0.8.3.3 |
 | 5 | Testes | Ambiente Vitest `node` bloqueia testar `backup.ts`/storage/estado/componentes | **Alta** | Vaga 3 |
-| 6 | Correção | Parser PDF: nº de voo vs hora resolvido só por posição (colisão `0845`/`2359`) | **Média** | Vaga 2 |
-| 7 | Correção | ICS ignora `Z`/`TZID` — trata tudo como UTC | **Média** | Vaga 2 |
+| 6 | Correção | Parser PDF: nº de voo vs hora resolvido só por posição (colisão `0845`/`2359`) | **Média** | Pendente (precisa de PDF real) |
+| 7 | Correção | ICS ignora `Z`/`TZID` — trata tudo como UTC | **Média** | ✅ 0.8.3.3 |
 
 > **Vaga 1 concluída (0.8.3.2):** itens 1.1, 1.2 (validação/allow-list no restore + `dataUrlToBlob` endurecido),
 > 3.1 (`deleteUser` completo e atómico, incl. PDFs + chaves localStorage), 3.2 (error boundary de topo) e
 > 3.3 (`catch` no `RosterProvider.init` + ecrã de erro de carregamento).
+>
+> **Vaga 2 concluída (0.8.3.3):** itens 2.1/2.2 (recência consistente, com dedup e validação de aterragens),
+> 2.3 (ICS converte `Z`/`TZID` para UTC), 2.4 (`inferFromSummary` por token, sem falsos positivos),
+> 2.6 (comparador `operatedFlights` estável), 2.7 (turnaround com instantes UTC assinados),
+> 2.8 (janela de 12 meses sem overflow de fim de mês), 2.9 (ano da notificação com fallback),
+> 2.10 (CSV com newlines dentro de aspas). +10 testes. **Adiado:** 2.5 (colisão nº de voo/hora) requer um
+> PDF real com um nº de voo que seja uma hora válida (ex. `TP0845`) para calibrar sem regredir o parser.
 
 ---
 

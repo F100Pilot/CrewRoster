@@ -1,7 +1,7 @@
 import type { AircraftReg, ParsedDuty } from './types';
 import { fetchFlightInfo, type FlightInfo } from '../services/crewlinkApi';
 import { operatedFlights } from './flightTime';
-import { diffMinutes } from '../utils/duration';
+import { utcDateTime } from '../utils/duration';
 import { loadRegs, regKey, saveReg } from '../storage/rosterStore';
 
 // Max ground time between two legs for them to count as the same continuous rotation
@@ -90,11 +90,16 @@ export function rotationChains(legs: RegDuty[]): RegDuty[][] {
     for (const leg of list) {
       const prev = chain[chain.length - 1];
       // Continue the chain only when the aircraft flows straight on: same airport AND a
-      // turnaround short enough to be the same airframe.
+      // turnaround short enough to be the same airframe. Use full UTC instants (not bare
+      // HH:mm) so the gap is SIGNED — a genuine overlap reads as a small negative, not a
+      // ~23h wrap that would wrongly break the chain.
+      const gapMin = prev && prev.arrivalTime && leg.departureTime
+        ? (utcDateTime(leg.date, leg.departureTime).getTime()
+           - utcDateTime(prev.date, prev.arrivalTime).getTime()) / 60000
+        : null;
       const connects =
         prev && prev.arrivalAirport && prev.arrivalAirport === leg.departureAirport &&
-        prev.arrivalTime && leg.departureTime &&
-        diffMinutes(prev.arrivalTime, leg.departureTime) <= MAX_TURNAROUND_MIN;
+        gapMin !== null && gapMin >= -15 && gapMin <= MAX_TURNAROUND_MIN;
       if (connects) {
         chain.push(leg);
       } else {

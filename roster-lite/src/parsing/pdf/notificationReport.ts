@@ -91,7 +91,10 @@ export function parseNotificationReport(tokens: PositionedToken[]): Notification
   };
   const notificationDate = meta(/Notification date:/i);
   const notificationId = meta(/Notification id:/i);
-  const year2 = notificationDate?.match(/(\d{2})$/)?.[1] ?? null;
+  // Two-digit year from a "09Jul26" / "23Jun26-11:23:19" label — anchored on the
+  // day+month so we never grab the trailing seconds. Fall back to the notification id.
+  const year2of = (s: string | null) => s?.match(/\d{1,2}[A-Za-z]{3}(\d{2})/)?.[1] ?? null;
+  const year2 = year2of(notificationDate) ?? year2of(notificationId);
 
   // Data tokens live below the header; the lone "*" bullets are layout markers.
   const data = tokens.filter((t) => t.y < headerY - 2 && t.text.trim() && t.text.trim() !== '*');

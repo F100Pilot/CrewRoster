@@ -28,4 +28,17 @@ describe('parseCsv', () => {
     expect(duties).toHaveLength(1);
     expect(duties[0].dutyType).toBe('Standby Airport');
   });
+
+  it('keeps a quoted field that contains a newline as one cell', () => {
+    const csv = [
+      'Date,Code,Observations',
+      '2026-06-18,FLT,"line one',
+      'line two"',
+      '2026-06-19,OFF,ok',
+    ].join('\n');
+    const duties = parseCsv(csv);
+    expect(duties).toHaveLength(2);
+    expect(duties[0].observations).toBe('line one\nline two');
+    expect(duties[1].dutyCode).toBe('OFF');
+  });
 });
