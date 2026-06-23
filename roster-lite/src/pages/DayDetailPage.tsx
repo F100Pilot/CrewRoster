@@ -1,7 +1,7 @@
 import { Box, Card, CardContent, Chip, Divider, IconButton, Stack, Typography } from '@mui/material';
 import { ArrowBack, ChevronLeft, ChevronRight, FlightLand, FlightTakeoff, Hotel, IosShare, Phone } from '@mui/icons-material';
 import { Link } from '@mui/material';
-import { format, parseISO } from 'date-fns';
+import { addDays, format, parseISO } from 'date-fns';
 import { useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
@@ -23,15 +23,16 @@ export default function DayDetailPage() {
   const stats = dayStats(duties);
   const rest = date ? restBefore(roster?.duties ?? [], date) : null;
 
-  // Adjacent days with entries, so swiping (or the header arrows) flips through the
-  // roster without landing on empty days.
-  const allDates = useMemo(
-    () => Array.from(new Set((roster?.duties ?? []).map((d) => d.date))).sort(),
-    [roster],
-  );
-  const idx = date ? allDates.indexOf(date) : -1;
-  const prevDate = idx > 0 ? allDates[idx - 1] : null;
-  const nextDate = idx >= 0 && idx < allDates.length - 1 ? allDates[idx + 1] : null;
+  // Step one calendar day at a time within the roster's date span, so swiping (or the
+  // header arrows) flows through every day — including empty ones — not just days with
+  // entries.
+  const range = useMemo(() => {
+    const dates = (roster?.duties ?? []).map((d) => d.date).sort();
+    return dates.length ? { min: dates[0], max: dates[dates.length - 1] } : null;
+  }, [roster]);
+  const shift = (iso: string, days: number) => format(addDays(parseISO(iso), days), 'yyyy-MM-dd');
+  const prevDate = date && range && date > range.min ? shift(date, -1) : null;
+  const nextDate = date && range && date < range.max ? shift(date, 1) : null;
   // replace:true keeps the back button returning to the list rather than walking back
   // through every day swiped to.
   const goTo = (d: string | null) => { if (d) navigate(`/day/${d}`, { replace: true }); };

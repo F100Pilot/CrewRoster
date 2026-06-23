@@ -11,6 +11,7 @@ import { alpha } from '@mui/material/styles';
 import { addMonths, format, isSameMonth, parseISO, subMonths } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
+import { useViewedMonth } from '../state/viewedMonth';
 import UploadDropzone from '../components/UploadDropzone';
 import DutyChip from '../components/DutyChip';
 import NextDutyCard from '../components/NextDutyCard';
@@ -41,11 +42,6 @@ const FILTERS: { key: Filter; label: string }[] = [
 // second one before the first resolves (module-level: survives component remounts).
 const autoRegInFlight = new Set<string>();
 
-// Remembers the last month the user was browsing, so returning from a day detail (via
-// the back arrow) lands on that month instead of the current calendar month. Module-level
-// so it survives the page unmount/remount that navigation causes.
-let lastViewedMonth: Date | null = null;
-
 function matchesFilter(d: ParsedDuty, f: Filter): boolean {
   switch (f) {
     case 'flights':
@@ -75,9 +71,7 @@ function matchesQuery(d: ParsedDuty, q: string): boolean {
 export default function RosterPage() {
   const { roster, loading, warnings, error, dismissChanges, activeUser } = useRoster();
   const navigate = useNavigate();
-  const [month, setMonth] = useState<Date>(() => lastViewedMonth ?? new Date());
-  // Keep the remembered month in sync so a later return restores the right month.
-  useEffect(() => { lastViewedMonth = month; }, [month]);
+  const [month, setMonth] = useViewedMonth();
   const [infoAnchor, setInfoAnchor] = useState<null | HTMLElement>(null);
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
