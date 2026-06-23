@@ -137,7 +137,18 @@ export interface FetchRosterOptions {
  */
 export type FetchRosterResult =
   | { type: 'pdf'; buffer: ArrayBuffer; sessionToken?: string }
-  | { type: 'notification'; text: string };
+  // The notification pop-up in CrewLink already shows the roster PDF, so the worker
+  // tries to extract it too — `buffer` lets the app parse + show the diff BEFORE the
+  // user confirms. It's null when no PDF could be read from the notification page.
+  | { type: 'notification'; text: string; buffer: ArrayBuffer | null };
+
+// Decode a base64 string (the notification's pre-confirmation PDF) into an ArrayBuffer.
+function base64ToBuffer(b64: string): ArrayBuffer {
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes.buffer;
+}
 
 /**
  * Fetch the roster PDF from CrewLink via the proxy worker.
@@ -180,9 +191,15 @@ export async function fetchRoster(options: FetchRosterOptions): Promise<FetchRos
 
   // A pending notification comes back as JSON, not a PDF.
   if (contentType.includes('application/json')) {
-    const data = (await res.json()) as { notificationPending?: boolean; notificationText?: string };
+    const data = (await res.json()) as {
+      notificationPending?: boolean; notificationText?: string; pdfBase64?: string | null;
+    };
     if (data.notificationPending) {
-      return { type: 'notification', text: data.notificationText ?? '' };
+      return {
+        type: 'notification',
+        text: data.notificationText ?? '',
+        buffer: data.pdfBase64 ? base64ToBuffer(data.pdfBase64) : null,
+      };
     }
     throw new Error('Resposta inesperada do servidor.');
   }
