@@ -10,6 +10,7 @@
 import { exportAllStores, importAllStores, type BackupStore } from './rosterStore';
 import { downloadBlob } from '../utils/download';
 import { APP_VERSION } from '../version';
+import { API_KEY_PATTERN } from './settings';
 
 const BACKUP_FORMAT = 'crewroster-backup';
 const BACKUP_VERSION = 1;
@@ -51,10 +52,30 @@ function blobToDataUrl(blob: Blob): Promise<string> {
   });
 }
 
-async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
-  // fetch() resolves data: URLs natively and gives back a Blob with the right type.
-  return (await fetch(dataUrl)).blob();
+// We only ever store PDF blobs (saved CrewLink rosters), so the rebuilt Blob's type is
+// constrained to that — a backup can't smuggle in an arbitrary MIME.
+const ALLOWED_BLOB_TYPES = new Set(['application/pdf']);
+const DATA_URL_RE = /^data:[\w.+-]+\/[\w.+-]+;base64,/i;
+const MAX_BLOB_DATAURL = 25 * 1024 * 1024; // 25 MB ceiling per embedded file
+
+// Rebuild a Blob from a serialized marker in an imported file. The string is fully
+// attacker-controlled, so validate the scheme, cap the size, and force a safe MIME
+// before handing it to fetch() — never fetch an arbitrary URL or trust the declared type.
+async function dataUrlToBlob(s: SerializedBlob): Promise<Blob> {
+  if (typeof s.data !== 'string' || !DATA_URL_RE.test(s.data)) {
+    throw new BackupError('Conteúdo de ficheiro inválido na cópia de segurança.');
+  }
+  if (s.data.length > MAX_BLOB_DATAURL) {
+    throw new BackupError('Um ficheiro embebido na cópia é demasiado grande.');
+  }
+  const raw = await (await fetch(s.data)).blob();
+  const type = ALLOWED_BLOB_TYPES.has(s.type) ? s.type : 'application/pdf';
+  return new Blob([raw], { type });
 }
+
+// Keys that must never be copied between objects — guards against prototype pollution
+// from a hand-crafted backup file.
+const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
 // Replace any Blob field on a row with a serialized marker (used for the 'pdfs' store).
 async function serializeRow(row: unknown): Promise<unknown> {
@@ -68,9 +89,10 @@ async function serializeRow(row: unknown): Promise<unknown> {
 
 async function deserializeRow(row: unknown): Promise<unknown> {
   if (typeof row !== 'object' || row === null) return row;
-  const out: Record<string, unknown> = { ...(row as Record<string, unknown>) };
-  for (const [k, v] of Object.entries(out)) {
-    if (isSerializedBlob(v)) out[k] = await dataUrlToBlob(v.data);
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(row as Record<string, unknown>)) {
+    if (DANGEROUS_KEYS.has(k)) continue;
+    out[k] = isSerializedBlob(v) ? await dataUrlToBlob(v) : v;
   }
   return out;
 }
@@ -141,17 +163,59 @@ export async function readBackupFile(file: File): Promise<{ backup: BackupFile; 
   return { backup, summary: summarize(backup.stores) };
 }
 
+// The keyPath of each store, so we can drop rows that don't carry a valid string key
+// instead of letting a malformed/hostile row reach IndexedDB.
+const STORE_KEYPATH: Record<BackupStore, string> = {
+  users: 'id', rosters: 'id', regs: 'key', logbook: 'key', documents: 'id', pdfs: 'id',
+};
+
+function validRow(store: BackupStore, row: unknown): row is Record<string, unknown> {
+  if (typeof row !== 'object' || row === null) return false;
+  return typeof (row as Record<string, unknown>)[STORE_KEYPATH[store]] === 'string';
+}
+
+// localStorage keys the app owns and may restore. Anything else in an imported file is
+// ignored, so a hostile backup can't set arbitrary trusted keys.
+const LS_ALLOW_EXACT = new Set(['active_user_id']);
+const LS_ALLOW_PREFIXES = [
+  'crewroster.',            // aerodataboxKey, checkinLeadMin, lastSeenVersion, colorMode, autoreg.*
+  'crewlink_notifications_',
+  'gcal_client_id_',        // OAuth client id (not a secret) and the resolved calendar id…
+  'gcal_calendar_id_',
+  // …but NOT gcal_token_/gcal_expires_ — access tokens are never restored; re-auth instead.
+];
+const LS_MAX_VALUE = 256 * 1024; // 256 KB per key
+
+function lsAllowed(key: string): boolean {
+  return LS_ALLOW_EXACT.has(key) || LS_ALLOW_PREFIXES.some((p) => key.startsWith(p));
+}
+
+function restoreLocalStorage(ls: Record<string, string> | undefined): void {
+  if (!ls || typeof ls !== 'object') return;
+  for (const [k, v] of Object.entries(ls)) {
+    if (typeof v !== 'string' || v.length > LS_MAX_VALUE || !lsAllowed(k)) continue;
+    // Never let an imported file poison the API key with an invalid/hostile value.
+    if (k === 'crewroster.aerodataboxKey' && !API_KEY_PATTERN.test(v.trim())) continue;
+    try { localStorage.setItem(k, v); } catch { /* ignore */ }
+  }
+}
+
 // Restore a parsed backup. `replace` clears existing stores first (recommended for a
 // clean reinstall); the caller should reload the app afterwards to pick up the new state.
+// Rows are validated and localStorage keys allow-listed, so importing a foreign/edited
+// file can't inject arbitrary trusted state.
 export async function restoreBackup(backup: BackupFile, replace: boolean): Promise<void> {
   const stores: Partial<Record<BackupStore, unknown[]>> = {};
   for (const [name, rows] of Object.entries(backup.stores)) {
-    stores[name as BackupStore] = await Promise.all((rows as unknown[]).map(deserializeRow));
+    if (!(name in STORE_KEYPATH) || !Array.isArray(rows)) continue; // ignore unknown stores
+    const store = name as BackupStore;
+    const clean: unknown[] = [];
+    for (const r of rows) {
+      const row = await deserializeRow(r);
+      if (validRow(store, row)) clean.push(row);
+    }
+    stores[store] = clean;
   }
   await importAllStores(stores, replace);
-  if (backup.localStorage && typeof backup.localStorage === 'object') {
-    for (const [k, v] of Object.entries(backup.localStorage)) {
-      try { localStorage.setItem(k, v); } catch { /* ignore */ }
-    }
-  }
+  restoreLocalStorage(backup.localStorage);
 }

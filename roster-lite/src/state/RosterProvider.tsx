@@ -18,6 +18,7 @@ export function RosterProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
   // CrewLink sessions are per-user and kept in memory only (never persisted): each
   // crew member logs in with their own credentials. `sessionToken` is the active
@@ -60,6 +61,10 @@ export function RosterProvider({ children }: { children: ReactNode }) {
 
         const r = await loadRoster(active.id);
         setRoster(r ?? null);
+      } catch (e) {
+        // A failed IndexedDB read must NOT look like a first launch (which would prompt
+        // re-onboarding over unreadable-this-session data). Surface a recoverable error.
+        setLoadError(e instanceof Error ? e.message : 'Não foi possível carregar os dados.');
       } finally {
         setLoading(false);
       }
@@ -239,12 +244,12 @@ export function RosterProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<RosterState>(
     () => ({
-      roster, loading, importing, error, warnings, sessionToken,
+      roster, loading, importing, error, loadError, warnings, sessionToken,
       importFile, previewImport, applyImport, clear, dismissChanges, setSessionToken,
       users, activeUser,
       switchUser, createUser, renameUser, deleteUser: deleteUserFn,
     }),
-    [roster, loading, importing, error, warnings, sessionToken,
+    [roster, loading, importing, error, loadError, warnings, sessionToken,
      importFile, previewImport, applyImport, clear, dismissChanges, users, activeUser, switchUser, createUser, renameUser, deleteUserFn]
   );
 

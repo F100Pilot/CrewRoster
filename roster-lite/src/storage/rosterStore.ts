@@ -1,5 +1,6 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import type { AircraftReg, CrewDocument, LogbookRow, Roster, SavedPdf, UserProfile } from '../domain/types';
+import { clearNotifications } from './notifications';
 
 interface RosterDB extends DBSchema {
   rosters: { key: string; value: Roster };
@@ -74,24 +75,44 @@ export async function saveUser(user: UserProfile): Promise<void> {
   await db.put('users', user);
 }
 
+// Remove the per-user localStorage keys that live outside IndexedDB (confirmed CrewLink
+// notifications and the auto-capture stamp). Google Calendar keys are cleared separately
+// by the provider's clearUserGCalData.
+export function clearUserLocalData(userId: string): void {
+  try {
+    clearNotifications(userId);
+    localStorage.removeItem(`crewroster.autoreg.${userId}`);
+  } catch {
+    // ignore (storage disabled)
+  }
+}
+
+// Delete a profile and ALL of its data. Every store is wiped in a SINGLE transaction so a
+// mid-way failure can't leave the user gone but its rows orphaned. Keys are read up front
+// (awaiting inside a write tx can auto-commit it); 'pdfs' has no userId index so we fetch
+// and filter it. Per-user localStorage is cleared after the DB commits.
 export async function deleteUser(id: string): Promise<void> {
   const db = await getDb();
-  await db.delete('users', id);
-  await db.delete('rosters', id);
-  // Drop this profile's recorded aircraft registrations too. Read the keys first, then
-  // issue all deletes synchronously within the write tx — awaiting between the read and
-  // the writes could let the transaction auto-commit and close (TransactionInactiveError).
-  const keys = await db.getAllKeysFromIndex('regs', 'userId', id);
-  const tx = db.transaction('regs', 'readwrite');
-  await Promise.all([...keys.map((k) => tx.store.delete(k)), tx.done]);
-  // The logbook belongs to the user, so deleting the user clears it too (clearing the
-  // roster does not — that's what keeps the logbook permanent).
-  const lkeys = await db.getAllKeysFromIndex('logbook', 'userId', id);
-  const ltx = db.transaction('logbook', 'readwrite');
-  await Promise.all([...lkeys.map((k) => ltx.store.delete(k)), ltx.done]);
-  const dkeys = await db.getAllKeysFromIndex('documents', 'userId', id);
-  const dtx = db.transaction('documents', 'readwrite');
-  await Promise.all([...dkeys.map((k) => dtx.store.delete(k)), dtx.done]);
+  const [regKeys, logKeys, docKeys, allPdfs] = await Promise.all([
+    db.getAllKeysFromIndex('regs', 'userId', id),
+    db.getAllKeysFromIndex('logbook', 'userId', id),
+    db.getAllKeysFromIndex('documents', 'userId', id),
+    db.getAll('pdfs'),
+  ]);
+  const pdfKeys = allPdfs.filter((p) => p.userId === id).map((p) => p.id);
+
+  const tx = db.transaction(['users', 'rosters', 'regs', 'logbook', 'documents', 'pdfs'], 'readwrite');
+  await Promise.all([
+    tx.objectStore('users').delete(id),
+    tx.objectStore('rosters').delete(id),
+    ...regKeys.map((k) => tx.objectStore('regs').delete(k)),
+    ...logKeys.map((k) => tx.objectStore('logbook').delete(k)),
+    ...docKeys.map((k) => tx.objectStore('documents').delete(k)),
+    ...pdfKeys.map((k) => tx.objectStore('pdfs').delete(k)),
+    tx.done,
+  ]);
+
+  clearUserLocalData(id);
 }
 
 // ── Active user (localStorage) ─────────────────────────────────────────────────────

@@ -34,3 +34,9 @@ export function dismissNotification(userId: string, id: string): void {
   localStorage.setItem(key(userId), JSON.stringify(list));
   window.dispatchEvent(new CustomEvent(NOTIFICATIONS_EVENT));
 }
+
+// Remove all confirmed notifications for a user (used when a profile is deleted).
+export function clearNotifications(userId: string): void {
+  localStorage.removeItem(key(userId));
+  window.dispatchEvent(new CustomEvent(NOTIFICATIONS_EVENT));
+}

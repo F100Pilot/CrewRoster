@@ -15,6 +15,9 @@ export interface RosterState {
   loading: boolean;
   importing: boolean;
   error: string | null;
+  // Set when the initial load from IndexedDB fails, so the app can show a recoverable
+  // error screen instead of mistaking it for a fresh install (empty user list).
+  loadError: string | null;
   warnings: string[];
   sessionToken: string | null;
   importFile: (file: File) => Promise<void>;

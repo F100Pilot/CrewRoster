@@ -19,15 +19,19 @@ importação), **(2)** `deleteUser` incompleto e não-atómico, **(3)** ausênci
 
 ### Top prioridades (por impacto)
 
-| # | Área | Item | Sev. |
-|---|------|------|------|
-| 1 | Segurança | `restoreBackup` escreve qualquer chave de localStorage / linha de IndexedDB de um ficheiro importado, sem validação | **Alta** |
-| 2 | Armazenamento | `deleteUser` não apaga PDFs nem chaves localStorage do utilizador, e não é atómico | **Alta** |
-| 3 | React | Sem error boundary — qualquer erro de render dá ecrã branco (mau numa PWA instalada) | **Alta** |
-| 4 | Correção | Recência (`recencyStatus`): `validUntil` e `current` calculados de conjuntos inconsistentes | **Alta** |
-| 5 | Testes | Ambiente Vitest `node` bloqueia testar `backup.ts`/storage/estado/componentes | **Alta** |
-| 6 | Correção | Parser PDF: nº de voo vs hora resolvido só por posição (colisão `0845`/`2359`) | **Média** |
-| 7 | Correção | ICS ignora `Z`/`TZID` — trata tudo como UTC | **Média** |
+| # | Área | Item | Sev. | Estado |
+|---|------|------|------|--------|
+| 1 | Segurança | `restoreBackup` escreve qualquer chave de localStorage / linha de IndexedDB de um ficheiro importado, sem validação | **Alta** | ✅ 0.8.3.2 |
+| 2 | Armazenamento | `deleteUser` não apaga PDFs nem chaves localStorage do utilizador, e não é atómico | **Alta** | ✅ 0.8.3.2 |
+| 3 | React | Sem error boundary — qualquer erro de render dá ecrã branco (mau numa PWA instalada) | **Alta** | ✅ 0.8.3.2 |
+| 4 | Correção | Recência (`recencyStatus`): `validUntil` e `current` calculados de conjuntos inconsistentes | **Alta** | Vaga 2 |
+| 5 | Testes | Ambiente Vitest `node` bloqueia testar `backup.ts`/storage/estado/componentes | **Alta** | Vaga 3 |
+| 6 | Correção | Parser PDF: nº de voo vs hora resolvido só por posição (colisão `0845`/`2359`) | **Média** | Vaga 2 |
+| 7 | Correção | ICS ignora `Z`/`TZID` — trata tudo como UTC | **Média** | Vaga 2 |
+
+> **Vaga 1 concluída (0.8.3.2):** itens 1.1, 1.2 (validação/allow-list no restore + `dataUrlToBlob` endurecido),
+> 3.1 (`deleteUser` completo e atómico, incl. PDFs + chaves localStorage), 3.2 (error boundary de topo) e
+> 3.3 (`catch` no `RosterProvider.init` + ecrã de erro de carregamento).
 
 ---
 
