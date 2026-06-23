@@ -1,6 +1,12 @@
 import { type ReactNode, useState } from 'react';
-import { AppBar, Box, Container, IconButton, Paper, Toolbar, Tooltip, Typography, BottomNavigation, BottomNavigationAction } from '@mui/material';
-import { CalendarMonth, FormatListBulleted, CloudDownload, PictureAsPdf, Logout, HelpOutline, Settings, MenuBook } from '@mui/icons-material';
+import {
+  AppBar, Box, Container, IconButton, Paper, Toolbar, Tooltip, Typography, BottomNavigation,
+  BottomNavigationAction, Menu, MenuItem, ListItemIcon, ListItemText,
+} from '@mui/material';
+import {
+  CalendarMonth, FormatListBulleted, CloudDownload, PictureAsPdf, Logout, HelpOutline,
+  Settings, MenuBook, MoreVert, QueryStats, Public, Badge,
+} from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import UserSwitcher from './UserSwitcher';
@@ -28,6 +34,8 @@ export default function Layout({ children }: { children: ReactNode }) {
   const current = NAV.findIndex((n) => n.path === location.pathname);
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [moreAnchor, setMoreAnchor] = useState<null | HTMLElement>(null);
+  const go = (path: string) => { setMoreAnchor(null); navigate(path); };
 
   return (
     <Box sx={{ pb: 8, minHeight: '100vh', bgcolor: 'background.default' }}>
@@ -64,6 +72,31 @@ export default function Layout({ children }: { children: ReactNode }) {
               <CloudDownload />
             </IconButton>
           </Tooltip>
+          <Tooltip title="Mais">
+            <IconButton color="inherit" onClick={(e) => setMoreAnchor(e.currentTarget)}>
+              <MoreVert />
+            </IconButton>
+          </Tooltip>
+          <Menu
+            anchorEl={moreAnchor}
+            open={Boolean(moreAnchor)}
+            onClose={() => setMoreAnchor(null)}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+          >
+            <MenuItem onClick={() => go('/stats')}>
+              <ListItemIcon><QueryStats fontSize="small" /></ListItemIcon>
+              <ListItemText>Estatísticas</ListItemText>
+            </MenuItem>
+            <MenuItem onClick={() => go('/map')}>
+              <ListItemIcon><Public fontSize="small" /></ListItemIcon>
+              <ListItemText>Mapa de voos</ListItemText>
+            </MenuItem>
+            <MenuItem onClick={() => go('/documents')}>
+              <ListItemIcon><Badge fontSize="small" /></ListItemIcon>
+              <ListItemText>Documentos</ListItemText>
+            </MenuItem>
+          </Menu>
         </Toolbar>
       </AppBar>
       <Container maxWidth="md" sx={{ py: 2 }}>

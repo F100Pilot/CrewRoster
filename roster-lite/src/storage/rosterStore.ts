@@ -1,5 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import type { AircraftReg, LogbookRow, Roster, SavedPdf, UserProfile } from '../domain/types';
+import type { AircraftReg, CrewDocument, LogbookRow, Roster, SavedPdf, UserProfile } from '../domain/types';
 
 interface RosterDB extends DBSchema {
   rosters: { key: string; value: Roster };
@@ -15,13 +15,15 @@ interface RosterDB extends DBSchema {
   // The permanent logbook — accumulates operated sectors across rosters and survives
   // clearing the roster. Editable by hand.
   logbook: { key: string; value: LogbookRow; indexes: { userId: string } };
+  // Crew documents with expiries (medical, licence, OPC/LPC…), per user.
+  documents: { key: string; value: CrewDocument; indexes: { userId: string } };
 }
 
 let dbPromise: Promise<IDBPDatabase<RosterDB>> | null = null;
 
 function getDb() {
   if (!dbPromise) {
-    dbPromise = openDB<RosterDB>('crewroster-lite', 5, {
+    dbPromise = openDB<RosterDB>('crewroster-lite', 6, {
       upgrade(db, oldVersion) {
         if (oldVersion < 2) {
           if (!db.objectStoreNames.contains('rosters'))
@@ -44,6 +46,12 @@ function getDb() {
         if (oldVersion < 5) {
           if (!db.objectStoreNames.contains('logbook')) {
             const s = db.createObjectStore('logbook', { keyPath: 'key' });
+            s.createIndex('userId', 'userId');
+          }
+        }
+        if (oldVersion < 6) {
+          if (!db.objectStoreNames.contains('documents')) {
+            const s = db.createObjectStore('documents', { keyPath: 'id' });
             s.createIndex('userId', 'userId');
           }
         }
@@ -81,6 +89,9 @@ export async function deleteUser(id: string): Promise<void> {
   const lkeys = await db.getAllKeysFromIndex('logbook', 'userId', id);
   const ltx = db.transaction('logbook', 'readwrite');
   await Promise.all([...lkeys.map((k) => ltx.store.delete(k)), ltx.done]);
+  const dkeys = await db.getAllKeysFromIndex('documents', 'userId', id);
+  const dtx = db.transaction('documents', 'readwrite');
+  await Promise.all([...dkeys.map((k) => dtx.store.delete(k)), dtx.done]);
 }
 
 // ── Active user (localStorage) ─────────────────────────────────────────────────────
@@ -230,4 +241,21 @@ export async function putLogbookRows(rows: LogbookRow[]): Promise<void> {
 export async function deleteLogbookRow(key: string): Promise<void> {
   const db = await getDb();
   await db.delete('logbook', key);
+}
+
+// ── Crew documents (per user) ────────────────────────────────────────────────────────
+
+export async function loadDocuments(userId: string): Promise<CrewDocument[]> {
+  const db = await getDb();
+  return db.getAllFromIndex('documents', 'userId', userId);
+}
+
+export async function putDocument(doc: CrewDocument): Promise<void> {
+  const db = await getDb();
+  await db.put('documents', doc);
+}
+
+export async function deleteDocument(id: string): Promise<void> {
+  const db = await getDb();
+  await db.delete('documents', id);
 }

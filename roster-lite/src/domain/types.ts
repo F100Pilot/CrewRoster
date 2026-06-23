@@ -89,6 +89,15 @@ export interface LogbookRow {
   edited?: boolean; // added/edited by hand → not overwritten by roster merges
 }
 
+// A crew document with an expiry the pilot wants to track (medical, licence, OPC/LPC,
+// passport…). Permanent and per-user, independent of the roster.
+export interface CrewDocument {
+  id: string;
+  userId: string;
+  name: string;
+  expiry: string; // YYYY-MM-DD
+}
+
 // A PDF downloaded from CrewLink, kept in IndexedDB so the user can re-open,
 // re-download, or delete it. Registered by download time and date range.
 export interface SavedPdf {

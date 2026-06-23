@@ -100,6 +100,25 @@ export function logbookCsvRows(rows: LogbookRow[]): string {
   return [header, ...body].map((r) => r.map(csvCell).join(',')).join('\r\n');
 }
 
+// Take-off/landing recency: 3 landings in the preceding 90 days. Currency stays valid
+// until 90 days after the 3rd-most-recent landing; below 3 landings ever, not current.
+export interface Recency { landings90: number; current: boolean; validUntil: string | null }
+
+export function recencyStatus(rows: LogbookRow[], refISO: string, required = 3, days = 90): Recency {
+  const landings90 = landingsInRows(rows, refISO, days);
+  const recent = rows
+    .filter((r) => r.date <= refISO)
+    .map((r) => r.date)
+    .sort((a, b) => b.localeCompare(a)); // most recent first
+  let validUntil: string | null = null;
+  if (recent.length >= required) {
+    const third = new Date(`${recent[required - 1]}T00:00:00Z`);
+    third.setUTCDate(third.getUTCDate() + days);
+    validUntil = third.toISOString().slice(0, 10);
+  }
+  return { landings90, current: landings90 >= required, validUntil };
+}
+
 // Landings (operated sectors) in the trailing `days`-day window ending at refISO.
 export function landingsInRows(rows: LogbookRow[], refISO: string, days = 90): number {
   const ref = new Date(`${refISO}T00:00:00Z`);
@@ -107,6 +126,54 @@ export function landingsInRows(rows: LogbookRow[], refISO: string, days = 90): n
   from.setUTCDate(from.getUTCDate() - (days - 1));
   const fromISO = from.toISOString().slice(0, 10);
   return rows.filter((r) => r.date >= fromISO && r.date <= refISO).length;
+}
+
+// ── Logbook statistics ───────────────────────────────────────────────────────────────
+
+export interface LogbookStats {
+  sectors: number;
+  blockMinutes: number;
+  airports: number;
+  tails: number; // distinct aircraft registrations flown
+  byYear: { year: string; sectors: number; blockMinutes: number }[]; // most recent first
+  topAirports: { code: string; visits: number }[];
+  byAircraft: { type: string; sectors: number }[];
+}
+
+export function logbookStats(rows: LogbookRow[], topN = 8): LogbookStats {
+  const years = new Map<string, { sectors: number; blockMinutes: number }>();
+  const visits = new Map<string, number>();
+  const aircraft = new Map<string, number>();
+  const tails = new Set<string>();
+  let blockMinutes = 0;
+
+  for (const r of rows) {
+    const b = rowBlock(r);
+    blockMinutes += b;
+    const y = r.date.slice(0, 4);
+    const yr = years.get(y) ?? { sectors: 0, blockMinutes: 0 };
+    yr.sectors += 1; yr.blockMinutes += b; years.set(y, yr);
+    for (const code of [r.from, r.to]) if (code) visits.set(code, (visits.get(code) ?? 0) + 1);
+    if (r.aircraft) aircraft.set(r.aircraft, (aircraft.get(r.aircraft) ?? 0) + 1);
+    if (r.reg) tails.add(r.reg);
+  }
+
+  return {
+    sectors: rows.length,
+    blockMinutes,
+    airports: visits.size,
+    tails: tails.size,
+    byYear: [...years.entries()]
+      .map(([year, v]) => ({ year, ...v }))
+      .sort((a, b) => b.year.localeCompare(a.year)),
+    topAirports: [...visits.entries()]
+      .map(([code, v]) => ({ code, visits: v }))
+      .sort((a, b) => b.visits - a.visits || a.code.localeCompare(b.code))
+      .slice(0, topN),
+    byAircraft: [...aircraft.entries()]
+      .map(([type, sectors]) => ({ type, sectors }))
+      .sort((a, b) => b.sectors - a.sectors || a.type.localeCompare(b.type)),
+  };
 }
 
 function csvCell(value: string): string {
