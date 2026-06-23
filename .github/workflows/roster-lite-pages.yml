@@ -22,7 +22,10 @@ jobs:
           node-version: 20
           cache: npm
           cache-dependency-path: roster-lite/package-lock.json
-      - run: pip install Pillow --quiet
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install "Pillow==11.0.0" --quiet
       - run: python3 scripts/gen-icons.py
         working-directory: roster-lite
       - run: npm ci

@@ -45,6 +45,13 @@ importação), **(2)** `deleteUser` incompleto e não-atómico, **(3)** ausênci
 > com react-hooks + jsx-a11y, no CI antes do build); 4.5 (`aria-label` nos botões só-ícone); 4.3
 > (code-splitting: o bundle principal passou de ~1.17 MB para ~158 kB, com `mui`/`pdfjs`/`geo`/`datefns` em
 > chunks separados e as rotas pesadas em `React.lazy`).
+>
+> **Vaga 4 concluída (higiene de repositório):** 4.6 (removida a app legada Firebase/Render — `frontend/`,
+> `backend/`, `firebase.json`, `firestore.*`, `.firebaserc`, `.firebase/`, `INSTALL.md`, `.env.example` da raiz
+> e o CSV solto com nome Windows mangled); 4.9 (CI fixa `actions/setup-python` + `Pillow==11.0.0`); 4.11
+> (README corrige `worker/worker.js` e o caminho `src/__tests__/`). Sem alteração de comportamento da app
+> (sem bump de versão). **Pendente:** 2.5 (precisa de PDF real); upgrades de majors (4.13) ficam para quando
+> for oportuno.
 
 ---
 

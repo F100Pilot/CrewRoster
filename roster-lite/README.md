@@ -194,10 +194,11 @@ roster-lite/
 │   │   └── localTime.ts        # UTC ↔ hora local de aeroporto
 │   ├── components/             # componentes reutilizáveis
 │   └── pages/                  # uma página por rota
+│   └── __tests__/              # testes Vitest (fixtures + asserts)
 ├── worker/                     # Cloudflare Worker (proxy CORS)
-│   ├── index.js
+│   ├── worker.js
 │   └── deploy.sh
-└── __tests__/                  # testes Vitest (fixtures + asserts)
+└── scripts/gen-icons.py        # gera os ícones a partir de assets/icon-master.png
 ```
 
 ---
@@ -234,7 +235,7 @@ bash deploy.sh
 
 ## Proxy Cloudflare Worker
 
-O worker em `worker/index.js` serve como proxy CORS para dois serviços externos:
+O worker em `worker/worker.js` serve como proxy CORS para dois serviços externos:
 
 | Endpoint | Destino | Uso |
 |---|---|---|
