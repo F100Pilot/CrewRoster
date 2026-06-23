@@ -1,7 +1,7 @@
 {
-  "name": "CrewRoster Lite",
+  "name": "CrewRoster",
   "short_name": "CrewRoster",
-  "description": "Visualizador de escala de voo — Portuguália Airlines",
+  "description": "Visualizador de escala de voo — Portugália Airlines",
   "start_url": "/CrewRoster/",
   "scope": "/CrewRoster/",
   "display": "standalone",

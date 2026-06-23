@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Box, Button, Stack, TextField, Typography } from '@mui/material';
 import { Person } from '@mui/icons-material';
 import { useRoster } from '../state/useRoster';
+import { APP_NAME, APP_VERSION_LABEL } from '../version';
 
 export default function WelcomePage() {
   const { createUser } = useRoster();
@@ -33,7 +34,10 @@ export default function WelcomePage() {
         sx={{ width: 80, height: 80, mb: 3, borderRadius: 3 }}
       />
       <Typography variant="h5" fontWeight={700} mb={0.5} textAlign="center">
-        CrewRoster Lite
+        {APP_NAME}
+      </Typography>
+      <Typography variant="caption" color="text.secondary" mb={1.5} textAlign="center">
+        {APP_VERSION_LABEL}
       </Typography>
       <Typography variant="body2" color="text.secondary" mb={4} textAlign="center">
         Bem-vindo! Como te chamas?

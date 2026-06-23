@@ -9,6 +9,7 @@ import {
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
+import { APP_NAME, APP_VERSION_LABEL } from '../version';
 import UserSwitcher from './UserSwitcher';
 import DownloadRosterDialog from './DownloadRosterDialog';
 import NotificationBanner from './NotificationBanner';
@@ -41,9 +42,14 @@ export default function Layout({ children }: { children: ReactNode }) {
     <Box sx={{ pb: 8, minHeight: '100vh', bgcolor: 'background.default' }}>
       <AppBar position="sticky" elevation={0}>
         <Toolbar variant="dense">
-          <Typography variant="h6" sx={{ fontWeight: 700, flexGrow: 1 }}>
-            CrewRoster Lite
-          </Typography>
+          <Box display="flex" alignItems="baseline" gap={0.75} sx={{ flexGrow: 1, minWidth: 0 }}>
+            <Typography variant="h6" sx={{ fontWeight: 700 }} noWrap>
+              {APP_NAME}
+            </Typography>
+            <Typography variant="caption" sx={{ opacity: 0.7, whiteSpace: 'nowrap' }}>
+              {APP_VERSION_LABEL}
+            </Typography>
+          </Box>
           {sessionToken && (
             <Tooltip title="Terminar sessão CrewLink">
               <IconButton

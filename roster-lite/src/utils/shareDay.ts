@@ -1,6 +1,7 @@
 import { format, parseISO } from 'date-fns';
 import { diffMinutes, formatDuration } from './duration';
 import { downloadBlob } from './download';
+import { APP_NAME, APP_VERSION_LABEL } from '../version';
 import type { ParsedDuty } from '../domain/types';
 
 // Tier 3 — turn a single day's duties into a shareable branded image. Drawn on a
@@ -119,7 +120,7 @@ function renderCard(date: string, duties: ParsedDuty[], subtitle?: string): HTML
   // Footer
   ctx.fillStyle = C.faint;
   ctx.font = `400 13px ${FONT}`;
-  ctx.fillText('Gerado por CrewRoster Lite', pad, H - pad + 4);
+  ctx.fillText(`Gerado por ${APP_NAME} ${APP_VERSION_LABEL}`, pad, H - pad + 4);
 
   return canvas;
 }
