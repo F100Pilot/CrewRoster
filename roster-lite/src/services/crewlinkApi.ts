@@ -137,9 +137,18 @@ export interface FetchRosterOptions {
  */
 export type FetchRosterResult =
   | { type: 'pdf'; buffer: ArrayBuffer; sessionToken?: string }
-  // The notification PDF is only a reception receipt (with the id to confirm), not the
-  // roster — the duty plan is only generated after confirming. So this carries just text.
-  | { type: 'notification'; text: string };
+  // CrewLink's notification PDF is the "Crew Notification" report (known/current state per
+  // changed day), so `buffer` lets the app show the before → after BEFORE confirming. The
+  // authoritative duty plan is still downloaded on confirmation.
+  | { type: 'notification'; text: string; buffer: ArrayBuffer | null };
+
+// Decode the notification report PDF (base64) into an ArrayBuffer.
+function base64ToBuffer(b64: string): ArrayBuffer {
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes.buffer;
+}
 
 /**
  * Fetch the roster PDF from CrewLink via the proxy worker.
@@ -182,9 +191,15 @@ export async function fetchRoster(options: FetchRosterOptions): Promise<FetchRos
 
   // A pending notification comes back as JSON, not a PDF.
   if (contentType.includes('application/json')) {
-    const data = (await res.json()) as { notificationPending?: boolean; notificationText?: string };
+    const data = (await res.json()) as {
+      notificationPending?: boolean; notificationText?: string; pdfBase64?: string | null;
+    };
     if (data.notificationPending) {
-      return { type: 'notification', text: data.notificationText ?? '' };
+      return {
+        type: 'notification',
+        text: data.notificationText ?? '',
+        buffer: data.pdfBase64 ? base64ToBuffer(data.pdfBase64) : null,
+      };
     }
     throw new Error('Resposta inesperada do servidor.');
   }

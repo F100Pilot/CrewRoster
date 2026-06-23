@@ -342,6 +342,17 @@ function extractBody(html) {
 // <br>/</tr>/</p> por quebras de linha, tira as restantes tags, descodifica as
 // entidades mais comuns e colapsa espaços. Usado para mostrar o conteúdo da
 // notificação ao utilizador antes de ele confirmar.
+// Base64-encode an ArrayBuffer (chunked to avoid blowing the call stack on large PDFs).
+function base64FromArrayBuffer(buf) {
+  const bytes = new Uint8Array(buf);
+  let binary = '';
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
+
 function extractReadableText(html) {
   let s = html;
   s = s.replace(/<head[\s\S]*?<\/head>/gi, ' ');
@@ -681,13 +692,19 @@ async function handleRoster(request) {
     const notifUrl = `${CREWLINK_BASE}${CREWLINK_APP_PATH}?crewlinkService=notification&crewlinkOperation=default&crewlinkSourcePage=spCrew`;
 
     if (!body.confirmNotification) {
-      // Modo "mostrar": ler o conteúdo da notificação sem confirmar nada. O PDF embebido
-      // na página é apenas o "notification report" (um comprovativo com o id a confirmar),
-      // NÃO a escala — a escala só é gerada depois de confirmar. Por isso devolvemos só o
-      // texto; o diff real é mostrado após a confirmação.
+      // Modo "mostrar": ler a notificação SEM confirmar. O PDF embebido na página é o
+      // "Crew Notification" report — uma tabela date | known state | current state, ou
+      // seja, traz o ANTES e o DEPOIS de cada dia alterado. Extraímo-lo (base64) para a
+      // app o parsear e mostrar as alterações antes de o utilizador confirmar.
       const { html: notifHtml } = await getHtml(notifUrl);
+      let pdfBase64 = null;
+      const notifPdfUrl = findPdfUrl(notifHtml);
+      if (notifPdfUrl) {
+        const buf = await fetchPdf(notifPdfUrl);
+        if (buf) pdfBase64 = base64FromArrayBuffer(buf);
+      }
       return jsonResponse(
-        { notificationPending: true, notificationText: extractReadableText(notifHtml) },
+        { notificationPending: true, notificationText: extractReadableText(notifHtml), pdfBase64 },
         200,
         request,
       );

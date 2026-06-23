@@ -9,6 +9,7 @@ import { login, fetchRoster, SessionExpiredError } from '../services/crewlinkApi
 import { useRoster, type RosterImportPreview } from '../state/useRoster';
 import { savePdf } from '../storage/rosterStore';
 import { addNotification } from '../storage/notifications';
+import { parseNotificationPdf, type NotificationReport } from '../parsing/pdf/notificationReport';
 import type { ChangeType, DayChange, ParsedDuty } from '../domain/types';
 
 const CHANGE_META: Record<ChangeType, { label: string; color: 'success' | 'warning' | 'error' }> = {
@@ -129,6 +130,9 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
   const [pendingBuffer, setPendingBuffer] = useState<ArrayBuffer | null>(null);
   // Notification text to record in the banner once the reviewed roster is applied.
   const [recordNotifText, setRecordNotifText] = useState<string | null>(null);
+  // Parsed "Crew Notification" report (known → current per changed day), shown in the
+  // notification phase before confirming.
+  const [notifReport, setNotifReport] = useState<NotificationReport | null>(null);
 
   function resetReview() {
     setPreview(null);
@@ -143,6 +147,7 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
     setStatus('');
     setPassword('');
     setPendingNotification(null);
+    setNotifReport(null);
     resetReview();
     onClose();
   }
@@ -247,6 +252,10 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
       if (result.type === 'notification') {
         setPendingNotification(result.text || '(Sem texto na notificação.)');
         setStatus('');
+        // Parse the notification report PDF to show the before → after of each changed day.
+        if (result.buffer) {
+          try { setNotifReport(await parseNotificationPdf(result.buffer)); } catch { /* text only */ }
+        }
         return;
       }
       if (result.sessionToken && result.sessionToken !== sessionToken) setSessionToken(result.sessionToken);
@@ -258,9 +267,9 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
     }
   }
 
-  // Notification "Confirmar": acknowledge it on CrewLink (required there to release the
-  // duty plan), download the real roster and route it through the review step so the
-  // actual changes are shown before they're applied.
+  // Notification "Confirmar e aplicar": the user already reviewed the before → after, so
+  // acknowledge the notification on CrewLink (required there to release the duty plan),
+  // download the authoritative roster and apply it directly.
   async function confirmNotification() {
     if (!sessionToken || !activeUser) return;
     setDownloading(true);
@@ -277,7 +286,11 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
       if (result.sessionToken && result.sessionToken !== sessionToken) setSessionToken(result.sessionToken);
       const notifText = pendingNotification ?? undefined;
       setPendingNotification(null);
-      await processPdf(result.buffer, notifText);
+      setNotifReport(null);
+      const fileName = `escala-${format(new Date(), 'yyyyMMdd-HHmm')}.pdf`;
+      const file = new File([new Blob([result.buffer], { type: 'application/pdf' })], fileName, { type: 'application/pdf' });
+      const pv = await previewImport(file);
+      await commitPreview(result.buffer, pv, notifText);
     } catch (e) {
       handleDownloadError(e);
     } finally {
@@ -304,29 +317,58 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
             <Button variant="contained" onClick={handleClose}>Ver escala</Button>
           </Stack>
         ) : pendingNotification !== null ? (
-          // ── Notification phase: show the message; the real diff comes after confirm ──
+          // ── Notification phase: message + before → after from the report ──────
           <Stack spacing={2} pt={0.5}>
             <Alert severity="warning" icon={<NotificationsActive />}>
-              O CrewLink tem uma notificação por ler para este período. Lê-a abaixo. Ao
-              confirmares, marca-la como lida no CrewLink e mostramos as alterações da
-              escala para reveres <strong>antes</strong> de aplicar.
+              O CrewLink tem uma notificação por ler para este período.{' '}
+              {notifReport && notifReport.changes.length > 0
+                ? 'Vê as alterações abaixo.'
+                : 'Lê-a abaixo.'}{' '}
+              Ao confirmares, marca-la como lida no CrewLink e a escala é atualizada.
             </Alert>
             {error && <Alert severity="error">{error}</Alert>}
-            <Box
-              sx={{
-                maxHeight: 220, overflowY: 'auto', p: 1.5, borderRadius: 1,
-                bgcolor: 'action.hover', whiteSpace: 'pre-wrap', fontSize: 13,
-              }}
-            >
-              {cleanNotificationText(pendingNotification)}
-            </Box>
+
+            {notifReport && notifReport.changes.length > 0 ? (
+              <Stack spacing={1.5}>
+                {notifReport.changes.map((c) => (
+                  <Box key={c.date} sx={{ p: 1, borderRadius: 1, bgcolor: 'action.hover' }}>
+                    <Typography variant="subtitle2">
+                      {/^\d{4}-/.test(c.date) ? format(parseISO(c.date), 'EEE, dd MMM yyyy') : c.rawDate}
+                    </Typography>
+                    <Box display="flex" gap={1} alignItems="flex-start" mt={0.5}>
+                      <Chip size="small" color="warning" label="Antes" sx={{ color: '#fff', minWidth: 64 }} />
+                      <Typography variant="body2" sx={{ flex: 1 }}>{c.known.join('; ') || '—'}</Typography>
+                    </Box>
+                    <Box display="flex" gap={1} alignItems="flex-start" mt={0.5}>
+                      <Chip size="small" color="success" label="Depois" sx={{ color: '#fff', minWidth: 64 }} />
+                      <Typography variant="body2" sx={{ flex: 1 }}>{c.current.join('; ') || '—'}</Typography>
+                    </Box>
+                  </Box>
+                ))}
+                {notifReport.notificationId && (
+                  <Typography variant="caption" color="text.secondary">
+                    Notificação {notifReport.notificationId}
+                  </Typography>
+                )}
+              </Stack>
+            ) : (
+              <Box
+                sx={{
+                  maxHeight: 220, overflowY: 'auto', p: 1.5, borderRadius: 1,
+                  bgcolor: 'action.hover', whiteSpace: 'pre-wrap', fontSize: 13,
+                }}
+              >
+                {cleanNotificationText(pendingNotification)}
+              </Box>
+            )}
+
             <Stack direction="row" spacing={1}>
               <Button
                 variant="contained" color="primary" fullWidth
                 onClick={confirmNotification} disabled={downloading}
                 startIcon={downloading ? <CircularProgress size={18} color="inherit" /> : <CheckCircle />}
               >
-                {downloading ? 'A confirmar…' : 'Confirmar'}
+                {downloading ? 'A confirmar…' : 'Confirmar e aplicar'}
               </Button>
               <Button variant="outlined" color="inherit" fullWidth onClick={handleClose} disabled={downloading}>
                 Fechar
