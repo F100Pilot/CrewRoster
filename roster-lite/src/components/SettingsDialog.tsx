@@ -5,6 +5,7 @@ import {
   ToggleButtonGroup, Typography,
 } from '@mui/material';
 import { Close, Visibility, VisibilityOff, CheckCircle, Science, CalendarMonth, DeleteOutline, BugReport, DarkMode, LightMode, InfoOutlined } from '@mui/icons-material';
+import readmeText from '../../README.md?raw';
 import { useNavigate } from 'react-router-dom';
 import { useColorMode } from '../state/colorMode';
 import {
@@ -31,6 +32,7 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
   const [testResult, setTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
   const [lead, setLead] = useState(getCheckinLeadMinutes());
+  const [readmeOpen, setReadmeOpen] = useState(false);
 
   // Load the stored key whenever the dialog opens.
   useEffect(() => {
@@ -271,8 +273,10 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
 
           <Box>
             <Box display="flex" alignItems="center" gap={0.5} mb={0.5}>
-              <InfoOutlined fontSize="small" color="action" />
-              <Typography variant="subtitle2">Sobre</Typography>
+              <Typography variant="subtitle2" sx={{ flexGrow: 1 }}>Sobre</Typography>
+              <IconButton size="small" onClick={() => setReadmeOpen(true)} title="Documentação">
+                <InfoOutlined fontSize="small" />
+              </IconButton>
             </Box>
             <Typography variant="body2" color="text.secondary">
               {APP_NAME} {APP_VERSION_LABEL}
@@ -294,6 +298,34 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
         <Button onClick={onClose} color="inherit">Fechar</Button>
         <Button onClick={handleSave} variant="contained" disabled={invalid}>Guardar</Button>
       </DialogActions>
+
+      {/* README viewer */}
+      <Dialog open={readmeOpen} onClose={() => setReadmeOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', pr: 1 }}>
+          <Box flexGrow={1}>Documentação</Box>
+          <IconButton onClick={() => setReadmeOpen(false)} size="small"><Close fontSize="small" /></IconButton>
+        </DialogTitle>
+        <DialogContent dividers sx={{ p: 0 }}>
+          <Box
+            component="pre"
+            sx={{
+              m: 0, p: 2,
+              fontFamily: 'monospace',
+              fontSize: '0.72rem',
+              lineHeight: 1.6,
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+              overflowX: 'hidden',
+              color: 'text.primary',
+            }}
+          >
+            {readmeText}
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setReadmeOpen(false)}>Fechar</Button>
+        </DialogActions>
+      </Dialog>
     </Dialog>
   );
 }
