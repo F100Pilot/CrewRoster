@@ -1,5 +1,5 @@
 import { Box, Card, CardContent, Chip, Divider, IconButton, Stack, Typography } from '@mui/material';
-import { ArrowBack, ChevronLeft, ChevronRight, FlightLand, FlightTakeoff, Groups, Hotel, IosShare, Phone } from '@mui/icons-material';
+import { ArrowBack, ChevronLeft, ChevronRight, FlightLand, FlightTakeoff, Hotel, IosShare, Phone } from '@mui/icons-material';
 import { Link } from '@mui/material';
 import { addDays, format, parseISO } from 'date-fns';
 import { useMemo, useRef } from 'react';
@@ -171,7 +171,6 @@ export default function DayDetailPage() {
                   </Typography>
                 )}
                 {duty.hotel && <HotelLine hotel={duty.hotel} />}
-                {duty.crew && duty.crew.length > 0 && <CrewLine crew={duty.crew} />}
               </Box>
             )}
 
@@ -251,36 +250,6 @@ function HotelLine({ hotel }: { hotel: { name: string; phone: string | null } })
           </Typography>
         </Link>
       )}
-    </Box>
-  );
-}
-
-// Friendly labels for the crew roles printed in the PDF.
-const ROLE_LABEL: Record<string, string> = { CP: 'CMD', FO: 'OPL', PU: 'CC', ST: 'TC' };
-
-// The crew rostered on a flight (from the PDF's "Crew Information on Leg" section).
-function CrewLine({ crew }: { crew: import('../domain/types').CrewMember[] }) {
-  const name = (c: import('../domain/types').CrewMember) =>
-    c.firstName ? `${c.surname} ${c.firstName.split(' ')[0]}` : c.surname;
-  return (
-    <Box mt={1.5}>
-      <Typography
-        variant="caption"
-        color="text.secondary"
-        sx={{ display: 'flex', alignItems: 'center', gap: 0.5, justifyContent: 'center' }}
-      >
-        <Groups fontSize="inherit" /> Tripulação
-      </Typography>
-      <Box display="flex" flexWrap="wrap" gap={0.5} justifyContent="center" mt={0.5}>
-        {crew.map((c) => (
-          <Chip
-            key={c.login}
-            size="small"
-            variant="outlined"
-            label={`${ROLE_LABEL[c.role] ?? c.role} · ${name(c)}`}
-          />
-        ))}
-      </Box>
     </Box>
   );
 }
