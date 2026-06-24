@@ -14,6 +14,7 @@ import {
 } from '../storage/settings';
 import { fetchFlightInfo } from '../services/crewlinkApi';
 import { APP_NAME, APP_VERSION_LABEL } from '../version';
+import { DISCLAIMER_TEXT } from '../disclaimer';
 import { operatedFlights } from '../domain/flightTime';
 import { downloadIcs } from '../utils/icsExport';
 import { startTour } from '../tour';
@@ -414,6 +415,9 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
             <Typography variant="body2">
               <Link href="mailto:pflm.bet@gmail.com">pflm.bet@gmail.com</Link>
             </Typography>
+            <Alert severity="warning" variant="outlined" sx={{ mt: 1.5, py: 0.5 }}>
+              <Typography variant="body2">{DISCLAIMER_TEXT}</Typography>
+            </Alert>
           </Box>
         </Stack>
       </DialogContent>

@@ -93,3 +93,23 @@ export function setTourSeen(): void {
     // ignore
   }
 }
+
+// ── Beta disclaimer ───────────────────────────────────────────────────────────────────
+// Whether the user has acknowledged the beta disclaimer (so the on-open notice shows once).
+const DISCLAIMER_SEEN = 'crewroster.disclaimerSeen';
+
+export function getDisclaimerSeen(): boolean {
+  try {
+    return localStorage.getItem(DISCLAIMER_SEEN) === '1';
+  } catch {
+    return true; // if storage is unavailable, don't nag
+  }
+}
+
+export function setDisclaimerSeen(): void {
+  try {
+    localStorage.setItem(DISCLAIMER_SEEN, '1');
+  } catch {
+    // ignore
+  }
+}
