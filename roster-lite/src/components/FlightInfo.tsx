@@ -1,19 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Box, Chip, CircularProgress, IconButton, List, ListItem, ListItemText, Popover, Tooltip, Typography } from '@mui/material';
-import { AirplaneTicket, Groups, InfoOutlined, Refresh } from '@mui/icons-material';
+import { AirplaneTicket, Groups, Refresh } from '@mui/icons-material';
 import { fetchFlightInfo, type FlightInfo as FlightInfoData } from '../services/crewlinkApi';
 import { matchLeg, recordReg, regMapKey, resolveRegs } from '../domain/aircraftRegs';
 import { loadRegs } from '../storage/rosterStore';
 import { useRoster } from '../state/useRoster';
-import type { AircraftReg, CrewMember, ParsedDuty } from '../domain/types';
+import type { AircraftReg, ParsedDuty } from '../domain/types';
 
 // Friendly labels for the crew roles printed in the PDF.
 const ROLE_LABEL: Record<string, string> = { CP: 'Comandante', FO: 'Oficial Piloto', PU: 'Chefe de Cabine', ST: 'Tripulante' };
 const ROLE_SHORT: Record<string, string> = { CP: 'CMD', FO: 'OPL', PU: 'CC', ST: 'TC' };
-
-function crewName(c: CrewMember): string {
-  return c.firstName ? `${c.surname} ${c.firstName.split(' ')[0]}` : c.surname;
-}
 
 // Colour the operational status so cancellations/diversions stand out at a glance.
 function statusColor(status: string | null): string {
@@ -101,7 +97,7 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
         {crew && crew.length > 0 && (
           <Tooltip title="Tripulação">
             <IconButton size="small" onClick={(e) => setCrewAnchor(e.currentTarget)} sx={{ p: 0.25 }} aria-label="Ver tripulação">
-              <InfoOutlined sx={{ fontSize: 18 }} />
+              <Groups sx={{ fontSize: 20 }} />
             </IconButton>
           </Tooltip>
         )}
@@ -132,9 +128,9 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
           {(crew ?? []).map((c) => (
             <ListItem key={c.login} sx={{ py: 0.1 }}>
               <ListItemText
-                primary={crewName(c)}
-                secondary={ROLE_LABEL[c.role] ?? c.role}
-                primaryTypographyProps={{ variant: 'body2', fontWeight: 600 }}
+                primary={c.login}
+                secondary={`${ROLE_LABEL[c.role] ?? c.role}${c.surname ? ' · ' + c.surname : ''}`}
+                primaryTypographyProps={{ variant: 'body2', fontWeight: 700, sx: { fontFamily: 'monospace' } }}
                 secondaryTypographyProps={{ variant: 'caption' }}
               />
               <Chip size="small" variant="outlined" label={ROLE_SHORT[c.role] ?? c.role} sx={{ ml: 1 }} />

@@ -124,9 +124,13 @@ export function attachCrewToDuties(duties: ParsedDuty[], legs: CrewLeg[]): void 
   for (const d of duties) {
     if (d.dutyType !== 'Flight Duty' || !d.flightNumber) continue;
     const dow = format(parseISO(d.date), 'EEEdd'); // e.g. "Thu15", English weekday like the PDF
-    const leg = legs.find((l) =>
-      l.flightNumber === d.flightNumber && l.dow === dow &&
-      (l.dep == null || d.departureAirport == null || l.dep === d.departureAirport));
+    // Confirm by the FLIGHT, not just the day: the crew section's day label alone can't
+    // tell e.g. 1 Jun from 1 Jul apart, so we require the flight number to match and the
+    // route (departure + arrival, when known) to agree, plus the weekday+day.
+    const sameRoute = (l: CrewLeg) =>
+      (l.dep == null || d.departureAirport == null || l.dep === d.departureAirport) &&
+      (l.arr == null || d.arrivalAirport == null || l.arr === d.arrivalAirport);
+    const leg = legs.find((l) => l.flightNumber === d.flightNumber && l.dow === dow && sameRoute(l));
     if (leg) d.crew = sortCrew(leg.crew);
   }
 }
