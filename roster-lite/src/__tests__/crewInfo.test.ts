@@ -12,6 +12,7 @@ function tok(text: string, x: number, y: number): PositionedToken {
 function legTokens(): PositionedToken[] {
   const X = 200; // identity column
   return [
+    tok('Crew Information on Leg', 240, 700), // section header the parser anchors on
     tok('Mon05', X, 535), tok('TP', X, 504), tok('100', X, 489),
     tok('LIS', X, 428), tok('0800', X, 401), tok('0930', X, 364), tok('OPO', X, 331),
     // crew in the two columns to the left
@@ -36,6 +37,7 @@ describe('parseCrewInfo', () => {
 
   it('keeps the first name when present in the token', () => {
     const legs = parseCrewInfo([
+      tok('Crew Information on Leg', 240, 700),
       tok('Mon05', 200, 535), tok('TP', 200, 504), tok('100', 200, 489), tok('LIS', 200, 428), tok('OPO', 200, 331),
       tok('XBARROS, BARROS, FO FILIPE', 180, 480),
     ]);

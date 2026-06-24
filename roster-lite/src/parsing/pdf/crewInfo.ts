@@ -35,11 +35,17 @@ function parseCrewToken(text: string): CrewMember | null {
 
 // Extract every leg (with its crew) from the crew-information section of a duty-plan PDF.
 export function parseCrewInfo(tokens: PositionedToken[]): CrewLeg[] {
+  // Anchor on the "Crew Information on Leg" header so we don't depend on a fixed page and
+  // we stay in the FLIGHT crew zone — the separate simulator/office crew zones have no
+  // flight carrier, so the carrier-anchoring below also naturally excludes them.
+  const header = tokens.find((z) => /Crew Information on Leg/i.test(z.text));
+  if (!header) return [];
+  const startPage = header.page;
+
   const legs: (CrewLeg & { page: number; x: number; dowY: number })[] = [];
 
-  // Anchor on each carrier token ("TP"). The crew section lives after the duty grid, so we
-  // only consider carriers from page 6 onward to avoid the main grid's flights.
-  for (const tp of tokens.filter((z) => z.text === 'TP' && z.page >= 6)) {
+  // Anchor on each carrier token ("TP") at/after the crew-section header.
+  for (const tp of tokens.filter((z) => z.text === 'TP' && z.page >= startPage)) {
     const col = tokens
       .filter((z) => z.page === tp.page && Math.abs(z.x - tp.x) <= 4 && z.text.trim())
       .sort((a, b) => b.y - a.y); // top → bottom
@@ -73,7 +79,7 @@ export function parseCrewInfo(tokens: PositionedToken[]): CrewLeg[] {
 
   // Assign each crew token to the nearest leg whose identity column is just to its RIGHT
   // (crew sit in the columns left of the identity), within the same vertical band.
-  for (const ct of tokens.filter((z) => z.page >= 6 && CREW.test(z.text))) {
+  for (const ct of tokens.filter((z) => z.page >= startPage && CREW.test(z.text))) {
     const member = parseCrewToken(ct.text);
     if (!member) continue;
     let best: (typeof legs)[number] | null = null;
