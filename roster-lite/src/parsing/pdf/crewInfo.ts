@@ -37,12 +37,14 @@ function parseCrewToken(text: string): CrewMember | null {
 
 // Extract every leg (with its crew) from the crew-information section of a duty-plan PDF.
 export function parseCrewInfo(tokens: PositionedToken[]): CrewLeg[] {
-  // Anchor on the "Crew Information on Leg" header so we don't depend on a fixed page and
-  // we stay in the FLIGHT crew zone — the separate simulator/office crew zones have no
-  // flight carrier, so the carrier-anchoring below also naturally excludes them.
-  const header = tokens.find((z) => /Crew Information on Leg/i.test(z.text));
-  if (!header) return [];
-  const startPage = header.page;
+  // Anchor on the FLIGHT crew zone, which is the part of the PDF that carries "cockpit:"
+  // labels: the main duty grid has none, and the simulator/office crew zones have no flight
+  // carrier (so the carrier-anchoring below also excludes those). This works regardless of
+  // the section's title or page — a short date-range export lays it out differently from
+  // the full-year one, and its header may read "Crew Information on" without "Leg".
+  const cockpitPages = tokens.filter((z) => /^cockpit:/i.test(z.text)).map((z) => z.page);
+  if (cockpitPages.length === 0) return [];
+  const startPage = Math.min(...cockpitPages);
 
   const legs: (CrewLeg & { page: number; x: number; dowY: number })[] = [];
 
