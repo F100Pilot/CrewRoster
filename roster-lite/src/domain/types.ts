@@ -62,6 +62,9 @@ export interface Roster {
   // CREW_PARSER_VERSION, the app re-derives crew from the stored PDF on load (see
   // refreshCrewFromPdfs) so older imports pick up parser improvements without re-importing.
   crewParserVersion?: number;
+  // Version of the overall PDF parser that produced this roster. When behind PARSE_VERSION the
+  // app re-parses the stored PDF(s) on load so all parsing improvements apply without re-import.
+  parseVersion?: number;
 }
 
 // Result of running a file through the parsing pipeline (before persistence).
