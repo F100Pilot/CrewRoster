@@ -44,7 +44,7 @@ export default function DebugPage() {
         <Box
           component="pre"
           sx={{
-            p: 1.5, bgcolor: 'action.hover', borderRadius: 1, fontSize: '0.72rem',
+            p: 1.5, bgcolor: 'rgba(128,128,128,0.14)', borderRadius: 1, fontSize: '0.72rem',
             whiteSpace: 'pre-wrap', maxHeight: 360, overflow: 'auto',
           }}
         >
@@ -71,7 +71,7 @@ export default function DebugPage() {
           <Box
             component="pre"
             sx={{
-              p: 1.5, bgcolor: 'action.hover', borderRadius: 1, fontSize: '0.72rem',
+              p: 1.5, bgcolor: 'rgba(128,128,128,0.14)', borderRadius: 1, fontSize: '0.72rem',
               whiteSpace: 'pre-wrap', maxHeight: 360, overflow: 'auto',
             }}
           >
@@ -84,7 +84,7 @@ export default function DebugPage() {
               <Box
                 component="pre"
                 sx={{
-                  p: 1.5, bgcolor: 'action.hover', borderRadius: 1, fontSize: '0.72rem',
+                  p: 1.5, bgcolor: 'rgba(128,128,128,0.14)', borderRadius: 1, fontSize: '0.72rem',
                   whiteSpace: 'pre-wrap', maxHeight: 360, overflow: 'auto',
                 }}
               >
