@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { CrewRole, Roster, UserProfile } from '../domain/types';
-import { parseRosterFile, refreshCrewFromPdfs, CREW_PARSER_VERSION } from '../parsing';
+import { parseRosterFile, PARSE_VERSION } from '../parsing';
 import { diffRosters } from '../domain/rosterDiff';
 import { mergeDuties } from '../domain/rosterMerge';
 import {
@@ -9,21 +9,39 @@ import {
   saveRoster, saveUser, setActiveUserId,
 } from '../storage/rosterStore';
 import { clearUserGCalData } from '../utils/googleCalendar';
+import { setCredentials } from '../storage/settings';
 import { RosterContext, type RosterState, type RosterImportPreview } from './useRoster';
 
-// When a stored PDF roster was parsed by an older crew parser, re-derive its crew from the
-// saved PDF(s) using the current parser, so improvements (e.g. capturing a clipped CC) appear
-// without the user re-importing. Best-effort: needs the original PDF in history (in-app
-// downloads keep it); returns the roster unchanged on any failure or when nothing to update.
-async function refreshStoredCrew(roster: Roster, userId: string): Promise<Roster> {
+// Re-parse a stored PDF roster from its saved PDF(s) with the current parser, so improvements
+// (crew, times, routes…) reach the user automatically on app entry — no need to re-download the
+// schedule after a code change. Gated by PARSE_VERSION so it runs once per parser bump. The
+// saved PDFs are re-parsed oldest→newest and merged on top of the existing roster, so dates whose
+// source PDF is no longer kept aren't lost. Best-effort: needs the original PDF in history
+// (in-app downloads keep it) and returns the roster unchanged on any failure.
+async function reparseStoredRoster(roster: Roster, userId: string): Promise<Roster> {
   if (roster.sourceType !== 'pdf') return roster;
-  if ((roster.crewParserVersion ?? 0) >= CREW_PARSER_VERSION) return roster;
+  if ((roster.parseVersion ?? 0) >= PARSE_VERSION) return roster;
   try {
     const pdfs = await listPdfs(userId);
-    if (pdfs.length === 0) return roster; // no source PDF kept → can't re-derive (re-import path)
-    const buffers = await Promise.all(pdfs.map((p) => p.blob.arrayBuffer()));
-    const duties = await refreshCrewFromPdfs(roster.duties, buffers);
-    const updated: Roster = { ...roster, duties, crewParserVersion: CREW_PARSER_VERSION };
+    if (pdfs.length === 0) return roster; // no source PDF kept → can't re-parse (re-import path)
+    const ordered = [...pdfs].sort((a, b) => a.downloadedAt.localeCompare(b.downloadedAt));
+    let duties = roster.duties;
+    let rawText = roster.rawText;
+    let reparsed = false;
+    for (const p of ordered) {
+      try {
+        const file = new File([p.blob], p.fileName, { type: 'application/pdf' });
+        const result = await parseRosterFile(file);
+        if (result.duties.length === 0) continue;
+        duties = mergeDuties(duties, result.duties); // per-day override: re-parsed dates win
+        rawText = result.rawText;
+        reparsed = true;
+      } catch {
+        // A single unreadable/non-roster PDF must not abort the refresh — skip it.
+      }
+    }
+    if (!reparsed) return roster;
+    const updated: Roster = { ...roster, duties, rawText, parseVersion: PARSE_VERSION };
     await saveRoster(userId, updated);
     return updated;
   } catch {
@@ -81,10 +99,10 @@ export function RosterProvider({ children }: { children: ReactNode }) {
 
         const r = await loadRoster(active.id);
         setRoster(r ?? null);
-        // Re-derive crew from the stored PDF if it was parsed by an older version. Runs in the
-        // background so startup isn't blocked; the crew "fills in" once it resolves.
+        // Re-parse the stored PDF(s) if they predate the current parser. Runs in the background
+        // so startup isn't blocked; the roster refreshes in place once it resolves.
         if (r) {
-          refreshStoredCrew(r, active.id).then((updated) => {
+          reparseStoredRoster(r, active.id).then((updated) => {
             if (updated !== r && activeUserRef.current?.id === active.id) setRoster(updated);
           });
         }
@@ -115,7 +133,7 @@ export function RosterProvider({ children }: { children: ReactNode }) {
     // clobber the now-active user's view with this (older) result.
     if (activeUserRef.current?.id === userId) setRoster(r ?? null);
     if (r) {
-      refreshStoredCrew(r, userId).then((updated) => {
+      reparseStoredRoster(r, userId).then((updated) => {
         if (updated !== r && activeUserRef.current?.id === userId) setRoster(updated);
       });
     }
@@ -144,7 +162,7 @@ export function RosterProvider({ children }: { children: ReactNode }) {
     const r = await loadRoster(user.id);
     setRoster(r ?? null);
     if (r) {
-      refreshStoredCrew(r, user.id).then((updated) => {
+      reparseStoredRoster(r, user.id).then((updated) => {
         if (updated !== r && activeUserRef.current?.id === user.id) setRoster(updated);
       });
     }
@@ -168,6 +186,7 @@ export function RosterProvider({ children }: { children: ReactNode }) {
   const deleteUserFn = useCallback(async (userId: string) => {
     await deleteUserDB(userId);
     clearUserGCalData(userId);
+    setCredentials(userId, null); // drop this profile's saved CrewLink credentials too
     sessionsByUser.current.delete(userId);
     setUsers((prev) => {
       const updated = prev.filter((u) => u.id !== userId);
@@ -212,7 +231,7 @@ export function RosterProvider({ children }: { children: ReactNode }) {
           duties: mergedDuties,
           rawText: result.rawText,
           changes,
-          crewParserVersion: CREW_PARSER_VERSION,
+          parseVersion: PARSE_VERSION,
         };
         await saveRoster(userId, next);
         if (activeUserRef.current?.id === userId) {
@@ -245,7 +264,7 @@ export function RosterProvider({ children }: { children: ReactNode }) {
       duties: mergedDuties,
       rawText: result.rawText,
       changes,
-      crewParserVersion: CREW_PARSER_VERSION,
+      parseVersion: PARSE_VERSION,
     };
     return { next, changes, warnings: result.warnings };
   }, [activeUser]);

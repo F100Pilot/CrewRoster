@@ -12,7 +12,7 @@ function tok(text: string, x: number, y: number): PositionedToken {
 function legTokens(): PositionedToken[] {
   const X = 200; // identity column
   return [
-    tok('cockpit: HOLDER, HOLDER, CP', X, 515), // marks the flight-crew zone the parser anchors on
+    tok('cockpit:',X, 515), // marks the flight-crew zone the parser anchors on
     tok('Mon05', X, 535), tok('TP', X, 504), tok('100', X, 489),
     tok('LIS', X, 428), tok('0800', X, 401), tok('0930', X, 364), tok('OPO', X, 331),
     // crew in the two columns to the left
@@ -37,7 +37,7 @@ describe('parseCrewInfo', () => {
 
   it('keeps the first name when present in the token', () => {
     const legs = parseCrewInfo([
-      tok('cockpit: HOLDER, HOLDER, CP', 200, 515),
+      tok('cockpit:',200, 515),
       tok('Mon05', 200, 535), tok('TP', 200, 504), tok('100', 200, 489), tok('LIS', 200, 428), tok('OPO', 200, 331),
       tok('XBARROS, BARROS, FO FILIPE', 180, 480),
     ]);
@@ -50,12 +50,28 @@ describe('parseCrewInfo', () => {
     expect(legs[0].crew).toHaveLength(4);
   });
 
+  // The "cockpit:"/"cabin:" section-holder tokens are real crew members (e.g. the Captain on a
+  // cabin-crew member's roster). Empty labels are ignored; named ones are captured.
+  it('captures the cockpit: section holder, ignoring an empty cabin: label', () => {
+    const X = 200;
+    const legs = parseCrewInfo([
+      tok('cockpit: CHIEF, CHIEF, CP', X, 515), // a real crew member (the Captain)
+      tok('cabin:', X - 12, 515), // empty label → ignored
+      tok('Mon05', X, 535), tok('TP', X, 504), tok('100', X, 489), tok('LIS', X, 428), tok('OPO', X, 331),
+      tok('AAA, ALPHA, FO', X - 20, 480),
+      tok('BBB, BRAVO, PU', X - 26, 480),
+    ]);
+    expect(legs[0].crew.map((c) => `${c.login}(${c.role})`).sort()).toEqual(
+      ['AAA(FO)', 'BBB(PU)', 'CHIEF(CP)'],
+    );
+  });
+
   // The PDF clips the role off a crew token when a leg carries two same-rank pilots; the
   // role is then inferred from the column position (cabin left, purser, cockpit right).
   it('infers a clipped PU when two same-rank pilots and no purser are present', () => {
     const X = 200;
     const legs = parseCrewInfo([
-      tok('cockpit: HOLDER, HOLDER, CP', X, 515),
+      tok('cockpit:',X, 515),
       tok('Mon05', X, 535), tok('TP', X, 504), tok('100', X, 489), tok('LIS', X, 428), tok('OPO', X, 331),
       tok('AAA, ALPHA, ST', X - 28, 480),
       tok('BBB, BRAVO, ST', X - 22, 480),
@@ -70,7 +86,7 @@ describe('parseCrewInfo', () => {
   it('infers the PU on a single-pilot cabin layout (ST ST ? FO)', () => {
     const X = 200;
     const legs = parseCrewInfo([
-      tok('cockpit: HOLDER, HOLDER, CP', X, 515),
+      tok('cockpit:',X, 515),
       tok('Mon05', X, 535), tok('TP', X, 504), tok('100', X, 489), tok('LIS', X, 428), tok('AGP', X, 331),
       tok('AAA, ALPHA, ST', X - 26, 480),
       tok('BBB, BRAVO, ST', X - 20, 480),
@@ -83,7 +99,7 @@ describe('parseCrewInfo', () => {
   it('infers a clipped role as steward when a purser is already present', () => {
     const X = 200;
     const legs = parseCrewInfo([
-      tok('cockpit: HOLDER, HOLDER, CP', X, 515),
+      tok('cockpit:',X, 515),
       tok('Mon05', X, 535), tok('TP', X, 504), tok('100', X, 489), tok('LIS', X, 428), tok('OPO', X, 331),
       tok('AAA, ALPHA, ST', X - 22, 480),
       tok('CCC, CHARLIE,', X - 16, 480), // role clipped, but a PU already sits to its right → ST
@@ -115,14 +131,31 @@ describe('attachCrewToDuties', () => {
   });
 
   it('propagates the crew to the return leg of a same-day rotation', () => {
-    // Outbound LIS→OPO (08:00–09:00) has a crew leg; the return OPO→LIS (10:00–11:00) has
-    // none of its own and should inherit it (same airframe → same crew).
+    // Outbound LIS→OPO has a crew leg; the same-day return OPO→LIS has none of its own and
+    // should inherit it (same airframe → same crew).
     const outbound = flight({ flightNumber: 'TP100', departureAirport: 'LIS', arrivalAirport: 'OPO', departureTime: '08:00', arrivalTime: '09:00' });
     const ret = flight({ flightNumber: 'TP101', departureAirport: 'OPO', arrivalAirport: 'LIS', departureTime: '10:00', arrivalTime: '11:00' });
     const duties = [outbound, ret];
     attachCrewToDuties(duties, parseCrewInfo(legTokens()));
     expect(outbound.crew?.map((c) => c.surname)).toEqual(['ALPHA', 'BRAVO', 'CHARLIE', 'DELTA']);
     expect(ret.crew?.map((c) => c.surname)).toEqual(['ALPHA', 'BRAVO', 'CHARLIE', 'DELTA']); // inherited
+  });
+
+  it('propagates the crew to an overnight return on the NEXT day', () => {
+    // Fly out LIS→OPO on the 5th (crew listed), sleep over, fly back OPO→LIS on the 6th with no
+    // Crew Information entry of its own → it must inherit the outbound's crew across the day.
+    const outbound = flight({ date: '2026-01-05', flightNumber: 'TP100', departureAirport: 'LIS', arrivalAirport: 'OPO', departureTime: '08:00', arrivalTime: '09:00' });
+    const ret = flight({ date: '2026-01-06', flightNumber: 'TP200', departureAirport: 'OPO', arrivalAirport: 'LIS', departureTime: '10:00', arrivalTime: '11:00' });
+    attachCrewToDuties([outbound, ret], parseCrewInfo(legTokens()));
+    expect(ret.crew?.map((c) => c.surname)).toEqual(['ALPHA', 'BRAVO', 'CHARLIE', 'DELTA']);
+  });
+
+  it('does NOT propagate across an implausibly long gap (different trip)', () => {
+    // A return that departs the same airport but a week later is a different pairing.
+    const outbound = flight({ date: '2026-01-05', flightNumber: 'TP100', departureAirport: 'LIS', arrivalAirport: 'OPO', departureTime: '08:00', arrivalTime: '09:00' });
+    const later = flight({ date: '2026-01-12', flightNumber: 'TP300', departureAirport: 'OPO', arrivalAirport: 'LIS', departureTime: '10:00', arrivalTime: '11:00' });
+    attachCrewToDuties([outbound, later], parseCrewInfo(legTokens()));
+    expect(later.crew).toBeUndefined();
   });
 
   it('does NOT overwrite a leg that has its own (changed) crew', () => {

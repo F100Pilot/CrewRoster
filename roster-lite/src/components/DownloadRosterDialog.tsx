@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert, Box, Button, Chip, CircularProgress, Dialog, DialogContent, DialogTitle,
   IconButton, Link, Stack, TextField, Typography,
@@ -8,6 +8,7 @@ import { format, parseISO } from 'date-fns';
 import { login, fetchRoster, SessionExpiredError } from '../services/crewlinkApi';
 import { useRoster, type RosterImportPreview } from '../state/useRoster';
 import { savePdf } from '../storage/rosterStore';
+import { getCredentials } from '../storage/settings';
 import { addNotification } from '../storage/notifications';
 import { parseNotificationPdf, type NotificationReport } from '../parsing/pdf/notificationReport';
 import type { ChangeType, DayChange, ParsedDuty } from '../domain/types';
@@ -110,7 +111,7 @@ function toCrewLinkDate(iso: string): string {
 export default function DownloadRosterDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { roster, sessionToken, setSessionToken, previewImport, applyImport, importing, activeUser } = useRoster();
 
-  const [crewCode, setCrewCode] = useState(activeUser?.crewCode ?? '');
+  const [crewCode, setCrewCode] = useState('');
   const [password, setPassword] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -133,6 +134,16 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
   // Parsed "Crew Notification" report (known → current per changed day), shown in the
   // notification phase before confirming.
   const [notifReport, setNotifReport] = useState<NotificationReport | null>(null);
+
+  // Pre-fill the login fields from the ACTIVE user's saved credentials, resetting whenever the
+  // dialog opens or the active profile changes — so one profile's code/password never lingers
+  // for another. Falls back to the profile's own crew code, or empty when nothing is saved.
+  useEffect(() => {
+    if (!open) return;
+    const cred = activeUser ? getCredentials(activeUser.id) : null;
+    setCrewCode(cred?.crewCode ?? activeUser?.crewCode ?? '');
+    setPassword(cred?.password ?? '');
+  }, [open, activeUser]);
 
   function resetReview() {
     setPreview(null);

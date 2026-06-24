@@ -27,6 +27,12 @@ const AIRPORT = /^[A-Z]{3}$/;
 // clips the role off a token (e.g. "LUIS, ALVES," with no "PU"), so we still accept it and
 // infer the role afterwards from the crew member's position in the column (see inferRoles).
 const CREW = /^([A-Za-z]+),\s*([A-Za-z]+),\s*(CP|FO|PU|ST)?\s*([A-Za-z].*)?$/i;
+// Each leg's column also carries section-holder tokens prefixed with "cockpit:" / "cabin:"
+// (e.g. "cockpit: RCLARO, CLARO, CP") — a real crew member that must be captured too. For a
+// pilot's roster the cockpit holder is the owner; for a cabin-crew roster it's the Captain, so
+// dropping it lost a commander. We strip the prefix and parse the rest as a normal crew token.
+const SECTION_PREFIX = /^(?:cockpit|cabin):\s*/i;
+const crewBody = (text: string) => text.replace(SECTION_PREFIX, '');
 
 export interface CrewLeg {
   dow: string; // weekday+day-of-month, e.g. "Thu15"
@@ -41,7 +47,7 @@ export interface CrewLeg {
 interface PositionedCrew extends CrewMember { x: number }
 
 function parseCrewToken(text: string): CrewMember | null {
-  const m = text.match(CREW);
+  const m = crewBody(text).match(CREW);
   if (!m) return null;
   const firstName = (m[4] ?? '').trim().replace(/\s+/g, ' ') || undefined;
   return { login: m[1].toUpperCase(), surname: m[2].toUpperCase(), role: (m[3] ?? '').toUpperCase(), firstName };
@@ -115,7 +121,7 @@ export function parseCrewInfo(tokens: PositionedToken[]): CrewLeg[] {
 
   // Assign each crew token to the nearest leg whose identity column is just to its RIGHT
   // (crew sit in the columns left of the identity), within the same vertical band.
-  for (const ct of tokens.filter((z) => z.page >= startPage && CREW.test(z.text))) {
+  for (const ct of tokens.filter((z) => z.page >= startPage && CREW.test(crewBody(z.text)))) {
     const member = parseCrewToken(ct.text);
     if (!member) continue;
     let best: (typeof legs)[number] | null = null;
@@ -196,6 +202,34 @@ export function attachCrewToDuties(duties: ParsedDuty[], legs: CrewLeg[]): void 
       if (!l.crew || l.crew.length === 0) l.crew = withCrew.crew.map((c) => ({ ...c }));
     }
   }
+
+  // Overnight / next-day returns: when a pairing sleeps away from base, the return flies on a
+  // LATER day and the PDF gives it no Crew Information entry (same crew), so the same-day pass
+  // above can't reach it. Walk the legs in time order (operatedFlights is already chronological)
+  // and fill a still-crewless leg from the inbound that fed its departure airport — the flight
+  // the crew arrived on — when that was within a plausible layover. The user's rule: a dateless
+  // return is flown by the outbound's crew, even on another day.
+  for (let i = 0; i < flightLegs.length; i++) {
+    const leg = flightLegs[i];
+    if ((leg.crew && leg.crew.length > 0) || !leg.departureAirport) continue;
+    let feeder: ParsedDuty | undefined;
+    for (let j = i - 1; j >= 0; j--) {
+      if (flightLegs[j].arrivalAirport === leg.departureAirport) { feeder = flightLegs[j]; break; }
+    }
+    if (!feeder?.crew || feeder.crew.length === 0) continue;
+    const gap = layoverHours(feeder.date, feeder.arrivalTime, leg.date, leg.departureTime);
+    if (gap !== null && gap >= -2 && gap <= 48) leg.crew = feeder.crew.map((c) => ({ ...c }));
+  }
+}
+
+// Hours from an arrival to a later departure (UTC date+time); falls back to the whole-day gap
+// when a time is missing. Used to keep cross-day crew propagation within a real layover.
+function layoverHours(d1: string, t1: string | null, d2: string, t2: string | null): number | null {
+  const [a, b] = t1 && t2
+    ? [Date.parse(`${d1}T${t1}:00Z`), Date.parse(`${d2}T${t2}:00Z`)]
+    : [Date.parse(`${d1}T00:00:00Z`), Date.parse(`${d2}T00:00:00Z`)];
+  if (isNaN(a) || isNaN(b)) return null;
+  return (b - a) / 3_600_000;
 }
 
 // Re-derive crew from scratch: clear whatever crew the duties already carry (possibly stale,

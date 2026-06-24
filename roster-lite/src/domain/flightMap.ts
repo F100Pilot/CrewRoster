@@ -1,4 +1,4 @@
-import { AIRPORT_COORD } from './airports';
+import { airportCoord } from './airportCoords';
 
 // Aggregated flight network for the map: airports visited (with visit counts) and the
 // undirected routes between them (LIS→GVA and GVA→LIS count as one edge).
@@ -14,9 +14,12 @@ export function buildFlightNetwork(legs: { from: string; to: string }[]): Flight
   const visits = new Map<string, number>();
   const routes = new Map<string, MapRoute>();
   const unknown = new Set<string>();
+  const coords = new Map<string, { lat: number; lon: number }>();
 
   const known = (code: string) => {
-    if (AIRPORT_COORD[code]) return true;
+    if (coords.has(code)) return true;
+    const c = airportCoord(code);
+    if (c) { coords.set(code, c); return true; }
     if (code) unknown.add(code);
     return false;
   };
@@ -26,7 +29,7 @@ export function buildFlightNetwork(legs: { from: string; to: string }[]): Flight
     const b = to?.toUpperCase();
     if (a && known(a)) visits.set(a, (visits.get(a) ?? 0) + 1);
     if (b && known(b)) visits.set(b, (visits.get(b) ?? 0) + 1);
-    if (a && b && AIRPORT_COORD[a] && AIRPORT_COORD[b] && a !== b) {
+    if (a && b && coords.has(a) && coords.has(b) && a !== b) {
       const key = [a, b].sort().join('-');
       const cur = routes.get(key);
       if (cur) cur.count += 1;
@@ -35,7 +38,7 @@ export function buildFlightNetwork(legs: { from: string; to: string }[]): Flight
   }
 
   const airports: MapAirport[] = [...visits.entries()].map(([code, v]) => ({
-    code, lat: AIRPORT_COORD[code].lat, lon: AIRPORT_COORD[code].lon, visits: v,
+    code, lat: coords.get(code)!.lat, lon: coords.get(code)!.lon, visits: v,
   }));
   return { airports, routes: [...routes.values()], unknown: [...unknown] };
 }

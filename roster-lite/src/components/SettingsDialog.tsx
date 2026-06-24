@@ -4,16 +4,18 @@ import {
   Divider, IconButton, InputAdornment, Link, Stack, TextField, ToggleButton,
   ToggleButtonGroup, Typography,
 } from '@mui/material';
-import { Close, Visibility, VisibilityOff, CheckCircle, Science, CalendarMonth, DeleteOutline, BugReport, DarkMode, LightMode, InfoOutlined, Backup, Restore, School } from '@mui/icons-material';
+import { Close, Visibility, VisibilityOff, CheckCircle, Science, CalendarMonth, DeleteOutline, BugReport, DarkMode, LightMode, InfoOutlined, Backup, Restore, School, CloudDownload } from '@mui/icons-material';
 import readmeText from '../../README.md?raw';
 import { useNavigate } from 'react-router-dom';
 import { useColorMode } from '../state/colorMode';
 import {
   API_KEY_PATTERN, getAeroDataBoxKey, setAeroDataBoxKey,
   CHECKIN_LEAD_OPTIONS, getCheckinLeadMinutes, setCheckinLeadMinutes,
+  getCredentials, setCredentials,
 } from '../storage/settings';
 import { fetchFlightInfo } from '../services/crewlinkApi';
 import { APP_NAME, APP_VERSION_LABEL } from '../version';
+import { DISCLAIMER_TEXT } from '../disclaimer';
 import { operatedFlights } from '../domain/flightTime';
 import { downloadIcs } from '../utils/icsExport';
 import { startTour } from '../tour';
@@ -26,10 +28,14 @@ import {
 // view can show aircraft registration, gate/terminal and status. The key is stored on
 // this device only and forwarded to the proxy per request — never committed or shared.
 export default function SettingsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { roster, clear } = useRoster();
+  const { roster, clear, activeUser } = useRoster();
   const { mode, setMode } = useColorMode();
   const navigate = useNavigate();
   const [key, setKey] = useState('');
+  // CrewLink credentials saved on this device (per profile) to pre-fill the download dialog.
+  const [credCode, setCredCode] = useState('');
+  const [credPassword, setCredPassword] = useState('');
+  const [showCred, setShowCred] = useState(false);
   const [show, setShow] = useState(false);
   const [saved, setSaved] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -50,8 +56,12 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
       setTestResult(null);
       setConfirmClear(false);
       setLead(getCheckinLeadMinutes());
+      setShowCred(false);
+      const cred = activeUser ? getCredentials(activeUser.id) : null;
+      setCredCode(cred?.crewCode ?? activeUser?.crewCode ?? '');
+      setCredPassword(cred?.password ?? '');
     }
-  }, [open]);
+  }, [open, activeUser]);
 
   // Wiping the roster is destructive, so the first tap arms a confirm and the second
   // actually clears and closes the dialog.
@@ -107,6 +117,16 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
   function handleSave() {
     if (invalid) return;
     setAeroDataBoxKey(trimmed);
+    if (activeUser) {
+      setCredentials(activeUser.id, { crewCode: credCode.trim(), password: credPassword });
+    }
+    setSaved(true);
+  }
+
+  function handleForgetCredentials() {
+    if (activeUser) setCredentials(activeUser.id, null);
+    setCredCode('');
+    setCredPassword('');
     setSaved(true);
   }
 
@@ -184,6 +204,52 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
                 <DarkMode fontSize="small" /> Escuro
               </ToggleButton>
             </ToggleButtonGroup>
+          </Box>
+
+          <Divider />
+
+          <Box>
+            <Typography variant="subtitle2" gutterBottom>Acesso ao CrewLink</Typography>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              Guarda o teu código de tripulante e password para preencherem automaticamente o
+              download da escala (ícone <CloudDownload sx={{ fontSize: 14, verticalAlign: 'text-bottom' }} />).
+              Ficam guardados <strong>só neste dispositivo</strong>.
+            </Typography>
+            <Stack spacing={1.5} sx={{ mt: 0.5 }}>
+              <TextField
+                label="Código tripulante"
+                value={credCode}
+                onChange={(e) => setCredCode(e.target.value)}
+                autoComplete="username"
+                size="small"
+                fullWidth
+              />
+              <TextField
+                label="Password"
+                type={showCred ? 'text' : 'password'}
+                value={credPassword}
+                onChange={(e) => setCredPassword(e.target.value)}
+                autoComplete="current-password"
+                size="small"
+                fullWidth
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton size="small" onClick={() => setShowCred((s) => !s)} edge="end" aria-label="Mostrar ou ocultar password">
+                        {showCred ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              {(credCode || credPassword) && (
+                <Box>
+                  <Button size="small" color="inherit" onClick={handleForgetCredentials} startIcon={<DeleteOutline />}>
+                    Esquecer credenciais
+                  </Button>
+                </Box>
+              )}
+            </Stack>
           </Box>
 
           <Divider />
@@ -414,6 +480,9 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
             <Typography variant="body2">
               <Link href="mailto:pflm.bet@gmail.com">pflm.bet@gmail.com</Link>
             </Typography>
+            <Alert severity="warning" variant="outlined" sx={{ mt: 1.5, py: 0.5 }}>
+              <Typography variant="body2">{DISCLAIMER_TEXT}</Typography>
+            </Alert>
           </Box>
         </Stack>
       </DialogContent>

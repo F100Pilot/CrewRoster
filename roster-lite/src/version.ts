@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.5.2';
+export const APP_VERSION = '0.8.6';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,18 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.6',
+    date: '2026-06-24',
+    highlights: [
+      'Tripulação por voo mais completa: Comandantes e Chefe de Cabine corretos, e os voos de regresso (mesmo no dia seguinte) já mostram a tripulação.',
+      'A tua própria entrada deixa de aparecer na lista de tripulação.',
+      'Definições → Acesso ao CrewLink: guarda o código de tripulante e password para preencherem automaticamente o download da escala.',
+      'Mapa: base de dados mundial de aeroportos — qualquer destino passa a ser desenhado.',
+      'Ao abrir, a escala é reprocessada automaticamente com as últimas melhorias, sem voltares a descarregar.',
+      'Aviso de versão beta ao abrir e sempre em Definições → Sobre: em caso de dúvida, confirma na escala oficial (separador “PDFs”).',
+    ],
+  },
   {
     version: '0.8.5.2',
     date: '2026-06-24',

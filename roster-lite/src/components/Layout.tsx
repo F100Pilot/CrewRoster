@@ -15,6 +15,7 @@ import DownloadRosterDialog from './DownloadRosterDialog';
 import NotificationBanner from './NotificationBanner';
 import SettingsDialog from './SettingsDialog';
 import WhatsNewDialog from './WhatsNewDialog';
+import DisclaimerDialog from './DisclaimerDialog';
 import { getTourSeen } from '../storage/settings';
 import { startTour } from '../tour';
 
@@ -101,6 +102,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       <DownloadRosterDialog open={downloadOpen} onClose={() => setDownloadOpen(false)} />
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <WhatsNewDialog />
+      <DisclaimerDialog />
       {/* Seven tabs don't fit a phone width, so the bar scrolls horizontally. */}
       <Paper
         data-tour="nav"
