@@ -1,0 +1,50 @@
+name: Deploy roster-lite EXPERIMENTAL preview
+
+# Builds the experimental branch and publishes it to a SEPARATE subpath of the same
+# GitHub Pages site, so it can be tested without touching production:
+#   https://f100pilot.github.io/CrewRoster/exp/
+# The service worker is disabled (DISABLE_PWA=1) so testers always get the latest build.
+
+on:
+  push:
+    branches: [claude/crew-per-flight]
+    paths: ['roster-lite/**', '.github/workflows/roster-lite-pages-exp.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: roster-lite
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: roster-lite/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install "Pillow==11.0.0" --quiet
+      - run: python3 scripts/gen-icons.py
+        working-directory: roster-lite
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+        env:
+          BASE: /CrewRoster/exp/
+          DISABLE_PWA: '1'
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+      - uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: roster-lite/dist
+          destination_dir: exp
+          keep_files: true

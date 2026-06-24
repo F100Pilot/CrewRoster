@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Box, Chip, CircularProgress, IconButton, Tooltip, Typography } from '@mui/material';
-import { AirplaneTicket, Refresh } from '@mui/icons-material';
+import { Box, Chip, CircularProgress, IconButton, List, ListItem, ListItemText, Popover, Tooltip, Typography } from '@mui/material';
+import { AirplaneTicket, Groups, Refresh } from '@mui/icons-material';
 import { fetchFlightInfo, type FlightInfo as FlightInfoData } from '../services/crewlinkApi';
 import { matchLeg, recordReg, regMapKey, resolveRegs } from '../domain/aircraftRegs';
 import { loadRegs } from '../storage/rosterStore';
 import { useRoster } from '../state/useRoster';
 import type { AircraftReg, ParsedDuty } from '../domain/types';
+
+// Friendly labels for the crew roles printed in the PDF.
+const ROLE_LABEL: Record<string, string> = { CP: 'Comandante', FO: 'Oficial Piloto', PU: 'Chefe de Cabine', ST: 'Tripulante' };
+const ROLE_SHORT: Record<string, string> = { CP: 'CMD', FO: 'OPL', PU: 'CC', ST: 'TC' };
 
 // Colour the operational status so cancellations/diversions stand out at a glance.
 function statusColor(status: string | null): string {
@@ -28,6 +32,8 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
   const [savedRegInferred, setSavedRegInferred] = useState(false);
   const [loading, setLoading] = useState(true);
   const [configured, setConfigured] = useState(true);
+  const [crewAnchor, setCrewAnchor] = useState<HTMLElement | null>(null);
+  const crew = duty.crew;
   const flightNumber = duty.flightNumber;
   const dep = duty.departureAirport;
   const arr = duty.arrivalAirport;
@@ -77,9 +83,9 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
     return () => window.removeEventListener('aerodatabox-key-changed', load);
   }, [load]);
 
-  // Feature off (no API key) → render nothing, so the banner stays clean.
-  // Feature off and nothing recorded → stay out of the way entirely.
-  if (!configured && !savedReg) return null;
+  // Feature off (no API key) and nothing recorded → stay out of the way, UNLESS there's
+  // crew to show (the crew "i" lives in this banner).
+  if (!configured && !savedReg && !crew?.length) return null;
 
   return (
     <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px dashed', borderColor: 'divider' }}>
@@ -88,16 +94,50 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
         <Typography variant="caption" color="text.secondary" sx={{ flexGrow: 1 }}>
           Aeronave e portas
         </Typography>
+        {crew && crew.length > 0 && (
+          <Tooltip title="Tripulação">
+            <IconButton size="small" onClick={(e) => setCrewAnchor(e.currentTarget)} sx={{ p: 0.25 }} aria-label="Ver tripulação">
+              <Groups sx={{ fontSize: 20 }} />
+            </IconButton>
+          </Tooltip>
+        )}
         {loading ? (
           <CircularProgress size={14} />
-        ) : configured ? (
-          <Tooltip title="Atualizar">
+        ) : (
+          <Tooltip title="Atualizar dados do voo">
             <IconButton size="small" onClick={load} sx={{ p: 0.25 }}>
               <Refresh sx={{ fontSize: 16 }} />
             </IconButton>
           </Tooltip>
-        ) : null}
+        )}
       </Box>
+
+      {/* Crew pop-up, opened from the "i" above. */}
+      <Popover
+        open={!!crewAnchor}
+        anchorEl={crewAnchor}
+        onClose={() => setCrewAnchor(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Box sx={{ px: 1.5, pt: 1, pb: 0.5, display: 'flex', alignItems: 'center', gap: 0.75 }}>
+          <Groups fontSize="small" color="action" />
+          <Typography variant="subtitle2">Tripulação</Typography>
+        </Box>
+        <List dense sx={{ pt: 0, minWidth: 200 }}>
+          {(crew ?? []).map((c) => (
+            <ListItem key={c.login} sx={{ py: 0.1 }}>
+              <ListItemText
+                primary={c.login}
+                secondary={`${ROLE_LABEL[c.role] ?? c.role}${c.surname ? ' · ' + c.surname : ''}`}
+                primaryTypographyProps={{ variant: 'body2', fontWeight: 700, sx: { fontFamily: 'monospace' } }}
+                secondaryTypographyProps={{ variant: 'caption' }}
+              />
+              <Chip size="small" variant="outlined" label={ROLE_SHORT[c.role] ?? c.role} sx={{ ml: 1 }} />
+            </ListItem>
+          ))}
+        </List>
+      </Popover>
 
       {/* No live leg but we have the tail (recorded, or inferred from the day's rotation). */}
       {!leg && savedReg && (

@@ -14,6 +14,17 @@ export interface ParsedDuty {
   observations: string | null;
   /** Layover hotel for this duty's overnight (resolved from a day's "Hn" marker). */
   hotel?: { name: string; phone: string | null } | null;
+  /** Crew rostered on this flight (from the PDF's "Crew Information on Leg" section). */
+  crew?: CrewMember[];
+}
+
+// One crew member on a leg, from the PDF "Crew Information on Leg" section.
+// e.g. token "FBARROS, BARROS, FO FILIPE" → {login:'FBARROS', surname:'BARROS', role:'FO', firstName:'FILIPE'}
+export interface CrewMember {
+  login: string;
+  surname: string;
+  role: string; // CP (captain), FO (first officer), PU (purser), ST (cabin)
+  firstName?: string;
 }
 
 export type SourceType = 'pdf' | 'csv' | 'ics';

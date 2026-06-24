@@ -133,7 +133,7 @@ export default function DayDetailPage() {
             </Box>
 
             {duty.flightNumber && (
-              <Box sx={{ bgcolor: 'grey.50', borderRadius: 2, p: 2, mb: 2 }}>
+              <Box sx={{ bgcolor: 'rgba(128,128,128,0.14)', borderRadius: 2, p: 2, mb: 2 }}>
                 <Box textAlign="center" mb={1}>
                   <Typography variant="caption" color="text.secondary">
                     Voo
@@ -176,7 +176,7 @@ export default function DayDetailPage() {
 
             {/* Layover hotel on a non-flight day (e.g. a day off mid-rotation). */}
             {!duty.flightNumber && duty.hotel && (
-              <Box sx={{ bgcolor: 'grey.50', borderRadius: 2, p: 1.5, mb: 2 }}>
+              <Box sx={{ bgcolor: 'rgba(128,128,128,0.14)', borderRadius: 2, p: 1.5, mb: 2 }}>
                 <HotelLine hotel={duty.hotel} />
               </Box>
             )}
@@ -187,7 +187,7 @@ export default function DayDetailPage() {
 
             {(duty.dutyType === 'Training' || duty.dutyType === 'Simulator') &&
               (duty.departureTime || duty.arrivalTime) && (
-                <Box sx={{ bgcolor: 'grey.50', borderRadius: 2, p: 2, mb: 2 }}>
+                <Box sx={{ bgcolor: 'rgba(128,128,128,0.14)', borderRadius: 2, p: 2, mb: 2 }}>
                   <Box display="flex" justifyContent="space-around">
                     <Box textAlign="center">
                       <Typography variant="body2" fontWeight={600} color="primary.main">
