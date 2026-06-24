@@ -66,6 +66,20 @@ describe('parseCrewInfo', () => {
     expect(legs[0].crew.find((c) => c.login === 'CCC')?.role).toBe('PU');
   });
 
+  // Real layout seen on a leg with a single rostered pilot: ST, ST, <clipped>, FO.
+  it('infers the PU on a single-pilot cabin layout (ST ST ? FO)', () => {
+    const X = 200;
+    const legs = parseCrewInfo([
+      tok('cockpit: HOLDER, HOLDER, CP', X, 515),
+      tok('Mon05', X, 535), tok('TP', X, 504), tok('100', X, 489), tok('LIS', X, 428), tok('AGP', X, 331),
+      tok('AAA, ALPHA, ST', X - 26, 480),
+      tok('BBB, BRAVO, ST', X - 20, 480),
+      tok('CCC, CHARLIE,', X - 14, 480), // role clipped → just left of the lone pilot → PU
+      tok('DDD, DELTA, FO', X - 8, 480),
+    ]);
+    expect(legs[0].crew.find((c) => c.login === 'CCC')?.role).toBe('PU');
+  });
+
   it('infers a clipped role as steward when a purser is already present', () => {
     const X = 200;
     const legs = parseCrewInfo([
