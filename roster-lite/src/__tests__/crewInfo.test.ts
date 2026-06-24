@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseCrewInfo, attachCrewToDuties, sortCrew } from '../parsing/pdf/crewInfo';
+import { parseCrewInfo, attachCrewToDuties, reattachCrew, sortCrew } from '../parsing/pdf/crewInfo';
 import type { PositionedToken } from '../parsing/pdf/extractText';
 import type { ParsedDuty } from '../domain/types';
 
@@ -130,6 +130,16 @@ describe('attachCrewToDuties', () => {
     const ret = flight({ flightNumber: 'TP101', departureAirport: 'OPO', arrivalAirport: 'LIS', departureTime: '10:00', arrivalTime: '11:00', crew: [{ login: 'OWN', surname: 'OWN', role: 'CP' }] });
     attachCrewToDuties([outbound, ret], parseCrewInfo(legTokens()));
     expect(ret.crew?.map((c) => c.login)).toEqual(['OWN']); // its own crew is kept
+  });
+
+  // reattachCrew is used to re-derive crew for a roster imported by an older parser: it must
+  // wipe whatever (possibly stale) crew the duties carry and rebuild it from the legs.
+  it('reattachCrew clears stale crew and re-derives from the legs', () => {
+    const outbound = flight({ flightNumber: 'TP100', departureAirport: 'LIS', arrivalAirport: 'OPO', departureTime: '08:00', arrivalTime: '09:00', crew: [{ login: 'OLD', surname: 'OLD', role: 'CP' }] });
+    const ret = flight({ flightNumber: 'TP101', departureAirport: 'OPO', arrivalAirport: 'LIS', departureTime: '10:00', arrivalTime: '11:00', crew: [{ login: 'STALE', surname: 'STALE', role: 'CP' }] });
+    reattachCrew([outbound, ret], parseCrewInfo(legTokens()));
+    expect(outbound.crew?.map((c) => c.surname)).toEqual(['ALPHA', 'BRAVO', 'CHARLIE', 'DELTA']);
+    expect(ret.crew?.map((c) => c.surname)).toEqual(['ALPHA', 'BRAVO', 'CHARLIE', 'DELTA']); // refreshed via rotation, not the stale crew
   });
 });
 

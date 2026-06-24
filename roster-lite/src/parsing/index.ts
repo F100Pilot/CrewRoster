@@ -1,14 +1,37 @@
-import type { ParseResult } from '../domain/types';
+import type { ParseResult, ParsedDuty } from '../domain/types';
 import { parseCsv } from './csv/parseCsv';
 import { parseIcs } from './ics/parseIcs';
 import { extractPdf } from './pdf/extractText';
 import { reconstructLines } from './pdf/reconstructLines';
 import { interpret } from './pdf/interpret';
 import { interpretPgaGrid } from './pdf/pgaGrid';
-import { parseCrewInfo, attachCrewToDuties } from './pdf/crewInfo';
+import { parseCrewInfo, attachCrewToDuties, reattachCrew, CREW_PARSER_VERSION, type CrewLeg } from './pdf/crewInfo';
+
+export { CREW_PARSER_VERSION };
 
 function sortByDate(duties: ParseResult['duties']): ParseResult['duties'] {
   return [...duties].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+}
+
+// Re-derive crew for an already-imported roster by re-running the (current) crew parser on the
+// PDFs that produced it. Returns the duties with refreshed crew; if no crew section is found in
+// any PDF (or all are unreadable) the duties are returned unchanged. Lets older rosters pick up
+// parser improvements on load without the user having to re-import — see RosterProvider.
+export async function refreshCrewFromPdfs(duties: ParsedDuty[], buffers: ArrayBuffer[]): Promise<ParsedDuty[]> {
+  const legs: CrewLeg[] = [];
+  for (const buf of buffers) {
+    try {
+      const { tokens } = await extractPdf(buf);
+      legs.push(...parseCrewInfo(tokens));
+    } catch {
+      // A single corrupt/unreadable PDF must not abort the refresh — skip it.
+    }
+  }
+  if (legs.length === 0) return duties;
+  // Work on a copy (with copied crew arrays) so callers can compare and avoid a needless write.
+  const copy = duties.map((d) => ({ ...d, crew: d.crew?.map((c) => ({ ...c })) }));
+  reattachCrew(copy, legs);
+  return copy;
 }
 
 // Dispatch a user-provided file through the right parser. All paths converge on

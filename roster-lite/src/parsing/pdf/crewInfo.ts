@@ -13,6 +13,11 @@ import type { PositionedToken } from './extractText';
 import { operatedFlights } from '../../domain/flightTime';
 import { rotationChains } from '../../domain/aircraftRegs';
 
+// Bumped whenever the crew parser changes in a way that should re-derive crew for ALREADY
+// imported rosters (the app re-runs the parser on the stored PDF when a roster's stamp is
+// behind this — see refreshCrewFromPdfs). 1 = role required; 2 = optional role + inference.
+export const CREW_PARSER_VERSION = 2;
+
 const DOW = /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\d{2}$/;
 const NUM = /^\d{2,4}$/;
 const AIRPORT = /^[A-Z]{3}$/;
@@ -191,4 +196,12 @@ export function attachCrewToDuties(duties: ParsedDuty[], legs: CrewLeg[]): void 
       if (!l.crew || l.crew.length === 0) l.crew = withCrew.crew.map((c) => ({ ...c }));
     }
   }
+}
+
+// Re-derive crew from scratch: clear whatever crew the duties already carry (possibly stale,
+// parsed by an older version) and attach again from the given legs. Used when re-processing a
+// stored roster's PDF after the parser improved, so old rosters pick up the new crew logic.
+export function reattachCrew(duties: ParsedDuty[], legs: CrewLeg[]): void {
+  for (const d of duties) if (d.crew) d.crew = undefined;
+  attachCrewToDuties(duties, legs);
 }

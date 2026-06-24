@@ -1,15 +1,35 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { CrewRole, Roster, UserProfile } from '../domain/types';
-import { parseRosterFile } from '../parsing';
+import { parseRosterFile, refreshCrewFromPdfs, CREW_PARSER_VERSION } from '../parsing';
 import { diffRosters } from '../domain/rosterDiff';
 import { mergeDuties } from '../domain/rosterMerge';
 import {
   assignOrphanPdfs, clearRoster, deleteUser as deleteUserDB, getActiveUserId,
-  listUsers, loadRoster, migrateLegacySingleUser,
+  listPdfs, listUsers, loadRoster, migrateLegacySingleUser,
   saveRoster, saveUser, setActiveUserId,
 } from '../storage/rosterStore';
 import { clearUserGCalData } from '../utils/googleCalendar';
 import { RosterContext, type RosterState, type RosterImportPreview } from './useRoster';
+
+// When a stored PDF roster was parsed by an older crew parser, re-derive its crew from the
+// saved PDF(s) using the current parser, so improvements (e.g. capturing a clipped CC) appear
+// without the user re-importing. Best-effort: needs the original PDF in history (in-app
+// downloads keep it); returns the roster unchanged on any failure or when nothing to update.
+async function refreshStoredCrew(roster: Roster, userId: string): Promise<Roster> {
+  if (roster.sourceType !== 'pdf') return roster;
+  if ((roster.crewParserVersion ?? 0) >= CREW_PARSER_VERSION) return roster;
+  try {
+    const pdfs = await listPdfs(userId);
+    if (pdfs.length === 0) return roster; // no source PDF kept → can't re-derive (re-import path)
+    const buffers = await Promise.all(pdfs.map((p) => p.blob.arrayBuffer()));
+    const duties = await refreshCrewFromPdfs(roster.duties, buffers);
+    const updated: Roster = { ...roster, duties, crewParserVersion: CREW_PARSER_VERSION };
+    await saveRoster(userId, updated);
+    return updated;
+  } catch {
+    return roster;
+  }
+}
 
 export function RosterProvider({ children }: { children: ReactNode }) {
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -61,6 +81,13 @@ export function RosterProvider({ children }: { children: ReactNode }) {
 
         const r = await loadRoster(active.id);
         setRoster(r ?? null);
+        // Re-derive crew from the stored PDF if it was parsed by an older version. Runs in the
+        // background so startup isn't blocked; the crew "fills in" once it resolves.
+        if (r) {
+          refreshStoredCrew(r, active.id).then((updated) => {
+            if (updated !== r && activeUserRef.current?.id === active.id) setRoster(updated);
+          });
+        }
       } catch (e) {
         // A failed IndexedDB read must NOT look like a first launch (which would prompt
         // re-onboarding over unreadable-this-session data). Surface a recoverable error.
@@ -87,6 +114,11 @@ export function RosterProvider({ children }: { children: ReactNode }) {
     // Guard against a stale load: if the user switched again while we awaited, don't
     // clobber the now-active user's view with this (older) result.
     if (activeUserRef.current?.id === userId) setRoster(r ?? null);
+    if (r) {
+      refreshStoredCrew(r, userId).then((updated) => {
+        if (updated !== r && activeUserRef.current?.id === userId) setRoster(updated);
+      });
+    }
   }, [users]);
 
   const createUser = useCallback(async (name: string, crewCode?: string, role: CrewRole = 'pilot'): Promise<UserProfile> => {
@@ -111,6 +143,11 @@ export function RosterProvider({ children }: { children: ReactNode }) {
     setWarnings([]);
     const r = await loadRoster(user.id);
     setRoster(r ?? null);
+    if (r) {
+      refreshStoredCrew(r, user.id).then((updated) => {
+        if (updated !== r && activeUserRef.current?.id === user.id) setRoster(updated);
+      });
+    }
     return user;
   }, []);
 
@@ -175,6 +212,7 @@ export function RosterProvider({ children }: { children: ReactNode }) {
           duties: mergedDuties,
           rawText: result.rawText,
           changes,
+          crewParserVersion: CREW_PARSER_VERSION,
         };
         await saveRoster(userId, next);
         if (activeUserRef.current?.id === userId) {
@@ -207,6 +245,7 @@ export function RosterProvider({ children }: { children: ReactNode }) {
       duties: mergedDuties,
       rawText: result.rawText,
       changes,
+      crewParserVersion: CREW_PARSER_VERSION,
     };
     return { next, changes, warnings: result.warnings };
   }, [activeUser]);
