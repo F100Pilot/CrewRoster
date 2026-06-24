@@ -2,7 +2,7 @@ import { Box, Card, CardContent, Chip, Divider, IconButton, Stack, Typography } 
 import { ArrowBack, ChevronLeft, ChevronRight, FlightLand, FlightTakeoff, Hotel, IosShare, Phone } from '@mui/icons-material';
 import { Link } from '@mui/material';
 import { addDays, format, parseISO } from 'date-fns';
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import { dutyColor } from '../theme';
@@ -18,6 +18,10 @@ export default function DayDetailPage() {
   const { date } = useParams<{ date: string }>();
   const navigate = useNavigate();
   const { roster, activeUser } = useRoster();
+
+  // Open at the top (first duty of the day), not wherever the list was scrolled to when the
+  // flight was tapped. Re-runs when stepping to another day (arrows/swipe) so each lands at top.
+  useEffect(() => { window.scrollTo(0, 0); }, [date]);
 
   const duties = (roster?.duties ?? []).filter((d) => d.date === date);
   const stats = dayStats(duties);
