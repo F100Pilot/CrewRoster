@@ -103,13 +103,13 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
         )}
         {loading ? (
           <CircularProgress size={14} />
-        ) : configured ? (
-          <Tooltip title="Atualizar">
+        ) : (
+          <Tooltip title="Atualizar dados do voo">
             <IconButton size="small" onClick={load} sx={{ p: 0.25 }}>
               <Refresh sx={{ fontSize: 16 }} />
             </IconButton>
           </Tooltip>
-        ) : null}
+        )}
       </Box>
 
       {/* Crew pop-up, opened from the "i" above. */}

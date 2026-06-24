@@ -70,6 +70,24 @@ describe('attachCrewToDuties', () => {
     attachCrewToDuties(duties, parseCrewInfo(legTokens()));
     expect(duties[0].crew).toBeUndefined();
   });
+
+  it('propagates the crew to the return leg of a same-day rotation', () => {
+    // Outbound LIS→OPO (08:00–09:00) has a crew leg; the return OPO→LIS (10:00–11:00) has
+    // none of its own and should inherit it (same airframe → same crew).
+    const outbound = flight({ flightNumber: 'TP100', departureAirport: 'LIS', arrivalAirport: 'OPO', departureTime: '08:00', arrivalTime: '09:00' });
+    const ret = flight({ flightNumber: 'TP101', departureAirport: 'OPO', arrivalAirport: 'LIS', departureTime: '10:00', arrivalTime: '11:00' });
+    const duties = [outbound, ret];
+    attachCrewToDuties(duties, parseCrewInfo(legTokens()));
+    expect(outbound.crew?.map((c) => c.surname)).toEqual(['ALPHA', 'BRAVO', 'CHARLIE', 'DELTA']);
+    expect(ret.crew?.map((c) => c.surname)).toEqual(['ALPHA', 'BRAVO', 'CHARLIE', 'DELTA']); // inherited
+  });
+
+  it('does NOT overwrite a leg that has its own (changed) crew', () => {
+    const outbound = flight({ flightNumber: 'TP100', arrivalAirport: 'OPO', departureTime: '08:00', arrivalTime: '09:00' });
+    const ret = flight({ flightNumber: 'TP101', departureAirport: 'OPO', arrivalAirport: 'LIS', departureTime: '10:00', arrivalTime: '11:00', crew: [{ login: 'OWN', surname: 'OWN', role: 'CP' }] });
+    attachCrewToDuties([outbound, ret], parseCrewInfo(legTokens()));
+    expect(ret.crew?.map((c) => c.login)).toEqual(['OWN']); // its own crew is kept
+  });
 });
 
 describe('sortCrew', () => {

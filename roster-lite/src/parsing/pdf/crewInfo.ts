@@ -10,6 +10,8 @@
 import { format, parseISO } from 'date-fns';
 import type { CrewMember, ParsedDuty } from '../../domain/types';
 import type { PositionedToken } from './extractText';
+import { operatedFlights } from '../../domain/flightTime';
+import { rotationChains } from '../../domain/aircraftRegs';
 
 const DOW = /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\d{2}$/;
 const NUM = /^\d{2,4}$/;
@@ -132,5 +134,20 @@ export function attachCrewToDuties(duties: ParsedDuty[], legs: CrewLeg[]): void 
       (l.arr == null || d.arrivalAirport == null || l.arr === d.arrivalAirport);
     const leg = legs.find((l) => l.flightNumber === d.flightNumber && l.dow === dow && sameRoute(l));
     if (leg) d.crew = sortCrew(leg.crew);
+  }
+
+  // Fill return/onward legs of a same-day rotation. The PDF lists the crew only ONCE per
+  // rotation when it doesn't change (e.g. only the outbound LIS→AGP, not the AGP→LIS
+  // return). A leg whose crew DID change has its own entry and was matched above, so here
+  // we only fill legs that still have no crew — copying it from a sibling in the same
+  // continuous same-day rotation (same airframe → same crew).
+  const flightLegs = operatedFlights(duties).filter((d) => d.flightNumber);
+  for (const chain of rotationChains(flightLegs)) {
+    const chainDuties = chain as ParsedDuty[];
+    const withCrew = chainDuties.find((l) => l.crew && l.crew.length > 0);
+    if (!withCrew?.crew) continue;
+    for (const l of chainDuties) {
+      if (!l.crew || l.crew.length === 0) l.crew = withCrew.crew.map((c) => ({ ...c }));
+    }
   }
 }
