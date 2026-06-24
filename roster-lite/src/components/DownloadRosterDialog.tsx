@@ -111,7 +111,7 @@ function toCrewLinkDate(iso: string): string {
 export default function DownloadRosterDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { roster, sessionToken, setSessionToken, previewImport, applyImport, importing, activeUser } = useRoster();
 
-  const [crewCode, setCrewCode] = useState(activeUser?.crewCode ?? '');
+  const [crewCode, setCrewCode] = useState('');
   const [password, setPassword] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
@@ -135,16 +135,15 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
   // notification phase before confirming.
   const [notifReport, setNotifReport] = useState<NotificationReport | null>(null);
 
-  // Pre-fill the login fields from credentials the user saved in Settings, so the download
-  // doesn't ask them to type the code/password every time. Only while signed out and only if
-  // the fields are still empty (don't clobber something the user just typed).
+  // Pre-fill the login fields from the ACTIVE user's saved credentials, resetting whenever the
+  // dialog opens or the active profile changes — so one profile's code/password never lingers
+  // for another. Falls back to the profile's own crew code, or empty when nothing is saved.
   useEffect(() => {
-    if (!open || sessionToken) return;
+    if (!open) return;
     const cred = activeUser ? getCredentials(activeUser.id) : null;
-    if (!cred) return;
-    setCrewCode((c) => c || cred.crewCode);
-    setPassword((p) => p || cred.password);
-  }, [open, sessionToken, activeUser]);
+    setCrewCode(cred?.crewCode ?? activeUser?.crewCode ?? '');
+    setPassword(cred?.password ?? '');
+  }, [open, activeUser]);
 
   function resetReview() {
     setPreview(null);

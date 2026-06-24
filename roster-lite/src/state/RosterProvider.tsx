@@ -9,6 +9,7 @@ import {
   saveRoster, saveUser, setActiveUserId,
 } from '../storage/rosterStore';
 import { clearUserGCalData } from '../utils/googleCalendar';
+import { setCredentials } from '../storage/settings';
 import { RosterContext, type RosterState, type RosterImportPreview } from './useRoster';
 
 // When a stored PDF roster was parsed by an older crew parser, re-derive its crew from the
@@ -168,6 +169,7 @@ export function RosterProvider({ children }: { children: ReactNode }) {
   const deleteUserFn = useCallback(async (userId: string) => {
     await deleteUserDB(userId);
     clearUserGCalData(userId);
+    setCredentials(userId, null); // drop this profile's saved CrewLink credentials too
     sessionsByUser.current.delete(userId);
     setUsers((prev) => {
       const updated = prev.filter((u) => u.id !== userId);
