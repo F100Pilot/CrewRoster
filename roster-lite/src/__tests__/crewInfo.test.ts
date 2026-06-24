@@ -49,6 +49,35 @@ describe('parseCrewInfo', () => {
     expect(legs).toHaveLength(1);
     expect(legs[0].crew).toHaveLength(4);
   });
+
+  // The PDF clips the role off a crew token when a leg carries two same-rank pilots; the
+  // role is then inferred from the column position (cabin left, purser, cockpit right).
+  it('infers a clipped PU when two same-rank pilots and no purser are present', () => {
+    const X = 200;
+    const legs = parseCrewInfo([
+      tok('cockpit: HOLDER, HOLDER, CP', X, 515),
+      tok('Mon05', X, 535), tok('TP', X, 504), tok('100', X, 489), tok('LIS', X, 428), tok('OPO', X, 331),
+      tok('AAA, ALPHA, ST', X - 28, 480),
+      tok('BBB, BRAVO, ST', X - 22, 480),
+      tok('CCC, CHARLIE,', X - 16, 480), // role clipped → sits just left of the cockpit → PU
+      tok('DDD, DELTA, FO', X - 10, 480),
+      tok('EEE, ECHO, FO', X - 4, 480),
+    ]);
+    expect(legs[0].crew.find((c) => c.login === 'CCC')?.role).toBe('PU');
+  });
+
+  it('infers a clipped role as steward when a purser is already present', () => {
+    const X = 200;
+    const legs = parseCrewInfo([
+      tok('cockpit: HOLDER, HOLDER, CP', X, 515),
+      tok('Mon05', X, 535), tok('TP', X, 504), tok('100', X, 489), tok('LIS', X, 428), tok('OPO', X, 331),
+      tok('AAA, ALPHA, ST', X - 22, 480),
+      tok('CCC, CHARLIE,', X - 16, 480), // role clipped, but a PU already sits to its right → ST
+      tok('PPP, PURSER, PU', X - 10, 480),
+      tok('DDD, DELTA, FO', X - 4, 480),
+    ]);
+    expect(legs[0].crew.find((c) => c.login === 'CCC')?.role).toBe('ST');
+  });
 });
 
 describe('attachCrewToDuties', () => {

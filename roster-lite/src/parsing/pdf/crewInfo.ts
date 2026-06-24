@@ -16,9 +16,12 @@ import { rotationChains } from '../../domain/aircraftRegs';
 const DOW = /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\d{2}$/;
 const NUM = /^\d{2,4}$/;
 const AIRPORT = /^[A-Z]{3}$/;
-// A crew token: LOGIN, SURNAME, ROLE [FIRST NAME]. Allow an optional space after the
+// A crew token: LOGIN, SURNAME, [ROLE] [FIRST NAME]. Allow an optional space after the
 // first comma (the PDF is inconsistent: "GROVISCO, ROVISCO, CP" vs "JRIBEIRO,RIBEIRO, CP").
-const CREW = /^([A-Za-z]+),\s*([A-Za-z]+),\s*(CP|FO|PU|ST)\b\s*(.*)$/i;
+// The ROLE is OPTIONAL: when a leg carries two pilots of the same rank the PDF sometimes
+// clips the role off a token (e.g. "LUIS, ALVES," with no "PU"), so we still accept it and
+// infer the role afterwards from the crew member's position in the column (see inferRoles).
+const CREW = /^([A-Za-z]+),\s*([A-Za-z]+),\s*(CP|FO|PU|ST)?\s*([A-Za-z].*)?$/i;
 
 export interface CrewLeg {
   dow: string; // weekday+day-of-month, e.g. "Thu15"
@@ -28,11 +31,35 @@ export interface CrewLeg {
   crew: CrewMember[];
 }
 
+// A crew member while still positioned in the grid: we keep its x so missing roles can be
+// inferred from where it sits in the column (cabin on the left, cockpit on the right).
+interface PositionedCrew extends CrewMember { x: number }
+
 function parseCrewToken(text: string): CrewMember | null {
   const m = text.match(CREW);
   if (!m) return null;
-  const firstName = m[4].trim().replace(/\s+/g, ' ') || undefined;
-  return { login: m[1].toUpperCase(), surname: m[2].toUpperCase(), role: m[3].toUpperCase(), firstName };
+  const firstName = (m[4] ?? '').trim().replace(/\s+/g, ' ') || undefined;
+  return { login: m[1].toUpperCase(), surname: m[2].toUpperCase(), role: (m[3] ?? '').toUpperCase(), firstName };
+}
+
+// Fill in roles that were clipped off in the PDF, using each member's x within the column.
+// Crew are printed left→right as: cabin (ST…) then the purser (PU) then the cockpit (FO/CP).
+// So the cockpit is the rightmost contiguous CP/FO block; a role-less member sitting just to
+// its left, when the leg has no purser yet, is the Chefe de Cabine (PU). Anything else
+// role-less is a cabin steward (ST).
+function inferRoles(crew: PositionedCrew[]): void {
+  if (crew.every((c) => c.role)) return;
+  const byX = [...crew].sort((a, b) => a.x - b.x);
+  let cockpitStart = byX.length;
+  for (let i = byX.length - 1; i >= 0; i--) {
+    if (byX[i].role === 'CP' || byX[i].role === 'FO') cockpitStart = i;
+    else break;
+  }
+  const hasPurser = byX.some((c) => c.role === 'PU');
+  for (let i = 0; i < byX.length; i++) {
+    if (byX[i].role) continue;
+    byX[i].role = !hasPurser && i === cockpitStart - 1 ? 'PU' : 'ST';
+  }
 }
 
 // Extract every leg (with its crew) from the crew-information section of a duty-plan PDF.
@@ -46,7 +73,7 @@ export function parseCrewInfo(tokens: PositionedToken[]): CrewLeg[] {
   if (cockpitPages.length === 0) return [];
   const startPage = Math.min(...cockpitPages);
 
-  const legs: (CrewLeg & { page: number; x: number; dowY: number })[] = [];
+  const legs: (Omit<CrewLeg, 'crew'> & { page: number; x: number; dowY: number; crew: PositionedCrew[] })[] = [];
 
   // Anchor on each carrier token ("TP") at/after the crew-section header.
   for (const tp of tokens.filter((z) => z.text === 'TP' && z.page >= startPage)) {
@@ -95,22 +122,34 @@ export function parseCrewInfo(tokens: PositionedToken[]): CrewLeg[] {
         bestDx = dx; best = leg;
       }
     }
-    if (best && !best.crew.some((c) => c.login === member.login)) best.crew.push(member);
+    if (best && !best.crew.some((c) => c.login === member.login)) best.crew.push({ ...member, x: ct.x });
   }
 
   // De-duplicate overlapping grid copies: merge legs with the same date+flight+route,
-  // keeping the union of crew. Drop legs that ended up with no crew.
-  const byKey = new Map<string, CrewLeg>();
+  // keeping the union of crew (still positioned, so roles can be inferred from the full set).
+  const byKey = new Map<string, (typeof legs)[number]>();
   for (const leg of legs) {
     const key = `${leg.dow}|${leg.flightNumber}|${leg.dep ?? ''}-${leg.arr ?? ''}`;
     const existing = byKey.get(key);
     if (existing) {
       for (const m of leg.crew) if (!existing.crew.some((c) => c.login === m.login)) existing.crew.push(m);
     } else {
-      byKey.set(key, { dow: leg.dow, flightNumber: leg.flightNumber, dep: leg.dep, arr: leg.arr, crew: [...leg.crew] });
+      byKey.set(key, { ...leg, crew: [...leg.crew] });
     }
   }
-  return [...byKey.values()].filter((l) => l.crew.length > 0);
+
+  // Now that each leg has its complete crew, fill in any clipped roles, then drop the
+  // internal x position and any leg that ended up with no crew.
+  const out: CrewLeg[] = [];
+  for (const leg of byKey.values()) {
+    if (leg.crew.length === 0) continue;
+    inferRoles(leg.crew);
+    out.push({
+      dow: leg.dow, flightNumber: leg.flightNumber, dep: leg.dep, arr: leg.arr,
+      crew: leg.crew.map(({ x: _x, ...c }) => c),
+    });
+  }
+  return out;
 }
 
 // Sort crew for display: cockpit first (CP, FO), then cabin (PU, ST), then by surname.
