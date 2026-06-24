@@ -131,14 +131,31 @@ describe('attachCrewToDuties', () => {
   });
 
   it('propagates the crew to the return leg of a same-day rotation', () => {
-    // Outbound LIS→OPO (08:00–09:00) has a crew leg; the return OPO→LIS (10:00–11:00) has
-    // none of its own and should inherit it (same airframe → same crew).
+    // Outbound LIS→OPO has a crew leg; the same-day return OPO→LIS has none of its own and
+    // should inherit it (same airframe → same crew).
     const outbound = flight({ flightNumber: 'TP100', departureAirport: 'LIS', arrivalAirport: 'OPO', departureTime: '08:00', arrivalTime: '09:00' });
     const ret = flight({ flightNumber: 'TP101', departureAirport: 'OPO', arrivalAirport: 'LIS', departureTime: '10:00', arrivalTime: '11:00' });
     const duties = [outbound, ret];
     attachCrewToDuties(duties, parseCrewInfo(legTokens()));
     expect(outbound.crew?.map((c) => c.surname)).toEqual(['ALPHA', 'BRAVO', 'CHARLIE', 'DELTA']);
     expect(ret.crew?.map((c) => c.surname)).toEqual(['ALPHA', 'BRAVO', 'CHARLIE', 'DELTA']); // inherited
+  });
+
+  it('propagates the crew to an overnight return on the NEXT day', () => {
+    // Fly out LIS→OPO on the 5th (crew listed), sleep over, fly back OPO→LIS on the 6th with no
+    // Crew Information entry of its own → it must inherit the outbound's crew across the day.
+    const outbound = flight({ date: '2026-01-05', flightNumber: 'TP100', departureAirport: 'LIS', arrivalAirport: 'OPO', departureTime: '08:00', arrivalTime: '09:00' });
+    const ret = flight({ date: '2026-01-06', flightNumber: 'TP200', departureAirport: 'OPO', arrivalAirport: 'LIS', departureTime: '10:00', arrivalTime: '11:00' });
+    attachCrewToDuties([outbound, ret], parseCrewInfo(legTokens()));
+    expect(ret.crew?.map((c) => c.surname)).toEqual(['ALPHA', 'BRAVO', 'CHARLIE', 'DELTA']);
+  });
+
+  it('does NOT propagate across an implausibly long gap (different trip)', () => {
+    // A return that departs the same airport but a week later is a different pairing.
+    const outbound = flight({ date: '2026-01-05', flightNumber: 'TP100', departureAirport: 'LIS', arrivalAirport: 'OPO', departureTime: '08:00', arrivalTime: '09:00' });
+    const later = flight({ date: '2026-01-12', flightNumber: 'TP300', departureAirport: 'OPO', arrivalAirport: 'LIS', departureTime: '10:00', arrivalTime: '11:00' });
+    attachCrewToDuties([outbound, later], parseCrewInfo(legTokens()));
+    expect(later.crew).toBeUndefined();
   });
 
   it('does NOT overwrite a leg that has its own (changed) crew', () => {

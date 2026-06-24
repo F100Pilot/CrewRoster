@@ -202,6 +202,34 @@ export function attachCrewToDuties(duties: ParsedDuty[], legs: CrewLeg[]): void 
       if (!l.crew || l.crew.length === 0) l.crew = withCrew.crew.map((c) => ({ ...c }));
     }
   }
+
+  // Overnight / next-day returns: when a pairing sleeps away from base, the return flies on a
+  // LATER day and the PDF gives it no Crew Information entry (same crew), so the same-day pass
+  // above can't reach it. Walk the legs in time order (operatedFlights is already chronological)
+  // and fill a still-crewless leg from the inbound that fed its departure airport — the flight
+  // the crew arrived on — when that was within a plausible layover. The user's rule: a dateless
+  // return is flown by the outbound's crew, even on another day.
+  for (let i = 0; i < flightLegs.length; i++) {
+    const leg = flightLegs[i];
+    if ((leg.crew && leg.crew.length > 0) || !leg.departureAirport) continue;
+    let feeder: ParsedDuty | undefined;
+    for (let j = i - 1; j >= 0; j--) {
+      if (flightLegs[j].arrivalAirport === leg.departureAirport) { feeder = flightLegs[j]; break; }
+    }
+    if (!feeder?.crew || feeder.crew.length === 0) continue;
+    const gap = layoverHours(feeder.date, feeder.arrivalTime, leg.date, leg.departureTime);
+    if (gap !== null && gap >= -2 && gap <= 48) leg.crew = feeder.crew.map((c) => ({ ...c }));
+  }
+}
+
+// Hours from an arrival to a later departure (UTC date+time); falls back to the whole-day gap
+// when a time is missing. Used to keep cross-day crew propagation within a real layover.
+function layoverHours(d1: string, t1: string | null, d2: string, t2: string | null): number | null {
+  const [a, b] = t1 && t2
+    ? [Date.parse(`${d1}T${t1}:00Z`), Date.parse(`${d2}T${t2}:00Z`)]
+    : [Date.parse(`${d1}T00:00:00Z`), Date.parse(`${d2}T00:00:00Z`)];
+  if (isNaN(a) || isNaN(b)) return null;
+  return (b - a) / 3_600_000;
 }
 
 // Re-derive crew from scratch: clear whatever crew the duties already carry (possibly stale,
