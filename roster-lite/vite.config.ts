@@ -42,6 +42,9 @@ export default defineConfig({
         // The pdf.js worker is ~1.4 MB; raise the cache ceiling so it's precached too.
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         navigateFallback: 'index.html',
+        // Never serve the production shell for the experimental preview at /CrewRoster/exp/
+        // — let those navigations hit the network so the preview isn't hijacked by this SW.
+        navigateFallbackDenylist: [/\/exp\//],
       },
     }),
   ],
