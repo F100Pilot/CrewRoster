@@ -113,3 +113,40 @@ export function setDisclaimerSeen(): void {
     // ignore
   }
 }
+
+// ── CrewLink credentials (saved on THIS DEVICE only, per user) ─────────────────────────
+// Optional convenience: the user can store their crew code + password so the download
+// dialog pre-fills them. Kept in localStorage on the device — never sent anywhere except
+// the existing CrewLink login request the user already makes. Stored per profile.
+const CRED_PREFIX = 'crewroster.cred.';
+
+export interface SavedCredentials {
+  crewCode: string;
+  password: string;
+}
+
+export function getCredentials(userId: string): SavedCredentials | null {
+  try {
+    const raw = localStorage.getItem(CRED_PREFIX + userId);
+    if (!raw) return null;
+    const v = JSON.parse(raw) as Partial<SavedCredentials>;
+    if (typeof v?.crewCode === 'string' && typeof v?.password === 'string') {
+      return { crewCode: v.crewCode, password: v.password };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export function setCredentials(userId: string, cred: SavedCredentials | null): void {
+  try {
+    if (cred && (cred.crewCode || cred.password)) {
+      localStorage.setItem(CRED_PREFIX + userId, JSON.stringify(cred));
+    } else {
+      localStorage.removeItem(CRED_PREFIX + userId);
+    }
+  } catch {
+    // ignore
+  }
+}
