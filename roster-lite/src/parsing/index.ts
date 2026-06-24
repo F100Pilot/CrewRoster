@@ -5,6 +5,7 @@ import { extractPdf } from './pdf/extractText';
 import { reconstructLines } from './pdf/reconstructLines';
 import { interpret } from './pdf/interpret';
 import { interpretPgaGrid } from './pdf/pgaGrid';
+import { parseCrewInfo, attachCrewToDuties } from './pdf/crewInfo';
 
 function sortByDate(duties: ParseResult['duties']): ParseResult['duties'] {
   return [...duties].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
@@ -22,6 +23,8 @@ export async function parseRosterFile(file: File): Promise<ParseResult> {
     // Primary: the PGA "Individual duty plan" grid parser.
     const pgaDuties = interpretPgaGrid(extracted.tokens);
     if (pgaDuties.length > 0) {
+      // Attach the rostered crew (from the "Crew Information on Leg" section) to each flight.
+      attachCrewToDuties(pgaDuties, parseCrewInfo(extracted.tokens));
       return { sourceType: 'pdf', duties: sortByDate(pgaDuties), rawText: extracted.rawText, warnings: [] };
     }
 
