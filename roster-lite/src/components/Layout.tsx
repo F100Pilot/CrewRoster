@@ -1,4 +1,4 @@
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import {
   AppBar, Box, Container, IconButton, Paper, Toolbar, Tooltip, Typography, BottomNavigation,
   BottomNavigationAction,
@@ -15,6 +15,8 @@ import DownloadRosterDialog from './DownloadRosterDialog';
 import NotificationBanner from './NotificationBanner';
 import SettingsDialog from './SettingsDialog';
 import WhatsNewDialog from './WhatsNewDialog';
+import { getTourSeen } from '../storage/settings';
+import { startTour } from '../tour';
 
 interface NavItem { label: string; icon: ReactNode; path: string }
 
@@ -39,6 +41,15 @@ export default function Layout({ children }: { children: ReactNode }) {
   const current = NAV.findIndex((n) => n.path === location.pathname);
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // First-run walkthrough: once a profile exists, run the guided tour a single time.
+  // Delay so the AppBar/nav are painted (driver.js anchors to those elements).
+  useEffect(() => {
+    if (activeUser && !getTourSeen()) {
+      const t = setTimeout(() => startTour(), 800);
+      return () => clearTimeout(t);
+    }
+  }, [activeUser]);
 
   return (
     <Box sx={{ pb: 8, minHeight: '100vh', bgcolor: 'background.default' }}>
@@ -72,12 +83,12 @@ export default function Layout({ children }: { children: ReactNode }) {
             <HelpOutline />
           </IconButton>
           <Tooltip title="Definições">
-            <IconButton color="inherit" onClick={() => setSettingsOpen(true)}>
+            <IconButton color="inherit" onClick={() => setSettingsOpen(true)} data-tour="settings">
               <Settings />
             </IconButton>
           </Tooltip>
           <Tooltip title="Descarregar / atualizar escala">
-            <IconButton color="inherit" onClick={() => setDownloadOpen(true)}>
+            <IconButton color="inherit" onClick={() => setDownloadOpen(true)} data-tour="download">
               <CloudDownload />
             </IconButton>
           </Tooltip>
@@ -92,6 +103,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       <WhatsNewDialog />
       {/* Seven tabs don't fit a phone width, so the bar scrolls horizontally. */}
       <Paper
+        data-tour="nav"
         sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, overflowX: 'auto' }}
         elevation={3}
       >

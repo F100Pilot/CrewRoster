@@ -4,7 +4,7 @@ import {
   Divider, IconButton, InputAdornment, Link, Stack, TextField, ToggleButton,
   ToggleButtonGroup, Typography,
 } from '@mui/material';
-import { Close, Visibility, VisibilityOff, CheckCircle, Science, CalendarMonth, DeleteOutline, BugReport, DarkMode, LightMode, InfoOutlined, Backup, Restore } from '@mui/icons-material';
+import { Close, Visibility, VisibilityOff, CheckCircle, Science, CalendarMonth, DeleteOutline, BugReport, DarkMode, LightMode, InfoOutlined, Backup, Restore, School } from '@mui/icons-material';
 import readmeText from '../../README.md?raw';
 import { useNavigate } from 'react-router-dom';
 import { useColorMode } from '../state/colorMode';
@@ -16,6 +16,7 @@ import { fetchFlightInfo } from '../services/crewlinkApi';
 import { APP_NAME, APP_VERSION_LABEL } from '../version';
 import { operatedFlights } from '../domain/flightTime';
 import { downloadIcs } from '../utils/icsExport';
+import { startTour } from '../tour';
 import { useRoster } from '../state/useRoster';
 import {
   downloadBackup, readBackupFile, restoreBackup, BackupError, type BackupSummary,
@@ -362,6 +363,22 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
                 {backupMsg.text}
               </Alert>
             )}
+          </Box>
+
+          <Divider />
+
+          {/* Replay the first-run guided tour. Close the dialog first so the balloons can
+              point at the AppBar/nav behind it. */}
+          <Box>
+            <Typography variant="subtitle2" gutterBottom>Tutorial</Typography>
+            <Button
+              onClick={() => { onClose(); setTimeout(() => startTour(), 300); }}
+              startIcon={<School />}
+              size="small"
+              variant="outlined"
+            >
+              Ver tutorial
+            </Button>
           </Box>
 
           <Divider />

@@ -73,3 +73,23 @@ export function setLastSeenVersion(version: string): void {
     // ignore
   }
 }
+
+// ── Guided tour ───────────────────────────────────────────────────────────────────────
+// Whether the first-run walkthrough has already been shown (so it only auto-runs once).
+const TOUR_SEEN = 'crewroster.tourSeen';
+
+export function getTourSeen(): boolean {
+  try {
+    return localStorage.getItem(TOUR_SEEN) === '1';
+  } catch {
+    return true; // if storage is unavailable, don't nag
+  }
+}
+
+export function setTourSeen(): void {
+  try {
+    localStorage.setItem(TOUR_SEEN, '1');
+  } catch {
+    // ignore
+  }
+}
