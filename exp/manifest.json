@@ -1,0 +1,39 @@
+{
+  "id": "/CrewRoster/",
+  "name": "CrewRoster",
+  "short_name": "CrewRoster",
+  "description": "Visualizador de escala de voo — Portugália Airlines",
+  "start_url": "/CrewRoster/",
+  "scope": "/CrewRoster/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0b63c4",
+  "theme_color": "#0b63c4",
+  "lang": "pt",
+  "icons": [
+    {
+      "src": "/CrewRoster/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/CrewRoster/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/CrewRoster/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/CrewRoster/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
