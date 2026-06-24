@@ -6,6 +6,11 @@ import { VitePWA } from 'vite-plugin-pwa';
 // (https://<user>.github.io/CrewRoster/). For Netlify/Vercel/root hosting set BASE=/.
 const base = process.env.BASE ?? '/CrewRoster/';
 
+// The experimental preview build disables the service worker (DISABLE_PWA=1) so testers
+// always get the freshest build with no cache, and so its SW can't clash with the
+// production PWA's scope.
+const disablePwa = process.env.DISABLE_PWA === '1';
+
 export default defineConfig({
   base,
   build: {
@@ -29,7 +34,7 @@ export default defineConfig({
     // precaches the app shell (JS/CSS/HTML/icons) so it loads with no network.
     // We keep the hand-written public/manifest.json (manifest: false) and just let
     // Workbox generate and register the service worker.
-    VitePWA({
+    ...(disablePwa ? [] : [VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
       manifest: false,
@@ -43,7 +48,7 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         navigateFallback: 'index.html',
       },
-    }),
+    })]),
   ],
   test: {
     globals: true,
