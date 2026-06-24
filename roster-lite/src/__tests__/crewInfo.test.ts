@@ -12,7 +12,7 @@ function tok(text: string, x: number, y: number): PositionedToken {
 function legTokens(): PositionedToken[] {
   const X = 200; // identity column
   return [
-    tok('cockpit: HOLDER, HOLDER, CP', X, 515), // marks the flight-crew zone the parser anchors on
+    tok('cockpit:',X, 515), // marks the flight-crew zone the parser anchors on
     tok('Mon05', X, 535), tok('TP', X, 504), tok('100', X, 489),
     tok('LIS', X, 428), tok('0800', X, 401), tok('0930', X, 364), tok('OPO', X, 331),
     // crew in the two columns to the left
@@ -37,7 +37,7 @@ describe('parseCrewInfo', () => {
 
   it('keeps the first name when present in the token', () => {
     const legs = parseCrewInfo([
-      tok('cockpit: HOLDER, HOLDER, CP', 200, 515),
+      tok('cockpit:',200, 515),
       tok('Mon05', 200, 535), tok('TP', 200, 504), tok('100', 200, 489), tok('LIS', 200, 428), tok('OPO', 200, 331),
       tok('XBARROS, BARROS, FO FILIPE', 180, 480),
     ]);
@@ -50,12 +50,28 @@ describe('parseCrewInfo', () => {
     expect(legs[0].crew).toHaveLength(4);
   });
 
+  // The "cockpit:"/"cabin:" section-holder tokens are real crew members (e.g. the Captain on a
+  // cabin-crew member's roster). Empty labels are ignored; named ones are captured.
+  it('captures the cockpit: section holder, ignoring an empty cabin: label', () => {
+    const X = 200;
+    const legs = parseCrewInfo([
+      tok('cockpit: CHIEF, CHIEF, CP', X, 515), // a real crew member (the Captain)
+      tok('cabin:', X - 12, 515), // empty label → ignored
+      tok('Mon05', X, 535), tok('TP', X, 504), tok('100', X, 489), tok('LIS', X, 428), tok('OPO', X, 331),
+      tok('AAA, ALPHA, FO', X - 20, 480),
+      tok('BBB, BRAVO, PU', X - 26, 480),
+    ]);
+    expect(legs[0].crew.map((c) => `${c.login}(${c.role})`).sort()).toEqual(
+      ['AAA(FO)', 'BBB(PU)', 'CHIEF(CP)'],
+    );
+  });
+
   // The PDF clips the role off a crew token when a leg carries two same-rank pilots; the
   // role is then inferred from the column position (cabin left, purser, cockpit right).
   it('infers a clipped PU when two same-rank pilots and no purser are present', () => {
     const X = 200;
     const legs = parseCrewInfo([
-      tok('cockpit: HOLDER, HOLDER, CP', X, 515),
+      tok('cockpit:',X, 515),
       tok('Mon05', X, 535), tok('TP', X, 504), tok('100', X, 489), tok('LIS', X, 428), tok('OPO', X, 331),
       tok('AAA, ALPHA, ST', X - 28, 480),
       tok('BBB, BRAVO, ST', X - 22, 480),
@@ -70,7 +86,7 @@ describe('parseCrewInfo', () => {
   it('infers the PU on a single-pilot cabin layout (ST ST ? FO)', () => {
     const X = 200;
     const legs = parseCrewInfo([
-      tok('cockpit: HOLDER, HOLDER, CP', X, 515),
+      tok('cockpit:',X, 515),
       tok('Mon05', X, 535), tok('TP', X, 504), tok('100', X, 489), tok('LIS', X, 428), tok('AGP', X, 331),
       tok('AAA, ALPHA, ST', X - 26, 480),
       tok('BBB, BRAVO, ST', X - 20, 480),
@@ -83,7 +99,7 @@ describe('parseCrewInfo', () => {
   it('infers a clipped role as steward when a purser is already present', () => {
     const X = 200;
     const legs = parseCrewInfo([
-      tok('cockpit: HOLDER, HOLDER, CP', X, 515),
+      tok('cockpit:',X, 515),
       tok('Mon05', X, 535), tok('TP', X, 504), tok('100', X, 489), tok('LIS', X, 428), tok('OPO', X, 331),
       tok('AAA, ALPHA, ST', X - 22, 480),
       tok('CCC, CHARLIE,', X - 16, 480), // role clipped, but a PU already sits to its right → ST

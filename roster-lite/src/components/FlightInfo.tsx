@@ -37,6 +37,11 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
   // Matched by the user's own crew code (login); when it isn't set, show everyone.
   const myCode = activeUser?.crewCode?.trim().toUpperCase() || null;
   const crew = (duty.crew ?? []).filter((c) => !myCode || c.login.toUpperCase() !== myCode);
+  // Full-crew composition (INCLUDING the user) so the count and categories can be verified at
+  // a glance against the official roster — e.g. "5 · 2 CMD · 1 CC · 2 TC".
+  const composition = (['CP', 'FO', 'PU', 'ST'] as const)
+    .map((r) => ({ r, n: (duty.crew ?? []).filter((c) => c.role === r).length }))
+    .filter((x) => x.n > 0);
   const flightNumber = duty.flightNumber;
   const dep = duty.departureAirport;
   const arr = duty.arrivalAirport;
@@ -123,9 +128,16 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
-        <Box sx={{ px: 1.5, pt: 1, pb: 0.5, display: 'flex', alignItems: 'center', gap: 0.75 }}>
-          <Groups fontSize="small" color="action" />
-          <Typography variant="subtitle2">Tripulação</Typography>
+        <Box sx={{ px: 1.5, pt: 1, pb: 0.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+            <Groups fontSize="small" color="action" />
+            <Typography variant="subtitle2">Tripulação</Typography>
+          </Box>
+          {composition.length > 0 && (
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25 }}>
+              {(duty.crew?.length ?? 0)} tripulantes · {composition.map(({ r, n }) => `${n} ${ROLE_SHORT[r] ?? r}`).join(' · ')}
+            </Typography>
+          )}
         </Box>
         <List dense sx={{ pt: 0, minWidth: 200 }}>
           {crew.map((c) => (

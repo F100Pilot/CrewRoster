@@ -27,6 +27,12 @@ const AIRPORT = /^[A-Z]{3}$/;
 // clips the role off a token (e.g. "LUIS, ALVES," with no "PU"), so we still accept it and
 // infer the role afterwards from the crew member's position in the column (see inferRoles).
 const CREW = /^([A-Za-z]+),\s*([A-Za-z]+),\s*(CP|FO|PU|ST)?\s*([A-Za-z].*)?$/i;
+// Each leg's column also carries section-holder tokens prefixed with "cockpit:" / "cabin:"
+// (e.g. "cockpit: RCLARO, CLARO, CP") — a real crew member that must be captured too. For a
+// pilot's roster the cockpit holder is the owner; for a cabin-crew roster it's the Captain, so
+// dropping it lost a commander. We strip the prefix and parse the rest as a normal crew token.
+const SECTION_PREFIX = /^(?:cockpit|cabin):\s*/i;
+const crewBody = (text: string) => text.replace(SECTION_PREFIX, '');
 
 export interface CrewLeg {
   dow: string; // weekday+day-of-month, e.g. "Thu15"
@@ -41,7 +47,7 @@ export interface CrewLeg {
 interface PositionedCrew extends CrewMember { x: number }
 
 function parseCrewToken(text: string): CrewMember | null {
-  const m = text.match(CREW);
+  const m = crewBody(text).match(CREW);
   if (!m) return null;
   const firstName = (m[4] ?? '').trim().replace(/\s+/g, ' ') || undefined;
   return { login: m[1].toUpperCase(), surname: m[2].toUpperCase(), role: (m[3] ?? '').toUpperCase(), firstName };
@@ -115,7 +121,7 @@ export function parseCrewInfo(tokens: PositionedToken[]): CrewLeg[] {
 
   // Assign each crew token to the nearest leg whose identity column is just to its RIGHT
   // (crew sit in the columns left of the identity), within the same vertical band.
-  for (const ct of tokens.filter((z) => z.page >= startPage && CREW.test(z.text))) {
+  for (const ct of tokens.filter((z) => z.page >= startPage && CREW.test(crewBody(z.text)))) {
     const member = parseCrewToken(ct.text);
     if (!member) continue;
     let best: (typeof legs)[number] | null = null;
