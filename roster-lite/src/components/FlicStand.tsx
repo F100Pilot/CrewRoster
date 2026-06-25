@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import { Box, Chip, CircularProgress, IconButton, Link, Typography } from '@mui/material';
-import { LocalParking, Refresh, OpenInNew, FlightTakeoff, FlightLand } from '@mui/icons-material';
-import { fetchFlicStands, flicEnabled, type FlicStandInfo } from '../domain/flic';
+import { Refresh, OpenInNew, LocalParking } from '@mui/icons-material';
+import { fetchFlicStands, flicEnabled, flicLegsFor, type FlicLeg, type FlicStandInfo } from '../domain/flic';
 
-// Colour the operational status the way the FLIC board does (green = gone, blue = boarding,
-// red = delayed/cancelled), so a glance conveys the state.
+// Colour the operational status the way the FLIC board does (green = gone/arrived, blue =
+// boarding, red = delayed/cancelled), so a glance conveys the state.
 function statusColor(s: string | null): string {
   const u = (s || '').toUpperCase();
   if (u.includes('DELAY') || u.includes('CANCEL')) return '#c62828';
@@ -20,67 +20,66 @@ function todayISO(): string {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
-function StandLeg({ info }: { info: FlicStandInfo }) {
-  const dep = info.kind === 'dep';
-  const Icon = dep ? FlightTakeoff : FlightLand;
-  const title = `${dep ? 'Partida' : 'Chegada'} ${info.hub}`;
+// One compact stand card, styled to line up beside the sunrise/sunset cards in the same row.
+function StandCard({
+  leg,
+  info,
+  loading,
+  onRefresh,
+}: {
+  leg: FlicLeg;
+  info: FlicStandInfo | null;
+  loading: boolean;
+  onRefresh: () => void;
+}) {
+  const dep = leg.kind === 'dep';
   return (
-    <Box
-      sx={{
-        px: 1.25,
-        py: 1,
-        borderRadius: 2,
-        bgcolor: 'rgba(128,128,128,0.10)',
-        minWidth: 140,
-        textAlign: 'center',
-      }}
-    >
-      <Box display="flex" alignItems="center" justifyContent="center" gap={0.5} mb={0.5}>
-        <Icon sx={{ fontSize: 16, color: 'text.secondary' }} />
-        <Typography variant="caption" color="text.secondary" fontWeight={600}>
-          {title}
+    <Box sx={{ px: 1.25, py: 0.5, borderRadius: 2, bgcolor: 'action.hover', textAlign: 'center', minWidth: 118 }}>
+      <Box display="flex" alignItems="center" justifyContent="center" gap={0.25}>
+        <LocalParking sx={{ fontSize: 14, color: 'text.secondary' }} />
+        <Typography variant="caption" fontWeight={700}>
+          {dep ? 'Partida' : 'Chegada'} {leg.hub}
         </Typography>
+        <IconButton size="small" onClick={onRefresh} disabled={loading} sx={{ p: 0 }} aria-label="Atualizar stand">
+          {loading ? <CircularProgress size={11} /> : <Refresh sx={{ fontSize: 13 }} />}
+        </IconButton>
       </Box>
 
-      {info.found && info.stand ? (
-        <Typography variant="h5" fontWeight={800} lineHeight={1.1}>
+      {info?.found && info.stand ? (
+        <Typography variant="h6" fontWeight={800} lineHeight={1.15}>
           {info.stand}
         </Typography>
-      ) : info.found ? (
-        <Typography variant="body2" color="text.secondary">
-          Stand por atribuir
+      ) : info?.found ? (
+        <Typography variant="caption" color="text.secondary" display="block">
+          stand n/d
         </Typography>
-      ) : (
-        <Typography variant="caption" color="text.secondary">
-          Ainda não publicado
-        </Typography>
-      )}
-
-      {info.found && info.status && (
-        <Chip
-          size="small"
-          label={info.status}
-          sx={{ mt: 0.5, height: 18, fontSize: 10, fontWeight: 700, color: '#fff', bgcolor: statusColor(info.status) }}
-        />
-      )}
-
-      {info.found && (info.act || info.est || info.sched) && (
-        <Typography variant="caption" color="text.secondary" display="block" mt={0.25}>
-          {dep ? 'STD' : 'STA'} {info.sched || '—'}
-          {info.act ? ` · A ${info.act}` : info.est ? ` · E ${info.est}` : ''} UTC
-        </Typography>
-      )}
-
-      {!info.found && (
+      ) : info ? (
         <Link
-          href={info.boardUrl}
+          href={leg.boardUrl}
           target="_blank"
           rel="noopener"
           variant="caption"
-          sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25, mt: 0.25 }}
+          sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25 }}
         >
-          Abrir board <OpenInNew sx={{ fontSize: 12 }} />
+          n/d <OpenInNew sx={{ fontSize: 11 }} />
         </Link>
+      ) : (
+        <CircularProgress size={14} sx={{ my: 0.25 }} />
+      )}
+
+      {info?.found && info.status && (
+        <Chip
+          size="small"
+          label={info.status}
+          sx={{ height: 16, fontSize: 9.5, fontWeight: 700, color: '#fff', bgcolor: statusColor(info.status), '& .MuiChip-label': { px: 0.75 } }}
+        />
+      )}
+
+      {info?.found && (info.act || info.est || info.sched) && (
+        <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: 10, lineHeight: 1.3 }}>
+          {dep ? 'STD' : 'STA'} {info.sched || '—'}
+          {info.act ? ` · A ${info.act}` : info.est ? ` · E ${info.est}` : ''}
+        </Typography>
       )}
     </Box>
   );
@@ -88,7 +87,7 @@ function StandLeg({ info }: { info: FlicStandInfo }) {
 
 // Live stand from FLIC for a flight touching LIS/OPO. The board only carries the current
 // operational window, so we only fetch on the day of the flight; on other days there is no
-// stand to show and the section stays hidden.
+// stand to show and the cards stay hidden. Rendered inline beside the sunrise/sunset cards.
 export default function FlicStand({
   flightNumber,
   dep,
@@ -100,16 +99,19 @@ export default function FlicStand({
   arr: string | null;
   date: string | null;
 }) {
-  const [legs, setLegs] = useState<FlicStandInfo[] | null>(null);
+  const [results, setResults] = useState<FlicStandInfo[] | null>(null);
   const [loading, setLoading] = useState(false);
   const isToday = date === todayISO();
+  const legs = flicLegsFor(dep, arr);
 
   const load = useCallback(() => {
-    if (!flicEnabled() || !isToday) return;
+    if (!flicEnabled() || !isToday || legs.length === 0) return;
     setLoading(true);
     fetchFlicStands(flightNumber, dep, arr)
-      .then((r) => setLegs(r))
+      .then((r) => setResults(r))
       .finally(() => setLoading(false));
+    // legs is derived from dep/arr, so those deps cover it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flightNumber, dep, arr, isToday]);
 
   useEffect(() => {
@@ -117,39 +119,16 @@ export default function FlicStand({
   }, [load]);
 
   // Nothing to show: feature off, not the flight day, or this flight doesn't touch a hub.
-  if (!flicEnabled() || !isToday || (legs && legs.length === 0)) return null;
+  if (!flicEnabled() || !isToday || legs.length === 0) return null;
 
-  const updated = legs?.find((l) => l.updated)?.updated || null;
+  // Match each leg's result by board id (fetchFlicStands preserves leg order/ids).
+  const infoFor = (leg: FlicLeg) => results?.find((r) => r.boardId === leg.boardId) ?? null;
 
   return (
-    <Box sx={{ mt: 1.25 }}>
-      <Box display="flex" alignItems="center" justifyContent="center" gap={0.5} mb={0.5}>
-        <LocalParking sx={{ fontSize: 16, color: 'text.secondary' }} />
-        <Typography variant="caption" color="text.secondary">
-          Stand (FLIC TAP)
-        </Typography>
-        <IconButton size="small" onClick={load} disabled={loading} sx={{ p: 0.25 }} aria-label="Atualizar stand">
-          {loading ? <CircularProgress size={12} /> : <Refresh sx={{ fontSize: 14 }} />}
-        </IconButton>
-      </Box>
-
-      {legs && legs.length > 0 ? (
-        <Box display="flex" gap={1} justifyContent="center" flexWrap="wrap">
-          {legs.map((l) => (
-            <StandLeg key={l.boardId} info={l} />
-          ))}
-        </Box>
-      ) : loading ? (
-        <Typography variant="caption" color="text.secondary" align="center" display="block">
-          A obter stand…
-        </Typography>
-      ) : null}
-
-      {updated && (
-        <Typography variant="caption" color="text.secondary" display="block" align="center" mt={0.25} sx={{ opacity: 0.7 }}>
-          Fonte: FLIC TAP · {updated}
-        </Typography>
-      )}
-    </Box>
+    <Fragment>
+      {legs.map((leg) => (
+        <StandCard key={leg.boardId} leg={leg} info={infoFor(leg)} loading={loading} onRefresh={load} />
+      ))}
+    </Fragment>
   );
 }

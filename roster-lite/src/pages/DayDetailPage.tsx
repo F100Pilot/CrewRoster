@@ -193,12 +193,17 @@ export default function DayDetailPage() {
                       .join(' · ')}
                   </Typography>
                 )}
-                <SunNightLine duty={duty} date={date} />
-                <FlicStand
-                  flightNumber={duty.flightNumber}
-                  dep={duty.departureAirport}
-                  arr={duty.arrivalAirport}
-                  date={date ?? null}
+                <SunNightLine
+                  duty={duty}
+                  date={date}
+                  trailing={
+                    <FlicStand
+                      flightNumber={duty.flightNumber}
+                      dep={duty.departureAirport}
+                      arr={duty.arrivalAirport}
+                      date={date ?? null}
+                    />
+                  }
                 />
                 {duty.hotel && <HotelLine hotel={duty.hotel} />}
               </Box>
@@ -262,7 +267,7 @@ export default function DayDetailPage() {
 // Daylight / night for a sector, shown graphically: a bar mapping the flight (departure →
 // arrival) coloured day (amber) vs night (indigo) from the sampled sun profile; a chip for the
 // flight type; and a sunrise/sunset card per airport. Silent for non-network airports / no times.
-function SunNightLine({ duty, date }: { duty: ParsedDuty; date: string | undefined }) {
+function SunNightLine({ duty, date, trailing }: { duty: ParsedDuty; date: string | undefined; trailing?: React.ReactNode }) {
   const s = sectorSun(duty.departureAirport, duty.arrivalAirport, date ?? null, duty.departureTime, duty.arrivalTime);
   if (!s) return null;
   const dep = duty.departureAirport, arr = duty.arrivalAirport;
@@ -289,8 +294,9 @@ function SunNightLine({ duty, date }: { duty: ParsedDuty; date: string | undefin
       <Box display="flex" justifyContent="center" mt={0.75}>
         <Chip size="small" variant="outlined" icon={chip.icon} label={chip.label} />
       </Box>
-      {/* sunrise/sunset card per airport */}
-      <Box display="flex" gap={1} justifyContent="center" mt={0.75}>
+      {/* sunrise/sunset card per airport, with any trailing cards (e.g. the live FLIC stand) on
+          the same row so the block stays compact rather than stacking vertically */}
+      <Box display="flex" gap={1} justifyContent="center" alignItems="flex-start" flexWrap="wrap" mt={0.75}>
         {airports.map((ap) => (
           <Box key={ap.code} sx={{ px: 1.25, py: 0.5, borderRadius: 2, bgcolor: 'action.hover', textAlign: 'center', minWidth: 118 }}>
             <Typography variant="caption" fontWeight={700} display="block">{ap.code}</Typography>
@@ -306,6 +312,7 @@ function SunNightLine({ duty, date }: { duty: ParsedDuty; date: string | undefin
             </Box>
           </Box>
         ))}
+        {trailing}
       </Box>
       <Typography variant="caption" color="text.secondary" display="block" textAlign="center" mt={0.25} sx={{ opacity: 0.7 }}>
         Nascer / pôr do sol (UTC)
