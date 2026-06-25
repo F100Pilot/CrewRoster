@@ -91,7 +91,7 @@ export default function FlightWeather({ duty, date }: { duty: ParsedDuty; date: 
           </Box>
 
           <Typography variant="caption" color="text.secondary" display="block" mt={1}>
-            {fc ? `Estimativa de turbulência a ~FL340 (shear ${fc.shearKmh} km/h · CAPE ${fc.capeJkg} J/kg). ` : ''}
+            {fc ? `Estimativa de turbulência a ~FL340 ao longo da rota (índice Ellrod ${fc.ellrod} · shear ${fc.shearKmh} km/h · CAPE ${fc.capeJkg} J/kg). ` : ''}
             Não substitui o briefing meteorológico oficial.
           </Typography>
         </DialogContent>

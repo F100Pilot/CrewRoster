@@ -3,28 +3,36 @@ import { computeRisk, windyEmbedUrl } from '../utils/turbulence';
 import { midpoint } from '../domain/airports';
 
 describe('computeRisk', () => {
-  it('is low with calm shear and no convection', () => {
-    expect(computeRisk(20, 0)).toBe('low');
+  it('is low with calm shear, no deformation and no convection', () => {
+    expect(computeRisk(0, 20, 0)).toBe('low');
   });
 
-  it('is moderate on meaningful wind shear alone', () => {
-    expect(computeRisk(50, 0)).toBe('moderate');
+  it('is moderate on meaningful vertical shear alone', () => {
+    expect(computeRisk(0, 50, 0)).toBe('moderate');
+  });
+
+  it('is moderate on a moderate Ellrod index alone', () => {
+    expect(computeRisk(5, 10, 0)).toBe('moderate');
   });
 
   it('is moderate on moderate CAPE alone', () => {
-    expect(computeRisk(10, 400)).toBe('moderate');
+    expect(computeRisk(0, 10, 400)).toBe('moderate');
   });
 
   it('is high on strong shear', () => {
-    expect(computeRisk(80, 0)).toBe('high');
+    expect(computeRisk(0, 80, 0)).toBe('high');
+  });
+
+  it('is high on a strong Ellrod index', () => {
+    expect(computeRisk(10, 10, 0)).toBe('high');
   });
 
   it('is high on strong convection (CAPE)', () => {
-    expect(computeRisk(10, 1200)).toBe('high');
+    expect(computeRisk(0, 10, 1200)).toBe('high');
   });
 
-  it('takes the worst of the two proxies', () => {
-    expect(computeRisk(50, 1200)).toBe('high');
+  it('takes the worst of the three proxies', () => {
+    expect(computeRisk(1, 50, 1200)).toBe('high');
   });
 });
 
