@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.7';
+export const APP_VERSION = '0.8.8';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,21 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.8',
+    date: '2026-06-25',
+    highlights: [
+      'Stand ao vivo (FLIC TAP): nos voos de/para Lisboa e Porto, o stand real aparece no banner no próprio dia.',
+      'METAR/TAF descodificado na Meteo da rota, com categoria de voo (VFR/MVFR/IFR/LIFR) a cores.',
+      'Nascer/pôr do sol e tempo noturno por setor, com barra dia/noite no banner do voo.',
+      'Diário de bordo: tempo noturno por setor e exportação CSV no estilo EASA (IFR, noite, aterragens dia/noite).',
+      '“Com quem voo”: toca num tripulante para ver todos os voos partilhados com esse colega.',
+      'Pesquisa global (lupa no topo): voos, aeroportos, rotas, colegas, tipo de serviço e datas.',
+      'Estatísticas: mapa de atividade anual (heatmap). Calendário: partilhar o mês como imagem.',
+      'Login automático ao CrewLink quando há credenciais guardadas, com confirmação ao guardar/remover.',
+      '⚠️ A tripulação por voo continua EM TESTES — confirma sempre na escala oficial do CrewLink (separador “PDFs”).',
+    ],
+  },
   {
     version: '0.8.7',
     date: '2026-06-25',

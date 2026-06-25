@@ -871,52 +871,13 @@ async function handleMetar(request) {
   return jsonResponse({ stations: Object.values(byId) }, 200, request);
 }
 
-// --- GET /flic-debug (TEMPORARY) -------------------------------------------
-// Diagnostic only: fetch a FLIC stand board server-side and dump the raw response so we can
-// see whether the worker can reach flic.tap.pt (it may geo/IP-filter) and what the HTML looks
-// like, to build the scraper. NOT origin-gated (so it can be opened straight in a browser).
-// REMOVE before promoting to production.
-const FLIC_BASE = 'https://flic.tap.pt/FLIC_UI/FLIC.aspx?Id=';
-const BROWSER_UA =
-  'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Mobile Safari/537.36';
-
-async function handleFlicDebug(request) {
-  const u = new URL(request.url);
-  const id = (u.searchParams.get('id') || 'PGA-LIS_DEP').toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 30);
-  const target = `${FLIC_BASE}${encodeURIComponent(id)}`;
-  let info = { target, ok: false };
-  try {
-    const r = await fetch(target, {
-      headers: {
-        'User-Agent': BROWSER_UA,
-        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'pt-PT,pt;q=0.9,en;q=0.8',
-      },
-      redirect: 'follow',
-    });
-    const body = await r.text();
-    info = {
-      target,
-      ok: r.ok,
-      status: r.status,
-      contentType: r.headers.get('Content-Type'),
-      finalUrl: r.url,
-      length: body.length,
-      body: body.slice(0, 60000),
-    };
-  } catch (e) {
-    info.error = String(e && e.message ? e.message : e);
-  }
-  return new Response(JSON.stringify(info, null, 2), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*' },
-  });
-}
-
 // --- POST /api/flic --------------------------------------------------------
 // Live stand/gate for a flight at the LIS/OPO hubs, scraped server-side from TAP's FLIC board
 // (flic.tap.pt is public but has no CORS, so the browser can't read it — the worker does). The
 // board only lists the current operational window, so a row only exists on/near the flight day.
+const FLIC_BASE = 'https://flic.tap.pt/FLIC_UI/FLIC.aspx?Id=';
+const BROWSER_UA =
+  'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Mobile Safari/537.36';
 const FLIC_IDS = new Set(['PGA-LIS_DEP', 'PGA-LIS_ARR', 'PGA-OPO_DEP', 'PGA-OPO_ARR']);
 
 function flicCleanText(s) {
@@ -1022,7 +983,6 @@ export default {
 
     if (request.method === 'OPTIONS') return preflight(request);
     if (url.pathname === '/health') return jsonResponse({ status: 'ok' }, 200, request);
-    if (url.pathname === '/flic-debug') return handleFlicDebug(request); // TEMP diagnostic
 
     if (request.method !== 'POST') {
       return jsonResponse({ error: 'Method not allowed' }, 405, request);
