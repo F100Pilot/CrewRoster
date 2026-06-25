@@ -47,6 +47,36 @@ credenciais**: *"Credenciais removidas deste dispositivo."*.
 - **Testar:** Definições → Acesso ao CrewLink → preencher → **Guardar** → ver o
   popup em baixo.
 
+### 3. "Com quem voo" (pesquisa de colega)
+Tocar num tripulante no pop-up da tripulação de um voo abre uma página com
+**todos os voos partilhados com esse colega** (data, voo, rota, função), com uma
+**pesquisa** (código ou apelido) para escolher qualquer colega da escala e a
+contagem de voos em comum. Cada voo abre o respetivo dia.
+
+- **Ficheiros:** `roster-lite/src/domain/crewSearch.ts`,
+  `roster-lite/src/pages/CrewSearchPage.tsx`, `App.tsx` (rota `/crew/:login`),
+  `roster-lite/src/components/FlightInfo.tsx` (nomes clicáveis).
+- **Testar:** abrir um voo com tripulação → ícone 👥 → tocar num nome.
+
+---
+
+## A implementar a seguir na exp (pedido, ainda por fazer)
+
+- **TAF descodificado** à partida/chegada (tempo significativo sinalizado).
+- **Pôr/nascer do sol + tempo noturno por setor** (usa `utils/sun.ts`).
+- **Logbook/registo:** exportar para formato standard (CSV EASA / mccPILOTLOG);
+  tempo noturno/IFR calculado por setor.
+- **Visualização/QoL:** pesquisa global na escala; estatísticas anuais (heatmap,
+  aeroportos/países); partilhar o mês como imagem.
+
+## TODO / Backlog (decidir mais tarde)
+
+- **Painel de FTL / fadiga** (contadores 7/14/28 dias e 12 meses, avisos de
+  limite, FDP máximo). _Precisa dos limites reais da Portugália._
+- **Lembretes locais (notificações da PWA)** para check-in e documentos a expirar.
+- **Componente de vento cruzado** por pista (precisa de BD de pistas).
+- **Estimador de ajudas de custo / per diem** (precisa das taxas).
+
 ---
 
 _Última atualização: 2026-06-25._

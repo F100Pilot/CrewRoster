@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Box, Chip, CircularProgress, IconButton, List, ListItem, ListItemText, Popover, Tooltip, Typography } from '@mui/material';
+import { Box, Chip, CircularProgress, IconButton, List, ListItem, ListItemButton, ListItemText, Popover, Tooltip, Typography } from '@mui/material';
 import { AirplaneTicket, Groups, Refresh } from '@mui/icons-material';
+import { useNavigate } from 'react-router-dom';
 import { fetchFlightInfo, type FlightInfo as FlightInfoData } from '../services/crewlinkApi';
 import { matchLeg, recordReg, regMapKey, resolveRegs } from '../domain/aircraftRegs';
 import { loadRegs } from '../storage/rosterStore';
@@ -27,6 +28,7 @@ function statusColor(status: string | null): string {
 // no data yet (normal for flights not near their date).
 export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: string }) {
   const { activeUser, roster } = useRoster();
+  const navigate = useNavigate();
   const [leg, setLeg] = useState<FlightInfoData | null>(null);
   const [savedReg, setSavedReg] = useState<string | null>(null);
   const [savedRegInferred, setSavedRegInferred] = useState(false);
@@ -141,14 +143,19 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
         </Box>
         <List dense sx={{ pt: 0, minWidth: 200 }}>
           {crew.map((c) => (
-            <ListItem key={c.login} sx={{ py: 0.1 }}>
-              <ListItemText
-                primary={c.login}
-                secondary={`${ROLE_LABEL[c.role] ?? c.role}${c.surname ? ' · ' + c.surname : ''}`}
-                primaryTypographyProps={{ variant: 'body2', fontWeight: 700, sx: { fontFamily: 'monospace' } }}
-                secondaryTypographyProps={{ variant: 'caption' }}
-              />
-              <Chip size="small" variant="outlined" label={ROLE_SHORT[c.role] ?? c.role} sx={{ ml: 1 }} />
+            <ListItem
+              key={c.login}
+              disablePadding
+              secondaryAction={<Chip size="small" variant="outlined" label={ROLE_SHORT[c.role] ?? c.role} />}
+            >
+              <ListItemButton sx={{ py: 0.1 }} onClick={() => { setCrewAnchor(null); navigate(`/crew/${c.login}`); }}>
+                <ListItemText
+                  primary={c.login}
+                  secondary={`${ROLE_LABEL[c.role] ?? c.role}${c.surname ? ' · ' + c.surname : ''}`}
+                  primaryTypographyProps={{ variant: 'body2', fontWeight: 700, sx: { fontFamily: 'monospace' } }}
+                  secondaryTypographyProps={{ variant: 'caption' }}
+                />
+              </ListItemButton>
             </ListItem>
           ))}
         </List>

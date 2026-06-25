@@ -23,6 +23,7 @@ const LoginPage = lazy(() => import('./pages/LoginPage'));
 const ImportPage = lazy(() => import('./pages/ImportPage'));
 const SavedPdfsPage = lazy(() => import('./pages/SavedPdfsPage'));
 const PdfViewerPage = lazy(() => import('./pages/PdfViewerPage'));
+const CrewSearchPage = lazy(() => import('./pages/CrewSearchPage'));
 
 function RouteFallback() {
   return (
@@ -85,6 +86,7 @@ function AppRoutes() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/day/:date" element={<DayDetailPage />} />
+          <Route path="/crew/:login" element={<CrewSearchPage />} />
           <Route path="/logbook" element={<LogbookPage />} />
           <Route path="/stats" element={<StatsPage />} />
           <Route path="/map" element={<MapPage />} />
