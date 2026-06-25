@@ -105,15 +105,24 @@ gera uma imagem com totais (dias, setores, bloco) e as rotas mais voadas.
   `roster-lite/src/pages/CalendarPage.tsx` (botão partilhar).
 - **Testar:** Estatísticas → ver o heatmap; Calendário → ícone de partilhar.
 
+### 8. METAR/TAF descodificado (CheckWX, chave opcional)
+No detalhe do voo (Meteo da rota), **METAR e TAF** de partida e chegada com a
+**categoria de voo** (VFR/MVFR/IFR/LIFR) a cores — quando o utilizador define uma
+**chave grátis CheckWX** nas Definições (opção 1 escolhida). Sem chave, mantém-se
+o resumo Open-Meteo. IATA→ICAO via tabela carregada à parte (não pesa no shell).
+
+- **Ficheiros:** `roster-lite/src/services/metarTaf.ts`,
+  `roster-lite/src/components/MetarTaf.tsx`, `roster-lite/src/domain/iataToIcao.json`,
+  `roster-lite/src/storage/settings.ts` (chave), `SettingsDialog.tsx`,
+  `roster-lite/src/components/FlightWeather.tsx`.
+- **Testar:** Definições → Meteo aviação → colar chave CheckWX → abrir um voo →
+  Meteo da rota → ver METAR/TAF.
+
 ---
 
-## A implementar a seguir na exp (pedido, ainda por fazer)
+## A implementar a seguir na exp
 
-- **TAF/METAR descodificado** à partida/chegada. ⚠️ _Bloqueio:_ o
-  `aviationweather.gov` não tem CORS e o proxy da app está noutro repositório.
-  Opções a decidir: (a) chave grátis opcional (CheckWX/AVWX) nas Definições, à
-  semelhança do AeroDataBox; (b) proxy CORS público (menos robusto); (c) manter
-  o Open-Meteo atual com apresentação mais aeronáutica (sem TAF oficial).
+_(Todos os lotes pedidos estão feitos. ✅)_
 
 ## TODO / Backlog (decidir mais tarde)
 
