@@ -6,7 +6,7 @@ import {
 import { Add, ArrowBack, Download, Edit, ExpandLess, ExpandMore, FlightTakeoff, Sync } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
-import { logbookCsvRows, landingsInRows, mergeLogbook, rowBlock, sortLogbook } from '../domain/logbook';
+import { logbookCsvRows, landingsInRows, mergeLogbook, rowBlock, rowNight, sortLogbook } from '../domain/logbook';
 import { backfillRegs, pendingBackfillCount, regMap, type BackfillResult } from '../domain/aircraftRegs';
 import { loadLogbook, putLogbookRows, deleteLogbookRow } from '../storage/rosterStore';
 import { getAeroDataBoxKey } from '../storage/settings';
@@ -63,21 +63,29 @@ export default function LogbookPage() {
   const entries = useMemo(() => sortLogbook(rows), [rows]);
   // Group sectors by calendar month for a month-by-month logbook, each with its own
   // sector count and block subtotal.
+  // Night minutes per row, computed once (one sun calc per sector) and reused for totals/display.
+  const nightByKey = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const e of entries) m.set(e.key, rowNight(e));
+    return m;
+  }, [entries]);
+
   const monthGroups = useMemo(() => {
-    const groups: { key: string; label: string; rows: LogbookRow[]; block: number }[] = [];
+    const groups: { key: string; label: string; rows: LogbookRow[]; block: number; night: number }[] = [];
     for (const e of entries) {
       const mk = e.date.slice(0, 7); // YYYY-MM
       let g = groups[groups.length - 1];
       if (!g || g.key !== mk) {
         const name = format(parseISO(e.date), 'MMMM yyyy', { locale: pt });
-        g = { key: mk, label: name.charAt(0).toUpperCase() + name.slice(1), rows: [], block: 0 };
+        g = { key: mk, label: name.charAt(0).toUpperCase() + name.slice(1), rows: [], block: 0, night: 0 };
         groups.push(g);
       }
       g.rows.push(e);
       g.block += rowBlock(e);
+      g.night += nightByKey.get(e.key) ?? 0;
     }
     return groups;
-  }, [entries]);
+  }, [entries, nightByKey]);
 
   // Collapsible months: a set of collapsed month keys, persisted per user so the chosen
   // layout (which months are folded) survives navigation and reloads.
@@ -93,6 +101,7 @@ export default function LogbookPage() {
     return next;
   });
   const totalBlock = useMemo(() => entries.reduce((sum, r) => sum + rowBlock(r), 0), [entries]);
+  const totalNight = useMemo(() => [...nightByKey.values()].reduce((s, n) => s + n, 0), [nightByKey]);
   const landings90 = useMemo(() => landingsInRows(entries, today, RECENCY_DAYS), [entries, today]);
   const recencyOk = landings90 >= RECENCY_REQUIRED;
   const missingRegs = useMemo(
@@ -193,6 +202,9 @@ export default function LogbookPage() {
             <FlightTakeoff fontSize="small" color="action" />
             <Chip size="small" variant="outlined" label={`${entries.length} setores`} />
             <Chip size="small" variant="outlined" label={`Bloco ${formatDuration(totalBlock)}`} />
+            {totalNight > 0 && (
+              <Chip size="small" variant="outlined" label={`Noite ${formatDuration(totalNight)}`} />
+            )}
             <Chip
               size="small"
               label={`Recência: ${landings90}/${RECENCY_REQUIRED} em ${RECENCY_DAYS}d`}
@@ -281,11 +293,12 @@ export default function LogbookPage() {
           >
             <TableHead>
               <TableRow>
-                <TableCell sx={{ width: '14%' }}>Data</TableCell>
+                <TableCell sx={{ width: '13%' }}>Data</TableCell>
                 <TableCell>Voo / Rota</TableCell>
-                <TableCell sx={{ width: '16%' }}>Bloco</TableCell>
-                <TableCell sx={{ width: '28%' }}>Avião</TableCell>
-                <TableCell sx={{ width: '10%' }} />
+                <TableCell sx={{ width: '14%' }}>Bloco</TableCell>
+                <TableCell sx={{ width: '13%' }}>Noite</TableCell>
+                <TableCell sx={{ width: '24%' }}>Avião</TableCell>
+                <TableCell sx={{ width: '9%' }} />
               </TableRow>
             </TableHead>
             <TableBody>
@@ -297,7 +310,7 @@ export default function LogbookPage() {
                   onClick={() => toggleMonth(g.key)}
                 >
                   <TableCell
-                    colSpan={5}
+                    colSpan={6}
                     sx={{ textAlign: 'left !important', py: 0.5, fontWeight: 600, whiteSpace: 'nowrap' }}
                   >
                     <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', verticalAlign: 'middle' }}>
@@ -305,7 +318,7 @@ export default function LogbookPage() {
                     </Box>
                     {g.label}
                     <Box component="span" sx={{ color: 'text.secondary', fontWeight: 400, ml: 1, fontSize: '0.8rem' }}>
-                      · {g.rows.length} setor{g.rows.length !== 1 ? 'es' : ''} · {formatDuration(g.block)}
+                      · {g.rows.length} setor{g.rows.length !== 1 ? 'es' : ''} · {formatDuration(g.block)}{g.night > 0 ? ` · noite ${formatDuration(g.night)}` : ''}
                     </Box>
                   </TableCell>
                 </TableRow>,
@@ -317,6 +330,9 @@ export default function LogbookPage() {
                       <Box sx={{ color: 'text.secondary', fontSize: '0.8rem' }}>{e.from}–{e.to}</Box>
                     </TableCell>
                     <TableCell sx={{ whiteSpace: 'nowrap' }}>{formatDuration(rowBlock(e))}</TableCell>
+                    <TableCell sx={{ whiteSpace: 'nowrap', color: (nightByKey.get(e.key) ?? 0) > 0 ? 'text.primary' : 'text.disabled' }}>
+                      {(nightByKey.get(e.key) ?? 0) > 0 ? formatDuration(nightByKey.get(e.key)!) : '—'}
+                    </TableCell>
                     <TableCell>
                       <Box>{e.aircraft || '—'}</Box>
                       <Box sx={{ color: 'text.secondary', fontSize: '0.8rem' }}>

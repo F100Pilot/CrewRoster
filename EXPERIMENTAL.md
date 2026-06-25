@@ -67,15 +67,26 @@ noturno do logbook (lote seguinte).
 
 - **Ficheiros:** `roster-lite/src/domain/sectorSun.ts`,
   `roster-lite/src/pages/DayDetailPage.tsx`.
-- **Testar:** abrir um dia com voo → ver o selo e os horários do sol no banner.
+- **Testar:** abrir um dia com voo → ver a barra dia/noite e os cartões do sol.
+- _Apresentação gráfica:_ barra dia/noite + cartões de nascer/pôr do sol por
+  aeroporto + chip do tipo de voo (ícones sol/lua).
+
+### 5. Logbook: tempo noturno por setor + export EASA-style
+Coluna **Noite** no diário (por setor, totais por mês e total geral), calculada
+a partir do sol ao longo da rota. O **export CSV** passa a incluir **IFR**
+(= bloco, operação de companhia toda em IFR), **Noite** e **aterragens
+dia/noite** — colunas compatíveis com logbook EASA / importadores (mccPILOTLOG).
+
+- **Ficheiros:** `roster-lite/src/domain/logbook.ts`,
+  `roster-lite/src/pages/LogbookPage.tsx`.
+- **Testar:** Diário → ver a coluna Noite e os totais; botão exportar → abrir o
+  CSV e confirmar as colunas IFR / Noite / aterragens.
 
 ---
 
 ## A implementar a seguir na exp (pedido, ainda por fazer)
 
 - **TAF descodificado** à partida/chegada (tempo significativo sinalizado).
-- **Logbook/registo:** exportar para formato standard (CSV EASA / mccPILOTLOG);
-  tempo noturno/IFR calculado por setor.
 - **Visualização/QoL:** pesquisa global na escala; estatísticas anuais (heatmap,
   aeroportos/países); partilhar o mês como imagem.
 
