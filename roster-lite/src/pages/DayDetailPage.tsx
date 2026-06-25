@@ -1,5 +1,5 @@
-import { Box, Card, CardContent, Chip, Divider, IconButton, Stack, Typography } from '@mui/material';
-import { ArrowBack, ChevronLeft, ChevronRight, FlightLand, FlightTakeoff, Hotel, IosShare, Phone, WbSunny, Bedtime, Brightness4 } from '@mui/icons-material';
+import { Box, Button, Card, CardContent, Chip, Divider, IconButton, Stack, Typography } from '@mui/material';
+import { ArrowBack, ChevronLeft, ChevronRight, FlightLand, FlightTakeoff, Hotel, IosShare, Phone, WbSunny, Bedtime, Brightness4, LocalParking, OpenInNew } from '@mui/icons-material';
 import { Link } from '@mui/material';
 import { addDays, format, parseISO } from 'date-fns';
 import { useEffect, useMemo, useRef } from 'react';
@@ -11,6 +11,7 @@ import { diffMinutes, formatDuration } from '../utils/duration';
 import { dayStats } from '../domain/dutyStats';
 import { restBefore } from '../domain/restPeriods';
 import { sectorSun } from '../domain/sectorSun';
+import { flicStandLinks } from '../domain/flic';
 import { shareDayImage } from '../utils/shareDay';
 import type { ParsedDuty } from '../domain/types';
 import FlightWeather from '../components/FlightWeather';
@@ -193,6 +194,7 @@ export default function DayDetailPage() {
                   </Typography>
                 )}
                 <SunNightLine duty={duty} date={date} />
+                <FlicStand dep={duty.departureAirport} arr={duty.arrivalAirport} />
                 {duty.hotel && <HotelLine hotel={duty.hotel} />}
               </Box>
             )}
@@ -302,6 +304,41 @@ function SunNightLine({ duty, date }: { duty: ParsedDuty; date: string | undefin
       </Box>
       <Typography variant="caption" color="text.secondary" display="block" textAlign="center" mt={0.25} sx={{ opacity: 0.7 }}>
         Nascer / pôr do sol (UTC)
+      </Typography>
+    </Box>
+  );
+}
+
+// Stand (parking) at the LIS/OPO hubs via TAP's FLIC boards. flic.tap.pt is internal, so we
+// can't read the stand here — we deep-link to the right arrivals/departures board (open it on
+// the TAP network / logged in).
+function FlicStand({ dep, arr }: { dep: string | null; arr: string | null }) {
+  const links = flicStandLinks(dep, arr);
+  if (links.length === 0) return null;
+  return (
+    <Box sx={{ mt: 1.25, textAlign: 'center' }}>
+      <Box display="flex" alignItems="center" justifyContent="center" gap={0.5} mb={0.5}>
+        <LocalParking fontSize="small" sx={{ color: 'text.secondary' }} />
+        <Typography variant="caption" color="text.secondary">Stand (FLIC TAP)</Typography>
+      </Box>
+      <Box display="flex" gap={1} justifyContent="center" flexWrap="wrap">
+        {links.map((l) => (
+          <Button
+            key={l.url}
+            component="a"
+            href={l.url}
+            target="_blank"
+            rel="noopener"
+            size="small"
+            variant="outlined"
+            endIcon={<OpenInNew sx={{ fontSize: 14 }} />}
+          >
+            {l.label}
+          </Button>
+        ))}
+      </Box>
+      <Typography variant="caption" color="text.secondary" display="block" mt={0.25} sx={{ opacity: 0.7 }}>
+        Abre na rede/login TAP.
       </Typography>
     </Box>
   );

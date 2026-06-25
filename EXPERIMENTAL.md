@@ -124,16 +124,20 @@ o resumo Open-Meteo. IATA→ICAO via tabela carregada à parte (não pesa no she
 
 _(Todos os lotes pedidos estão feitos. ✅)_
 
+### 9. Stand (FLIC TAP) — deep-link por voo
+No banner do voo, botões **"Stand (FLIC TAP)"** que abrem a board correta:
+**Partida LIS/OPO** → `PGA-{LIS|OPO}_DEP`; **Chegada LIS/OPO** → `PGA-{LIS|OPO}_ARR`.
+O `flic.tap.pt` é interno (rede/login TAP + CORS bloqueado), por isso não dá para
+ler o stand na app — abre-se a board (legenda "Abre na rede/login TAP").
+
+- **Ficheiros:** `roster-lite/src/domain/flic.ts`,
+  `roster-lite/src/pages/DayDetailPage.tsx`.
+- **Testar:** abrir um voo que toque LIS ou OPO → botões do FLIC no banner.
+
+---
+
 ## TODO / Backlog (decidir mais tarde)
 
-- **Stand em LIS/OPO via FLIC da TAP** — fonte robusta encontrada pelo utilizador
-  (páginas internas `flic.tap.pt`):
-  - `https://flic.tap.pt/FLIC_UI/FLIC.aspx?Id=PGA-LIS_ARR`
-  - `https://flic.tap.pt/FLIC_UI/FLIC.aspx?Id=PGA-LIS_DEP`
-  - `https://flic.tap.pt/FLIC_UI/FLIC.aspx?Id=PGA-OPO_ARR`
-  - `https://flic.tap.pt/FLIC_UI/FLIC.aspx?Id=PGA-OPO_DEP`
-  - _A investigar:_ provavelmente exige rede/login TAP e CORS bloqueado →
-    abrir link / scraping autenticado; ver como integrar (talvez "abrir FLIC" por voo).
 - **Painel de FTL / fadiga** (contadores 7/14/28 dias e 12 meses, avisos de
   limite, FDP máximo). _Precisa dos limites reais da Portugália._
 - **Lembretes locais (notificações da PWA)** para check-in e documentos a expirar.
