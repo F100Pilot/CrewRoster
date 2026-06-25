@@ -63,7 +63,9 @@ export default function CrewSearchPage() {
 
       {flights.map((f, i) => (
         <Card key={`${f.date}-${f.flightNumber}-${i}`} variant="outlined">
-          <CardActionArea onClick={() => navigate(`/day/${f.date}`)}>
+          <CardActionArea
+            onClick={() => navigate(`/day/${f.date}`, { state: { flightNumber: f.flightNumber, dep: f.dep, arr: f.arr } })}
+          >
             <CardContent sx={{ py: 1.5 }}>
               <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
                 <Typography variant="subtitle2" sx={{ minWidth: 92 }}>

@@ -3,7 +3,7 @@ import { ArrowBack, ChevronLeft, ChevronRight, FlightLand, FlightTakeoff, Hotel,
 import { Link } from '@mui/material';
 import { addDays, format, parseISO } from 'date-fns';
 import { useEffect, useMemo, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import { dutyColor } from '../theme';
 import { toLocalTime } from '../utils/localTime';
@@ -19,13 +19,24 @@ export default function DayDetailPage() {
   const navigate = useNavigate();
   const { roster, activeUser } = useRoster();
 
-  // Open at the top (first duty of the day), not wherever the list was scrolled to when the
-  // flight was tapped. Re-runs when stepping to another day (arrows/swipe) so each lands at top.
-  useEffect(() => { window.scrollTo(0, 0); }, [date]);
-
+  const location = useLocation();
   const duties = (roster?.duties ?? []).filter((d) => d.date === date);
   const stats = dayStats(duties);
   const rest = date ? restBefore(roster?.duties ?? [], date) : null;
+
+  // When arriving from a specific flight (e.g. the "com quem voo" list), open ON that flight and
+  // highlight it; otherwise open at the top. Re-runs when stepping to another day (arrows/swipe).
+  const focus = location.state as { flightNumber?: string | null; dep?: string | null; arr?: string | null } | null;
+  const focusIdx = focus?.flightNumber
+    ? duties.findIndex((d) => d.flightNumber === focus.flightNumber
+        && d.departureAirport === focus.dep && d.arrivalAirport === focus.arr)
+    : -1;
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  useEffect(() => {
+    const el = focusIdx >= 0 ? cardRefs.current[focusIdx] : null;
+    if (el) el.scrollIntoView({ block: 'center' });
+    else window.scrollTo(0, 0);
+  }, [date, focusIdx]);
 
   // Step one calendar day at a time within the roster's date span, so swiping (or the
   // header arrows) flows through every day — including empty ones — not just days with
@@ -109,7 +120,12 @@ export default function DayDetailPage() {
       {duties.length === 0 && <Typography color="text.secondary">Sem registos neste dia.</Typography>}
 
       {duties.map((duty, i) => (
-        <Card key={i} variant="outlined">
+        <Card
+          key={i}
+          variant="outlined"
+          ref={(el: HTMLDivElement | null) => { cardRefs.current[i] = el; }}
+          sx={i === focusIdx ? { borderColor: 'primary.main', borderWidth: 2 } : undefined}
+        >
           <CardContent>
             <Box display="flex" alignItems="center" gap={1} mb={2} flexWrap="wrap">
               <Chip

@@ -51,7 +51,8 @@ credenciais**: *"Credenciais removidas deste dispositivo."*.
 Tocar num tripulante no pop-up da tripulação de um voo abre uma página com
 **todos os voos partilhados com esse colega** (data, voo, rota, função), com uma
 **pesquisa** (código ou apelido) para escolher qualquer colega da escala e a
-contagem de voos em comum. Cada voo abre o respetivo dia.
+contagem de voos em comum. Tocar num voo abre o dia **já nesse voo** (destacado),
+não no primeiro do dia.
 
 - **Ficheiros:** `roster-lite/src/domain/crewSearch.ts`,
   `roster-lite/src/pages/CrewSearchPage.tsx`, `App.tsx` (rota `/crew/:login`),
