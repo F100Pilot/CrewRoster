@@ -1,5 +1,5 @@
 import { Box, Card, CardContent, Chip, Divider, IconButton, Stack, Typography } from '@mui/material';
-import { ArrowBack, ChevronLeft, ChevronRight, FlightLand, FlightTakeoff, Hotel, IosShare, Phone } from '@mui/icons-material';
+import { ArrowBack, ChevronLeft, ChevronRight, FlightLand, FlightTakeoff, Hotel, IosShare, Phone, WbSunny, Bedtime, Brightness4 } from '@mui/icons-material';
 import { Link } from '@mui/material';
 import { addDays, format, parseISO } from 'date-fns';
 import { useEffect, useMemo, useRef } from 'react';
@@ -252,18 +252,20 @@ export default function DayDetailPage() {
   );
 }
 
-// Daylight / night for a sector, shown graphically: a bar mapping the flight (departure → arrival)
-// coloured day (amber) vs night (indigo) from the sampled sun profile, with sunrise (↑) and sunset
-// (↓) in UTC at each airport. Silent for non-network airports or missing times.
+// Daylight / night for a sector, shown graphically: a bar mapping the flight (departure →
+// arrival) coloured day (amber) vs night (indigo) from the sampled sun profile; a chip for the
+// flight type; and a sunrise/sunset card per airport. Silent for non-network airports / no times.
 function SunNightLine({ duty, date }: { duty: ParsedDuty; date: string | undefined }) {
   const s = sectorSun(duty.departureAirport, duty.arrivalAirport, date ?? null, duty.departureTime, duty.arrivalTime);
   if (!s) return null;
-  const badge = s.nightMin <= 0 ? '☀️ Voo diurno'
-    : s.nightMin >= s.blockMin ? '🌙 Voo noturno'
-    : `🌗 Diurno + ${formatDuration(s.nightMin)} de noite`;
   const dep = duty.departureAirport, arr = duty.arrivalAirport;
-  const sun = (t: { sunriseUtc: string | null; sunsetUtc: string | null }) =>
-    `↑${t.sunriseUtc ?? '—'} ↓${t.sunsetUtc ?? '—'}`;
+  const airports = [{ code: dep, t: s.depSun }, ...(arr && arr !== dep ? [{ code: arr, t: s.arrSun }] : [])];
+  const chip = s.nightMin <= 0
+    ? { icon: <WbSunny sx={{ color: '#ffb300 !important' }} />, label: 'Voo diurno' }
+    : s.nightMin >= s.blockMin
+      ? { icon: <Bedtime sx={{ color: '#5c6bc0 !important' }} />, label: 'Voo noturno' }
+      : { icon: <Brightness4 sx={{ color: '#7e57c2 !important' }} />, label: `Diurno + ${formatDuration(s.nightMin)} de noite` };
+
   return (
     <Box mt={1.25}>
       {/* endpoints: departure ← bar → arrival */}
@@ -277,11 +279,29 @@ function SunNightLine({ duty, date }: { duty: ParsedDuty; date: string | undefin
           <Box key={i} sx={{ flex: 1, bgcolor: day ? '#ffb300' : '#1a237e' }} />
         ))}
       </Box>
-      <Typography variant="caption" color="text.secondary" display="block" textAlign="center" mt={0.5}>
-        {badge}
-      </Typography>
-      <Typography variant="caption" color="text.secondary" display="block" textAlign="center">
-        Sol (z) · {dep} {sun(s.depSun)}{arr && arr !== dep ? ` · ${arr} ${sun(s.arrSun)}` : ''}
+      <Box display="flex" justifyContent="center" mt={0.75}>
+        <Chip size="small" variant="outlined" icon={chip.icon} label={chip.label} />
+      </Box>
+      {/* sunrise/sunset card per airport */}
+      <Box display="flex" gap={1} justifyContent="center" mt={0.75}>
+        {airports.map((ap) => (
+          <Box key={ap.code} sx={{ px: 1.25, py: 0.5, borderRadius: 2, bgcolor: 'action.hover', textAlign: 'center', minWidth: 118 }}>
+            <Typography variant="caption" fontWeight={700} display="block">{ap.code}</Typography>
+            <Box display="flex" gap={1.25} alignItems="center" justifyContent="center">
+              <Box display="flex" alignItems="center" gap={0.25}>
+                <WbSunny sx={{ fontSize: 15, color: '#ffb300' }} />
+                <Typography variant="caption">{ap.t.sunriseUtc ?? '—'}</Typography>
+              </Box>
+              <Box display="flex" alignItems="center" gap={0.25}>
+                <Bedtime sx={{ fontSize: 14, color: '#5c6bc0' }} />
+                <Typography variant="caption">{ap.t.sunsetUtc ?? '—'}</Typography>
+              </Box>
+            </Box>
+          </Box>
+        ))}
+      </Box>
+      <Typography variant="caption" color="text.secondary" display="block" textAlign="center" mt={0.25} sx={{ opacity: 0.7 }}>
+        Nascer / pôr do sol (UTC)
       </Typography>
     </Box>
   );
