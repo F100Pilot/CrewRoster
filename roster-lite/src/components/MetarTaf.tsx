@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Box, Chip, Typography } from '@mui/material';
 import { fetchAirportWx, categoryColor, type AirportWx } from '../services/metarTaf';
-import { getCheckwxKey } from '../storage/settings';
 
 function AirportBlock({ iata, label }: { iata: string | null; label: string }) {
   const [wx, setWx] = useState<AirportWx | null>(null);
@@ -34,9 +33,9 @@ function AirportBlock({ iata, label }: { iata: string | null; label: string }) {
   );
 }
 
-// Decoded METAR/TAF for the flight's airports — only when the user has set a CheckWX key.
+// METAR/TAF for the flight's airports (via the worker → NOAA AWC). Renders nothing until data
+// arrives, so it's silent when the proxy/endpoint isn't available.
 export default function MetarTaf({ dep, arr }: { dep: string | null; arr: string | null }) {
-  if (!getCheckwxKey()) return null;
   return (
     <Box sx={{ mb: 1.5 }}>
       <AirportBlock iata={dep} label="Partida" />

@@ -10,6 +10,7 @@
  *   POST /api/login       — autentica, devolve o JSESSIONID
  *   POST /api/roster      — usa a sessão para descarregar o PDF da escala
  *   POST /api/flightinfo  — dados operacionais do voo (matrícula, porta) via AeroDataBox
+ *   POST /api/metar       — METAR/TAF por ICAO via NOAA Aviation Weather Center (sem chave)
  *   GET  /health          — verificação de estado
  *
  * Segurança: as credenciais são reenviadas para netline.pga.pt por HTTPS e
@@ -820,6 +821,56 @@ async function handleFlightInfo(request, env) {
   return jsonResponse({ configured: true, flights }, 200, request);
 }
 
+// --- POST /api/metar -------------------------------------------------------
+// Decoded METAR/TAF for one or more airports (by ICAO), fetched server-side from the NOAA
+// Aviation Weather Center. AWC has no CORS, so the browser can't call it directly — the worker
+// does, then returns JSON the SPA can read. Keyless: AWC is a free public service.
+async function handleMetar(request) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return jsonResponse({ error: 'Invalid JSON body' }, 400, request);
+  }
+  // Sanitise to a comma-separated list of ICAO codes (letters/digits only).
+  const ids = String(body.ids || '').toUpperCase().replace(/[^A-Z0-9,]/g, '').slice(0, 120);
+  if (!ids) return jsonResponse({ stations: [] }, 200, request);
+
+  const AWC = 'https://aviationweather.gov/api/data';
+  const ua = 'CrewRoster/1.0 (+https://github.com/f100pilot/crewroster)';
+  const awc = async (kind) => {
+    try {
+      const r = await fetch(`${AWC}/${kind}?ids=${encodeURIComponent(ids)}&format=json`, { headers: { 'User-Agent': ua } });
+      if (!r.ok) return [];
+      const j = await r.json();
+      return Array.isArray(j) ? j : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const [metars, tafs] = await Promise.all([awc('metar'), awc('taf')]);
+  const byId = {};
+  const get = (k) => (byId[k] ||= { icao: k, metarRaw: null, tafRaw: null, category: null });
+  // Field names vary a little across AWC endpoints/versions, so accept both casings.
+  const tafOf = (o) => o.rawTAF || o.rawTaf || o.raw_taf || null;
+  for (const m of metars) {
+    const k = String(m.icaoId || '').toUpperCase();
+    if (!k) continue;
+    const s = get(k);
+    s.metarRaw = m.rawOb || s.metarRaw;
+    s.category = m.fltCat || m.fltcat || s.category;
+    s.tafRaw = tafOf(m) || s.tafRaw; // the METAR response sometimes carries the TAF too
+  }
+  for (const t of tafs) {
+    const k = String(t.icaoId || '').toUpperCase();
+    if (!k) continue;
+    const raw = tafOf(t);
+    if (raw) get(k).tafRaw = raw;
+  }
+  return jsonResponse({ stations: Object.values(byId) }, 200, request);
+}
+
 // --- Router ----------------------------------------------------------------
 export default {
   async fetch(request, env) {
@@ -844,6 +895,8 @@ export default {
         return handleRoster(request);
       case '/api/flightinfo':
         return handleFlightInfo(request, env);
+      case '/api/metar':
+        return handleMetar(request);
       default:
         return jsonResponse({ error: 'Not found' }, 404, request);
     }

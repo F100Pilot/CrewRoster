@@ -1,15 +1,16 @@
-import { getCheckwxKey } from '../storage/settings';
+// Decoded METAR/TAF for an airport, via the app's Cloudflare Worker (which fetches the NOAA
+// Aviation Weather Center server-side — AWC has no CORS, so the browser can't call it directly).
+// Keyless. IATA→ICAO is resolved from a lazily-loaded table (kept out of the app shell). Returns
+// null when there's no proxy configured, the airport is unknown, or nothing comes back — the
+// caller then falls back to the keyless Open-Meteo summary.
 
-// Decoded METAR/TAF for an airport, fetched directly from CheckWX with the user's own key.
-// IATA→ICAO is resolved from a lazily-loaded table (so the dataset isn't in the app shell).
-// Returns null when no key is set, the airport is unknown, or the request fails — the caller
-// then falls back to the keyless Open-Meteo summary.
+const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '');
 
 export interface AirportWx {
   icao: string;
   metarRaw: string | null;
   tafRaw: string | null;
-  category: string | null; // VFR / MVFR / IFR / LIFR (from CheckWX flight_category)
+  category: string | null; // VFR / MVFR / IFR / LIFR (AWC flight category, when available)
 }
 
 let icaoMap: Record<string, string> | null = null;
@@ -20,34 +21,25 @@ async function toIcao(iata: string): Promise<string | null> {
 
 const cache = new Map<string, AirportWx | null>();
 
-async function checkwx(path: string, key: string): Promise<unknown> {
-  const res = await fetch(`https://api.checkwx.com/${path}`, { headers: { 'X-API-Key': key } });
-  if (!res.ok) throw new Error(`CheckWX ${res.status}`);
-  return res.json();
-}
+interface Station { icao: string; metarRaw: string | null; tafRaw: string | null; category: string | null }
 
 export async function fetchAirportWx(iata: string | null): Promise<AirportWx | null> {
-  const key = getCheckwxKey();
-  if (!key || !iata) return null;
+  if (!iata || !API_BASE) return null;
   const icao = await toIcao(iata);
   if (!icao) return null;
   if (cache.has(icao)) return cache.get(icao)!;
 
   try {
-    const [metar, taf] = await Promise.all([
-      checkwx(`metar/${icao}/decoded`, key).catch(() => null),
-      checkwx(`taf/${icao}`, key).catch(() => null),
-    ]);
-    const m = (metar as { data?: Array<{ raw_text?: string; flight_category?: string }> } | null)?.data?.[0];
-    const t = (taf as { data?: string[] } | null)?.data?.[0];
-    const wx: AirportWx = {
-      icao,
-      metarRaw: m?.raw_text ?? null,
-      tafRaw: typeof t === 'string' ? t : null,
-      category: m?.flight_category ?? null,
-    };
-    // Nothing came back at all → treat as no data (don't cache a permanent miss on a transient).
-    if (!wx.metarRaw && !wx.tafRaw) return null;
+    const res = await fetch(`${API_BASE}/api/metar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: icao }),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { stations?: Station[] };
+    const s = data.stations?.find((x) => x.icao?.toUpperCase() === icao) ?? data.stations?.[0];
+    if (!s || (!s.metarRaw && !s.tafRaw)) return null;
+    const wx: AirportWx = { icao, metarRaw: s.metarRaw ?? null, tafRaw: s.tafRaw ?? null, category: s.category ?? null };
     cache.set(icao, wx);
     return wx;
   } catch {

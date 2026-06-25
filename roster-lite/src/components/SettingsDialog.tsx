@@ -11,7 +11,7 @@ import { useColorMode } from '../state/colorMode';
 import {
   API_KEY_PATTERN, getAeroDataBoxKey, setAeroDataBoxKey,
   CHECKIN_LEAD_OPTIONS, getCheckinLeadMinutes, setCheckinLeadMinutes,
-  getCredentials, setCredentials, getCheckwxKey, setCheckwxKey,
+  getCredentials, setCredentials,
 } from '../storage/settings';
 import { fetchFlightInfo } from '../services/crewlinkApi';
 import { APP_NAME, APP_VERSION_LABEL } from '../version';
@@ -32,9 +32,6 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
   const { mode, setMode } = useColorMode();
   const navigate = useNavigate();
   const [key, setKey] = useState('');
-  // Optional CheckWX key for decoded METAR/TAF (on this device).
-  const [cwxKey, setCwxKey] = useState('');
-  const [showCwx, setShowCwx] = useState(false);
   // CrewLink credentials saved on this device (per profile) to pre-fill the download dialog.
   const [credCode, setCredCode] = useState('');
   const [credPassword, setCredPassword] = useState('');
@@ -56,8 +53,6 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
   useEffect(() => {
     if (open) {
       setKey(getAeroDataBoxKey());
-      setCwxKey(getCheckwxKey());
-      setShowCwx(false);
       setSaved(false);
       setShow(false);
       setTestResult(null);
@@ -124,7 +119,6 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
   function handleSave() {
     if (invalid) return;
     setAeroDataBoxKey(trimmed);
-    setCheckwxKey(cwxKey.trim());
     if (activeUser) {
       setCredentials(activeUser.id, { crewCode: credCode.trim(), password: credPassword });
     }
@@ -357,55 +351,6 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
           {testResult && (
             <Alert severity={testResult.ok ? 'success' : 'warning'}>{testResult.msg}</Alert>
           )}
-
-          <Divider />
-
-          {/* Optional decoded METAR/TAF via the user's own CheckWX key. */}
-          <Box>
-            <Typography variant="subtitle2" gutterBottom>Meteo aviação (METAR/TAF)</Typography>
-            <Typography variant="body2" color="text.secondary">
-              Mostra <strong>METAR e TAF</strong> de partida e chegada no detalhe do voo. Precisa
-              de uma chave gratuita <strong>CheckWX</strong> (regista em{' '}
-              <Link href="https://www.checkwxapi.com/" target="_blank" rel="noopener">checkwxapi.com</Link>).
-            </Typography>
-            <Alert severity="info" sx={{ mt: 1, py: 0, fontSize: '0.78rem' }}>
-              Chave <strong>pessoal e gratuita</strong> (~2000 pedidos/dia). Fica só neste
-              dispositivo e é enviada diretamente ao CheckWX.
-            </Alert>
-            <TextField
-              label="Chave CheckWX"
-              value={cwxKey}
-              onChange={(e) => { setCwxKey(e.target.value); setSaved(false); }}
-              type={showCwx ? 'text' : 'password'}
-              placeholder="A tua X-API-Key do CheckWX"
-              size="small"
-              fullWidth
-              sx={{ mt: 1 }}
-              autoComplete="off"
-              helperText="Fica só neste dispositivo."
-              InputProps={{
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton onClick={() => setShowCwx((s) => !s)} edge="end" size="small">
-                      {showCwx ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-            {getCheckwxKey() && (
-              <Button
-                onClick={() => { setCheckwxKey(''); setCwxKey(''); setSaved(true); setSnack('Chave CheckWX removida.'); }}
-                startIcon={<DeleteOutline />}
-                size="small"
-                variant="outlined"
-                color="error"
-                sx={{ mt: 1 }}
-              >
-                Remover chave
-              </Button>
-            )}
-          </Box>
 
           <Divider />
 

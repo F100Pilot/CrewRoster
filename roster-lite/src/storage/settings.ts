@@ -26,29 +26,6 @@ export function setAeroDataBoxKey(key: string): void {
   } catch {
     // ignore (private mode / storage disabled)
   }
-}
-
-// ── CheckWX key (optional, for decoded METAR/TAF) ──────────────────────────────────────
-// The user's own free CheckWX key, stored on this device only and sent directly to CheckWX
-// from the browser (their key, their device). Empty = the aviation weather feature is off.
-const CHECKWX_KEY = 'crewroster.checkwxKey';
-
-export function getCheckwxKey(): string {
-  try {
-    return localStorage.getItem(CHECKWX_KEY)?.trim() ?? '';
-  } catch {
-    return '';
-  }
-}
-
-export function setCheckwxKey(key: string): void {
-  try {
-    const v = key.trim();
-    if (v) localStorage.setItem(CHECKWX_KEY, v);
-    else localStorage.removeItem(CHECKWX_KEY);
-  } catch {
-    // ignore (private mode / storage disabled)
-  }
   window.dispatchEvent(new Event('aerodatabox-key-changed'));
 }
 
