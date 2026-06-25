@@ -294,29 +294,33 @@ function SunNightLine({ duty, date, trailing }: { duty: ParsedDuty; date: string
       <Box display="flex" justifyContent="center" mt={0.75}>
         <Chip size="small" variant="outlined" icon={chip.icon} label={chip.label} />
       </Box>
-      {/* sunrise/sunset card per airport, with any trailing cards (e.g. the live FLIC stand) on
-          the same row so the block stays compact rather than stacking vertically */}
+      {/* sunrise/sunset cards (+ caption) as one group, with any trailing card (the live FLIC
+          stand) beside it on the right so the block stays compact rather than stacking */}
       <Box display="flex" gap={1} justifyContent="center" alignItems="flex-start" flexWrap="wrap" mt={0.75}>
-        {airports.map((ap) => (
-          <Box key={ap.code} sx={{ px: 1.25, py: 0.5, borderRadius: 2, bgcolor: 'action.hover', textAlign: 'center', minWidth: 118 }}>
-            <Typography variant="caption" fontWeight={700} display="block">{ap.code}</Typography>
-            <Box display="flex" gap={1.25} alignItems="center" justifyContent="center">
-              <Box display="flex" alignItems="center" gap={0.25}>
-                <WbSunny sx={{ fontSize: 15, color: '#ffb300' }} />
-                <Typography variant="caption">{ap.t.sunriseUtc ?? '—'}</Typography>
+        <Box>
+          <Box display="flex" gap={1} justifyContent="center">
+            {airports.map((ap) => (
+              <Box key={ap.code} sx={{ px: 1.25, py: 0.5, borderRadius: 2, bgcolor: 'action.hover', textAlign: 'center', minWidth: 118 }}>
+                <Typography variant="caption" fontWeight={700} display="block">{ap.code}</Typography>
+                <Box display="flex" gap={1.25} alignItems="center" justifyContent="center">
+                  <Box display="flex" alignItems="center" gap={0.25}>
+                    <WbSunny sx={{ fontSize: 15, color: '#ffb300' }} />
+                    <Typography variant="caption">{ap.t.sunriseUtc ?? '—'}</Typography>
+                  </Box>
+                  <Box display="flex" alignItems="center" gap={0.25}>
+                    <Bedtime sx={{ fontSize: 14, color: '#5c6bc0' }} />
+                    <Typography variant="caption">{ap.t.sunsetUtc ?? '—'}</Typography>
+                  </Box>
+                </Box>
               </Box>
-              <Box display="flex" alignItems="center" gap={0.25}>
-                <Bedtime sx={{ fontSize: 14, color: '#5c6bc0' }} />
-                <Typography variant="caption">{ap.t.sunsetUtc ?? '—'}</Typography>
-              </Box>
-            </Box>
+            ))}
           </Box>
-        ))}
+          <Typography variant="caption" color="text.secondary" display="block" textAlign="center" mt={0.25} sx={{ opacity: 0.7 }}>
+            Nascer / pôr do sol (UTC)
+          </Typography>
+        </Box>
         {trailing}
       </Box>
-      <Typography variant="caption" color="text.secondary" display="block" textAlign="center" mt={0.25} sx={{ opacity: 0.7 }}>
-        Nascer / pôr do sol (UTC)
-      </Typography>
     </Box>
   );
 }
