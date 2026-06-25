@@ -1,7 +1,7 @@
 import { useMemo, useRef } from 'react';
 import { Box, Button, Card, CardContent, IconButton, Paper, Stack, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import { ChevronLeft, ChevronRight, Today } from '@mui/icons-material';
+import { ChevronLeft, ChevronRight, Today, IosShare } from '@mui/icons-material';
 import {
   addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, isToday,
   parseISO, startOfMonth, startOfWeek, subMonths,
@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import { useViewedMonth } from '../state/viewedMonth';
 import MonthStatsCard from '../components/MonthStatsCard';
+import { shareMonthImage } from '../utils/shareDay';
 import { dutyColor } from '../theme';
 import type { ParsedDuty } from '../domain/types';
 
@@ -33,7 +34,7 @@ const DUTY_LABELS: Record<string, string> = {
 };
 
 export default function CalendarPage() {
-  const { roster } = useRoster();
+  const { roster, activeUser } = useRoster();
   const navigate = useNavigate();
   const [month, setMonth] = useViewedMonth();
 
@@ -102,7 +103,16 @@ export default function CalendarPage() {
         <IconButton size="small" onClick={() => setMonth((m) => addMonths(m, 1))} aria-label="Mês seguinte">
           <ChevronRight />
         </IconButton>
-        <Box flex={1} display="flex" justifyContent="flex-end">
+        <Box flex={1} display="flex" justifyContent="flex-end" alignItems="center">
+          <IconButton
+            size="small"
+            color="primary"
+            aria-label="Partilhar o mês"
+            title="Partilhar o mês"
+            onClick={() => shareMonthImage(format(month, 'yyyy-MM'), roster?.duties ?? [], activeUser?.name)}
+          >
+            <IosShare fontSize="small" />
+          </IconButton>
           <Button size="small" startIcon={<Today />} onClick={() => setMonth(new Date())}>
             Hoje
           </Button>

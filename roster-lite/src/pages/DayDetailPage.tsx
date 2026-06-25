@@ -1,31 +1,45 @@
 import { Box, Card, CardContent, Chip, Divider, IconButton, Stack, Typography } from '@mui/material';
-import { ArrowBack, ChevronLeft, ChevronRight, FlightLand, FlightTakeoff, Hotel, IosShare, Phone } from '@mui/icons-material';
+import { ArrowBack, ChevronLeft, ChevronRight, FlightLand, FlightTakeoff, Hotel, IosShare, Phone, WbSunny, Bedtime, Brightness4 } from '@mui/icons-material';
 import { Link } from '@mui/material';
 import { addDays, format, parseISO } from 'date-fns';
 import { useEffect, useMemo, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import { dutyColor } from '../theme';
 import { toLocalTime } from '../utils/localTime';
 import { diffMinutes, formatDuration } from '../utils/duration';
 import { dayStats } from '../domain/dutyStats';
 import { restBefore } from '../domain/restPeriods';
+import { sectorSun } from '../domain/sectorSun';
 import { shareDayImage } from '../utils/shareDay';
+import type { ParsedDuty } from '../domain/types';
 import FlightWeather from '../components/FlightWeather';
 import FlightInfo from '../components/FlightInfo';
+import FlicStand from '../components/FlicStand';
 
 export default function DayDetailPage() {
   const { date } = useParams<{ date: string }>();
   const navigate = useNavigate();
   const { roster, activeUser } = useRoster();
 
-  // Open at the top (first duty of the day), not wherever the list was scrolled to when the
-  // flight was tapped. Re-runs when stepping to another day (arrows/swipe) so each lands at top.
-  useEffect(() => { window.scrollTo(0, 0); }, [date]);
-
+  const location = useLocation();
   const duties = (roster?.duties ?? []).filter((d) => d.date === date);
   const stats = dayStats(duties);
   const rest = date ? restBefore(roster?.duties ?? [], date) : null;
+
+  // When arriving from a specific flight (e.g. the "com quem voo" list), open ON that flight and
+  // highlight it; otherwise open at the top. Re-runs when stepping to another day (arrows/swipe).
+  const focus = location.state as { flightNumber?: string | null; dep?: string | null; arr?: string | null } | null;
+  const focusIdx = focus?.flightNumber
+    ? duties.findIndex((d) => d.flightNumber === focus.flightNumber
+        && d.departureAirport === focus.dep && d.arrivalAirport === focus.arr)
+    : -1;
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  useEffect(() => {
+    const el = focusIdx >= 0 ? cardRefs.current[focusIdx] : null;
+    if (el) el.scrollIntoView({ block: 'center' });
+    else window.scrollTo(0, 0);
+  }, [date, focusIdx]);
 
   // Step one calendar day at a time within the roster's date span, so swiping (or the
   // header arrows) flows through every day — including empty ones — not just days with
@@ -109,7 +123,12 @@ export default function DayDetailPage() {
       {duties.length === 0 && <Typography color="text.secondary">Sem registos neste dia.</Typography>}
 
       {duties.map((duty, i) => (
-        <Card key={i} variant="outlined">
+        <Card
+          key={i}
+          variant="outlined"
+          ref={(el: HTMLDivElement | null) => { cardRefs.current[i] = el; }}
+          sx={i === focusIdx ? { borderColor: 'primary.main', borderWidth: 2 } : undefined}
+        >
           <CardContent>
             <Box display="flex" alignItems="center" gap={1} mb={2} flexWrap="wrap">
               <Chip
@@ -174,6 +193,18 @@ export default function DayDetailPage() {
                       .join(' · ')}
                   </Typography>
                 )}
+                <SunNightLine
+                  duty={duty}
+                  date={date}
+                  trailing={
+                    <FlicStand
+                      flightNumber={duty.flightNumber}
+                      dep={duty.departureAirport}
+                      arr={duty.arrivalAirport}
+                      date={date ?? null}
+                    />
+                  }
+                />
                 {duty.hotel && <HotelLine hotel={duty.hotel} />}
               </Box>
             )}
@@ -230,6 +261,67 @@ export default function DayDetailPage() {
         </Card>
       ))}
     </Stack>
+  );
+}
+
+// Daylight / night for a sector, shown graphically: a bar mapping the flight (departure →
+// arrival) coloured day (amber) vs night (indigo) from the sampled sun profile; a chip for the
+// flight type; and a sunrise/sunset card per airport. Silent for non-network airports / no times.
+function SunNightLine({ duty, date, trailing }: { duty: ParsedDuty; date: string | undefined; trailing?: React.ReactNode }) {
+  const s = sectorSun(duty.departureAirport, duty.arrivalAirport, date ?? null, duty.departureTime, duty.arrivalTime);
+  if (!s) return null;
+  const dep = duty.departureAirport, arr = duty.arrivalAirport;
+  const airports = [{ code: dep, t: s.depSun }, ...(arr && arr !== dep ? [{ code: arr, t: s.arrSun }] : [])];
+  const chip = s.nightMin <= 0
+    ? { icon: <WbSunny sx={{ color: '#ffb300 !important' }} />, label: 'Voo diurno' }
+    : s.nightMin >= s.blockMin
+      ? { icon: <Bedtime sx={{ color: '#5c6bc0 !important' }} />, label: 'Voo noturno' }
+      : { icon: <Brightness4 sx={{ color: '#7e57c2 !important' }} />, label: `Diurno + ${formatDuration(s.nightMin)} de noite` };
+
+  return (
+    <Box mt={1.25}>
+      {/* endpoints: departure ← bar → arrival */}
+      <Box display="flex" justifyContent="space-between" mb={0.25}>
+        <Typography variant="caption" color="text.secondary">{dep} · {duty.departureTime}z</Typography>
+        <Typography variant="caption" color="text.secondary">{arr} · {duty.arrivalTime}z</Typography>
+      </Box>
+      {/* the day/night bar */}
+      <Box sx={{ display: 'flex', height: 12, borderRadius: 6, overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}>
+        {s.profile.map((day, i) => (
+          <Box key={i} sx={{ flex: 1, bgcolor: day ? '#ffb300' : '#1a237e' }} />
+        ))}
+      </Box>
+      <Box display="flex" justifyContent="center" mt={0.75}>
+        <Chip size="small" variant="outlined" icon={chip.icon} label={chip.label} />
+      </Box>
+      {/* sunrise/sunset cards (+ caption) as one group, with any trailing card (the live FLIC
+          stand) beside it on the right so the block stays compact rather than stacking */}
+      <Box display="flex" gap={1} justifyContent="center" alignItems="flex-start" flexWrap="wrap" mt={0.75}>
+        <Box>
+          <Box display="flex" gap={1} justifyContent="center">
+            {airports.map((ap) => (
+              <Box key={ap.code} sx={{ px: 1.25, py: 0.5, borderRadius: 2, bgcolor: 'action.hover', textAlign: 'center', minWidth: 118 }}>
+                <Typography variant="caption" fontWeight={700} display="block">{ap.code}</Typography>
+                <Box display="flex" gap={1.25} alignItems="center" justifyContent="center">
+                  <Box display="flex" alignItems="center" gap={0.25}>
+                    <WbSunny sx={{ fontSize: 15, color: '#ffb300' }} />
+                    <Typography variant="caption">{ap.t.sunriseUtc ?? '—'}</Typography>
+                  </Box>
+                  <Box display="flex" alignItems="center" gap={0.25}>
+                    <Bedtime sx={{ fontSize: 14, color: '#5c6bc0' }} />
+                    <Typography variant="caption">{ap.t.sunsetUtc ?? '—'}</Typography>
+                  </Box>
+                </Box>
+              </Box>
+            ))}
+          </Box>
+          <Typography variant="caption" color="text.secondary" display="block" textAlign="center" mt={0.25} sx={{ opacity: 0.7 }}>
+            Nascer / pôr do sol (UTC)
+          </Typography>
+        </Box>
+        {trailing}
+      </Box>
+    </Box>
   );
 }
 

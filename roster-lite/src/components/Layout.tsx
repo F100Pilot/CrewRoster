@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import {
   CalendarMonth, FormatListBulleted, CloudDownload, PictureAsPdf, Logout, HelpOutline,
-  Settings, MenuBook, QueryStats, Public, Badge,
+  Settings, MenuBook, QueryStats, Public, Badge, Search,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
@@ -76,6 +76,11 @@ export default function Layout({ children }: { children: ReactNode }) {
             </Tooltip>
           )}
           <UserSwitcher />
+          <Tooltip title="Pesquisar">
+            <IconButton color="inherit" onClick={() => navigate('/search')} aria-label="Pesquisar">
+              <Search />
+            </IconButton>
+          </Tooltip>
           <IconButton
             color="inherit"
             onClick={() => navigate('/codes')}

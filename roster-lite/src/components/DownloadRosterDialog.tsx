@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Alert, Box, Button, Chip, CircularProgress, Dialog, DialogContent, DialogTitle,
   IconButton, Link, Stack, TextField, Typography,
@@ -115,6 +115,9 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
   const [password, setPassword] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  // Hidden auto-login when saved credentials exist, so the login form is skipped.
+  const [autoLoggingIn, setAutoLoggingIn] = useState(false);
+  const autoTried = useRef(false);
 
   const [beginDate, setBeginDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState('');
@@ -135,15 +138,27 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
   // notification phase before confirming.
   const [notifReport, setNotifReport] = useState<NotificationReport | null>(null);
 
-  // Pre-fill the login fields from the ACTIVE user's saved credentials, resetting whenever the
-  // dialog opens or the active profile changes — so one profile's code/password never lingers
-  // for another. Falls back to the profile's own crew code, or empty when nothing is saved.
+  // Pre-fill the login fields from the ACTIVE user's saved credentials (resetting whenever the
+  // dialog opens or the active profile changes, so one profile's code/password never lingers for
+  // another) — and, when BOTH are saved, sign in automatically in the background and jump straight
+  // to the date-range step. The login form only appears when there are no saved credentials or the
+  // hidden sign-in fails.
   useEffect(() => {
-    if (!open) return;
+    if (!open) { autoTried.current = false; return; }
+    if (sessionToken) return;
     const cred = activeUser ? getCredentials(activeUser.id) : null;
     setCrewCode(cred?.crewCode ?? activeUser?.crewCode ?? '');
     setPassword(cred?.password ?? '');
-  }, [open, activeUser]);
+    if (!autoTried.current && cred?.crewCode && cred?.password) {
+      autoTried.current = true;
+      setAutoLoggingIn(true);
+      setAuthError(null);
+      login(cred.crewCode, cred.password)
+        .then((token) => { setSessionToken(token); setPassword(''); })
+        .catch((e) => setAuthError(e instanceof Error ? e.message : 'Erro de autenticação.'))
+        .finally(() => setAutoLoggingIn(false));
+    }
+  }, [open, sessionToken, activeUser, setSessionToken]);
 
   function resetReview() {
     setPreview(null);
@@ -413,6 +428,13 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
             </Stack>
           </Stack>
         ) : !sessionToken ? (
+          autoLoggingIn ? (
+            // ── Hidden auto-login (saved credentials) ──────────────────────────
+            <Stack alignItems="center" spacing={1.5} py={3}>
+              <CircularProgress size={28} />
+              <Typography variant="body2" color="text.secondary">A iniciar sessão no CrewLink…</Typography>
+            </Stack>
+          ) : (
           // ── Login phase ──────────────────────────────────────────────────────
           <Stack spacing={2} pt={0.5}>
             <Typography variant="body2" color="text.secondary">
@@ -448,6 +470,7 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
               {authLoading ? 'A autenticar…' : 'Entrar'}
             </Button>
           </Stack>
+          )
         ) : (
           // ── Download phase ───────────────────────────────────────────────────
           <Stack spacing={2} pt={0.5}>

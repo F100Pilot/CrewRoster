@@ -10,6 +10,7 @@
  *   POST /api/login       — autentica, devolve o JSESSIONID
  *   POST /api/roster      — usa a sessão para descarregar o PDF da escala
  *   POST /api/flightinfo  — dados operacionais do voo (matrícula, porta) via AeroDataBox
+ *   POST /api/metar       — METAR/TAF por ICAO via NOAA Aviation Weather Center (sem chave)
  *   GET  /health          — verificação de estado
  *
  * Segurança: as credenciais são reenviadas para netline.pga.pt por HTTPS e
@@ -820,6 +821,161 @@ async function handleFlightInfo(request, env) {
   return jsonResponse({ configured: true, flights }, 200, request);
 }
 
+// --- POST /api/metar -------------------------------------------------------
+// Decoded METAR/TAF for one or more airports (by ICAO), fetched server-side from the NOAA
+// Aviation Weather Center. AWC has no CORS, so the browser can't call it directly — the worker
+// does, then returns JSON the SPA can read. Keyless: AWC is a free public service.
+async function handleMetar(request) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return jsonResponse({ error: 'Invalid JSON body' }, 400, request);
+  }
+  // Sanitise to a comma-separated list of ICAO codes (letters/digits only).
+  const ids = String(body.ids || '').toUpperCase().replace(/[^A-Z0-9,]/g, '').slice(0, 120);
+  if (!ids) return jsonResponse({ stations: [] }, 200, request);
+
+  const AWC = 'https://aviationweather.gov/api/data';
+  const ua = 'CrewRoster/1.0 (+https://github.com/f100pilot/crewroster)';
+  const awc = async (kind) => {
+    try {
+      const r = await fetch(`${AWC}/${kind}?ids=${encodeURIComponent(ids)}&format=json`, { headers: { 'User-Agent': ua } });
+      if (!r.ok) return [];
+      const j = await r.json();
+      return Array.isArray(j) ? j : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const [metars, tafs] = await Promise.all([awc('metar'), awc('taf')]);
+  const byId = {};
+  const get = (k) => (byId[k] ||= { icao: k, metarRaw: null, tafRaw: null, category: null });
+  // Field names vary a little across AWC endpoints/versions, so accept both casings.
+  const tafOf = (o) => o.rawTAF || o.rawTaf || o.raw_taf || null;
+  for (const m of metars) {
+    const k = String(m.icaoId || '').toUpperCase();
+    if (!k) continue;
+    const s = get(k);
+    s.metarRaw = m.rawOb || s.metarRaw;
+    s.category = m.fltCat || m.fltcat || s.category;
+    s.tafRaw = tafOf(m) || s.tafRaw; // the METAR response sometimes carries the TAF too
+  }
+  for (const t of tafs) {
+    const k = String(t.icaoId || '').toUpperCase();
+    if (!k) continue;
+    const raw = tafOf(t);
+    if (raw) get(k).tafRaw = raw;
+  }
+  return jsonResponse({ stations: Object.values(byId) }, 200, request);
+}
+
+// --- POST /api/flic --------------------------------------------------------
+// Live stand/gate for a flight at the LIS/OPO hubs, scraped server-side from TAP's FLIC board
+// (flic.tap.pt is public but has no CORS, so the browser can't read it — the worker does). The
+// board only lists the current operational window, so a row only exists on/near the flight day.
+const FLIC_BASE = 'https://flic.tap.pt/FLIC_UI/FLIC.aspx?Id=';
+const BROWSER_UA =
+  'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Mobile Safari/537.36';
+const FLIC_IDS = new Set(['PGA-LIS_DEP', 'PGA-LIS_ARR', 'PGA-OPO_DEP', 'PGA-OPO_ARR']);
+
+function flicCleanText(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n))
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&quot;/gi, '"')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// Parse a FLIC departures/arrivals board into rows. Cells carry stable semantic ids
+// (TD_CARR_CD, TD_FLT_SUF, TD_FULL_ROUTE, TD_DEP_STAND, TD_DEP_STAT1, …); we key off those
+// rather than the OutSystems-generated wrapper ids, which can change between deploys.
+export function parseFlicBoard(html) {
+  let updated = '';
+  const um = /screenHeaderDate[\s\S]*?<div[^>]*>([^<]+)<\/div/i.exec(html);
+  if (um) updated = flicCleanText(um[1]);
+
+  const rows = [];
+  const trRe = /<tr\b[^>]*>([\s\S]*?)<\/tr>/gi;
+  let m;
+  while ((m = trRe.exec(html))) {
+    const rh = m[1];
+    if (!/id="TD_CARR_CD"/.test(rh)) continue; // skip header/title rows
+    const cells = {};
+    const tdRe = /<td\b[^>]*\bid="(TD_[A-Z0-9_]+)"[^>]*>([\s\S]*?)<\/td>/gi;
+    let c;
+    while ((c = tdRe.exec(rh))) {
+      if (!(c[1] in cells)) cells[c[1]] = flicCleanText(c[2]);
+    }
+    const findKey = (re) => {
+      for (const k in cells) if (re.test(k)) return cells[k];
+      return '';
+    };
+    const pick = (...ks) => {
+      for (const k of ks) {
+        const v = cells[k];
+        if (v != null && v !== '') return v;
+      }
+      return '';
+    };
+    const num = cells.TD_FLT_SUF || '';
+    if (!num) continue;
+    rows.push({
+      carrier: cells.TD_CARR_CD || '',
+      num,
+      // Departures board carries the destination in TD_FULL_ROUTE; the arrivals board has no
+      // TD_FULL_ROUTE and instead puts the origin in TD_DEP_AIRP_CD (first occurrence — the
+      // second is the onward/linked flight's destination, which we keep out of by taking the
+      // first id only). Either way, `route` is the airport at the non-hub end of this leg.
+      route: (cells.TD_FULL_ROUTE || cells.TD_DEP_AIRP_CD || '').trim(),
+      reg: cells.TD_AIRC_REG || '',
+      eqt: cells.TD_AIRC_TYP || '',
+      stand: (cells.TD_DEP_STAND ?? cells.TD_ARR_STAND ?? findKey(/STAND/)) || '',
+      std: pick('TD_DEP_STD_UTC', 'TD_ARR_STA_UTC') || findKey(/ST[AD]_UTC$/),
+      etd: pick('TD_DEP_ETD_UTC', 'TD_ARR_ETA_UTC') || findKey(/ET[AD]_UTC$/),
+      atd: pick('TD_DEP_ATD_UTC', 'TD_ARR_ATA_UTC') || findKey(/AT[AD]_UTC$/),
+      status: pick('TD_DEP_STAT1', 'TD_ARR_STAT1') || findKey(/STAT/),
+    });
+  }
+  return { updated, rows };
+}
+
+async function handleFlic(request) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return jsonResponse({ error: 'Invalid JSON body' }, 400, request);
+  }
+  const id = String(body.id || '').toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+  if (!FLIC_IDS.has(id)) return jsonResponse({ error: 'invalid board id' }, 400, request);
+
+  try {
+    const r = await fetch(`${FLIC_BASE}${encodeURIComponent(id)}`, {
+      headers: {
+        'User-Agent': BROWSER_UA,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'pt-PT,pt;q=0.9,en;q=0.8',
+      },
+      redirect: 'follow',
+    });
+    if (!r.ok) return jsonResponse({ id, updated: '', rows: [], error: `upstream_${r.status}` }, 200, request);
+    const html = await r.text();
+    const { updated, rows } = parseFlicBoard(html);
+    return jsonResponse({ id, updated, rows }, 200, request);
+  } catch {
+    return jsonResponse({ id, updated: '', rows: [], error: 'upstream_unreachable' }, 200, request);
+  }
+}
+
 // --- Router ----------------------------------------------------------------
 export default {
   async fetch(request, env) {
@@ -844,6 +1000,10 @@ export default {
         return handleRoster(request);
       case '/api/flightinfo':
         return handleFlightInfo(request, env);
+      case '/api/metar':
+        return handleMetar(request);
+      case '/api/flic':
+        return handleFlic(request);
       default:
         return jsonResponse({ error: 'Not found' }, 404, request);
     }

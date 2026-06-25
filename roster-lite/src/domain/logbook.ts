@@ -1,6 +1,7 @@
 import type { AircraftReg, LogbookRow, ParsedDuty } from './types';
 import { operatedFlights } from './flightTime';
 import { regMapKey, resolveRegs } from './aircraftRegs';
+import { sectorSun } from './sectorSun';
 import { logbookRowKey } from '../storage/rosterStore';
 import { diffMinutes, formatDuration } from '../utils/duration';
 
@@ -49,6 +50,17 @@ export function rowBlock(r: LogbookRow): number {
   return diffMinutes(r.off, r.on);
 }
 
+// Night minutes of a row, estimated from the sun along the sector (0 when the airports are
+// outside the curated network). Airline sectors are flown under IFR, so IFR time = block.
+export function rowNight(r: LogbookRow): number {
+  return sectorSun(r.from, r.to, r.date, r.off, r.on)?.nightMin ?? 0;
+}
+
+// Whether the landing (arrival) is at night — for night-landing recency and the logbook export.
+export function rowNightLanding(r: LogbookRow): boolean {
+  return sectorSun(r.from, r.to, r.date, r.off, r.on)?.arrDay === false;
+}
+
 // Chronological order: by date, then by off-block time within the day.
 export function sortLogbook(rows: LogbookRow[]): LogbookRow[] {
   return [...rows].sort((a, b) => (a.date === b.date ? a.off.localeCompare(b.off) : a.date.localeCompare(b.date)));
@@ -92,11 +104,24 @@ export function mergeLogbook(
 }
 
 // CSV (CRLF, spreadsheet-friendly) straight from the persisted rows.
+// EASA-style export: one row per sector with block, IFR (= block, airline ops), night time and
+// day/night landings — the columns a logbook (and importers like mccPILOTLOG) need. Times are
+// "HH:mm" so a spreadsheet keeps them as durations.
 export function logbookCsvRows(rows: LogbookRow[]): string {
-  const header = ['Data', 'Voo', 'De', 'Para', 'Off (UTC)', 'On (UTC)', 'Bloco', 'Aeronave', 'Matrícula'];
-  const body = sortLogbook(rows).map((r) => [
-    r.date, r.flightNumber, r.from, r.to, r.off, r.on, formatDuration(rowBlock(r)), r.aircraft, r.reg,
-  ]);
+  const header = [
+    'Data', 'Voo', 'De', 'Off (UTC)', 'Para', 'On (UTC)', 'Aeronave', 'Matrícula',
+    'Bloco', 'IFR', 'Noite', 'Aterr. dia', 'Aterr. noite',
+  ];
+  const body = sortLogbook(rows).map((r) => {
+    const block = rowBlock(r);
+    const night = rowNight(r);
+    const nightLdg = rowNightLanding(r);
+    return [
+      r.date, r.flightNumber, r.from, r.off, r.to, r.on, r.aircraft, r.reg,
+      formatDuration(block), formatDuration(block), formatDuration(night),
+      nightLdg ? '0' : '1', nightLdg ? '1' : '0',
+    ];
+  });
   return [header, ...body].map((r) => r.map(csvCell).join(',')).join('\r\n');
 }
 

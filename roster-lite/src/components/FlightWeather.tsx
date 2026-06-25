@@ -6,6 +6,7 @@ import {
 import { Air, Close } from '@mui/icons-material';
 import { fetchTurbulence, windyEmbedUrl, type TurbulenceForecast, type TurbulenceLevel } from '../utils/turbulence';
 import AirportWeather from './AirportWeather';
+import MetarTaf from './MetarTaf';
 import type { ParsedDuty } from '../domain/types';
 
 const LEVEL: Record<TurbulenceLevel, { label: string; color: string }> = {
@@ -76,6 +77,10 @@ export default function FlightWeather({ duty, date }: { duty: ParsedDuty; date: 
             <AirportWeather icao={duty.departureAirport} label="Partida" dateISO={date} timeUtc={duty.departureTime} />
             <AirportWeather icao={duty.arrivalAirport} label="Chegada" dateISO={date} timeUtc={duty.arrivalTime} />
           </Box>
+
+          {/* Decoded METAR/TAF — only when a CheckWX key is configured. */}
+          <MetarTaf dep={duty.departureAirport} arr={duty.arrivalAirport} />
+
 
           <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
             Mapa de turbulência (CAT) ao nível de cruzeiro (~FL340), via Windy.
