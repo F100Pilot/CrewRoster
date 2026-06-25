@@ -293,11 +293,10 @@ export default function LogbookPage() {
           >
             <TableHead>
               <TableRow>
-                <TableCell sx={{ width: '13%' }}>Data</TableCell>
+                <TableCell sx={{ width: '14%' }}>Data</TableCell>
                 <TableCell>Voo / Rota</TableCell>
-                <TableCell sx={{ width: '14%' }}>Bloco</TableCell>
-                <TableCell sx={{ width: '13%' }}>Noite</TableCell>
-                <TableCell sx={{ width: '24%' }}>Avião</TableCell>
+                <TableCell sx={{ width: '17%' }}>Bloco</TableCell>
+                <TableCell sx={{ width: '27%' }}>Avião</TableCell>
                 <TableCell sx={{ width: '9%' }} />
               </TableRow>
             </TableHead>
@@ -310,7 +309,7 @@ export default function LogbookPage() {
                   onClick={() => toggleMonth(g.key)}
                 >
                   <TableCell
-                    colSpan={6}
+                    colSpan={5}
                     sx={{ textAlign: 'left !important', py: 0.5, fontWeight: 600, whiteSpace: 'nowrap' }}
                   >
                     <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', verticalAlign: 'middle' }}>
@@ -329,9 +328,11 @@ export default function LogbookPage() {
                       <Box sx={{ fontWeight: 600 }}>{e.flightNumber}{e.edited ? ' ✎' : ''}</Box>
                       <Box sx={{ color: 'text.secondary', fontSize: '0.8rem' }}>{e.from}–{e.to}</Box>
                     </TableCell>
-                    <TableCell sx={{ whiteSpace: 'nowrap' }}>{formatDuration(rowBlock(e))}</TableCell>
-                    <TableCell sx={{ whiteSpace: 'nowrap', color: (nightByKey.get(e.key) ?? 0) > 0 ? 'text.primary' : 'text.disabled' }}>
-                      {(nightByKey.get(e.key) ?? 0) > 0 ? formatDuration(nightByKey.get(e.key)!) : '—'}
+                    <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                      <Box>{formatDuration(rowBlock(e))}</Box>
+                      {(nightByKey.get(e.key) ?? 0) > 0 && (
+                        <Box sx={{ color: '#5c6bc0', fontSize: '0.78rem' }}>🌙 {formatDuration(nightByKey.get(e.key)!)}</Box>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Box>{e.aircraft || '—'}</Box>
