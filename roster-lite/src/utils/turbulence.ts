@@ -160,9 +160,9 @@ export async function fetchTurbulence(
   }
 }
 
-// A Windy embed URL centred on the route midpoint, wind overlay at ~FL340 (250 hPa).
-// The dedicated turbulence overlay is Windy Premium and not available in the free
-// embed, so we show wind at cruise level as the visual proxy.
+// A Windy embed URL centred on the route midpoint, showing Windy's CAT/turbulence overlay at
+// ~FL340 (250 hPa) — the clear-air-turbulence layer the user asked for. (Windy's turbulence
+// overlay may require a Windy account/Premium to render in full; it falls back gracefully.)
 export function windyEmbedUrl(dep: string | null, arr: string | null): string | null {
   const a = dep ? AIRPORT_COORD[dep.toUpperCase()] : undefined;
   const b = arr ? AIRPORT_COORD[arr.toUpperCase()] : undefined;
@@ -175,7 +175,7 @@ export function windyEmbedUrl(dep: string | null, arr: string | null): string | 
     detailLon: mid.lon.toFixed(3),
     zoom: '5',
     level: '250h',
-    overlay: 'wind',
+    overlay: 'turbulence',
     menu: '',
     message: '',
     marker: 'true',

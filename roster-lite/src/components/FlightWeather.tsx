@@ -77,10 +77,13 @@ export default function FlightWeather({ duty, date }: { duty: ParsedDuty; date: 
             <AirportWeather icao={duty.arrivalAirport} label="Chegada" dateISO={date} timeUtc={duty.arrivalTime} />
           </Box>
 
+          <Typography variant="caption" color="text.secondary" display="block" mb={0.5}>
+            Mapa de turbulência (CAT) ao nível de cruzeiro (~FL340), via Windy.
+          </Typography>
           <Box sx={{ borderRadius: 2, overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}>
             {open && (
               <iframe
-                title="Mapa meteorológico da rota"
+                title="Mapa de turbulência (CAT) da rota"
                 src={mapUrl}
                 width="100%"
                 height={fullScreen ? 420 : 360}

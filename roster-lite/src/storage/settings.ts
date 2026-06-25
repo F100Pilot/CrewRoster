@@ -95,8 +95,9 @@ export function setTourSeen(): void {
 }
 
 // ── Beta disclaimer ───────────────────────────────────────────────────────────────────
-// Whether the user has acknowledged the beta disclaimer (so the on-open notice shows once).
-const DISCLAIMER_SEEN = 'crewroster.disclaimerSeen';
+// Whether the user ticked "não voltar a mostrar" — until then the beta notice shows on EVERY
+// open. New key (v2) so the change of behaviour re-shows the notice to everyone once.
+const DISCLAIMER_SEEN = 'crewroster.disclaimerDismissed';
 
 export function getDisclaimerSeen(): boolean {
   try {

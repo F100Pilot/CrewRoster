@@ -45,7 +45,7 @@ describe('windyEmbedUrl', () => {
   it('builds an embed URL centred between the two airports', () => {
     const url = windyEmbedUrl('LIS', 'NCE');
     expect(url).toContain('embed.windy.com/embed2.html');
-    expect(url).toContain('overlay=wind');
+    expect(url).toContain('overlay=turbulence');
     expect(url).toContain('level=250h');
   });
 });
