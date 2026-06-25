@@ -84,14 +84,38 @@ dia/noite** — colunas compatíveis com logbook EASA / importadores (mccPILOTLO
 
 ---
 
+### 6. QoL — Pesquisa global
+Ícone de **lupa** na barra de topo → página de pesquisa que percorre a escala:
+**voo** (número, aeroporto, rota, tripulante), **tipo de serviço** e **datas**.
+Cada resultado salta para o dia (e foca o voo).
+
+- **Ficheiros:** `roster-lite/src/domain/rosterSearch.ts`,
+  `roster-lite/src/pages/SearchPage.tsx`, `App.tsx` (rota `/search`),
+  `roster-lite/src/components/Layout.tsx` (ícone na barra).
+- **Testar:** lupa no topo → procurar "TP400", "RAK", apelido de um colega, "30/06".
+
+---
+
 ## A implementar a seguir na exp (pedido, ainda por fazer)
 
-- **TAF descodificado** à partida/chegada (tempo significativo sinalizado).
-- **Visualização/QoL:** pesquisa global na escala; estatísticas anuais (heatmap,
-  aeroportos/países); partilhar o mês como imagem.
+- **TAF/METAR descodificado** à partida/chegada. ⚠️ _Bloqueio:_ o
+  `aviationweather.gov` não tem CORS e o proxy da app está noutro repositório.
+  Opções a decidir: (a) chave grátis opcional (CheckWX/AVWX) nas Definições, à
+  semelhança do AeroDataBox; (b) proxy CORS público (menos robusto); (c) manter
+  o Open-Meteo atual com apresentação mais aeronáutica (sem TAF oficial).
+- **Visualização/QoL (resto):** estatísticas anuais (heatmap, aeroportos/países);
+  partilhar o mês como imagem.
 
 ## TODO / Backlog (decidir mais tarde)
 
+- **Stand em LIS/OPO via FLIC da TAP** — fonte robusta encontrada pelo utilizador
+  (páginas internas `flic.tap.pt`):
+  - `https://flic.tap.pt/FLIC_UI/FLIC.aspx?Id=PGA-LIS_ARR`
+  - `https://flic.tap.pt/FLIC_UI/FLIC.aspx?Id=PGA-LIS_DEP`
+  - `https://flic.tap.pt/FLIC_UI/FLIC.aspx?Id=PGA-OPO_ARR`
+  - `https://flic.tap.pt/FLIC_UI/FLIC.aspx?Id=PGA-OPO_DEP`
+  - _A investigar:_ provavelmente exige rede/login TAP e CORS bloqueado →
+    abrir link / scraping autenticado; ver como integrar (talvez "abrir FLIC" por voo).
 - **Painel de FTL / fadiga** (contadores 7/14/28 dias e 12 meses, avisos de
   limite, FDP máximo). _Precisa dos limites reais da Portugália._
 - **Lembretes locais (notificações da PWA)** para check-in e documentos a expirar.
