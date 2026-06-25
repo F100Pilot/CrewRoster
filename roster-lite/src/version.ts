@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.6';
+export const APP_VERSION = '0.8.7';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,15 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.7',
+    date: '2026-06-25',
+    highlights: [
+      'Turbulência mais precisa: estimada em vários pontos da rota com o índice de Ellrod (shear + deformação), além do CAPE.',
+      'Meteo da rota: o mapa passa a mostrar a camada de turbulência (CAT) ao nível de cruzeiro.',
+      'O aviso de versão beta aparece sempre até marcares “Tomei conhecimento. Não voltar a mostrar o aviso.”.',
+    ],
+  },
   {
     version: '0.8.6',
     date: '2026-06-24',
