@@ -94,6 +94,17 @@ Cada resultado salta para o dia (e foca o voo).
   `roster-lite/src/components/Layout.tsx` (ícone na barra).
 - **Testar:** lupa no topo → procurar "TP400", "RAK", apelido de um colega, "30/06".
 
+### 7. QoL — Heatmap anual + partilhar o mês
+Em **Estatísticas**, um **heatmap de atividade** por ano (estilo GitHub: dias
+coloridos pelo bloco voado). No **Calendário**, botão de **partilhar o mês** —
+gera uma imagem com totais (dias, setores, bloco) e as rotas mais voadas.
+
+- **Ficheiros:** `roster-lite/src/domain/activity.ts`,
+  `roster-lite/src/components/YearHeatmap.tsx`, `roster-lite/src/pages/StatsPage.tsx`,
+  `roster-lite/src/utils/shareDay.ts` (`shareMonthImage`),
+  `roster-lite/src/pages/CalendarPage.tsx` (botão partilhar).
+- **Testar:** Estatísticas → ver o heatmap; Calendário → ícone de partilhar.
+
 ---
 
 ## A implementar a seguir na exp (pedido, ainda por fazer)
@@ -103,8 +114,6 @@ Cada resultado salta para o dia (e foca o voo).
   Opções a decidir: (a) chave grátis opcional (CheckWX/AVWX) nas Definições, à
   semelhança do AeroDataBox; (b) proxy CORS público (menos robusto); (c) manter
   o Open-Meteo atual com apresentação mais aeronáutica (sem TAF oficial).
-- **Visualização/QoL (resto):** estatísticas anuais (heatmap, aeroportos/países);
-  partilhar o mês como imagem.
 
 ## TODO / Backlog (decidir mais tarde)
 

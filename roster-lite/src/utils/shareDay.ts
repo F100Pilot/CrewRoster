@@ -1,6 +1,8 @@
 import { format, parseISO } from 'date-fns';
+import { pt } from 'date-fns/locale';
 import { diffMinutes, formatDuration } from './duration';
 import { downloadBlob } from './download';
+import { operatedFlights } from '../domain/flightTime';
 import { APP_NAME, APP_VERSION_LABEL } from '../version';
 import type { ParsedDuty } from '../domain/types';
 
@@ -123,6 +125,108 @@ function renderCard(date: string, duties: ParsedDuty[], subtitle?: string): HTML
   ctx.fillText(`Gerado por ${APP_NAME} ${APP_VERSION_LABEL}`, pad, H - pad + 4);
 
   return canvas;
+}
+
+// A shareable summary card for a whole month (YYYY-MM): totals + the routes flown, ranked.
+function renderMonthCard(monthKey: string, duties: ParsedDuty[], subtitle?: string): HTMLCanvasElement {
+  const flights = operatedFlights(duties.filter((d) => d.date.startsWith(monthKey)));
+  const flightDays = new Set(flights.map((d) => d.date)).size;
+  const block = flights.reduce((s, d) => s + diffMinutes(d.departureTime!, d.arrivalTime!), 0);
+  const routeCount = new Map<string, number>();
+  for (const d of flights) {
+    const r = `${d.departureAirport ?? '—'}–${d.arrivalAirport ?? '—'}`;
+    routeCount.set(r, (routeCount.get(r) ?? 0) + 1);
+  }
+  const routes = [...routeCount.entries()].sort((a, b) => b[1] - a[1]).slice(0, 12);
+  const title = format(parseISO(`${monthKey}-01`), 'MMMM yyyy', { locale: pt });
+
+  const scale = 2, W = 540, pad = 32;
+  let H = pad + 44 + 44 + (subtitle ? 24 : 0) + 30 + 34 + 28 + routes.length * 26 + 44;
+  H = Math.max(H, 300);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = W * scale;
+  canvas.height = H * scale;
+  const ctx = canvas.getContext('2d')!;
+  ctx.scale(scale, scale);
+  ctx.textBaseline = 'alphabetic';
+
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, C.top);
+  g.addColorStop(1, C.bottom);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+
+  let y = pad + 24;
+  ctx.fillStyle = C.white;
+  ctx.font = `700 22px ${FONT}`;
+  ctx.fillText('✈ CrewRoster', pad, y);
+  y += 44;
+
+  ctx.font = `700 28px ${FONT}`;
+  ctx.fillText(title.charAt(0).toUpperCase() + title.slice(1), pad, y);
+  y += subtitle ? 26 : 20;
+  if (subtitle) {
+    ctx.fillStyle = C.dim;
+    ctx.font = `400 16px ${FONT}`;
+    ctx.fillText(subtitle, pad, y);
+    y += 22;
+  }
+
+  y += 6;
+  ctx.strokeStyle = C.rule;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(pad, y);
+  ctx.lineTo(W - pad, y);
+  ctx.stroke();
+  y += 30;
+
+  ctx.fillStyle = C.accent;
+  ctx.font = `600 19px ${FONT}`;
+  ctx.fillText(`${flightDays} dias · ${flights.length} setores · Bloco ${formatDuration(block)}`, pad, y);
+  y += 34;
+
+  for (const [route, n] of routes) {
+    ctx.fillStyle = C.white;
+    ctx.font = `400 18px ${FONT}`;
+    ctx.textAlign = 'left';
+    ctx.fillText(route, pad, y);
+    ctx.fillStyle = C.dim;
+    ctx.textAlign = 'right';
+    ctx.fillText(`×${n}`, W - pad, y);
+    ctx.textAlign = 'left';
+    y += 26;
+  }
+
+  ctx.fillStyle = C.faint;
+  ctx.font = `400 13px ${FONT}`;
+  ctx.fillText(`Gerado por ${APP_NAME} ${APP_VERSION_LABEL}`, pad, H - pad + 4);
+  return canvas;
+}
+
+async function shareCanvas(canvas: HTMLCanvasElement, fileName: string, title: string, text: string): Promise<void> {
+  const blob = await new Promise<Blob>((resolve, reject) =>
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Falha ao gerar imagem'))), 'image/png')
+  );
+  const file = new File([blob], fileName, { type: 'image/png' });
+  const nav = navigator as Navigator & { canShare?: (data: ShareData) => boolean };
+  if (nav.canShare && nav.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title, text });
+      return;
+    } catch (e) {
+      if (e instanceof Error && e.name === 'AbortError') return;
+    }
+  }
+  downloadBlob(blob, fileName);
+}
+
+// Share a whole month's roster summary as a branded image.
+export async function shareMonthImage(monthKey: string, duties: ParsedDuty[], subtitle?: string): Promise<void> {
+  const canvas = renderMonthCard(monthKey, duties, subtitle);
+  const title = format(parseISO(`${monthKey}-01`), 'MMMM yyyy', { locale: pt });
+  await shareCanvas(canvas, `escala-${monthKey}.png`, 'Escala', `Escala de ${title}`);
 }
 
 export async function shareDayImage(date: string, duties: ParsedDuty[], subtitle?: string): Promise<void> {
