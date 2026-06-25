@@ -37,20 +37,45 @@ confirmar no portal e descarregar a nova escala.
 - **Lista** — duties agrupados por dia com navegação por mês e indicador "Hoje".
 - **Calendário** — grelha mensal com cor por tipo de duty, totais semanais e
   indicador de dias com hotel.
-- **Detalhe do dia** — report, STD/STA, rota, aeronave, observações, hotel, clima e
-  FTL (tempo de repouso mínimo legal). Swipe esquerda/direita para mudar de dia.
+- **Detalhe do dia** — report, STD/STA, rota, aeronave, observações, hotel, repouso
+  mínimo legal, tripulação por voo (ícone 👥, **em testes**), nascer/pôr do sol e
+  tempo noturno por setor, **METAR/TAF** descodificado e **stand ao vivo (FLIC TAP)**
+  nos hubs LIS/OPO. Swipe esquerda/direita para mudar de dia.
+
+### Tripulação por voo (em testes)
+- Cada voo mostra a tripulação escalada (do "Crew Information on Leg" do PDF).
+- **"Com quem voo"**: toca num tripulante para ver todos os voos partilhados com
+  esse colega, com pesquisa por código/apelido.
+- ⚠️ Em testes — confirma sempre na escala oficial do CrewLink (separador "PDFs").
+
+### Meteo da rota
+- **METAR/TAF** descodificado de partida e chegada, com categoria de voo
+  (VFR/MVFR/IFR/LIFR) a cores. Sem chave — o worker vai buscar ao **NOAA Aviation
+  Weather Center** do lado do servidor (o AWC não tem CORS).
+- Nascer/pôr do sol em UTC por aeroporto e barra dia/noite por setor.
+- Camada de turbulência (CAT) ao nível de cruzeiro no mapa da rota.
+
+### Stand ao vivo (FLIC TAP)
+- Nos voos de/para **Lisboa e Porto**, o stand real aparece no banner **no próprio
+  dia**. O worker faz scraping da board do FLIC (`flic.tap.pt`, público mas sem CORS)
+  e cruza pelo número de voo + aeroporto.
 
 ### Diário de bordo (logbook)
 - Registo permanente de sectores voados (separado da escala — sobrevive a limpezas).
 - Matrícula da aeronave registada via **AeroDataBox** (RapidAPI).
 - Inferência de matrícula por rotação no mesmo dia (poupa chamadas à API).
+- **Tempo noturno** por setor (calculado a partir do sol ao longo da rota).
+- **Exportação CSV no estilo EASA** (IFR, noite, aterragens dia/noite) — compatível
+  com importadores como o mccPILOTLOG.
 - Edição manual linha a linha.
-- Exportação futura para CSV (ver TODO.md).
 
 ### Estatísticas
 - Horas de bloco por ano e totais acumulados.
 - Sectores, aeroportos visitados e tipos de aeronave.
 - Top aeroportos e distribuição de frotas.
+- **Heatmap de atividade anual** (estilo GitHub) por bloco voado.
+- **Pesquisa global** (lupa no topo): voos, aeroportos, rotas, colegas, datas.
+- **Partilhar o mês** como imagem (totais + rotas mais voadas).
 
 ### Mapa de voos
 - Mapa mundial offline com **d3-geo** (projeção Mercator) e World Atlas (TopoJSON).
@@ -79,16 +104,18 @@ confirmar no portal e descarregar a nova escala.
 
 | Camada | Tecnologia |
 |---|---|
-| UI | React 18 + MUI v5 + Emotion |
-| Build | Vite 5 + TypeScript 5 |
-| Testes | Vitest 2 |
-| PDF parsing | pdf.js (pdfjs-dist) |
-| Persistência local | IndexedDB via idb v8 |
-| Datas | date-fns 3 |
+| UI | React 19 + MUI 7 + Emotion |
+| Build | Vite 7 + TypeScript 5 |
+| Testes | Vitest 3 (207 testes) |
+| PDF parsing | pdf.js (pdfjs-dist 4) |
+| Persistência local | IndexedDB via idb 8 |
+| Datas | date-fns 4 |
 | Mapa | d3-geo + world-atlas + topojson-client |
 | PWA | vite-plugin-pwa (Workbox) |
 | Proxy CORS | Cloudflare Worker (`roster-lite/worker/`) |
 | Dados de voo | AeroDataBox (RapidAPI) |
+| Meteo | NOAA Aviation Weather Center (via worker, sem chave) |
+| Stand | FLIC TAP (scraping via worker) |
 
 ---
 
@@ -147,8 +174,9 @@ antes→depois por dia alterado.
 cd roster-lite
 npm install
 npm run dev        # http://localhost:5173
-npm test           # testes unitários (Vitest) — 141 testes
-npm run typecheck  # verificação de tipos TypeScript
+npm test           # testes unitários (Vitest) — 207 testes
+npm run typecheck  # verificação de tipos TypeScript (tsc -b)
+npm run lint       # ESLint
 npm run build      # gera dist/ (site estático)
 npm run preview    # serve o build de produção localmente
 ```
@@ -169,9 +197,15 @@ roster-lite/
 │   │   ├── dutyType.ts         # inferDutyType()
 │   │   ├── aircraftRegs.ts     # resolveRegs(), rotationChains()
 │   │   ├── flightMap.ts        # coordenadas de aeroportos para o mapa
-│   │   ├── logbook.ts          # mergeLogbook(), recencyStatus()
+│   │   ├── logbook.ts          # mergeLogbook(), recencyStatus(), CSV EASA + tempo noturno
 │   │   ├── rosterDiff.ts       # diffRosters() — what changed vs previous import
-│   │   └── dutyStats.ts        # totalBlock(), sectorCount()…
+│   │   ├── dutyStats.ts        # totalBlock(), sectorCount()…
+│   │   ├── sectorSun.ts        # nascer/pôr do sol + tempo noturno por setor (ortodrómica)
+│   │   ├── flic.ts             # stand ao vivo FLIC: flicLegsFor(), fetchFlicStands()
+│   │   ├── crewSearch.ts       # "com quem voo": flightsWithColleague(), allColleagues()
+│   │   ├── rosterSearch.ts     # pesquisa global na escala
+│   │   ├── activity.ts         # heatmap anual de atividade
+│   │   └── iataToIcao.json     # tabela IATA→ICAO (lazy chunk, p/ METAR)
 │   ├── parsing/                # parsers (descritos acima)
 │   ├── storage/
 │   │   ├── rosterStore.ts      # IndexedDB: roster, logbook, docs, aircraft regs, PDFs
@@ -182,7 +216,8 @@ roster-lite/
 │   │   ├── colorMode.tsx       # ColorModeProvider + useColorMode()
 │   │   └── viewedMonth.ts      # useViewedMonth() — mantém o mês ao navegar
 │   ├── services/
-│   │   └── crewlinkApi.ts      # fetchRoster(), fetchFlightInfo() via Cloudflare Worker
+│   │   ├── crewlinkApi.ts      # fetchRoster(), fetchFlightInfo() via Cloudflare Worker
+│   │   └── metarTaf.ts         # fetchAirportWx() — METAR/TAF via worker (NOAA AWC)
 │   ├── utils/
 │   │   ├── icsExport.ts        # downloadIcs() — exportação .ics com alarmes
 │   │   ├── googleCalendar.ts   # syncToGoogleCalendar() (suspenso — ver TODO.md)
@@ -235,12 +270,24 @@ bash deploy.sh
 
 ## Proxy Cloudflare Worker
 
-O worker em `worker/worker.js` serve como proxy CORS para dois serviços externos:
+O worker em `worker/worker.js` (ficheiro único, autónomo) serve como proxy CORS para
+vários serviços externos. Só as origens da SPA (`ALLOWED_ORIGINS`) podem usar os
+endpoints `/api/*`:
 
 | Endpoint | Destino | Uso |
 |---|---|---|
-| `GET /api/roster` | netline.pga.pt | Download da escala em PDF |
-| `GET /api/flightinfo` | AeroDataBox (RapidAPI) | Matrícula, terminal, estado do voo |
+| `POST /api/login` | netline.pga.pt | Autentica, devolve o JSESSIONID |
+| `POST /api/roster` | netline.pga.pt | Download da escala em PDF |
+| `POST /api/flightinfo` | AeroDataBox (RapidAPI) | Matrícula, terminal, estado do voo |
+| `POST /api/metar` | NOAA Aviation Weather Center | METAR/TAF por ICAO (sem chave) |
+| `POST /api/flic` | flic.tap.pt | Stand ao vivo dos hubs LIS/OPO (scraping) |
+| `GET /health` | — | Verificação de estado |
 
 A chave AeroDataBox é fornecida pelo utilizador nas Definições e enviada por header
-em cada pedido — nunca fica no bundle ou no repositório.
+em cada pedido — nunca fica no bundle ou no repositório. As credenciais CrewLink são
+reenviadas para o NetLine por HTTPS e nunca guardadas/registadas pelo worker.
+
+O worker faz **auto-deploy** (workflow `deploy-worker.yml`) ao fazer push para
+`master` quando `worker/worker.js` muda; também se pode disparar manualmente
+(`workflow_dispatch`). A app só ativa METAR/FLIC quando `VITE_API_URL` está definido
+no build (caso contrário o código é eliminado por dead-code-elimination).
