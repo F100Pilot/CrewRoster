@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   Alert, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle,
-  Divider, IconButton, InputAdornment, Link, Stack, TextField, ToggleButton,
+  Divider, IconButton, InputAdornment, Link, Snackbar, Stack, TextField, ToggleButton,
   ToggleButtonGroup, Typography,
 } from '@mui/material';
 import { Close, Visibility, VisibilityOff, CheckCircle, Science, CalendarMonth, DeleteOutline, BugReport, DarkMode, LightMode, InfoOutlined, Backup, Restore, School, CloudDownload } from '@mui/icons-material';
@@ -38,6 +38,8 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
   const [showCred, setShowCred] = useState(false);
   const [show, setShow] = useState(false);
   const [saved, setSaved] = useState(false);
+  // Transient confirmation popup (e.g. after saving CrewLink credentials).
+  const [snack, setSnack] = useState<string | null>(null);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; msg: string } | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
@@ -121,6 +123,9 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
       setCredentials(activeUser.id, { crewCode: credCode.trim(), password: credPassword });
     }
     setSaved(true);
+    if (credCode.trim() || credPassword) {
+      setSnack('Credenciais do CrewLink guardadas neste dispositivo.');
+    }
   }
 
   function handleForgetCredentials() {
@@ -128,6 +133,7 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
     setCredCode('');
     setCredPassword('');
     setSaved(true);
+    setSnack('Credenciais removidas deste dispositivo.');
   }
 
   function handleRemove() {
@@ -519,6 +525,17 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
           <Button onClick={() => setReadmeOpen(false)}>Fechar</Button>
         </DialogActions>
       </Dialog>
+
+      <Snackbar
+        open={!!snack}
+        autoHideDuration={3000}
+        onClose={() => setSnack(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity="success" variant="filled" onClose={() => setSnack(null)} sx={{ width: '100%' }}>
+          {snack}
+        </Alert>
+      </Snackbar>
     </Dialog>
   );
 }
