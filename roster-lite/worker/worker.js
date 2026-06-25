@@ -970,7 +970,11 @@ export function parseFlicBoard(html) {
     rows.push({
       carrier: cells.TD_CARR_CD || '',
       num,
-      route: (cells.TD_FULL_ROUTE || '').trim(),
+      // Departures board carries the destination in TD_FULL_ROUTE; the arrivals board has no
+      // TD_FULL_ROUTE and instead puts the origin in TD_DEP_AIRP_CD (first occurrence — the
+      // second is the onward/linked flight's destination, which we keep out of by taking the
+      // first id only). Either way, `route` is the airport at the non-hub end of this leg.
+      route: (cells.TD_FULL_ROUTE || cells.TD_DEP_AIRP_CD || '').trim(),
       reg: cells.TD_AIRC_REG || '',
       eqt: cells.TD_AIRC_TYP || '',
       stand: (cells.TD_DEP_STAND ?? cells.TD_ARR_STAND ?? findKey(/STAND/)) || '',
