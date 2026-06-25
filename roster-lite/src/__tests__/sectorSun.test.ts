@@ -10,6 +10,8 @@ describe('sectorSun', () => {
     expect(s.arrDay).toBe(true);
     expect(s.nightMin).toBe(0);
     expect(s.blockMin).toBe(60);
+    expect(s.profile.length).toBe(33);
+    expect(s.profile.every(Boolean)).toBe(true); // all-day profile for the bar
     expect(s.depSun.sunriseUtc).toMatch(/^0[45]:/); // sunrise around 05z
   });
 
@@ -18,6 +20,7 @@ describe('sectorSun', () => {
     expect(s.depDay).toBe(false);
     expect(s.nightMin).toBeGreaterThan(0);
     expect(s.nightMin).toBeLessThanOrEqual(s.blockMin);
+    expect(s.profile.some((d) => !d)).toBe(true); // some night in the profile
   });
 
   it('handles an overnight sector (arrival past midnight) without going negative', () => {

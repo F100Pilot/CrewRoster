@@ -14,6 +14,7 @@ export interface SectorSun {
   arrDay: boolean | null; // daylight at arrival
   depSun: SunTimes;
   arrSun: SunTimes;
+  profile: boolean[]; // day(true)/night(false) sampled dep→arr, for the visual bar
 }
 
 const RAD = Math.PI / 180;
@@ -66,14 +67,17 @@ export function sectorSun(
   const blockMin = (overnight ? arrRaw + 1440 : arrRaw) - depMin;
   const arrDateISO = shiftDate(dateISO, overnight ? 1 : 0);
 
-  // Sample the route in position AND time, counting night samples.
-  const N = 16;
+  // Sample the route in position AND time, counting night samples and recording the day/night
+  // profile (dep→arr) for the visual bar. Unknown samples (polar) are treated as day.
+  const N = 32;
+  const profile: boolean[] = [];
   let night = 0, counted = 0;
   for (let i = 0; i <= N; i++) {
     const f = i / N;
     const pt = gcPoint(a, b, f);
     const { dateISO: dISO, hhmm } = atMinutes(dateISO, depMin + f * blockMin);
     const dl = isDaylight(pt.lat, pt.lon, dISO, hhmm);
+    profile.push(dl !== false);
     if (dl !== null) { counted++; if (!dl) night++; }
   }
   const nightMin = counted ? Math.round((blockMin * night) / counted) : 0;
@@ -85,5 +89,6 @@ export function sectorSun(
     arrDay: isDaylight(b.lat, b.lon, arrDateISO, arrHHmm),
     depSun: sunTimes(a.lat, a.lon, dateISO),
     arrSun: sunTimes(b.lat, b.lon, arrDateISO),
+    profile,
   };
 }

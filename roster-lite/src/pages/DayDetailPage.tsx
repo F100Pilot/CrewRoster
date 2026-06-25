@@ -252,21 +252,35 @@ export default function DayDetailPage() {
   );
 }
 
-// Daylight / night for a sector: a day/night badge with estimated night minutes, plus sunrise
-// (↑) and sunset (↓) in UTC at each airport. Silent for non-network airports or missing times.
+// Daylight / night for a sector, shown graphically: a bar mapping the flight (departure → arrival)
+// coloured day (amber) vs night (indigo) from the sampled sun profile, with sunrise (↑) and sunset
+// (↓) in UTC at each airport. Silent for non-network airports or missing times.
 function SunNightLine({ duty, date }: { duty: ParsedDuty; date: string | undefined }) {
   const s = sectorSun(duty.departureAirport, duty.arrivalAirport, date ?? null, duty.departureTime, duty.arrivalTime);
   if (!s) return null;
   const badge = s.nightMin <= 0 ? '☀️ Voo diurno'
     : s.nightMin >= s.blockMin ? '🌙 Voo noturno'
-    : `🌗 Parcial · noite ~${s.nightMin} min`;
+    : `🌗 Diurno + ${formatDuration(s.nightMin)} de noite`;
   const dep = duty.departureAirport, arr = duty.arrivalAirport;
   const sun = (t: { sunriseUtc: string | null; sunsetUtc: string | null }) =>
     `↑${t.sunriseUtc ?? '—'} ↓${t.sunsetUtc ?? '—'}`;
   return (
-    <Box textAlign="center" mt={0.75}>
-      <Chip size="small" variant="outlined" label={badge} />
-      <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+    <Box mt={1.25}>
+      {/* endpoints: departure ← bar → arrival */}
+      <Box display="flex" justifyContent="space-between" mb={0.25}>
+        <Typography variant="caption" color="text.secondary">{dep} · {duty.departureTime}z</Typography>
+        <Typography variant="caption" color="text.secondary">{arr} · {duty.arrivalTime}z</Typography>
+      </Box>
+      {/* the day/night bar */}
+      <Box sx={{ display: 'flex', height: 12, borderRadius: 6, overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}>
+        {s.profile.map((day, i) => (
+          <Box key={i} sx={{ flex: 1, bgcolor: day ? '#ffb300' : '#1a237e' }} />
+        ))}
+      </Box>
+      <Typography variant="caption" color="text.secondary" display="block" textAlign="center" mt={0.5}>
+        {badge}
+      </Typography>
+      <Typography variant="caption" color="text.secondary" display="block" textAlign="center">
         Sol (z) · {dep} {sun(s.depSun)}{arr && arr !== dep ? ` · ${arr} ${sun(s.arrSun)}` : ''}
       </Typography>
     </Box>
