@@ -10,7 +10,9 @@ import { toLocalTime } from '../utils/localTime';
 import { diffMinutes, formatDuration } from '../utils/duration';
 import { dayStats } from '../domain/dutyStats';
 import { restBefore } from '../domain/restPeriods';
+import { sectorSun } from '../domain/sectorSun';
 import { shareDayImage } from '../utils/shareDay';
+import type { ParsedDuty } from '../domain/types';
 import FlightWeather from '../components/FlightWeather';
 import FlightInfo from '../components/FlightInfo';
 
@@ -190,6 +192,7 @@ export default function DayDetailPage() {
                       .join(' · ')}
                   </Typography>
                 )}
+                <SunNightLine duty={duty} date={date} />
                 {duty.hotel && <HotelLine hotel={duty.hotel} />}
               </Box>
             )}
@@ -246,6 +249,27 @@ export default function DayDetailPage() {
         </Card>
       ))}
     </Stack>
+  );
+}
+
+// Daylight / night for a sector: a day/night badge with estimated night minutes, plus sunrise
+// (↑) and sunset (↓) in UTC at each airport. Silent for non-network airports or missing times.
+function SunNightLine({ duty, date }: { duty: ParsedDuty; date: string | undefined }) {
+  const s = sectorSun(duty.departureAirport, duty.arrivalAirport, date ?? null, duty.departureTime, duty.arrivalTime);
+  if (!s) return null;
+  const badge = s.nightMin <= 0 ? '☀️ Voo diurno'
+    : s.nightMin >= s.blockMin ? '🌙 Voo noturno'
+    : `🌗 Parcial · noite ~${s.nightMin} min`;
+  const dep = duty.departureAirport, arr = duty.arrivalAirport;
+  const sun = (t: { sunriseUtc: string | null; sunsetUtc: string | null }) =>
+    `↑${t.sunriseUtc ?? '—'} ↓${t.sunsetUtc ?? '—'}`;
+  return (
+    <Box textAlign="center" mt={0.75}>
+      <Chip size="small" variant="outlined" label={badge} />
+      <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+        Sol (z) · {dep} {sun(s.depSun)}{arr && arr !== dep ? ` · ${arr} ${sun(s.arrSun)}` : ''}
+      </Typography>
+    </Box>
   );
 }
 

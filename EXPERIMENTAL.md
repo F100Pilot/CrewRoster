@@ -59,12 +59,21 @@ não no primeiro do dia.
   `roster-lite/src/components/FlightInfo.tsx` (nomes clicáveis).
 - **Testar:** abrir um voo com tripulação → ícone 👥 → tocar num nome.
 
+### 4. Pôr/nascer do sol + tempo noturno por setor
+No banner do voo, um selo **☀️ diurno / 🌙 noturno / 🌗 parcial** com **minutos de
+noite** estimados (amostragem da rota em posição e tempo, ortodrómica) e o
+**nascer (↑) / pôr (↓) do sol em UTC** em cada aeroporto. Base para o tempo
+noturno do logbook (lote seguinte).
+
+- **Ficheiros:** `roster-lite/src/domain/sectorSun.ts`,
+  `roster-lite/src/pages/DayDetailPage.tsx`.
+- **Testar:** abrir um dia com voo → ver o selo e os horários do sol no banner.
+
 ---
 
 ## A implementar a seguir na exp (pedido, ainda por fazer)
 
 - **TAF descodificado** à partida/chegada (tempo significativo sinalizado).
-- **Pôr/nascer do sol + tempo noturno por setor** (usa `utils/sun.ts`).
 - **Logbook/registo:** exportar para formato standard (CSV EASA / mccPILOTLOG);
   tempo noturno/IFR calculado por setor.
 - **Visualização/QoL:** pesquisa global na escala; estatísticas anuais (heatmap,
