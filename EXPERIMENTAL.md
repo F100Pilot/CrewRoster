@@ -125,15 +125,25 @@ carregada à parte (não pesa no shell).
 
 _(Todos os lotes pedidos estão feitos. ✅)_
 
-### 9. Stand (FLIC TAP) — deep-link por voo
-No banner do voo, botões **"Stand (FLIC TAP)"** que abrem a board correta:
-**Partida LIS/OPO** → `PGA-{LIS|OPO}_DEP`; **Chegada LIS/OPO** → `PGA-{LIS|OPO}_ARR`.
-O `flic.tap.pt` é interno (rede/login TAP + CORS bloqueado), por isso não dá para
-ler o stand na app — abre-se a board (legenda "Abre na rede/login TAP").
+### 9. Stand (FLIC TAP) — stand ao vivo por voo (scraping)
+No banner do voo, o **stand real** vindo da board do FLIC da TAP (LIS/OPO), com o
+**estado** (DEPARTED/BOARDING/DELAYED…) e horas STD/STA. O `flic.tap.pt` é público
+mas **não tem CORS**, por isso o **worker** ganhou um endpoint **`/api/flic`** que
+vai buscar a board **do lado do servidor**, faz parsing das linhas (ids de célula
+`TD_DEP_STAND`, `TD_FLT_SUF`, `TD_FULL_ROUTE`, …) e devolve JSON. A app cruza pelo
+**número de voo + aeroporto** (partida → destino; chegada → origem) e mostra o stand.
+A board só tem a **janela operacional do próprio dia**, por isso o stand só aparece
+**no dia do voo** (fora disso a secção fica escondida).
 
-- **Ficheiros:** `roster-lite/src/domain/flic.ts`,
-  `roster-lite/src/pages/DayDetailPage.tsx`.
-- **Testar:** abrir um voo que toque LIS ou OPO → botões do FLIC no banner.
+- ⚠️ **Requer deploy do worker** (`roster-lite/worker/worker.js`) — o `/api/flic`
+  só existe depois de o Cloudflare publicar esta versão.
+- **Ficheiros:** `roster-lite/worker/worker.js` (`/api/flic` + `parseFlicBoard`),
+  `roster-lite/src/domain/flic.ts`, `roster-lite/src/components/FlicStand.tsx`,
+  `roster-lite/src/pages/DayDetailPage.tsx`, `roster-lite/src/__tests__/flic.test.ts`.
+- **Testar:** (worker publicado, no dia do voo) abrir um voo que toque LIS/OPO →
+  ver o stand e o estado no banner. Voos de outros dias não mostram (não há board).
+- ⚠️ **Antes de promover:** remover o endpoint **temporário** `GET /flic-debug` do
+  worker (diagnóstico).
 
 ---
 

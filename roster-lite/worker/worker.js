@@ -913,6 +913,104 @@ async function handleFlicDebug(request) {
   });
 }
 
+// --- POST /api/flic --------------------------------------------------------
+// Live stand/gate for a flight at the LIS/OPO hubs, scraped server-side from TAP's FLIC board
+// (flic.tap.pt is public but has no CORS, so the browser can't read it — the worker does). The
+// board only lists the current operational window, so a row only exists on/near the flight day.
+const FLIC_IDS = new Set(['PGA-LIS_DEP', 'PGA-LIS_ARR', 'PGA-OPO_DEP', 'PGA-OPO_ARR']);
+
+function flicCleanText(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n))
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&quot;/gi, '"')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// Parse a FLIC departures/arrivals board into rows. Cells carry stable semantic ids
+// (TD_CARR_CD, TD_FLT_SUF, TD_FULL_ROUTE, TD_DEP_STAND, TD_DEP_STAT1, …); we key off those
+// rather than the OutSystems-generated wrapper ids, which can change between deploys.
+export function parseFlicBoard(html) {
+  let updated = '';
+  const um = /screenHeaderDate[\s\S]*?<div[^>]*>([^<]+)<\/div/i.exec(html);
+  if (um) updated = flicCleanText(um[1]);
+
+  const rows = [];
+  const trRe = /<tr\b[^>]*>([\s\S]*?)<\/tr>/gi;
+  let m;
+  while ((m = trRe.exec(html))) {
+    const rh = m[1];
+    if (!/id="TD_CARR_CD"/.test(rh)) continue; // skip header/title rows
+    const cells = {};
+    const tdRe = /<td\b[^>]*\bid="(TD_[A-Z0-9_]+)"[^>]*>([\s\S]*?)<\/td>/gi;
+    let c;
+    while ((c = tdRe.exec(rh))) {
+      if (!(c[1] in cells)) cells[c[1]] = flicCleanText(c[2]);
+    }
+    const findKey = (re) => {
+      for (const k in cells) if (re.test(k)) return cells[k];
+      return '';
+    };
+    const pick = (...ks) => {
+      for (const k of ks) {
+        const v = cells[k];
+        if (v != null && v !== '') return v;
+      }
+      return '';
+    };
+    const num = cells.TD_FLT_SUF || '';
+    if (!num) continue;
+    rows.push({
+      carrier: cells.TD_CARR_CD || '',
+      num,
+      route: (cells.TD_FULL_ROUTE || '').trim(),
+      reg: cells.TD_AIRC_REG || '',
+      eqt: cells.TD_AIRC_TYP || '',
+      stand: (cells.TD_DEP_STAND ?? cells.TD_ARR_STAND ?? findKey(/STAND/)) || '',
+      std: pick('TD_DEP_STD_UTC', 'TD_ARR_STA_UTC') || findKey(/ST[AD]_UTC$/),
+      etd: pick('TD_DEP_ETD_UTC', 'TD_ARR_ETA_UTC') || findKey(/ET[AD]_UTC$/),
+      atd: pick('TD_DEP_ATD_UTC', 'TD_ARR_ATA_UTC') || findKey(/AT[AD]_UTC$/),
+      status: pick('TD_DEP_STAT1', 'TD_ARR_STAT1') || findKey(/STAT/),
+    });
+  }
+  return { updated, rows };
+}
+
+async function handleFlic(request) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return jsonResponse({ error: 'Invalid JSON body' }, 400, request);
+  }
+  const id = String(body.id || '').toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+  if (!FLIC_IDS.has(id)) return jsonResponse({ error: 'invalid board id' }, 400, request);
+
+  try {
+    const r = await fetch(`${FLIC_BASE}${encodeURIComponent(id)}`, {
+      headers: {
+        'User-Agent': BROWSER_UA,
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'pt-PT,pt;q=0.9,en;q=0.8',
+      },
+      redirect: 'follow',
+    });
+    if (!r.ok) return jsonResponse({ id, updated: '', rows: [], error: `upstream_${r.status}` }, 200, request);
+    const html = await r.text();
+    const { updated, rows } = parseFlicBoard(html);
+    return jsonResponse({ id, updated, rows }, 200, request);
+  } catch {
+    return jsonResponse({ id, updated: '', rows: [], error: 'upstream_unreachable' }, 200, request);
+  }
+}
+
 // --- Router ----------------------------------------------------------------
 export default {
   async fetch(request, env) {
@@ -940,6 +1038,8 @@ export default {
         return handleFlightInfo(request, env);
       case '/api/metar':
         return handleMetar(request);
+      case '/api/flic':
+        return handleFlic(request);
       default:
         return jsonResponse({ error: 'Not found' }, 404, request);
     }
