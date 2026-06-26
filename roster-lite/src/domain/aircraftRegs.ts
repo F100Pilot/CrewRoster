@@ -61,6 +61,28 @@ export async function recordReg(
   return entry;
 }
 
+// Record (or update) a registration from a raw value rather than an AeroDataBox leg — e.g. the
+// tail scraped from the FLIC board. Same store/key as recordReg, so it shows in the day view and
+// the logbook and dedupes by date+flight+route.
+export async function recordRegValue(
+  userId: string, duty: RecordDuty, reg: string, model: string | null = null,
+): Promise<AircraftReg | null> {
+  if (!reg || !duty.flightNumber) return null;
+  const entry: AircraftReg = {
+    key: regKey(userId, duty.date, duty.flightNumber, duty.departureAirport, duty.arrivalAirport),
+    userId,
+    date: duty.date,
+    flightNumber: duty.flightNumber,
+    dep: duty.departureAirport,
+    arr: duty.arrivalAirport,
+    reg,
+    model,
+    recordedAt: new Date().toISOString(),
+  };
+  await saveReg(entry);
+  return entry;
+}
+
 // A lookup of recorded registrations keyed by date+flight+route for the logbook/day view.
 export async function regMap(userId: string): Promise<Map<string, AircraftReg>> {
   const all = await loadRegs(userId);

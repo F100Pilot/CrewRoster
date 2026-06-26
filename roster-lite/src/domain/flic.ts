@@ -63,21 +63,50 @@ function makeLeg(kind: 'dep' | 'arr', hub: string): FlicLeg {
 
 const digitsOf = (s: string | null | undefined) => (s || '').replace(/\D/g, '').replace(/^0+/, '');
 
-async function fetchBoard(id: string): Promise<{ updated: string; rows: FlicRow[] } | null> {
+// Normalise a FLIC registration ("CSTPW") to the canonical hyphenated mark ("CS-TPW") so it
+// matches the format the logbook stores (AeroDataBox returns it hyphenated). The PGA fleet is
+// all Portuguese (CS-…); other marks are left as-is.
+export function normalizeReg(raw: string | null | undefined): string | null {
+  const s = (raw || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (!s) return null;
+  const m = /^(CS)([A-Z]{3})$/.exec(s);
+  return m ? `${m[1]}-${m[2]}` : s;
+}
+
+type Board = { updated: string; rows: FlicRow[] };
+
+// Short-lived cache of board fetches, keyed by board id. The same board is needed by several
+// components at once when a day opens (the stand card and each flight's aircraft lookup), so
+// this collapses that burst into a single network call. A manual refresh passes force to bypass
+// it. Failed fetches (null) are not cached, so they retry.
+const BOARD_TTL_MS = 45_000;
+const boardCache = new Map<string, { ts: number; promise: Promise<Board | null> }>();
+
+async function fetchBoard(id: string, force = false): Promise<Board | null> {
   if (!API_BASE) return null;
-  try {
-    const res = await fetch(`${API_BASE}/api/flic`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
-    });
-    if (!res.ok) return null;
-    const data = (await res.json()) as { rows?: FlicRow[]; updated?: string };
-    if (!Array.isArray(data.rows)) return null;
-    return { updated: data.updated || '', rows: data.rows };
-  } catch {
-    return null;
-  }
+  const hit = boardCache.get(id);
+  if (!force && hit && Date.now() - hit.ts < BOARD_TTL_MS) return hit.promise;
+
+  const promise = (async (): Promise<Board | null> => {
+    try {
+      const res = await fetch(`${API_BASE}/api/flic`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) return null;
+      const data = (await res.json()) as { rows?: FlicRow[]; updated?: string };
+      if (!Array.isArray(data.rows)) return null;
+      return { updated: data.updated || '', rows: data.rows };
+    } catch {
+      return null;
+    }
+  })();
+
+  boardCache.set(id, { ts: Date.now(), promise });
+  // Don't let a null/failed result linger in the cache — drop it so the next call retries.
+  promise.then((data) => { if (data == null) boardCache.delete(id); }).catch(() => boardCache.delete(id));
+  return promise;
 }
 
 // Match the board row for this flight: same flight number, and (when possible) the same other
@@ -99,6 +128,7 @@ export async function fetchFlicStands(
   flightNumber: string | null,
   dep: string | null,
   arr: string | null,
+  opts: { force?: boolean } = {},
 ): Promise<FlicStandInfo[]> {
   const legs = flicLegsFor(dep, arr);
   if (legs.length === 0 || !API_BASE) return [];
@@ -118,7 +148,7 @@ export async function fetchFlicStands(
         act: null,
         updated: null,
       };
-      const board = await fetchBoard(leg.boardId);
+      const board = await fetchBoard(leg.boardId, opts.force);
       if (!board) return base;
       base.updated = board.updated || null;
       const other = leg.kind === 'dep' ? arr : dep;
@@ -138,4 +168,23 @@ export async function fetchFlicStands(
     }),
   );
   return results;
+}
+
+// The aircraft registration (and equipment) for a flight from the FLIC board — the most current
+// source on the day of the flight. Returns the first hub leg that carries a tail (both legs of a
+// LIS↔OPO rotation share the airframe), with the mark normalised to "CS-…". Null off-day / not
+// on the board / no worker configured.
+export async function fetchFlicReg(
+  flightNumber: string | null,
+  dep: string | null,
+  arr: string | null,
+): Promise<{ reg: string; eqt: string | null } | null> {
+  const stands = await fetchFlicStands(flightNumber, dep, arr);
+  for (const s of stands) {
+    if (s.found && s.reg) {
+      const reg = normalizeReg(s.reg);
+      if (reg) return { reg, eqt: s.eqt };
+    }
+  }
+  return null;
 }

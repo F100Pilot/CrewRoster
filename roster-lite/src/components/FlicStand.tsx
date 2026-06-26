@@ -75,9 +75,9 @@ export default function FlicStand({
   const isToday = date === todayISO();
   const legs = flicLegsFor(dep, arr);
 
-  const load = useCallback(() => {
+  const load = useCallback((force = false) => {
     if (!flicEnabled() || !isToday || legs.length === 0) return;
-    fetchFlicStands(flightNumber, dep, arr).then((r) => setResults(r));
+    fetchFlicStands(flightNumber, dep, arr, { force }).then((r) => setResults(r));
     // legs is derived from dep/arr, so those deps cover it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flightNumber, dep, arr, isToday]);
@@ -95,7 +95,7 @@ export default function FlicStand({
   return (
     <Fragment>
       {legs.map((leg) => (
-        <StandCard key={leg.boardId} leg={leg} info={infoFor(leg)} onRefresh={load} />
+        <StandCard key={leg.boardId} leg={leg} info={infoFor(leg)} onRefresh={() => load(true)} />
       ))}
     </Fragment>
   );

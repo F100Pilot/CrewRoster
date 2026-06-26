@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { flicLegsFor } from '../domain/flic';
+import { flicLegsFor, normalizeReg } from '../domain/flic';
 
 describe('flicLegsFor', () => {
   it('gives both boards for a hub-to-hub leg (LIS→OPO)', () => {
@@ -24,5 +24,24 @@ describe('flicLegsFor', () => {
   it('gives nothing when neither end is a hub', () => {
     expect(flicLegsFor('AGP', 'MAD')).toEqual([]);
     expect(flicLegsFor(null, null)).toEqual([]);
+  });
+});
+
+describe('normalizeReg', () => {
+  it('hyphenates a Portuguese mark from the FLIC board', () => {
+    expect(normalizeReg('CSTPW')).toBe('CS-TPW');
+    expect(normalizeReg('cstpw')).toBe('CS-TPW');
+  });
+  it('keeps an already-hyphenated mark', () => {
+    expect(normalizeReg('CS-TPW')).toBe('CS-TPW');
+  });
+  it('leaves non-Portuguese / unexpected marks untouched (uppercased, stripped)', () => {
+    expect(normalizeReg('D-AIBC')).toBe('DAIBC');
+    expect(normalizeReg('CSTNXY')).toBe('CSTNXY'); // not CS+3 letters → left as-is
+  });
+  it('returns null for empty input', () => {
+    expect(normalizeReg('')).toBeNull();
+    expect(normalizeReg(null)).toBeNull();
+    expect(normalizeReg(undefined)).toBeNull();
   });
 });
