@@ -7,8 +7,8 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.8.8`
-- **Próxima versão ao promover:** `0.8.9` (ou superior, conforme o âmbito)
+- **Produção (`master`) está em:** `0.8.9`
+- **Próxima versão ao promover:** `0.8.10` (ou superior, conforme o âmbito)
 
 ## Como promover tudo para produção (quando estiver pronto)
 
@@ -25,20 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-### Matrícula via FLIC no próprio dia
-No dia do voo, a **matrícula** passa a vir da board do FLIC (campo `TD_AIRC_REG`,
-ex.: `CSTPW` → `CS-TPW`) — a fonte operacional mais atual (reflete trocas de
-aeronave de última hora antes do AeroDataBox, e funciona **sem chave**). É
-gravada no diário de bordo e tem prioridade na apresentação. As boards do FLIC
-passaram a ter uma **cache curta** (45s) para o cartão do stand e a procura de
-matrícula partilharem um único pedido (o refresh manual ignora a cache).
-
-- **Ficheiros:** `roster-lite/src/domain/flic.ts` (`normalizeReg`, `fetchFlicReg`,
-  cache), `roster-lite/src/domain/aircraftRegs.ts` (`recordRegValue`),
-  `roster-lite/src/components/FlightInfo.tsx`, `roster-lite/src/components/FlicStand.tsx`,
-  `roster-lite/src/__tests__/flic.test.ts`.
-- **Testar:** (no dia do voo) abrir um voo LIS/OPO → a matrícula aparece com a
-  nota "via FLIC (atualizada no dia)"; confirmar que fica no diário de bordo.
+_(Vazio — tudo o que estava pendente foi promovido em `0.8.9`.)_
 
 ---
 

@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.8';
+export const APP_VERSION = '0.8.9';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,14 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.9',
+    date: '2026-06-26',
+    highlights: [
+      'Matrícula da aeronave pelo FLIC no próprio dia do voo (LIS/OPO): mais atual (reflete trocas de última hora), funciona sem chave e fica registada no diário de bordo.',
+      'Heatmap de atividade mais legível: meses e dias da semana identificados, grelha visível e toca num dia para veres a data e o bloco.',
+    ],
+  },
   {
     version: '0.8.8',
     date: '2026-06-25',
