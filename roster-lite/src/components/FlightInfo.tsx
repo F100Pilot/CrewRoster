@@ -3,7 +3,8 @@ import { Box, Chip, CircularProgress, IconButton, List, ListItem, ListItemButton
 import { AirplaneTicket, Groups, Refresh } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { fetchFlightInfo, type FlightInfo as FlightInfoData } from '../services/crewlinkApi';
-import { matchLeg, recordReg, regMapKey, resolveRegs } from '../domain/aircraftRegs';
+import { matchLeg, recordReg, recordRegValue, regMapKey, resolveRegs } from '../domain/aircraftRegs';
+import { fetchFlicReg } from '../domain/flic';
 import { loadRegs } from '../storage/rosterStore';
 import { useRoster } from '../state/useRoster';
 import type { AircraftReg, ParsedDuty } from '../domain/types';
@@ -32,6 +33,8 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
   const [leg, setLeg] = useState<FlightInfoData | null>(null);
   const [savedReg, setSavedReg] = useState<string | null>(null);
   const [savedRegInferred, setSavedRegInferred] = useState(false);
+  // Registration scraped from the FLIC board — the most current source on the day of the flight.
+  const [flicReg, setFlicReg] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [configured, setConfigured] = useState(true);
   const [crewAnchor, setCrewAnchor] = useState<HTMLElement | null>(null);
@@ -49,6 +52,12 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
   const arr = duty.arrivalAirport;
   const userId = activeUser?.id;
   const duties = roster?.duties;
+  // FLIC only carries the current operational window, so its tail is only meaningful on the day.
+  const isToday = (() => {
+    const d = new Date();
+    const p = (n: number) => String(n).padStart(2, '0');
+    return date === `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+  })();
 
   // Show any previously-recorded registration immediately (even with no live data),
   // resolving across the day's rotation so a tail captured on the sibling leg shows here
@@ -93,9 +102,31 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
     return () => window.removeEventListener('aerodatabox-key-changed', load);
   }, [load]);
 
+  // On the day of the flight, take the registration from the FLIC board — it's the operational
+  // source and the most current (it reflects last-minute aircraft swaps before AeroDataBox does,
+  // and works with no API key). Record it to the logbook store too.
+  useEffect(() => {
+    let alive = true;
+    if (!isToday || !flightNumber) return;
+    fetchFlicReg(flightNumber, dep, arr).then((r) => {
+      if (!alive || !r) return;
+      setFlicReg(r.reg);
+      if (userId) {
+        recordRegValue(userId, { date, flightNumber, departureAirport: dep, arrivalAirport: arr }, r.reg, r.eqt)
+          .then(() => { if (alive) setSavedReg((prev) => prev ?? r.reg); });
+      }
+    });
+    return () => { alive = false; };
+  }, [isToday, flightNumber, dep, arr, date, userId]);
+
   // Feature off (no API key) and nothing recorded → stay out of the way, UNLESS there's
-  // crew to show (the crew "i" lives in this banner).
-  if (!configured && !savedReg && !crew.length) return null;
+  // crew to show (the crew "i" lives in this banner) or a FLIC tail for today.
+  if (!configured && !savedReg && !flicReg && !crew.length) return null;
+
+  // The tail to show: FLIC wins on the day (most current), then a live AeroDataBox leg, then a
+  // previously-recorded/inferred tail.
+  const displayReg = flicReg ?? leg?.reg ?? savedReg ?? null;
+  const displayRegInferred = !flicReg && !leg?.reg && savedRegInferred;
 
   return (
     <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px dashed', borderColor: 'divider' }}>
@@ -161,12 +192,15 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
         </List>
       </Popover>
 
-      {/* No live leg but we have the tail (recorded, or inferred from the day's rotation). */}
-      {!leg && savedReg && (
-        <Chip size="small" label={savedReg + (savedRegInferred ? ' *' : '')} sx={{ fontWeight: 700 }} />
+      {/* No live AeroDataBox leg but we have a tail (FLIC today, recorded, or inferred). */}
+      {!leg && displayReg && (
+        <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
+          <Chip size="small" label={displayReg + (displayRegInferred ? ' *' : '')} sx={{ fontWeight: 700 }} />
+          {flicReg && <Typography variant="caption" color="text.secondary">via FLIC (atualizada no dia)</Typography>}
+        </Box>
       )}
 
-      {!loading && !leg && !savedReg && (
+      {!loading && !leg && !displayReg && (
         <Typography variant="caption" color="text.secondary">
           Sem dados ainda (ficam disponíveis perto do voo).
         </Typography>
@@ -175,11 +209,8 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
       {leg && (
         <>
           <Box display="flex" alignItems="center" gap={1} flexWrap="wrap" mb={0.5}>
-            {leg.reg ? (
-              <Chip size="small" label={leg.reg} sx={{ fontWeight: 700 }} />
-            ) : savedReg ? (
-              // This leg's own lookup had no tail, but the rotation sibling did.
-              <Chip size="small" label={savedReg + (savedRegInferred ? ' *' : '')} sx={{ fontWeight: 700 }} />
+            {displayReg ? (
+              <Chip size="small" label={displayReg + (displayRegInferred ? ' *' : '')} sx={{ fontWeight: 700 }} />
             ) : (
               <Chip size="small" variant="outlined" label="Matrícula —" />
             )}
@@ -201,7 +232,8 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
           </Box>
           <Typography variant="caption" color="text.secondary" display="block" mt={0.75}>
             Dados operacionais (AeroDataBox). O estacionamento (stand) pode não estar disponível.
-            {((!leg.reg && savedReg && savedRegInferred)) && ' Matrícula (*) inferida da rotação do dia.'}
+            {flicReg && ' Matrícula via FLIC (atualizada no dia).'}
+            {!flicReg && !leg.reg && savedReg && savedRegInferred && ' Matrícula (*) inferida da rotação do dia.'}
           </Typography>
         </>
       )}

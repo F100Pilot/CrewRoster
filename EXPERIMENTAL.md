@@ -7,8 +7,8 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.8.8`
-- **Próxima versão ao promover:** `0.8.9` (ou superior, conforme o âmbito)
+- **Produção (`master`) está em:** `0.8.9`
+- **Próxima versão ao promover:** `0.8.10` (ou superior, conforme o âmbito)
 
 ## Como promover tudo para produção (quando estiver pronto)
 
@@ -25,7 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(Vazio — tudo o que estava pendente foi promovido em `0.8.8`.)_
+_(Vazio — tudo o que estava pendente foi promovido em `0.8.9`.)_
 
 ---
 
