@@ -2,7 +2,12 @@ import { Box, Tooltip, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { addDays, endOfWeek, format, parseISO, startOfWeek } from 'date-fns';
 import { pt } from 'date-fns/locale';
-import { activityLevel } from '../domain/activity';
+import { activityLevel, type GroundKind } from '../domain/activity';
+
+// Non-flying work days (sim/training/office) are shown in a single contrasting hue (violet),
+// distinct from the flight gradient, so they read as "activity but not a flight".
+const GROUND_COLOR = '#7e57c2';
+const GROUND_LABEL: Record<GroundKind, string> = { sim: 'Simulador', training: 'Treino', office: 'Gabinete' };
 
 const CELL = 13; // px — a touch bigger than GitHub so days read on a phone
 const GAP = 3;
@@ -17,7 +22,15 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 // A calendar heatmap of daily flying for one year: 7 rows (Mon–Sun) × ~53 week columns, each cell
 // shaded by the block time flown that day, with month labels across the top and weekday labels
 // down the left so you can read which day each cell is. Horizontally scrollable on phones.
-export default function YearHeatmap({ year, minutesByDate }: { year: number; minutesByDate: Map<string, number> }) {
+export default function YearHeatmap({
+  year,
+  minutesByDate,
+  groundByDate,
+}: {
+  year: number;
+  minutesByDate: Map<string, number>;
+  groundByDate?: Map<string, GroundKind>;
+}) {
   const first = startOfWeek(parseISO(`${year}-01-01`), { weekStartsOn: 1 });
   const last = endOfWeek(parseISO(`${year}-12-31`), { weekStartsOn: 1 });
   const weeks: string[][] = [];
@@ -41,7 +54,17 @@ export default function YearHeatmap({ year, minutesByDate }: { year: number; min
     return '';
   });
 
-  const cell = (theme: { palette: { primary: { main: string }; action: { hover: string } } }, lvl: number) =>
+  // A day's cell colour: flown block shades the flight gradient; otherwise a non-flying work day
+  // (sim/training/office) gets the flat ground hue; empty days are the faint background.
+  type Pal = { palette: { primary: { main: string }; action: { hover: string } } };
+  const cellBg = (theme: Pal, mins: number, ground: GroundKind | undefined) => {
+    const lvl = activityLevel(mins);
+    if (lvl > 0) return alpha(theme.palette.primary.main, [0, 0.28, 0.5, 0.75, 1][lvl]);
+    if (ground) return alpha(GROUND_COLOR, 0.7);
+    return theme.palette.action.hover;
+  };
+  // Legend swatch for the flight gradient only (ground is shown separately).
+  const cell = (theme: Pal, lvl: number) =>
     lvl === 0 ? theme.palette.action.hover : alpha(theme.palette.primary.main, [0, 0.28, 0.5, 0.75, 1][lvl]);
 
   return (
@@ -88,9 +111,15 @@ export default function YearHeatmap({ year, minutesByDate }: { year: number; min
                   const inYear = iso.slice(0, 4) === String(year);
                   if (!inYear) return <Box key={iso} sx={{ width: CELL, height: CELL }} />;
                   const mins = minutesByDate.get(iso) ?? 0;
-                  const lvl = activityLevel(mins);
+                  const ground = mins > 0 ? undefined : groundByDate?.get(iso);
+                  const coloured = mins > 0 || !!ground;
                   const h = Math.floor(mins / 60), m = mins % 60;
-                  const label = `${format(parseISO(iso), 'EEE dd MMM', { locale: pt })} · ${mins ? `${h}h${String(m).padStart(2, '0')}` : 'sem voo'}`;
+                  const detail = mins
+                    ? `${h}h${String(m).padStart(2, '0')}`
+                    : ground
+                      ? GROUND_LABEL[ground]
+                      : 'sem voo';
+                  const label = `${format(parseISO(iso), 'EEE dd MMM', { locale: pt })} · ${detail}`;
                   return (
                     <Tooltip key={iso} title={label} arrow disableInteractive enterTouchDelay={0} leaveTouchDelay={2500}>
                       <Box
@@ -98,11 +127,11 @@ export default function YearHeatmap({ year, minutesByDate }: { year: number; min
                           width: CELL,
                           height: CELL,
                           borderRadius: '3px',
-                          bgcolor: (t) => cell(t, lvl),
+                          bgcolor: (t) => cellBg(t, mins, ground),
                           // a faint outline on every cell so the day grid itself is visible,
                           // not just the coloured days
                           border: '1px solid',
-                          borderColor: lvl === 0 ? 'rgba(128,128,128,0.18)' : 'rgba(0,0,0,0.10)',
+                          borderColor: coloured ? 'rgba(0,0,0,0.10)' : 'rgba(128,128,128,0.18)',
                           cursor: 'default',
                         }}
                       />
@@ -115,13 +144,18 @@ export default function YearHeatmap({ year, minutesByDate }: { year: number; min
         </Box>
       </Box>
 
-      {/* legend */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5, justifyContent: 'flex-end' }}>
-        <Typography variant="caption" color="text.secondary">menos</Typography>
-        {[0, 1, 2, 3, 4].map((lvl) => (
-          <Box key={lvl} sx={{ width: CELL, height: CELL, borderRadius: '3px', bgcolor: (t) => cell(t, lvl) }} />
-        ))}
-        <Typography variant="caption" color="text.secondary">mais</Typography>
+      {/* legend: flight gradient + the ground (sim/office/training) swatch */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Typography variant="caption" color="text.secondary">Voo</Typography>
+          {[1, 2, 3, 4].map((lvl) => (
+            <Box key={lvl} sx={{ width: CELL, height: CELL, borderRadius: '3px', bgcolor: (t) => cell(t, lvl) }} />
+          ))}
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Box sx={{ width: CELL, height: CELL, borderRadius: '3px', bgcolor: alpha(GROUND_COLOR, 0.7) }} />
+          <Typography variant="caption" color="text.secondary">Sim / Gabinete</Typography>
+        </Box>
       </Box>
     </Box>
   );

@@ -7,14 +7,14 @@ import { useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import { loadLogbook } from '../storage/rosterStore';
 import { logbookStats } from '../domain/logbook';
-import { blockByDate, activeYears } from '../domain/activity';
+import { blockByDate, activeYears, groundActivityByDate } from '../domain/activity';
 import YearHeatmap from '../components/YearHeatmap';
 import { formatDuration } from '../utils/duration';
 import type { LogbookRow } from '../domain/types';
 
 export default function StatsPage() {
   const navigate = useNavigate();
-  const { activeUser } = useRoster();
+  const { activeUser, roster } = useRoster();
   const userId = activeUser?.id;
 
   const [rows, setRows] = useState<LogbookRow[]>([]);
@@ -26,7 +26,8 @@ export default function StatsPage() {
   const stats = useMemo(() => logbookStats(rows), [rows]);
   const maxAircraft = Math.max(1, ...stats.byAircraft.map((a) => a.sectors));
   const minutesByDate = useMemo(() => blockByDate(rows), [rows]);
-  const years = useMemo(() => activeYears(rows), [rows]);
+  const groundByDate = useMemo(() => groundActivityByDate(roster?.duties ?? []), [roster]);
+  const years = useMemo(() => activeYears(rows, groundByDate.keys()), [rows, groundByDate]);
 
   return (
     <Stack spacing={2}>
@@ -79,7 +80,7 @@ export default function StatsPage() {
                 {years.map((y) => (
                   <Box key={y}>
                     <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>{y}</Typography>
-                    <YearHeatmap year={y} minutesByDate={minutesByDate} />
+                    <YearHeatmap year={y} minutesByDate={minutesByDate} groundByDate={groundByDate} />
                   </Box>
                 ))}
               </Stack>
