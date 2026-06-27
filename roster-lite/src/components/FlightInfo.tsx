@@ -6,6 +6,7 @@ import { fetchFlightInfo, type FlightInfo as FlightInfoData } from '../services/
 import { matchLeg, recordReg, recordRegValue, regMapKey, resolveRegs } from '../domain/aircraftRegs';
 import { fetchFlicReg } from '../domain/flic';
 import { loadRegs } from '../storage/rosterStore';
+import { utcDateTime } from '../utils/duration';
 import { useRoster } from '../state/useRoster';
 import type { AircraftReg, ParsedDuty } from '../domain/types';
 
@@ -83,7 +84,7 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
     fetchFlightInfo(flightNumber, date)
       .then((r) => {
         setConfigured(r.configured);
-        const m = matchLeg(r.flights, dep, arr);
+        const m = matchLeg(r.flights, dep, arr, date);
         setLeg(m);
         if (m?.reg && userId) {
           recordReg(userId, { date, flightNumber, departureAirport: dep, arrivalAirport: arr }, m)
@@ -127,6 +128,14 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
   // previously-recorded/inferred tail.
   const displayReg = flicReg ?? leg?.reg ?? savedReg ?? null;
   const displayRegInferred = !flicReg && !leg?.reg && savedRegInferred;
+
+  // A flight that hasn't reached its scheduled departure can't have departed/arrived. AeroDataBox
+  // sometimes returns a stale (previous-day) operation, so suppress impossible "completed" states
+  // until the flight is actually due.
+  const stdUtc = duty.departureTime ? utcDateTime(date, duty.departureTime) : null;
+  const notDepartedYet = stdUtc ? Date.now() < stdUtc.getTime() : false;
+  const COMPLETED_STATUS = /arriv|depart|land|en[\s-]?route|airborne|in\s*air|active/i;
+  const showLegStatus = !!leg?.status && !(notDepartedYet && COMPLETED_STATUS.test(leg.status));
 
   return (
     <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px dashed', borderColor: 'divider' }}>
@@ -218,7 +227,7 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
               <Typography variant="caption" color="text.secondary">{leg.model}</Typography>
             )}
             <Box flexGrow={1} />
-            {leg.status && (
+            {showLegStatus && leg.status && (
               <Chip
                 size="small"
                 label={leg.status}

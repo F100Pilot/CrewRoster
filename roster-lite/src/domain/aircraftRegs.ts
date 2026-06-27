@@ -15,15 +15,24 @@ const MAX_TURNAROUND_MIN = 180;
 // candidate tier (exact route → same departure → anything) prefer a leg that actually
 // carries a registration, so a regless duplicate never shadows the real one.
 export function matchLeg(
-  flights: FlightInfo[], dep: string | null, arr: string | null,
+  flights: FlightInfo[], dep: string | null, arr: string | null, dateISO?: string | null,
 ): FlightInfo | null {
   if (flights.length === 0) return null;
+  // The same flight number flies daily, and AeroDataBox can return neighbouring days' operations
+  // for a number/date — yesterday's completed leg (with a tail and "Arrived" status) would then
+  // shadow today's not-yet-operated one. Restrict to legs scheduled on the rostered day, but only
+  // when at least one matches, so we never end up worse off than before.
+  let pool = flights;
+  if (dateISO) {
+    const sameDay = flights.filter((f) => (f.departure.scheduledUtc ?? '').slice(0, 10) === dateISO);
+    if (sameDay.length) pool = sameDay;
+  }
   const pick = (list: FlightInfo[]): FlightInfo | null =>
     list.length === 0 ? null : (list.find((f) => f.reg) ?? list[0]);
   return (
-    pick(flights.filter((f) => f.departure.iata === dep && f.arrival.iata === arr)) ??
-    pick(flights.filter((f) => f.departure.iata === dep)) ??
-    pick(flights)
+    pick(pool.filter((f) => f.departure.iata === dep && f.arrival.iata === arr)) ??
+    pick(pool.filter((f) => f.departure.iata === dep)) ??
+    pick(pool)
   );
 }
 
@@ -224,7 +233,7 @@ export async function backfillRegs(
     // Quota or auth problems won't fix themselves on the next call — stop and report.
     if (/_429$/.test(r.error ?? '')) return { found, processed: i, total: pending.length, stopped: 'quota', emptyCount, lastError };
     if (/_40[13]$/.test(r.error ?? '')) return { found, processed: i, total: pending.length, stopped: 'auth', emptyCount, lastError };
-    const leg = matchLeg(r.flights, d.departureAirport, d.arrivalAirport);
+    const leg = matchLeg(r.flights, d.departureAirport, d.arrivalAirport, d.date);
     if (leg?.reg) {
       const saved = await recordReg(userId, d, leg);
       if (saved) confirmed.set(keyOf(d), saved); // so the sibling skips its call
