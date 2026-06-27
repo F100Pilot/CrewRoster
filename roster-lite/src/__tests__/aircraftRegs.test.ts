@@ -31,6 +31,21 @@ describe('matchLeg', () => {
     const flights = [regless('LIS', 'GVA'), leg('LIS', 'GVA', 'CS-TPU')];
     expect(matchLeg(flights, 'LIS', 'GVA')?.reg).toBe('CS-TPU');
   });
+  it('ignores a previous-day operation of the same number when a rostered-day leg exists', () => {
+    // The same daily number: yesterday already arrived (with a tail), today not yet operated and
+    // still tail-less. Without the date, the reg-bearing yesterday leg shadows today's → wrong
+    // "Arrived". With the rostered day, today's leg wins.
+    const at = (reg: string | null, scheduledUtc: string, status: string): FlightInfo => ({
+      number: 'TP1325', status, reg, model: 'Embraer 190',
+      departure: { iata: 'LIS', icao: null, terminal: null, gate: null, scheduledUtc },
+      arrival: { iata: 'DUB', icao: null, terminal: null, gate: null, scheduledUtc: null },
+    });
+    const flights = [at('CS-TPR', '2026-06-25T20:15:00Z', 'Arrived'), at(null, '2026-06-26T20:15:00Z', 'Expected')];
+    expect(matchLeg(flights, 'LIS', 'DUB', '2026-06-26')?.status).toBe('Expected');
+    expect(matchLeg(flights, 'LIS', 'DUB', '2026-06-26')?.reg).toBeNull();
+    // Without a date (back-compat) the old behaviour stands.
+    expect(matchLeg(flights, 'LIS', 'DUB')?.reg).toBe('CS-TPR');
+  });
 });
 
 describe('logbookEntries with registrations', () => {

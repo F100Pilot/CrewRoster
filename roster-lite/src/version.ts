@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.9';
+export const APP_VERSION = '0.8.9.1';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,13 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.9.1',
+    date: '2026-06-27',
+    highlights: [
+      'Correção: um voo que ainda não partiu deixa de mostrar estados impossíveis (ex.: “Arrived”), e a matrícula/portas deixam de vir de uma operação de outro dia do mesmo voo. Sem dados disponíveis, fica uma indicação clara em vez de campos vazios.',
+    ],
+  },
   {
     version: '0.8.9',
     date: '2026-06-26',

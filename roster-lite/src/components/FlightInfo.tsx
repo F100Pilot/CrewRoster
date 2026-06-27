@@ -6,6 +6,7 @@ import { fetchFlightInfo, type FlightInfo as FlightInfoData } from '../services/
 import { matchLeg, recordReg, recordRegValue, regMapKey, resolveRegs } from '../domain/aircraftRegs';
 import { fetchFlicReg } from '../domain/flic';
 import { loadRegs } from '../storage/rosterStore';
+import { utcDateTime } from '../utils/duration';
 import { useRoster } from '../state/useRoster';
 import type { AircraftReg, ParsedDuty } from '../domain/types';
 
@@ -83,7 +84,7 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
     fetchFlightInfo(flightNumber, date)
       .then((r) => {
         setConfigured(r.configured);
-        const m = matchLeg(r.flights, dep, arr);
+        const m = matchLeg(r.flights, dep, arr, date);
         setLeg(m);
         if (m?.reg && userId) {
           recordReg(userId, { date, flightNumber, departureAirport: dep, arrivalAirport: arr }, m)
@@ -127,6 +128,23 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
   // previously-recorded/inferred tail.
   const displayReg = flicReg ?? leg?.reg ?? savedReg ?? null;
   const displayRegInferred = !flicReg && !leg?.reg && savedRegInferred;
+
+  // A flight that hasn't reached its scheduled departure can't have departed/arrived. AeroDataBox
+  // sometimes returns a stale (previous-day) operation, so suppress impossible "completed" states
+  // until the flight is actually due.
+  const stdUtc = duty.departureTime ? utcDateTime(date, duty.departureTime) : null;
+  const notDepartedYet = stdUtc ? Date.now() < stdUtc.getTime() : false;
+  const COMPLETED_STATUS = /arriv|depart|land|en[\s-]?route|airborne|in\s*air|active/i;
+  const showLegStatus = !!leg?.status && !(notDepartedYet && COMPLETED_STATUS.test(leg.status));
+
+  // Whether the matched leg actually carries something worth showing. AeroDataBox can return a
+  // bare scheduled record (no tail, no gate, status suppressed) for a flight whose aircraft isn't
+  // assigned yet — render the clean "no data yet" line for that, not an empty block of dashes.
+  const legHasData =
+    !!leg &&
+    (!!leg.reg || showLegStatus ||
+      !!leg.departure.terminal || !!leg.departure.gate ||
+      !!leg.arrival.terminal || !!leg.arrival.gate);
 
   return (
     <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px dashed', borderColor: 'divider' }}>
@@ -192,21 +210,21 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
         </List>
       </Popover>
 
-      {/* No live AeroDataBox leg but we have a tail (FLIC today, recorded, or inferred). */}
-      {!leg && displayReg && (
+      {/* No operational leg data, but we have a tail (FLIC today, recorded, or inferred). */}
+      {!legHasData && displayReg && (
         <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
           <Chip size="small" label={displayReg + (displayRegInferred ? ' *' : '')} sx={{ fontWeight: 700 }} />
           {flicReg && <Typography variant="caption" color="text.secondary">via FLIC (atualizada no dia)</Typography>}
         </Box>
       )}
 
-      {!loading && !leg && !displayReg && (
+      {!loading && !legHasData && !displayReg && (
         <Typography variant="caption" color="text.secondary">
           Sem dados ainda (ficam disponíveis perto do voo).
         </Typography>
       )}
 
-      {leg && (
+      {legHasData && leg && (
         <>
           <Box display="flex" alignItems="center" gap={1} flexWrap="wrap" mb={0.5}>
             {displayReg ? (
@@ -218,7 +236,7 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
               <Typography variant="caption" color="text.secondary">{leg.model}</Typography>
             )}
             <Box flexGrow={1} />
-            {leg.status && (
+            {showLegStatus && leg.status && (
               <Chip
                 size="small"
                 label={leg.status}
