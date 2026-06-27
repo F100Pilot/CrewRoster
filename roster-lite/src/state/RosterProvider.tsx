@@ -5,9 +5,11 @@ import { diffRosters } from '../domain/rosterDiff';
 import { mergeDuties } from '../domain/rosterMerge';
 import {
   assignOrphanPdfs, clearRoster, deleteUser as deleteUserDB, getActiveUserId,
-  listPdfs, listUsers, loadRoster, migrateLegacySingleUser,
-  saveRoster, saveUser, setActiveUserId,
+  listPdfs, listUsers, loadLogbook, loadRoster, migrateLegacySingleUser,
+  putLogbookRows, saveRoster, saveUser, setActiveUserId,
 } from '../storage/rosterStore';
+import { mergeLogbook } from '../domain/logbook';
+import { regMap } from '../domain/aircraftRegs';
 import { clearUserGCalData } from '../utils/googleCalendar';
 import { setCredentials } from '../storage/settings';
 import { RosterContext, type RosterState, type RosterImportPreview } from './useRoster';
@@ -116,6 +118,31 @@ export function RosterProvider({ children }: { children: ReactNode }) {
     }
     init();
   }, []);
+
+  // Keep the permanent logbook in sync with the active roster centrally — so Statistics, Map and
+  // Documents have data even when the Diário (logbook) page was never opened (it used to be the
+  // only place that built the logbook). mergeLogbook only upserts new/changed sectors and never
+  // overwrites hand-edited rows, so this is safe to run on every roster load/import. Best-effort.
+  useEffect(() => {
+    const uid = activeUser?.id;
+    const duties = roster?.duties;
+    if (!uid || !duties || duties.length === 0) return;
+    let alive = true;
+    (async () => {
+      try {
+        const [existing, regs] = await Promise.all([loadLogbook(uid), regMap(uid)]);
+        const upserts = mergeLogbook(existing, duties, uid, regs);
+        if (upserts.length && alive) {
+          await putLogbookRows(upserts);
+          // Let already-mounted pages (Stats/Map/Documents) refresh once the sync lands.
+          window.dispatchEvent(new Event('logbook-updated'));
+        }
+      } catch {
+        // logbook sync is best-effort; the Diário page also merges on open as a fallback.
+      }
+    })();
+    return () => { alive = false; };
+  }, [activeUser, roster]);
 
   const switchUser = useCallback(async (userId: string) => {
     const user = users.find((u) => u.id === userId);
