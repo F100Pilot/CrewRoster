@@ -4,10 +4,11 @@ import { addDays, endOfWeek, format, parseISO, startOfWeek } from 'date-fns';
 import { pt } from 'date-fns/locale';
 import { activityLevel, type GroundKind } from '../domain/activity';
 
-// Non-flying work days (sim/training/office) are shown in a single contrasting hue (violet),
-// distinct from the flight gradient, so they read as "activity but not a flight".
-const GROUND_COLOR = '#7e57c2';
+// Non-flying work days each get their own colour, all clearly off the indigo flight gradient:
+// simulator = orange, training = teal, office = purple.
+const GROUND_COLOR: Record<GroundKind, string> = { sim: '#f57c00', training: '#00897b', office: '#8e24aa' };
 const GROUND_LABEL: Record<GroundKind, string> = { sim: 'Simulador', training: 'Treino', office: 'Gabinete' };
+const GROUND_ORDER: GroundKind[] = ['sim', 'training', 'office'];
 
 const CELL = 13; // px — a touch bigger than GitHub so days read on a phone
 const GAP = 3;
@@ -60,7 +61,7 @@ export default function YearHeatmap({
   const cellBg = (theme: Pal, mins: number, ground: GroundKind | undefined) => {
     const lvl = activityLevel(mins);
     if (lvl > 0) return alpha(theme.palette.primary.main, [0, 0.28, 0.5, 0.75, 1][lvl]);
-    if (ground) return alpha(GROUND_COLOR, 0.7);
+    if (ground) return alpha(GROUND_COLOR[ground], 0.8);
     return theme.palette.action.hover;
   };
   // Legend swatch for the flight gradient only (ground is shown separately).
@@ -152,10 +153,12 @@ export default function YearHeatmap({
             <Box key={lvl} sx={{ width: CELL, height: CELL, borderRadius: '3px', bgcolor: (t) => cell(t, lvl) }} />
           ))}
         </Box>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-          <Box sx={{ width: CELL, height: CELL, borderRadius: '3px', bgcolor: alpha(GROUND_COLOR, 0.7) }} />
-          <Typography variant="caption" color="text.secondary">Sim / Gabinete</Typography>
-        </Box>
+        {GROUND_ORDER.map((k) => (
+          <Box key={k} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Box sx={{ width: CELL, height: CELL, borderRadius: '3px', bgcolor: alpha(GROUND_COLOR[k], 0.8) }} />
+            <Typography variant="caption" color="text.secondary">{GROUND_LABEL[k]}</Typography>
+          </Box>
+        ))}
       </Box>
     </Box>
   );
