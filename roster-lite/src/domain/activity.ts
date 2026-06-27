@@ -12,17 +12,18 @@ export function blockByDate(rows: LogbookRow[]): Map<string, number> {
 
 // Ground (non-flying) work the heatmap should still show: simulator, training/checks and office
 // duty. Other duty types (standby, day off, vacation, …) are not "activity" and stay blank.
-export type GroundKind = 'sim' | 'training' | 'office';
+export type GroundKind = 'sim' | 'training' | 'office' | 'absence';
 const GROUND_DUTY_TYPE: Record<string, GroundKind> = {
   Simulator: 'sim',
   Training: 'training',
   'Office Duty': 'office',
+  Absence: 'absence', // Falta (FAL, FAL(PD), …)
 };
 
-// One ground kind per date (sim wins over training over office when a day mixes them), so the
-// heatmap can colour and label non-flying work days.
+// One ground kind per date (later in `order` wins when a day mixes them), so the heatmap can
+// colour and label non-flying days.
 export function groundActivityByDate(duties: ParsedDuty[]): Map<string, GroundKind> {
-  const order: GroundKind[] = ['office', 'training', 'sim']; // later = higher priority
+  const order: GroundKind[] = ['office', 'training', 'sim', 'absence']; // later = higher priority
   const m = new Map<string, GroundKind>();
   for (const d of duties) {
     const kind = GROUND_DUTY_TYPE[d.dutyType];
