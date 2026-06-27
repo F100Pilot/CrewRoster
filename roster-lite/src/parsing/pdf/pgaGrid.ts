@@ -175,7 +175,9 @@ function classifyDuty(name: string): { dutyType: string; dutyCode: string } | nu
   // ("FP-Elearning CA-MEL ...") that sits in an adjacent sub-column is NOT mistaken
   // for a second training duty.
   if (/^FP\w*-LEARN$/.test(n)) return { dutyType: 'Training', dutyCode: n };
-  if (n === 'FAL') return { dutyType: 'Absence', dutyCode: 'FAL' }; // Falta (ausência)
+  // Falta (absence): FAL, or with a reason suffix in parentheses e.g. FAL(PD). Keep the full
+  // code on the chip so the reason stays visible.
+  if (/^FAL(\(.*\))?$/.test(n)) return { dutyType: 'Absence', dutyCode: n };
   return null;
 }
 

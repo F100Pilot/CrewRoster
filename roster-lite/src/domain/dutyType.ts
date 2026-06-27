@@ -21,7 +21,7 @@ export function inferDutyType(dutyCode: string): string {
   if (['OFD', 'OFFICE', 'GRD'].includes(code)) return 'Office Duty';
   if (['TRG', 'TRNG', 'TR'].includes(code)) return 'Training';
   if (['MED', 'MC', 'MEDICAL'].includes(code)) return 'Medical';
-  if (code === 'FAL') return 'Absence'; // Falta (ausência)
+  if (/^FAL(\(.*\))?$/.test(code)) return 'Absence'; // Falta (ausência): FAL, FAL(PD), …
   if (['RSV', 'R'].includes(code)) return 'Reserve';
   if (['POS', 'DH'].includes(code)) return 'Positioning';
   return 'Other';

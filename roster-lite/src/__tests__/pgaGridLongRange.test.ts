@@ -173,6 +173,22 @@ describe('interpretPgaGrid — FAL (Falta)', () => {
   });
 });
 
+// FAL with a reason suffix in parentheses, e.g. FAL(PD), must be detected too (the parenthesised
+// form was previously unrecognised, so the day was dropped).
+const faltaSuffix: PositionedToken[] = [
+  tk('01Jul26 -', 60, 900),
+  tk('Wed01', 100, 600), tk('Thu02', 130, 600), tk('Fri03', 160, 600), tk('Sat04', 190, 600),
+  tk('Sun05', 220, 600), tk('Mon06', 250, 600), tk('Tue07', 280, 600), tk('date', 500, 600),
+  tk('FAL(PD)', 100, 560), tk('LIS', 100, 550),
+];
+
+describe('interpretPgaGrid — FAL(PD)', () => {
+  const duties = interpretPgaGrid(faltaSuffix);
+  it('detects FAL(PD) as Absence, keeping the full code', () => {
+    expect(duties.find((x) => x.date === '2026-07-01')).toMatchObject({ dutyCode: 'FAL(PD)', dutyType: 'Absence' });
+  });
+});
+
 // A truly unrecognised code with supporting structure (a time) must still produce a
 // duty so the day is not dropped.
 const unknownCode: PositionedToken[] = [

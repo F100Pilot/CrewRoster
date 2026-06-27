@@ -36,6 +36,7 @@ describe('inferDutyType', () => {
     ['TRG', 'Training'],
     ['MED', 'Medical'],
     ['FAL', 'Absence'],
+    ['FAL(PD)', 'Absence'], // Falta with a reason suffix
     ['RSV', 'Reserve'],
     ['POS', 'Positioning'],
     ['ZZZ', 'Other'],
