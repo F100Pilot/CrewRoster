@@ -7,32 +7,42 @@ describe('computeRisk', () => {
     expect(computeRisk(0, 20, 0)).toBe('low');
   });
 
-  it('is moderate on meaningful vertical shear alone', () => {
-    expect(computeRisk(0, 50, 0)).toBe('moderate');
+  it('keeps a normal jet crossing low (matches EDR-based products)', () => {
+    // Real case: Ellrod 28, shear 70 km/h, CAPE 0 — Windy's CAT layer showed this as light, but
+    // the old thresholds called it "high". It must read as low.
+    expect(computeRisk(28, 70, 0)).toBe('low');
   });
 
-  it('is moderate on a moderate Ellrod index alone', () => {
-    expect(computeRisk(5, 10, 0)).toBe('moderate');
+  it('is moderate on strong vertical shear alone', () => {
+    expect(computeRisk(0, 110, 0)).toBe('moderate');
+    expect(computeRisk(0, 70, 0)).toBe('low'); // everyday jet shear stays low
+  });
+
+  it('is moderate on a strong Ellrod index alone', () => {
+    expect(computeRisk(50, 10, 0)).toBe('moderate');
+    expect(computeRisk(30, 10, 0)).toBe('low'); // routine deformation stays low
   });
 
   it('is moderate on moderate CAPE alone', () => {
-    expect(computeRisk(0, 10, 400)).toBe('moderate');
+    expect(computeRisk(0, 10, 1000)).toBe('moderate');
+    expect(computeRisk(0, 10, 400)).toBe('low');
   });
 
-  it('is high on strong shear', () => {
-    expect(computeRisk(0, 80, 0)).toBe('high');
+  it('is high on very strong shear', () => {
+    expect(computeRisk(0, 160, 0)).toBe('high');
   });
 
-  it('is high on a strong Ellrod index', () => {
-    expect(computeRisk(10, 10, 0)).toBe('high');
+  it('is high on a very strong Ellrod index', () => {
+    expect(computeRisk(90, 10, 0)).toBe('high');
   });
 
   it('is high on strong convection (CAPE)', () => {
-    expect(computeRisk(0, 10, 1200)).toBe('high');
+    expect(computeRisk(0, 10, 2500)).toBe('high');
   });
 
   it('takes the worst of the three proxies', () => {
-    expect(computeRisk(1, 50, 1200)).toBe('high');
+    expect(computeRisk(10, 110, 0)).toBe('moderate'); // shear escalates
+    expect(computeRisk(10, 10, 2500)).toBe('high'); // convection escalates
   });
 });
 
