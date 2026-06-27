@@ -220,7 +220,9 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
 
       {!loading && !legHasData && !displayReg && (
         <Typography variant="caption" color="text.secondary">
-          Sem dados ainda (ficam disponíveis perto do voo).
+          {configured
+            ? 'Sem dados ainda (ficam disponíveis perto do voo).'
+            : 'Portas e matrícula vêm do AeroDataBox — adiciona a tua chave em Definições (é por dispositivo).'}
         </Typography>
       )}
 
