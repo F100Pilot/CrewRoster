@@ -137,6 +137,15 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
   const COMPLETED_STATUS = /arriv|depart|land|en[\s-]?route|airborne|in\s*air|active/i;
   const showLegStatus = !!leg?.status && !(notDepartedYet && COMPLETED_STATUS.test(leg.status));
 
+  // Whether the matched leg actually carries something worth showing. AeroDataBox can return a
+  // bare scheduled record (no tail, no gate, status suppressed) for a flight whose aircraft isn't
+  // assigned yet — render the clean "no data yet" line for that, not an empty block of dashes.
+  const legHasData =
+    !!leg &&
+    (!!leg.reg || showLegStatus ||
+      !!leg.departure.terminal || !!leg.departure.gate ||
+      !!leg.arrival.terminal || !!leg.arrival.gate);
+
   return (
     <Box sx={{ mt: 1.5, pt: 1.5, borderTop: '1px dashed', borderColor: 'divider' }}>
       <Box display="flex" alignItems="center" gap={0.75} mb={0.5}>
@@ -201,21 +210,21 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
         </List>
       </Popover>
 
-      {/* No live AeroDataBox leg but we have a tail (FLIC today, recorded, or inferred). */}
-      {!leg && displayReg && (
+      {/* No operational leg data, but we have a tail (FLIC today, recorded, or inferred). */}
+      {!legHasData && displayReg && (
         <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
           <Chip size="small" label={displayReg + (displayRegInferred ? ' *' : '')} sx={{ fontWeight: 700 }} />
           {flicReg && <Typography variant="caption" color="text.secondary">via FLIC (atualizada no dia)</Typography>}
         </Box>
       )}
 
-      {!loading && !leg && !displayReg && (
+      {!loading && !legHasData && !displayReg && (
         <Typography variant="caption" color="text.secondary">
           Sem dados ainda (ficam disponíveis perto do voo).
         </Typography>
       )}
 
-      {leg && (
+      {legHasData && leg && (
         <>
           <Box display="flex" alignItems="center" gap={1} flexWrap="wrap" mb={0.5}>
             {displayReg ? (
