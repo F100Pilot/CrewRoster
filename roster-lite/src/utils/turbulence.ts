@@ -19,12 +19,18 @@ export interface TurbulenceForecast {
   capeJkg: number; // CAPE at the worst point, J/kg
 }
 
-// Combine the three proxies into a level — the worst one wins. Thresholds are deliberately
-// conservative. Ellrod TI1 in ×1e7 s⁻²; shear in km/h; CAPE in J/kg.
+// Combine the three proxies into a level — the worst one wins. Ellrod TI1 in ×1e7 s⁻²; shear in
+// km/h; CAPE in J/kg.
+//
+// Thresholds are calibrated against EDR-based products (e.g. Windy's CAT layer): on this coarse
+// Open-Meteo grid a normal jet-stream crossing routinely yields Ellrod ~15–30 and vertical shear
+// ~60–80 km/h, which those products show as *light* turbulence. Earlier thresholds (Ellrod ≥ 9,
+// shear ≥ 45) flagged that as "high", which over-called badly — so the bars are now well above
+// the everyday-jet range and only genuinely strong deformation/shear/convection escalate.
 export function computeRisk(ellrod: number, shearKmh: number, capeJkg: number): TurbulenceLevel {
-  const e = ellrod >= 9 ? 2 : ellrod >= 4 ? 1 : 0;
-  const s = shearKmh >= 75 ? 2 : shearKmh >= 45 ? 1 : 0;
-  const c = capeJkg >= 1000 ? 2 : capeJkg >= 300 ? 1 : 0;
+  const e = ellrod >= 80 ? 2 : ellrod >= 40 ? 1 : 0;
+  const s = shearKmh >= 150 ? 2 : shearKmh >= 100 ? 1 : 0;
+  const c = capeJkg >= 2000 ? 2 : capeJkg >= 800 ? 1 : 0;
   const score = Math.max(e, s, c);
   return score >= 2 ? 'high' : score >= 1 ? 'moderate' : 'low';
 }
