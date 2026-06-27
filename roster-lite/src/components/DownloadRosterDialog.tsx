@@ -118,6 +118,11 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
   // Hidden auto-login when saved credentials exist, so the login form is skipped.
   const [autoLoggingIn, setAutoLoggingIn] = useState(false);
   const autoTried = useRef(false);
+  // Read the manual login fields from the DOM on submit: a password manager can fill them without
+  // firing React's onChange, leaving the controlled state empty (which would also keep the button
+  // disabled). The DOM value is authoritative.
+  const loginCodeRef = useRef<HTMLInputElement>(null);
+  const loginPwRef = useRef<HTMLInputElement>(null);
 
   const [beginDate, setBeginDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [endDate, setEndDate] = useState('');
@@ -179,11 +184,13 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
   }
 
   async function handleLogin() {
-    if (!crewCode || !password) return;
+    const code = (loginCodeRef.current?.value ?? crewCode).trim();
+    const pw = loginPwRef.current?.value ?? password;
+    if (!code || !pw) return;
     setAuthLoading(true);
     setAuthError(null);
     try {
-      const token = await login(crewCode, password);
+      const token = await login(code, pw);
       setSessionToken(token);
       setPassword(''); // don't keep the password in memory longer than needed
     } catch (e) {
@@ -445,6 +452,7 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
               label="Código tripulante"
               value={crewCode}
               onChange={(e) => setCrewCode(e.target.value)}
+              inputRef={loginCodeRef}
               disabled={authLoading}
               autoComplete="username"
               size="small"
@@ -456,6 +464,7 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+              inputRef={loginPwRef}
               disabled={authLoading}
               autoComplete="current-password"
               size="small"
@@ -464,7 +473,7 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
             <Button
               variant="contained"
               onClick={handleLogin}
-              disabled={authLoading || !crewCode || !password}
+              disabled={authLoading}
               startIcon={authLoading ? <CircularProgress size={18} color="inherit" /> : <Login />}
             >
               {authLoading ? 'A autenticar…' : 'Entrar'}

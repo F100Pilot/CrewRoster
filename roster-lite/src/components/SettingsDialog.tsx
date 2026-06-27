@@ -46,6 +46,11 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
   const [lead, setLead] = useState(getCheckinLeadMinutes());
   const [readmeOpen, setReadmeOpen] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+  // Read the credential inputs straight from the DOM on save: password managers (Bitwarden, etc.)
+  // fill the field without firing React's onChange, so the controlled state can stay empty and an
+  // empty password would be saved — then auto-login never triggers. The DOM value is authoritative.
+  const credCodeRef = useRef<HTMLInputElement>(null);
+  const credPasswordRef = useRef<HTMLInputElement>(null);
   const [backupBusy, setBackupBusy] = useState(false);
   const [backupMsg, setBackupMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
@@ -119,11 +124,17 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
   function handleSave() {
     if (invalid) return;
     setAeroDataBoxKey(trimmed);
+    // Prefer the live DOM value so a password-manager fill (no onChange) is still captured.
+    const code = (credCodeRef.current?.value ?? credCode).trim();
+    const pw = credPasswordRef.current?.value ?? credPassword;
     if (activeUser) {
-      setCredentials(activeUser.id, { crewCode: credCode.trim(), password: credPassword });
+      setCredentials(activeUser.id, { crewCode: code, password: pw });
     }
+    // Keep React state in sync with what we actually saved.
+    if (code !== credCode) setCredCode(code);
+    if (pw !== credPassword) setCredPassword(pw);
     setSaved(true);
-    if (credCode.trim() || credPassword) {
+    if (code || pw) {
       setSnack('Credenciais do CrewLink guardadas neste dispositivo.');
     }
   }
@@ -226,6 +237,7 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
                 label="Código tripulante"
                 value={credCode}
                 onChange={(e) => setCredCode(e.target.value)}
+                inputRef={credCodeRef}
                 autoComplete="username"
                 size="small"
                 fullWidth
@@ -235,6 +247,7 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
                 type={showCred ? 'text' : 'password'}
                 value={credPassword}
                 onChange={(e) => setCredPassword(e.target.value)}
+                inputRef={credPasswordRef}
                 autoComplete="current-password"
                 size="small"
                 fullWidth
