@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.9.2';
+export const APP_VERSION = '0.8.9.3';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,14 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.9.3',
+    date: '2026-06-27',
+    highlights: [
+      'Login automático ao CrewLink mais fiável: passa a funcionar mesmo quando a password é preenchida por um gestor de passwords (ex.: Bitwarden). Antes podia ficar por guardar e o formulário aparecia na mesma.',
+      'Mensagem mais clara quando as portas/matrícula não aparecem: indica que vêm do AeroDataBox e que a chave é por dispositivo (Definições).',
+    ],
+  },
   {
     version: '0.8.9.2',
     date: '2026-06-27',
