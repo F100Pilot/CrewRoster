@@ -31,6 +31,10 @@ export default function MapPage() {
     setRows(userId ? await loadLogbook(userId) : []);
   }, [userId]);
   useEffect(() => { reload(); }, [reload]);
+  useEffect(() => {
+    window.addEventListener('logbook-updated', reload);
+    return () => window.removeEventListener('logbook-updated', reload);
+  }, [reload]);
 
   const net = useMemo(
     () => buildFlightNetwork(rows.map((r) => ({ from: r.from, to: r.to }))),

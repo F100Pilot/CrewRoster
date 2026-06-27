@@ -22,6 +22,11 @@ export default function StatsPage() {
     setRows(userId ? await loadLogbook(userId) : []);
   }, [userId]);
   useEffect(() => { reload(); }, [reload]);
+  // The roster provider syncs the logbook in the background; refresh when it lands.
+  useEffect(() => {
+    window.addEventListener('logbook-updated', reload);
+    return () => window.removeEventListener('logbook-updated', reload);
+  }, [reload]);
 
   const stats = useMemo(() => logbookStats(rows), [rows]);
   const maxAircraft = Math.max(1, ...stats.byAircraft.map((a) => a.sectors));

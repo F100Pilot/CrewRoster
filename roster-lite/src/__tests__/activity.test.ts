@@ -18,6 +18,7 @@ describe('groundActivityByDate', () => {
       duty('2026-06-04', 'Flight Duty'),
       duty('2026-06-05', 'Day Off'),
       duty('2026-06-06', 'Standby Home'),
+      duty('2026-06-07', 'Absence'),
     ]);
     expect(m.get('2026-06-01')).toBe('sim');
     expect(m.get('2026-06-02')).toBe('office');
@@ -25,6 +26,7 @@ describe('groundActivityByDate', () => {
     expect(m.has('2026-06-04')).toBe(false);
     expect(m.has('2026-06-05')).toBe(false);
     expect(m.has('2026-06-06')).toBe(false);
+    expect(m.get('2026-06-07')).toBe('absence');
   });
 
   it('prefers sim over training over office when a day mixes them', () => {

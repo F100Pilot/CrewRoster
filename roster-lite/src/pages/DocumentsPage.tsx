@@ -38,6 +38,10 @@ export default function DocumentsPage() {
     setRows(r);
   }, [userId]);
   useEffect(() => { reload(); }, [reload]);
+  useEffect(() => {
+    window.addEventListener('logbook-updated', reload);
+    return () => window.removeEventListener('logbook-updated', reload);
+  }, [reload]);
 
   const recency = useMemo(() => recencyStatus(rows, today), [rows, today]);
 

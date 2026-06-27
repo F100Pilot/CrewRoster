@@ -4,11 +4,11 @@ import { addDays, endOfWeek, format, parseISO, startOfWeek } from 'date-fns';
 import { pt } from 'date-fns/locale';
 import { activityLevel, type GroundKind } from '../domain/activity';
 
-// Non-flying work days each get their own colour, all clearly off the indigo flight gradient:
-// simulator = orange, training = teal, office = purple.
-const GROUND_COLOR: Record<GroundKind, string> = { sim: '#f57c00', training: '#00897b', office: '#8e24aa' };
-const GROUND_LABEL: Record<GroundKind, string> = { sim: 'Simulador', training: 'Formação', office: 'Gabinete' };
-const GROUND_ORDER: GroundKind[] = ['sim', 'training', 'office'];
+// Non-flying days each get their own colour, all clearly off the indigo flight gradient:
+// simulator = orange, training = teal, office = purple, absence (falta) = red.
+const GROUND_COLOR: Record<GroundKind, string> = { sim: '#f57c00', training: '#00897b', office: '#8e24aa', absence: '#d32f2f' };
+const GROUND_LABEL: Record<GroundKind, string> = { sim: 'Simulador', training: 'Formação', office: 'Gabinete', absence: 'Falta' };
+const GROUND_ORDER: GroundKind[] = ['sim', 'training', 'office', 'absence'];
 
 const CELL = 13; // px — a touch bigger than GitHub so days read on a phone
 const GAP = 3;
