@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import { Box, CircularProgress, Link, Typography } from '@mui/material';
-import { LocalParking } from '@mui/icons-material';
+import { LocalParking, FlightLand, FlightTakeoff } from '@mui/icons-material';
 import { fetchFlicStands, flicEnabled, flicLegsFor, type FlicLeg, type FlicStandInfo } from '../domain/flic';
 
 function todayISO(): string {
@@ -9,9 +9,9 @@ function todayISO(): string {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
-// One minimal stand card: just the parking icon and the stand number, side by side, sized to
-// line up with the sunrise/sunset cards. Tapping it re-fetches (stands change). The flight's
-// status/times live on the board itself — here we keep it to the essential: which stand.
+// One compact stand card, sized to line up with the sunrise/sunset cards: a top line stating
+// whether it's the arrival or departure stand (with the hub), and the stand number below.
+// Tapping it re-fetches (stands change). Status/times live on the board itself.
 function StandCard({
   leg,
   info,
@@ -21,38 +21,50 @@ function StandCard({
   info: FlicStandInfo | null;
   onRefresh: () => void;
 }) {
+  const dep = leg.kind === 'dep';
+  const DirIcon = dep ? FlightTakeoff : FlightLand;
   return (
     <Box
       onClick={onRefresh}
-      title={`${leg.kind === 'dep' ? 'Partida' : 'Chegada'} ${leg.hub} — toque para atualizar`}
+      title={`${dep ? 'Partida' : 'Chegada'} ${leg.hub} — toque para atualizar`}
       sx={{
-        px: 1.5,
+        px: 1.25,
         py: 0.5,
         borderRadius: 2,
         bgcolor: 'action.hover',
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
-        gap: 0.75,
+        justifyContent: 'center',
         cursor: 'pointer',
         minHeight: 44,
+        minWidth: 96,
       }}
     >
-      <LocalParking sx={{ fontSize: 20, color: 'text.secondary' }} />
-      {info?.found && info.stand ? (
-        <Typography variant="h6" fontWeight={800} lineHeight={1}>
-          {info.stand}
+      <Box display="flex" alignItems="center" gap={0.4}>
+        <DirIcon sx={{ fontSize: 13, color: 'text.secondary' }} />
+        <Typography variant="caption" fontWeight={700} color="text.secondary" lineHeight={1}>
+          {dep ? 'Partida' : 'Chegada'} {leg.hub}
         </Typography>
-      ) : info?.found ? (
-        <Typography variant="body2" color="text.secondary">
-          n/d
-        </Typography>
-      ) : info ? (
-        <Link href={leg.boardUrl} target="_blank" rel="noopener" variant="body2" onClick={(e) => e.stopPropagation()}>
-          n/d
-        </Link>
-      ) : (
-        <CircularProgress size={16} />
-      )}
+      </Box>
+      <Box display="flex" alignItems="center" gap={0.5} mt={0.25}>
+        <LocalParking sx={{ fontSize: 17, color: 'text.secondary' }} />
+        {info?.found && info.stand ? (
+          <Typography variant="h6" fontWeight={800} lineHeight={1}>
+            {info.stand}
+          </Typography>
+        ) : info?.found ? (
+          <Typography variant="body2" color="text.secondary">
+            n/d
+          </Typography>
+        ) : info ? (
+          <Link href={leg.boardUrl} target="_blank" rel="noopener" variant="body2" onClick={(e) => e.stopPropagation()}>
+            n/d
+          </Link>
+        ) : (
+          <CircularProgress size={16} />
+        )}
+      </Box>
     </Box>
   );
 }
