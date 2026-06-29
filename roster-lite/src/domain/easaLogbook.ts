@@ -1,6 +1,7 @@
-import type { LogbookRow } from './types';
+import type { LogbookRow, ParsedDuty } from './types';
 import type { LogbookFunction } from '../storage/settings';
 import { rowBlock, rowNight, rowNightLanding, sortLogbook } from './logbook';
+import { diffMinutes } from '../utils/duration';
 
 // Builds the printable EASA logbook: one line per flown sector, paginated with per-page subtotals
 // and carried-forward cumulative totals — the layout of a paper flight crew logbook (FCL.050).
@@ -105,6 +106,25 @@ export function paginateEasa(sectors: EasaSector[], fn: LogbookFunction, perPage
     broughtForward = total;
   }
   return pages;
+}
+
+// The EASA logbook's separate FSTD (synthetic training device) section: simulator sessions from
+// the roster (not the flight logbook), with their date, device type and session length.
+export interface FstdSession {
+  date: string;
+  type: string;
+  totalMin: number;
+}
+
+export function fstdSessions(duties: ParsedDuty[]): FstdSession[] {
+  return duties
+    .filter((d) => d.dutyType === 'Simulator')
+    .map((d) => ({
+      date: d.date,
+      type: d.aircraftType || d.dutyCode || 'SIM',
+      totalMin: d.departureTime && d.arrivalTime ? diffMinutes(d.departureTime, d.arrivalTime) : 0,
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date));
 }
 
 // Minutes → "H:MM" (logbook convention), '' for zero so empty cells stay blank.

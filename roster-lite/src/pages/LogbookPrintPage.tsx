@@ -6,7 +6,7 @@ import { format, parseISO } from 'date-fns';
 import { useRoster } from '../state/useRoster';
 import { loadLogbook } from '../storage/rosterStore';
 import { getLogbookFunction, type LogbookFunction } from '../storage/settings';
-import { easaSectors, paginateEasa, hm, type EasaPage, type EasaTotals } from '../domain/easaLogbook';
+import { easaSectors, paginateEasa, fstdSessions, hm, type EasaPage, type EasaTotals } from '../domain/easaLogbook';
 import type { LogbookRow } from '../domain/types';
 
 // Scoped to body.printing-easa so it never affects printing of other pages: hide the whole app
@@ -116,7 +116,7 @@ function PageTable({ page, picName, fn }: { page: EasaPage; picName: string; fn:
 
 export default function LogbookPrintPage() {
   const navigate = useNavigate();
-  const { activeUser } = useRoster();
+  const { activeUser, roster } = useRoster();
   const userId = activeUser?.id;
 
   const [rows, setRows] = useState<LogbookRow[]>([]);
@@ -130,6 +130,10 @@ export default function LogbookPrintPage() {
   const pages = useMemo(() => paginateEasa(easaSectors(rows), fn), [rows, fn]);
   // Name PIC: when flying as PIC the entry is "SELF"; as co-pilot the captain isn't known here.
   const picName = fn === 'PIC' ? 'SELF' : '';
+  // FSTD (simulator) sessions come from the roster, not the flight logbook.
+  const fstd = useMemo(() => fstdSessions(roster?.duties ?? []), [roster]);
+  const fstdTotal = fstd.reduce((s, f) => s + f.totalMin, 0);
+  const hasContent = rows.length > 0 || fstd.length > 0;
 
   // Hide the app chrome only while this page is mounted (scopes the print rules).
   useEffect(() => {
@@ -144,7 +148,7 @@ export default function LogbookPrintPage() {
       <Box className="no-print" sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
         <IconButton onClick={() => navigate(-1)}><ArrowBack /></IconButton>
         <Typography variant="h6" sx={{ flexGrow: 1 }}>Caderneta EASA</Typography>
-        <Button variant="contained" startIcon={<Print />} onClick={() => window.print()} disabled={rows.length === 0}>
+        <Button variant="contained" startIcon={<Print />} onClick={() => window.print()} disabled={!hasContent}>
           Imprimir
         </Button>
       </Box>
@@ -157,8 +161,8 @@ export default function LogbookPrintPage() {
         </Typography>
       </Box>
 
-      {rows.length === 0 ? (
-        <Typography className="no-print" color="text.secondary">Sem voos no diário ainda.</Typography>
+      {!hasContent ? (
+        <Typography className="no-print" color="text.secondary">Sem voos nem simulador no diário/escala ainda.</Typography>
       ) : (
         <Box sx={{ overflowX: 'auto' }}>
           {/* Title shown on the printed sheet */}
@@ -171,6 +175,37 @@ export default function LogbookPrintPage() {
           {pages.map((p) => (
             <PageTable key={p.index} page={p} picName={picName} fn={fn} />
           ))}
+
+          {/* FSTD (simulator) section — its own sheet (the last flight page breaks before it). */}
+          {fstd.length > 0 && (
+            <Box className="easa-fstd" sx={{ mt: 2 }}>
+              <Typography sx={{ fontWeight: 700, fontSize: 13, mb: 0.5 }}>
+                Dispositivos de treino de simulação (FSTD)
+              </Typography>
+              <table className="easa-table" style={{ width: 'auto', tableLayout: 'auto', minWidth: 360 }}>
+                <thead>
+                  <tr>
+                    <th style={{ padding: '2px 10px' }}>Data</th>
+                    <th style={{ padding: '2px 10px' }}>Tipo de FSTD</th>
+                    <th style={{ padding: '2px 10px' }}>Total da sessão</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {fstd.map((f, i) => (
+                    <tr key={i}>
+                      <td style={{ padding: '2px 10px' }}>{format(parseISO(f.date), 'dd/MM/yy')}</td>
+                      <td style={{ padding: '2px 10px' }}>{f.type}</td>
+                      <td style={{ padding: '2px 10px' }}>{hm(f.totalMin)}</td>
+                    </tr>
+                  ))}
+                  <tr className="tot">
+                    <td className="lbl" colSpan={2} style={{ padding: '2px 10px' }}>TOTAL FSTD</td>
+                    <td style={{ padding: '2px 10px' }}>{hm(fstdTotal)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </Box>
+          )}
         </Box>
       )}
     </Box>

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { paginateEasa, hm, type EasaSector } from '../domain/easaLogbook';
+import { paginateEasa, fstdSessions, hm, type EasaSector } from '../domain/easaLogbook';
+import type { ParsedDuty } from '../domain/types';
 
 const sec = (over: Partial<EasaSector> = {}): EasaSector => ({
   date: '2026-06-01', flightNumber: 'TP1', from: 'LIS', off: '08:00', to: 'OPO', on: '08:55',
@@ -13,6 +14,31 @@ describe('hm', () => {
     expect(hm(60)).toBe('1:00');
     expect(hm(0)).toBe('');
     expect(hm(-5)).toBe('');
+  });
+});
+
+describe('fstdSessions', () => {
+  const duty = (over: Partial<ParsedDuty>): ParsedDuty => ({
+    date: '2026-06-01', dutyCode: 'SIM', dutyType: 'Simulator',
+    reportingTime: null, departureTime: null, arrivalTime: null,
+    flightNumber: null, departureAirport: null, arrivalAirport: null,
+    aircraftType: null, observations: null, ...over,
+  });
+
+  it('keeps only simulator duties, with type and session length', () => {
+    const out = fstdSessions([
+      duty({ date: '2026-06-02', dutyCode: 'E90-VIE-1', departureTime: '08:00', arrivalTime: '12:00' }),
+      duty({ date: '2026-06-01', dutyCode: 'SIM', departureTime: '09:00', arrivalTime: '13:00', aircraftType: 'A320' }),
+      duty({ dutyType: 'Flight Duty', flightNumber: 'TP1' }),
+      duty({ dutyType: 'Office Duty', dutyCode: 'GAB1' }),
+    ]);
+    expect(out).toHaveLength(2);
+    expect(out[0]).toMatchObject({ date: '2026-06-01', type: 'A320', totalMin: 240 }); // sorted by date
+    expect(out[1]).toMatchObject({ date: '2026-06-02', type: 'E90-VIE-1', totalMin: 240 });
+  });
+
+  it('totalMin is 0 when the session has no times', () => {
+    expect(fstdSessions([duty({})])[0].totalMin).toBe(0);
   });
 });
 
