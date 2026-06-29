@@ -12,6 +12,7 @@ import {
   API_KEY_PATTERN, getAeroDataBoxKey, setAeroDataBoxKey,
   CHECKIN_LEAD_OPTIONS, getCheckinLeadMinutes, setCheckinLeadMinutes,
   getCredentials, setCredentials,
+  getLogbookFunction, setLogbookFunction, type LogbookFunction,
 } from '../storage/settings';
 import { fetchFlightInfo } from '../services/crewlinkApi';
 import { APP_NAME, APP_VERSION_LABEL } from '../version';
@@ -36,6 +37,8 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
   const [credCode, setCredCode] = useState('');
   const [credPassword, setCredPassword] = useState('');
   const [showCred, setShowCred] = useState(false);
+  // EASA logbook: which function (PIC / co-pilot) the printable logbook assigns block time to.
+  const [logbookFn, setLogbookFn] = useState<LogbookFunction>('COPILOT');
   const [show, setShow] = useState(false);
   const [saved, setSaved] = useState(false);
   // Transient confirmation popup (e.g. after saving CrewLink credentials).
@@ -67,6 +70,7 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
       const cred = activeUser ? getCredentials(activeUser.id) : null;
       setCredCode(cred?.crewCode ?? activeUser?.crewCode ?? '');
       setCredPassword(cred?.password ?? '');
+      setLogbookFn(activeUser ? getLogbookFunction(activeUser.id) : 'COPILOT');
     }
   }, [open, activeUser]);
 
@@ -129,6 +133,7 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
     const pw = credPasswordRef.current?.value ?? credPassword;
     if (activeUser) {
       setCredentials(activeUser.id, { crewCode: code, password: pw });
+      setLogbookFunction(activeUser.id, logbookFn);
     }
     // Keep React state in sync with what we actually saved.
     if (code !== credCode) setCredCode(code);
@@ -269,6 +274,26 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
                 </Box>
               )}
             </Stack>
+          </Box>
+
+          <Divider />
+
+          <Box>
+            <Typography variant="subtitle2" gutterBottom>Caderneta de voo (EASA)</Typography>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              A tua função habitual, para a folha imprimível EASA (o tempo de bloco vai para esta
+              coluna). A app não a sabe por voo.
+            </Typography>
+            <ToggleButtonGroup
+              size="small"
+              exclusive
+              color="primary"
+              value={logbookFn}
+              onChange={(_, v) => v && setLogbookFn(v)}
+            >
+              <ToggleButton value="PIC">Comandante</ToggleButton>
+              <ToggleButton value="COPILOT">Oficial Piloto</ToggleButton>
+            </ToggleButtonGroup>
           </Box>
 
           <Divider />

@@ -14,6 +14,7 @@ import { useRoster } from './state/useRoster';
 // Secondary routes are code-split so their heavy deps (d3-geo + world-atlas on the map,
 // pdf.js on the viewer, the stats/logbook math) don't weigh down the first load.
 const LogbookPage = lazy(() => import('./pages/LogbookPage'));
+const LogbookPrintPage = lazy(() => import('./pages/LogbookPrintPage'));
 const StatsPage = lazy(() => import('./pages/StatsPage'));
 const MapPage = lazy(() => import('./pages/MapPage'));
 const DocumentsPage = lazy(() => import('./pages/DocumentsPage'));
@@ -90,6 +91,7 @@ function AppRoutes() {
           <Route path="/crew/:login" element={<CrewSearchPage />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/logbook" element={<LogbookPage />} />
+          <Route path="/logbook/print" element={<LogbookPrintPage />} />
           <Route path="/stats" element={<StatsPage />} />
           <Route path="/map" element={<MapPage />} />
           <Route path="/documents" element={<DocumentsPage />} />

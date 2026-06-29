@@ -3,7 +3,7 @@ import {
   Alert, Box, Button, Card, CardContent, Chip, Divider, IconButton, LinearProgress, Stack,
   Table, TableBody, TableCell, TableHead, TableRow, Typography,
 } from '@mui/material';
-import { Add, ArrowBack, Download, Edit, ExpandLess, ExpandMore, FlightTakeoff, Sync } from '@mui/icons-material';
+import { Add, ArrowBack, Download, Edit, ExpandLess, ExpandMore, FlightTakeoff, Print, Sync } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import { logbookCsvRows, landingsInRows, mergeLogbook, rowBlock, rowNight, sortLogbook } from '../domain/logbook';
@@ -193,6 +193,15 @@ export default function LogbookPage() {
           disabled={entries.length === 0}
         >
           CSV
+        </Button>
+        <Button
+          size="small"
+          variant="outlined"
+          startIcon={<Print />}
+          onClick={() => navigate('/logbook/print')}
+          disabled={entries.length === 0}
+        >
+          EASA
         </Button>
       </Box>
 
