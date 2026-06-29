@@ -151,3 +151,26 @@ export function setCredentials(userId: string, cred: SavedCredentials | null): v
     // ignore
   }
 }
+
+// ── Logbook (EASA) function, per profile ───────────────────────────────────────────────
+// Which pilot-function column a flight's block time goes to in the printable EASA logbook —
+// 'PIC' (Comandante) or 'COPILOT' (Oficial Piloto). The app can't tell per flight, so the pilot
+// sets it once. Kept on-device per profile.
+export type LogbookFunction = 'PIC' | 'COPILOT';
+const LOGBOOK_FN_PREFIX = 'crewroster.logbookFn.';
+
+export function getLogbookFunction(userId: string): LogbookFunction {
+  try {
+    return localStorage.getItem(LOGBOOK_FN_PREFIX + userId) === 'PIC' ? 'PIC' : 'COPILOT';
+  } catch {
+    return 'COPILOT';
+  }
+}
+
+export function setLogbookFunction(userId: string, fn: LogbookFunction): void {
+  try {
+    localStorage.setItem(LOGBOOK_FN_PREFIX + userId, fn);
+  } catch {
+    // ignore
+  }
+}
