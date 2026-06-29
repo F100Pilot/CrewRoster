@@ -32,7 +32,7 @@ const PRINT_CSS = `
 .easa-table .obs { text-align: left; }
 `;
 
-const COLS = 17;
+const COLS = 15;
 
 function TotalsRow({ label, t, strong }: { label: string; t: EasaTotals; strong?: boolean }) {
   return (
@@ -41,8 +41,6 @@ function TotalsRow({ label, t, strong }: { label: string; t: EasaTotals; strong?
       <td>{hm(t.block)}</td>
       <td>{hm(t.block)}</td>
       <td />
-      <td>{t.dayLdg || ''}</td>
-      <td>{t.nightLdg || ''}</td>
       <td>{hm(t.night)}</td>
       <td>{hm(t.ifr)}</td>
       <td>{hm(t.pic)}</td>
@@ -62,10 +60,9 @@ function PageTable({ page, picName, fn }: { page: EasaPage; picName: string; fn:
           <col style={{ width: '5%' }} /><col style={{ width: '4%' }} />
           <col style={{ width: '6%' }} /><col style={{ width: '6%' }} />
           <col style={{ width: '6%' }} /><col style={{ width: '6%' }} />
-          <col style={{ width: '8%' }} />
-          <col style={{ width: '4%' }} /><col style={{ width: '4%' }} />
-          <col style={{ width: '5%' }} /><col style={{ width: '5%' }} />
+          <col style={{ width: '10%' }} />
           <col style={{ width: '6%' }} /><col style={{ width: '6%' }} />
+          <col style={{ width: '7%' }} /><col style={{ width: '7%' }} />
           <col style={{ width: 'auto' }} />
         </colgroup>
         <thead>
@@ -76,7 +73,6 @@ function PageTable({ page, picName, fn }: { page: EasaPage; picName: string; fn:
             <th colSpan={2}>Aeronave</th>
             <th colSpan={2}>Tempo (multipiloto)</th>
             <th rowSpan={2}>Nome PIC</th>
-            <th colSpan={2}>Aterragens</th>
             <th colSpan={2}>Condições</th>
             <th colSpan={2}>Tempo de função</th>
             <th rowSpan={2}>Voo / Obs.</th>
@@ -86,7 +82,6 @@ function PageTable({ page, picName, fn }: { page: EasaPage; picName: string; fn:
             <th>Local</th><th>Hora</th>
             <th>Tipo</th><th>Matríc.</th>
             <th>Multip.</th><th>Total</th>
-            <th>Dia</th><th>Noite</th>
             <th>Noite</th><th>IFR</th>
             <th>PIC</th><th>Co-pil.</th>
           </tr>
@@ -100,7 +95,6 @@ function PageTable({ page, picName, fn }: { page: EasaPage; picName: string; fn:
               <td>{s.type}</td><td>{s.reg || ''}</td>
               <td>{hm(s.blockMin)}</td><td>{hm(s.blockMin)}</td>
               <td>{picName}</td>
-              <td>{s.dayLdg || ''}</td><td>{s.nightLdg || ''}</td>
               <td>{hm(s.nightMin)}</td><td>{hm(s.ifrMin)}</td>
               <td>{fn === 'PIC' ? hm(s.blockMin) : ''}</td>
               <td>{fn === 'COPILOT' ? hm(s.blockMin) : ''}</td>
