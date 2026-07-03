@@ -16,8 +16,8 @@ import { rotationChains } from '../../domain/aircraftRegs';
 // Bumped whenever the crew parser changes in a way that should re-derive crew for ALREADY
 // imported rosters (the app re-runs the parser on the stored PDF when a roster's stamp is
 // behind this — see refreshCrewFromPdfs). 1 = role required; 2 = optional role + inference;
-// 3 = crew on ground activities (simulator).
-export const CREW_PARSER_VERSION = 3;
+// 3 = crew on ground activities (simulator); 4 = + begin/end/location for ground activities.
+export const CREW_PARSER_VERSION = 4;
 
 const DOW = /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\d{2}$/;
 const NUM = /^\d{2,4}$/;
@@ -173,24 +173,44 @@ export function parseCrewInfo(tokens: PositionedToken[]): CrewLeg[] {
 // the activity is identified by its date + code — the same code the duty grid stores as the
 // Simulator duty's dutyCode (see classifyDuty: E90-VIE-1 style).
 const GROUND_CODE = /^E\d{2}-[A-Z]{3}-\d$/; // E90-FRA-1, E90-VIE-1
+const HHMM = /^([01]\d|2[0-3])[0-5]\d$/; // 1700, 2100 → begin/end columns
 
 export interface GroundCrewLeg {
   dow: string; // "Fri03"
   code: string; // "E90-FRA-1"
+  location: string | null; // "FRA"
+  begin: string | null; // "17:00"
+  end: string | null; // "21:00"
   crew: CrewMember[];
 }
+
+const hhmm = (t: string) => `${t.slice(0, 2)}:${t.slice(2)}`;
 
 export function parseGroundCrewInfo(tokens: PositionedToken[]): GroundCrewLeg[] {
   // Identity rows: a ground code (E90-FRA-1) with its weekday+day label on the same row, just to
   // its left. We key off the CODE rather than the "crew on event:" label because pdf.js may split
   // that label into separate tokens; a duty-grid copy of the code with no crew below it simply
-  // yields an empty activity that's dropped at the end.
-  const acts: { dow: string; code: string; x: number; y: number; page: number; crew: CrewMember[] }[] = [];
+  // yields an empty activity that's dropped at the end. The location/begin/end sit on the same
+  // row to the RIGHT of the code ("… FRA 1700 2100").
+  type Act = Omit<GroundCrewLeg, 'crew'> & { x: number; y: number; page: number; crew: CrewMember[] };
+  const acts: Act[] = [];
   for (const code of tokens.filter((z) => GROUND_CODE.test(z.text))) {
     const dow = tokens
       .filter((z) => z.page === code.page && Math.abs(z.y - code.y) <= 4 && z.x < code.x && DOW.test(z.text))
       .sort((a, b) => b.x - a.x)[0]; // nearest date to the left
-    if (dow) acts.push({ dow: dow.text, code: code.text, x: code.x, y: code.y, page: code.page, crew: [] });
+    if (!dow) continue;
+    const right = tokens
+      .filter((z) => z.page === code.page && Math.abs(z.y - code.y) <= 4 && z.x > code.x)
+      .sort((a, b) => a.x - b.x);
+    const location = right.find((z) => AIRPORT.test(z.text))?.text ?? null;
+    const clock = right.filter((z) => HHMM.test(z.text));
+    acts.push({
+      dow: dow.text, code: code.text, x: code.x, y: code.y, page: code.page,
+      location,
+      begin: clock[0] ? hhmm(clock[0].text) : null,
+      end: clock[1] ? hhmm(clock[1].text) : null,
+      crew: [],
+    });
   }
   if (acts.length === 0) return [];
 
@@ -217,8 +237,11 @@ export function parseGroundCrewInfo(tokens: PositionedToken[]): GroundCrewLeg[] 
     const existing = byKey.get(key);
     if (existing) {
       for (const m of a.crew) if (!existing.crew.some((c) => c.login === m.login)) existing.crew.push(m);
+      existing.location ??= a.location;
+      existing.begin ??= a.begin;
+      existing.end ??= a.end;
     } else {
-      byKey.set(key, { dow: a.dow, code: a.code, crew: [...a.crew] });
+      byKey.set(key, { dow: a.dow, code: a.code, location: a.location, begin: a.begin, end: a.end, crew: [...a.crew] });
     }
   }
   return [...byKey.values()];
@@ -233,7 +256,13 @@ export function attachGroundCrewToDuties(duties: ParsedDuty[], legs: GroundCrewL
     if (!d.dutyCode) continue;
     const dow = format(parseISO(d.date), 'EEEdd'); // e.g. "Fri03", English weekday like the PDF
     const leg = legs.find((l) => l.code === d.dutyCode && l.dow === dow);
-    if (leg) d.crew = sortCrew(leg.crew);
+    if (!leg) continue;
+    d.crew = sortCrew(leg.crew);
+    // The Ground Activity table has explicit begin/end/location columns, so use them to fill the
+    // session's start/end (Início/Fim) and airport when the duty grid didn't carry them.
+    if (leg.begin && !d.departureTime) d.departureTime = leg.begin;
+    if (leg.end && !d.arrivalTime) d.arrivalTime = leg.end;
+    if (leg.location && !d.departureAirport) d.departureAirport = leg.location;
   }
 }
 

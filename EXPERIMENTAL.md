@@ -30,7 +30,8 @@ produção, em vez de promover uma a uma.
 - **Tripulação escalada para o simulador:** a secção "Crew Information on Ground
   Activity" do PDF passa a ser interpretada; no detalhe do dia, uma sessão de
   Simulador/Formação mostra a tripulação escalada (com quem voas no evento), tocável
-  para ver os voos partilhados. As escalas já importadas reprocessam sozinhas
+  para ver os voos partilhados. A sessão passa também a mostrar o Início/Fim (UTC) e o
+  local. As escalas já importadas reprocessam sozinhas
   (`PARSE_VERSION`/`CREW_PARSER_VERSION`).
 
 ---

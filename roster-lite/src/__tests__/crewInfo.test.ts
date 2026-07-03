@@ -195,7 +195,7 @@ describe('parseGroundCrewInfo', () => {
   it('extracts a simulator activity with its crew', () => {
     const legs = parseGroundCrewInfo(groundTokens());
     expect(legs).toHaveLength(1);
-    expect(legs[0]).toMatchObject({ dow: 'Fri03', code: 'E90-FRA-1' });
+    expect(legs[0]).toMatchObject({ dow: 'Fri03', code: 'E90-FRA-1', location: 'FRA', begin: '17:00', end: '21:00' });
     expect(legs[0].crew.map((c) => `${c.login}(${c.role})`).sort()).toEqual(
       ['ATIAGO(CP)', 'LEIBUSCH(FO)', 'PMORAIS(CP)'],
     );
@@ -244,6 +244,12 @@ describe('attachGroundCrewToDuties', () => {
     const duties = [sim()]; // 2026-07-03 is a Friday → "Fri03"
     attachGroundCrewToDuties(duties, parseGroundCrewInfo(groundTokens()));
     expect(duties[0].crew?.map((c) => c.login)).toEqual(['ATIAGO', 'PMORAIS', 'LEIBUSCH']); // CP, CP, FO → sorted
+  });
+
+  it('fills Início/Fim and airport from the Ground Activity row when the duty lacks them', () => {
+    const duties = [sim({ departureTime: null, arrivalTime: null, departureAirport: null })];
+    attachGroundCrewToDuties(duties, parseGroundCrewInfo(groundTokens()));
+    expect(duties[0]).toMatchObject({ departureTime: '17:00', arrivalTime: '21:00', departureAirport: 'FRA' });
   });
 
   it('does not attach to a different date or code', () => {
