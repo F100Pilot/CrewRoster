@@ -15,8 +15,9 @@ import { rotationChains } from '../../domain/aircraftRegs';
 
 // Bumped whenever the crew parser changes in a way that should re-derive crew for ALREADY
 // imported rosters (the app re-runs the parser on the stored PDF when a roster's stamp is
-// behind this — see refreshCrewFromPdfs). 1 = role required; 2 = optional role + inference.
-export const CREW_PARSER_VERSION = 2;
+// behind this — see refreshCrewFromPdfs). 1 = role required; 2 = optional role + inference;
+// 3 = crew on ground activities (simulator).
+export const CREW_PARSER_VERSION = 3;
 
 const DOW = /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\d{2}$/;
 const NUM = /^\d{2,4}$/;
@@ -30,8 +31,9 @@ const CREW = /^([A-Za-z]+),\s*([A-Za-z]+),\s*(CP|FO|PU|ST)?\s*([A-Za-z].*)?$/i;
 // Each leg's column also carries section-holder tokens prefixed with "cockpit:" / "cabin:"
 // (e.g. "cockpit: RCLARO, CLARO, CP") — a real crew member that must be captured too. For a
 // pilot's roster the cockpit holder is the owner; for a cabin-crew roster it's the Captain, so
-// dropping it lost a commander. We strip the prefix and parse the rest as a normal crew token.
-const SECTION_PREFIX = /^(?:cockpit|cabin):\s*/i;
+// dropping it lost a commander. The ground-activity section prefixes its crew with
+// "crew on event:" instead. We strip whichever prefix and parse the rest as a normal crew token.
+const SECTION_PREFIX = /^(?:cockpit|cabin|crew on event):\s*/i;
 const crewBody = (text: string) => text.replace(SECTION_PREFIX, '');
 
 export interface CrewLeg {
@@ -163,6 +165,80 @@ export function parseCrewInfo(tokens: PositionedToken[]): CrewLeg[] {
   return out;
 }
 
+// ── Ground activities (simulator) ───────────────────────────────────────────────────────────
+// The PDF's "Crew Information on Ground Activity" section — the crew rostered on a simulator
+// session — is a plain, NON-transposed table (unlike the flight "on Leg" grid): each row is an
+// activity "date  code  location  begin  end" (e.g. "Fri03  E90-FRA-1  FRA  1700  2100"), with
+// the crew listed just below on "crew on event:" lines. There is no carrier/flight number, so
+// the activity is identified by its date + code — the same code the duty grid stores as the
+// Simulator duty's dutyCode (see classifyDuty: E90-VIE-1 style).
+const GROUND_CODE = /^E\d{2}-[A-Z]{3}-\d$/; // E90-FRA-1, E90-VIE-1
+
+export interface GroundCrewLeg {
+  dow: string; // "Fri03"
+  code: string; // "E90-FRA-1"
+  crew: CrewMember[];
+}
+
+export function parseGroundCrewInfo(tokens: PositionedToken[]): GroundCrewLeg[] {
+  // Anchor on the "crew on event:" labels that only this section carries; if none, there's no
+  // ground-activity crew to read. Scope everything to the page(s) they appear on.
+  const anchorPages = new Set(tokens.filter((z) => /^crew on event:/i.test(z.text)).map((z) => z.page));
+  if (anchorPages.size === 0) return [];
+
+  // Identity rows: a ground code with its weekday+day label on the same row, just to its left.
+  const acts: { dow: string; code: string; x: number; y: number; page: number; crew: CrewMember[] }[] = [];
+  for (const code of tokens.filter((z) => anchorPages.has(z.page) && GROUND_CODE.test(z.text))) {
+    const dow = tokens
+      .filter((z) => z.page === code.page && Math.abs(z.y - code.y) <= 4 && z.x < code.x && DOW.test(z.text))
+      .sort((a, b) => b.x - a.x)[0]; // nearest date to the left
+    if (dow) acts.push({ dow: dow.text, code: code.text, x: code.x, y: code.y, page: code.page, crew: [] });
+  }
+  if (acts.length === 0) return [];
+
+  // Assign each crew token to the nearest activity ABOVE it (identity row on top, crew below —
+  // pdf.js y grows upward). A modest band keeps a token with its own activity, not a distant one.
+  for (const ct of tokens.filter((z) => anchorPages.has(z.page) && CREW.test(crewBody(z.text)))) {
+    const member = parseCrewToken(ct.text);
+    if (!member) continue;
+    let best: (typeof acts)[number] | null = null;
+    let bestDy = Infinity;
+    for (const a of acts) {
+      if (a.page !== ct.page) continue;
+      const dy = a.y - ct.y; // positive when the identity sits above the crew line
+      if (dy > 0 && dy < 140 && dy < bestDy) { bestDy = dy; best = a; }
+    }
+    if (best && !best.crew.some((c) => c.login === member.login)) best.crew.push(member);
+  }
+
+  // De-duplicate overlapping grid copies (same date+code), merging crew.
+  const byKey = new Map<string, GroundCrewLeg>();
+  for (const a of acts) {
+    if (a.crew.length === 0) continue;
+    const key = `${a.dow}|${a.code}`;
+    const existing = byKey.get(key);
+    if (existing) {
+      for (const m of a.crew) if (!existing.crew.some((c) => c.login === m.login)) existing.crew.push(m);
+    } else {
+      byKey.set(key, { dow: a.dow, code: a.code, crew: [...a.crew] });
+    }
+  }
+  return [...byKey.values()];
+}
+
+// Attach the ground-activity crew to the matching Simulator/Training duties, keyed by
+// weekday+day-of-month + the activity code (= the duty's dutyCode).
+export function attachGroundCrewToDuties(duties: ParsedDuty[], legs: GroundCrewLeg[]): void {
+  if (legs.length === 0) return;
+  for (const d of duties) {
+    if (d.dutyType !== 'Simulator' && d.dutyType !== 'Training') continue;
+    if (!d.dutyCode) continue;
+    const dow = format(parseISO(d.date), 'EEEdd'); // e.g. "Fri03", English weekday like the PDF
+    const leg = legs.find((l) => l.code === d.dutyCode && l.dow === dow);
+    if (leg) d.crew = sortCrew(leg.crew);
+  }
+}
+
 // Sort crew for display: cockpit first (CP, FO), then cabin (PU, ST), then by surname.
 const ROLE_ORDER: Record<string, number> = { CP: 0, FO: 1, PU: 2, ST: 3 };
 export function sortCrew(crew: CrewMember[]): CrewMember[] {
@@ -235,7 +311,8 @@ function layoverHours(d1: string, t1: string | null, d2: string, t2: string | nu
 // Re-derive crew from scratch: clear whatever crew the duties already carry (possibly stale,
 // parsed by an older version) and attach again from the given legs. Used when re-processing a
 // stored roster's PDF after the parser improved, so old rosters pick up the new crew logic.
-export function reattachCrew(duties: ParsedDuty[], legs: CrewLeg[]): void {
+export function reattachCrew(duties: ParsedDuty[], legs: CrewLeg[], groundLegs: GroundCrewLeg[] = []): void {
   for (const d of duties) if (d.crew) d.crew = undefined;
   attachCrewToDuties(duties, legs);
+  attachGroundCrewToDuties(duties, groundLegs);
 }

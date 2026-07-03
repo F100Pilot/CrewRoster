@@ -1,5 +1,5 @@
 import { Box, Card, CardContent, Chip, Divider, IconButton, Stack, Typography } from '@mui/material';
-import { ArrowBack, ChevronLeft, ChevronRight, FlightLand, FlightTakeoff, Hotel, IosShare, Phone, WbSunny, Bedtime, Brightness4 } from '@mui/icons-material';
+import { ArrowBack, ChevronLeft, ChevronRight, FlightLand, FlightTakeoff, Groups, Hotel, IosShare, Phone, WbSunny, Bedtime, Brightness4 } from '@mui/icons-material';
 import { Link } from '@mui/material';
 import { addDays, format, parseISO } from 'date-fns';
 import { useEffect, useMemo, useRef } from 'react';
@@ -246,6 +246,9 @@ export default function DayDetailPage() {
                       {duty.departureAirport}
                     </Typography>
                   )}
+                  {duty.crew && duty.crew.length > 0 && (
+                    <GroundCrew crew={duty.crew} myCode={activeUser?.crewCode} />
+                  )}
                 </Box>
               )}
 
@@ -346,6 +349,41 @@ function HotelLine({ hotel }: { hotel: { name: string; phone: string | null } })
           </Typography>
         </Link>
       )}
+    </Box>
+  );
+}
+
+// The crew rostered on a simulator (or training) session, from the PDF's "Crew Information on
+// Ground Activity" section. Compact list, tap a name to see all shared flights — like the flight
+// banner's crew popover. The user's own entry is hidden (they know they're on it).
+const GROUND_ROLE_LABEL: Record<string, string> = { CP: 'Comandante', FO: 'Oficial Piloto', PU: 'Chefe de Cabine', ST: 'Tripulante' };
+function GroundCrew({ crew, myCode }: { crew: NonNullable<ParsedDuty['crew']>; myCode?: string }) {
+  const navigate = useNavigate();
+  const code = myCode?.trim().toUpperCase() || null;
+  const others = crew.filter((c) => !code || c.login.toUpperCase() !== code);
+  if (others.length === 0) return null;
+  return (
+    <Box mt={1.25}>
+      <Box display="flex" alignItems="center" justifyContent="center" gap={0.5} mb={0.5}>
+        <Groups fontSize="small" sx={{ color: 'text.secondary' }} />
+        <Typography variant="caption" color="text.secondary">Tripulação escalada</Typography>
+      </Box>
+      <Stack spacing={0.25} alignItems="center">
+        {others.map((c) => (
+          <Link
+            key={c.login}
+            component="button"
+            underline="hover"
+            onClick={() => navigate(`/crew/${c.login}`)}
+            sx={{ typography: 'body2', color: 'text.primary' }}
+          >
+            {c.firstName ? `${c.firstName} ${c.surname}` : c.surname}
+            <Typography component="span" variant="caption" color="text.secondary">
+              {' · '}{GROUND_ROLE_LABEL[c.role] ?? c.role}
+            </Typography>
+          </Link>
+        ))}
+      </Stack>
     </Box>
   );
 }

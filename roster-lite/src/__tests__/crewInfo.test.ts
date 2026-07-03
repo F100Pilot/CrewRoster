@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { parseCrewInfo, attachCrewToDuties, reattachCrew, sortCrew } from '../parsing/pdf/crewInfo';
+import {
+  parseCrewInfo, parseGroundCrewInfo, attachCrewToDuties, attachGroundCrewToDuties,
+  reattachCrew, sortCrew,
+} from '../parsing/pdf/crewInfo';
 import type { PositionedToken } from '../parsing/pdf/extractText';
 import type { ParsedDuty } from '../domain/types';
 
@@ -173,6 +176,78 @@ describe('attachCrewToDuties', () => {
     reattachCrew([outbound, ret], parseCrewInfo(legTokens()));
     expect(outbound.crew?.map((c) => c.surname)).toEqual(['ALPHA', 'BRAVO', 'CHARLIE', 'DELTA']);
     expect(ret.crew?.map((c) => c.surname)).toEqual(['ALPHA', 'BRAVO', 'CHARLIE', 'DELTA']); // refreshed via rotation, not the stale crew
+  });
+});
+
+// The "Crew Information on Ground Activity" section is a plain table: an identity row
+// (date, code, location, begin, end) with the crew listed just below on "crew on event:" lines.
+function groundTokens(code = 'E90-FRA-1'): PositionedToken[] {
+  const Y = 500; // identity row; crew sit below it (lower y — pdf.js y grows upward)
+  return [
+    tok('Fri03', 100, Y), tok(code, 180, Y), tok('FRA', 300, Y), tok('1700', 360, Y), tok('2100', 420, Y),
+    tok('crew on event:ATIAGO, ARAUJO, CP ANDRE', 180, Y - 15),
+    tok('LEIBUSCH, ZDANOWSKI, FO FRANCISCO BERNARDO', 180, Y - 30),
+    tok('PMORAIS, MORAIS, CP PAULO', 180, Y - 45),
+  ];
+}
+
+describe('parseGroundCrewInfo', () => {
+  it('extracts a simulator activity with its crew', () => {
+    const legs = parseGroundCrewInfo(groundTokens());
+    expect(legs).toHaveLength(1);
+    expect(legs[0]).toMatchObject({ dow: 'Fri03', code: 'E90-FRA-1' });
+    expect(legs[0].crew.map((c) => `${c.login}(${c.role})`).sort()).toEqual(
+      ['ATIAGO(CP)', 'LEIBUSCH(FO)', 'PMORAIS(CP)'],
+    );
+    expect(legs[0].crew.find((c) => c.login === 'ATIAGO')?.firstName).toBe('ANDRE');
+  });
+
+  it('returns nothing without the "crew on event:" anchor', () => {
+    const noAnchor = groundTokens().filter((t) => !/crew on event/i.test(t.text));
+    expect(parseGroundCrewInfo(noAnchor)).toHaveLength(0);
+  });
+
+  it('de-duplicates repeated grid copies, merging crew', () => {
+    expect(parseGroundCrewInfo([...groundTokens(), ...groundTokens()])).toHaveLength(1);
+  });
+
+  it('keeps two activities apart, assigning each its own crew', () => {
+    const first = groundTokens('E90-FRA-1');
+    // A second activity higher up the page (larger y) with its own crew line.
+    const second: PositionedToken[] = [
+      tok('Mon06', 100, 600), tok('E90-VIE-1', 180, 600),
+      tok('crew on event:XSOLO, SOLO, CP SOLO', 180, 585),
+    ];
+    const legs = parseGroundCrewInfo([...first, ...second]);
+    expect(legs.map((l) => l.code).sort()).toEqual(['E90-FRA-1', 'E90-VIE-1']);
+    expect(legs.find((l) => l.code === 'E90-VIE-1')?.crew.map((c) => c.login)).toEqual(['XSOLO']);
+  });
+});
+
+describe('attachGroundCrewToDuties', () => {
+  const sim = (over: Partial<ParsedDuty> = {}): ParsedDuty => ({
+    date: '2026-07-03', dutyCode: 'E90-FRA-1', dutyType: 'Simulator', reportingTime: null,
+    departureTime: '17:00', arrivalTime: '21:00', flightNumber: null,
+    departureAirport: 'FRA', arrivalAirport: null, aircraftType: null, observations: null, ...over,
+  });
+
+  it('attaches the simulator crew by weekday+day and code', () => {
+    const duties = [sim()]; // 2026-07-03 is a Friday → "Fri03"
+    attachGroundCrewToDuties(duties, parseGroundCrewInfo(groundTokens()));
+    expect(duties[0].crew?.map((c) => c.login)).toEqual(['ATIAGO', 'PMORAIS', 'LEIBUSCH']); // CP, CP, FO → sorted
+  });
+
+  it('does not attach to a different date or code', () => {
+    const other = [sim({ date: '2026-07-10' }), sim({ dutyCode: 'E90-VIE-1' })];
+    attachGroundCrewToDuties(other, parseGroundCrewInfo(groundTokens()));
+    expect(other[0].crew).toBeUndefined();
+    expect(other[1].crew).toBeUndefined();
+  });
+
+  it('reattachCrew also re-derives ground crew', () => {
+    const duties = [sim({ crew: [{ login: 'STALE', surname: 'STALE', role: 'CP' }] })];
+    reattachCrew(duties, [], parseGroundCrewInfo(groundTokens()));
+    expect(duties[0].crew?.map((c) => c.login)).toEqual(['ATIAGO', 'PMORAIS', 'LEIBUSCH']);
   });
 });
 
