@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.10';
+export const APP_VERSION = '0.8.11';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,14 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.11',
+    date: '2026-07-03',
+    highlights: [
+      'Tripulação escalada para o simulador: ao abrir um dia com sessão de Simulador/Formação, vês a tripulação do evento (com quem estás escalado), com função e toque para ver os voos partilhados. As escalas já importadas reprocessam sozinhas.',
+      'Caderneta EASA: nova secção FSTD (dispositivos de treino de simulação) na folha imprimível, com data, tipo de FSTD, duração e total.',
+    ],
+  },
   {
     version: '0.8.10',
     date: '2026-06-28',
