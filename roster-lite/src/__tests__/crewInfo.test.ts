@@ -179,20 +179,24 @@ describe('attachCrewToDuties', () => {
   });
 });
 
-// The "Crew Information on Ground Activity" section is a plain table: an identity row
-// (date, code, location, begin, end) with the crew listed just below on "crew on event:" lines.
-function groundTokens(code = 'E90-FRA-1'): PositionedToken[] {
-  const Y = 500; // identity row; crew sit below it (lower y — pdf.js y grows upward)
+// The "Crew Information on Ground Activity" section is a TRANSPOSED grid (like the flight "on
+// Leg" one), modelled here on the real PDF geometry: each activity is a column with the date on
+// top, then the code, the crew just to the LEFT of and below the code, then location and
+// begin/end below. pdf.js emits the crew prefix as a bare "event:" token. Fake names only.
+function groundTokens(code = 'E90-FRA-1', colX = 465, date = 'Fri03'): PositionedToken[] {
   return [
-    tok('Fri03', 100, Y), tok(code, 180, Y), tok('FRA', 300, Y), tok('1700', 360, Y), tok('2100', 420, Y),
-    tok('crew on event:ATIAGO, ARAUJO, CP ANDRE', 180, Y - 15),
-    tok('LEIBUSCH, ZDANOWSKI, FO FRANCISCO BERNARDO', 180, Y - 30),
-    tok('PMORAIS, MORAIS, CP PAULO', 180, Y - 45),
+    tok(date, colX, 802), // date on top of the column
+    tok(code, colX, 770), // the activity code
+    tok('event:ATIAGO, ARAUJO, CP ANDRE', colX - 6, 751), // crew just left of / below the code
+    tok('LEIBUSCH, ZDANOWSKI, FO FRANCISCO', colX - 12, 729),
+    tok('PMORAIS, MORAIS, CP PAULO', colX - 18, 729),
+    tok('FRA', colX, 707), // location, below the crew
+    tok('1700', colX, 660), tok('2100', colX, 625), // begin / end
   ];
 }
 
 describe('parseGroundCrewInfo', () => {
-  it('extracts a simulator activity with its crew', () => {
+  it('extracts a simulator activity with its crew (transposed column)', () => {
     const legs = parseGroundCrewInfo(groundTokens());
     expect(legs).toHaveLength(1);
     expect(legs[0]).toMatchObject({ dow: 'Fri03', code: 'E90-FRA-1', location: 'FRA', begin: '17:00', end: '21:00' });
@@ -202,17 +206,14 @@ describe('parseGroundCrewInfo', () => {
     expect(legs[0].crew.find((c) => c.login === 'ATIAGO')?.firstName).toBe('ANDRE');
   });
 
-  it('parses crew even when the "crew on event:" label is split off (keys off the code)', () => {
-    // pdf.js may emit the "crew on event:" label as its own token, leaving the crew names
-    // unprefixed — the parser must still attach them, anchored on the activity code.
-    const noPrefix = groundTokens().map((t) => ({ ...t, text: t.text.replace(/^crew on event:/i, '') }));
+  it('parses crew even when the "event:" prefix is absent (keys off the code)', () => {
+    const noPrefix = groundTokens().map((t) => ({ ...t, text: t.text.replace(/^event:/i, '') }));
     const legs = parseGroundCrewInfo(noPrefix);
-    expect(legs).toHaveLength(1);
     expect(legs[0].crew.map((c) => c.login).sort()).toEqual(['ATIAGO', 'LEIBUSCH', 'PMORAIS']);
   });
 
-  it('ignores a bare code with no crew below it (e.g. the duty-grid copy)', () => {
-    const gridOnly = [tok('Fri03', 100, 500), tok('E90-FRA-1', 180, 500)];
+  it('ignores a bare code with no crew in its column (e.g. the duty-grid copy)', () => {
+    const gridOnly = [tok('Fri03', 465, 802), tok('E90-FRA-1', 465, 770)];
     expect(parseGroundCrewInfo(gridOnly)).toHaveLength(0);
   });
 
@@ -220,16 +221,18 @@ describe('parseGroundCrewInfo', () => {
     expect(parseGroundCrewInfo([...groundTokens(), ...groundTokens()])).toHaveLength(1);
   });
 
-  it('keeps two activities apart, assigning each its own crew', () => {
-    const first = groundTokens('E90-FRA-1');
-    // A second activity higher up the page (larger y) with its own crew line.
-    const second: PositionedToken[] = [
-      tok('Mon06', 100, 600), tok('E90-VIE-1', 180, 600),
-      tok('crew on event:XSOLO, SOLO, CP SOLO', 180, 585),
+  it('keeps two adjacent activity columns apart, without bleeding crew across them', () => {
+    // Two columns ~33px apart, each E90-FRA-1 on a different date with its own crew.
+    const a = groundTokens('E90-FRA-1', 465, 'Fri03');
+    const b: PositionedToken[] = [
+      tok('Sat04', 432, 802), tok('E90-FRA-1', 432, 770),
+      tok('event:XSOLO, SOLO, CP SOLO', 432 - 6, 751),
+      tok('FRA', 432, 707), tok('1700', 432, 660), tok('2100', 432, 625),
     ];
-    const legs = parseGroundCrewInfo([...first, ...second]);
-    expect(legs.map((l) => l.code).sort()).toEqual(['E90-FRA-1', 'E90-VIE-1']);
-    expect(legs.find((l) => l.code === 'E90-VIE-1')?.crew.map((c) => c.login)).toEqual(['XSOLO']);
+    const legs = parseGroundCrewInfo([...a, ...b]);
+    expect(legs.map((l) => l.dow).sort()).toEqual(['Fri03', 'Sat04']);
+    expect(legs.find((l) => l.dow === 'Sat04')?.crew.map((c) => c.login)).toEqual(['XSOLO']);
+    expect(legs.find((l) => l.dow === 'Fri03')?.crew.map((c) => c.login).sort()).toEqual(['ATIAGO', 'LEIBUSCH', 'PMORAIS']);
   });
 });
 

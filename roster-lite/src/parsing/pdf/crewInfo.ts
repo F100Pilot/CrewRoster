@@ -16,8 +16,9 @@ import { rotationChains } from '../../domain/aircraftRegs';
 // Bumped whenever the crew parser changes in a way that should re-derive crew for ALREADY
 // imported rosters (the app re-runs the parser on the stored PDF when a roster's stamp is
 // behind this — see refreshCrewFromPdfs). 1 = role required; 2 = optional role + inference;
-// 3 = crew on ground activities (simulator); 4 = + begin/end/location for ground activities.
-export const CREW_PARSER_VERSION = 4;
+// 3 = crew on ground activities (simulator); 4 = + begin/end/location for ground activities;
+// 5 = ground-activity section parsed as a transposed grid (event: prefix, column geometry).
+export const CREW_PARSER_VERSION = 5;
 
 const DOW = /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\d{2}$/;
 const NUM = /^\d{2,4}$/;
@@ -32,8 +33,9 @@ const CREW = /^([A-Za-z]+),\s*([A-Za-z]+),\s*(CP|FO|PU|ST)?\s*([A-Za-z].*)?$/i;
 // (e.g. "cockpit: RCLARO, CLARO, CP") — a real crew member that must be captured too. For a
 // pilot's roster the cockpit holder is the owner; for a cabin-crew roster it's the Captain, so
 // dropping it lost a commander. The ground-activity section prefixes its crew with
-// "crew on event:" instead. We strip whichever prefix and parse the rest as a normal crew token.
-const SECTION_PREFIX = /^(?:cockpit|cabin|crew on event):\s*/i;
+// "crew on event:" — which pdf.js often emits as a bare "event:" token, the "crew on " having
+// been split off onto the label line above. We strip whichever prefix and parse the rest.
+const SECTION_PREFIX = /^(?:cockpit|cabin|(?:crew on )?event):\s*/i;
 const crewBody = (text: string) => text.replace(SECTION_PREFIX, '');
 
 export interface CrewLeg {
@@ -187,23 +189,24 @@ export interface GroundCrewLeg {
 const hhmm = (t: string) => `${t.slice(0, 2)}:${t.slice(2)}`;
 
 export function parseGroundCrewInfo(tokens: PositionedToken[]): GroundCrewLeg[] {
-  // Identity rows: a ground code (E90-FRA-1) with its weekday+day label on the same row, just to
-  // its left. We key off the CODE rather than the "crew on event:" label because pdf.js may split
-  // that label into separate tokens; a duty-grid copy of the code with no crew below it simply
-  // yields an empty activity that's dropped at the end. The location/begin/end sit on the same
-  // row to the RIGHT of the code ("… FRA 1700 2100").
+  // The "Crew Information on Ground Activity" section is a TRANSPOSED grid, like the flight "on
+  // Leg" one: each activity is a COLUMN whose identity is stacked vertically — the date on top,
+  // then the code (E90-FRA-1), then the crew, then the location and begin/end times — with the
+  // crew tokens in the narrow columns just to the LEFT of the code. Overlapping grid copies
+  // repeat, so we de-duplicate. We anchor on the code; a duty-grid copy of the code with no crew
+  // in its column simply yields an empty activity that's dropped at the end.
   type Act = Omit<GroundCrewLeg, 'crew'> & { x: number; y: number; page: number; crew: CrewMember[] };
   const acts: Act[] = [];
   for (const code of tokens.filter((z) => GROUND_CODE.test(z.text))) {
+    // The date sits just above the code in the same column.
     const dow = tokens
-      .filter((z) => z.page === code.page && Math.abs(z.y - code.y) <= 4 && z.x < code.x && DOW.test(z.text))
-      .sort((a, b) => b.x - a.x)[0]; // nearest date to the left
+      .filter((z) => z.page === code.page && Math.abs(z.x - code.x) <= 12 && z.y > code.y && z.y < code.y + 52 && DOW.test(z.text))
+      .sort((a, b) => a.y - b.y)[0];
     if (!dow) continue;
-    const right = tokens
-      .filter((z) => z.page === code.page && Math.abs(z.y - code.y) <= 4 && z.x > code.x)
-      .sort((a, b) => a.x - b.x);
-    const location = right.find((z) => AIRPORT.test(z.text))?.text ?? null;
-    const clock = right.filter((z) => HHMM.test(z.text));
+    // Location and begin/end sit below the code in the same column.
+    const colBelow = tokens.filter((z) => z.page === code.page && Math.abs(z.x - code.x) <= 12 && z.y < code.y && z.y > code.y - 170);
+    const location = colBelow.filter((z) => AIRPORT.test(z.text)).sort((a, b) => b.y - a.y)[0]?.text ?? null;
+    const clock = colBelow.filter((z) => HHMM.test(z.text)).sort((a, b) => b.y - a.y);
     acts.push({
       dow: dow.text, code: code.text, x: code.x, y: code.y, page: code.page,
       location,
@@ -214,17 +217,19 @@ export function parseGroundCrewInfo(tokens: PositionedToken[]): GroundCrewLeg[] 
   }
   if (acts.length === 0) return [];
 
-  // Assign each crew token to the nearest activity ABOVE it (identity row on top, crew below —
-  // pdf.js y grows upward). A modest band keeps a token with its own activity, not a distant one.
+  // Assign each crew token to the code column immediately to its RIGHT (crew sit just left of the
+  // identity), below the code. The dx window is tight (< 22) so a token binds only to its OWN
+  // column — adjacent activity columns are ~33px apart, so this never bleeds across them.
   for (const ct of tokens.filter((z) => CREW.test(crewBody(z.text)))) {
     const member = parseCrewToken(ct.text);
     if (!member) continue;
     let best: (typeof acts)[number] | null = null;
-    let bestDy = Infinity;
+    let bestDx = Infinity;
     for (const a of acts) {
       if (a.page !== ct.page) continue;
-      const dy = a.y - ct.y; // positive when the identity sits above the crew line
-      if (dy > 0 && dy < 140 && dy < bestDy) { bestDy = dy; best = a; }
+      const dx = a.x - ct.x; // positive when the code sits to the right of the crew token
+      const dy = a.y - ct.y; // positive when the crew sits below the code
+      if (dx >= -4 && dx < 22 && dy > 0 && dy < 110 && dx < bestDx) { bestDx = dx; best = a; }
     }
     if (best && !best.crew.some((c) => c.login === member.login)) best.crew.push(member);
   }
