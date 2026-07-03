@@ -202,9 +202,18 @@ describe('parseGroundCrewInfo', () => {
     expect(legs[0].crew.find((c) => c.login === 'ATIAGO')?.firstName).toBe('ANDRE');
   });
 
-  it('returns nothing without the "crew on event:" anchor', () => {
-    const noAnchor = groundTokens().filter((t) => !/crew on event/i.test(t.text));
-    expect(parseGroundCrewInfo(noAnchor)).toHaveLength(0);
+  it('parses crew even when the "crew on event:" label is split off (keys off the code)', () => {
+    // pdf.js may emit the "crew on event:" label as its own token, leaving the crew names
+    // unprefixed — the parser must still attach them, anchored on the activity code.
+    const noPrefix = groundTokens().map((t) => ({ ...t, text: t.text.replace(/^crew on event:/i, '') }));
+    const legs = parseGroundCrewInfo(noPrefix);
+    expect(legs).toHaveLength(1);
+    expect(legs[0].crew.map((c) => c.login).sort()).toEqual(['ATIAGO', 'LEIBUSCH', 'PMORAIS']);
+  });
+
+  it('ignores a bare code with no crew below it (e.g. the duty-grid copy)', () => {
+    const gridOnly = [tok('Fri03', 100, 500), tok('E90-FRA-1', 180, 500)];
+    expect(parseGroundCrewInfo(gridOnly)).toHaveLength(0);
   });
 
   it('de-duplicates repeated grid copies, merging crew', () => {

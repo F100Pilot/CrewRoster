@@ -181,14 +181,12 @@ export interface GroundCrewLeg {
 }
 
 export function parseGroundCrewInfo(tokens: PositionedToken[]): GroundCrewLeg[] {
-  // Anchor on the "crew on event:" labels that only this section carries; if none, there's no
-  // ground-activity crew to read. Scope everything to the page(s) they appear on.
-  const anchorPages = new Set(tokens.filter((z) => /^crew on event:/i.test(z.text)).map((z) => z.page));
-  if (anchorPages.size === 0) return [];
-
-  // Identity rows: a ground code with its weekday+day label on the same row, just to its left.
+  // Identity rows: a ground code (E90-FRA-1) with its weekday+day label on the same row, just to
+  // its left. We key off the CODE rather than the "crew on event:" label because pdf.js may split
+  // that label into separate tokens; a duty-grid copy of the code with no crew below it simply
+  // yields an empty activity that's dropped at the end.
   const acts: { dow: string; code: string; x: number; y: number; page: number; crew: CrewMember[] }[] = [];
-  for (const code of tokens.filter((z) => anchorPages.has(z.page) && GROUND_CODE.test(z.text))) {
+  for (const code of tokens.filter((z) => GROUND_CODE.test(z.text))) {
     const dow = tokens
       .filter((z) => z.page === code.page && Math.abs(z.y - code.y) <= 4 && z.x < code.x && DOW.test(z.text))
       .sort((a, b) => b.x - a.x)[0]; // nearest date to the left
@@ -198,7 +196,7 @@ export function parseGroundCrewInfo(tokens: PositionedToken[]): GroundCrewLeg[] 
 
   // Assign each crew token to the nearest activity ABOVE it (identity row on top, crew below —
   // pdf.js y grows upward). A modest band keeps a token with its own activity, not a distant one.
-  for (const ct of tokens.filter((z) => anchorPages.has(z.page) && CREW.test(crewBody(z.text)))) {
+  for (const ct of tokens.filter((z) => CREW.test(crewBody(z.text)))) {
     const member = parseCrewToken(ct.text);
     if (!member) continue;
     let best: (typeof acts)[number] | null = null;

@@ -221,26 +221,28 @@ export default function DayDetailPage() {
             {duty.flightNumber && date && <FlightWeather duty={duty} date={date} />}
 
             {(duty.dutyType === 'Training' || duty.dutyType === 'Simulator') &&
-              (duty.departureTime || duty.arrivalTime) && (
+              (duty.departureTime || duty.arrivalTime || (duty.crew && duty.crew.length > 0)) && (
                 <Box sx={{ bgcolor: 'rgba(128,128,128,0.14)', borderRadius: 2, p: 2, mb: 2 }}>
-                  <Box display="flex" justifyContent="space-around">
-                    <Box textAlign="center">
-                      <Typography variant="body2" fontWeight={600} color="primary.main">
-                        {duty.departureTime || '—'}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Início (UTC)
-                      </Typography>
+                  {(duty.departureTime || duty.arrivalTime) && (
+                    <Box display="flex" justifyContent="space-around">
+                      <Box textAlign="center">
+                        <Typography variant="body2" fontWeight={600} color="primary.main">
+                          {duty.departureTime || '—'}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Início (UTC)
+                        </Typography>
+                      </Box>
+                      <Box textAlign="center">
+                        <Typography variant="body2" fontWeight={600} color="primary.main">
+                          {duty.arrivalTime || '—'}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Fim (UTC)
+                        </Typography>
+                      </Box>
                     </Box>
-                    <Box textAlign="center">
-                      <Typography variant="body2" fontWeight={600} color="primary.main">
-                        {duty.arrivalTime || '—'}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Fim (UTC)
-                      </Typography>
-                    </Box>
-                  </Box>
+                  )}
                   {duty.departureAirport && (
                     <Typography variant="caption" color="text.secondary" display="block" textAlign="center" mt={1}>
                       {duty.departureAirport}
