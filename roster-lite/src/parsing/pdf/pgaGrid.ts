@@ -312,16 +312,17 @@ export function parseSubColumn(
     const named = classifyDuty(words[0]);
     if (named) {
       const isFree = named.dutyType === 'Day Off';
-      const isTraining = named.dutyType === 'Training';
+      // Training and simulator sessions carry a scheduled start/end block in the grid
+      // (e.g. FPE-LEARN 07:45–08:15, E90-FRA-1 17:00–21:00); show it as Início/Fim.
+      const isTimed = named.dutyType === 'Training' || named.dutyType === 'Simulator';
       const times = words.map(toTime).filter((t): t is string => !!t);
       duties.push({
         date,
         dutyCode: named.dutyCode,
         dutyType: named.dutyType,
         reportingTime: isFree ? null : times[0] ?? null,
-        // Training shows the scheduled block (e.g. FPE-LEARN 07:45–08:15).
-        departureTime: isTraining ? times[0] ?? null : null,
-        arrivalTime: isTraining ? times[1] ?? null : null,
+        departureTime: isTimed ? times[0] ?? null : null,
+        arrivalTime: isTimed ? times[1] ?? null : null,
         flightNumber: null,
         departureAirport: isFree ? null : airports[0] ?? null,
         arrivalAirport: null,

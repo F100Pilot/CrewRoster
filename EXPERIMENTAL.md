@@ -25,7 +25,14 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(Vazio — tudo o que estava pendente foi promovido em `0.8.9`.)_
+- **Secção FSTD na caderneta EASA:** a folha imprimível passa a incluir uma tabela
+  separada de sessões de simulador (data, tipo de FSTD, duração), com total.
+- **Tripulação escalada para o simulador:** a secção "Crew Information on Ground
+  Activity" do PDF passa a ser interpretada; no detalhe do dia, uma sessão de
+  Simulador/Formação mostra a tripulação escalada (com quem voas no evento), tocável
+  para ver os voos partilhados. A sessão passa também a mostrar o Início/Fim (UTC) e o
+  local. As escalas já importadas reprocessam sozinhas
+  (`PARSE_VERSION`/`CREW_PARSER_VERSION`).
 
 ---
 

@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.10';
+export const APP_VERSION = '0.8.11.5';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,49 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.11.5',
+    date: '2026-07-04',
+    highlights: [
+      'Caderneta EASA no telemóvel: a tabela deixa de cortar as células — mostra-se à largura toda com deslize horizontal e texto maior. Ao imprimir/guardar em PDF continua a caber na folha A4.',
+    ],
+  },
+  {
+    version: '0.8.11.4',
+    date: '2026-07-03',
+    highlights: [
+      'Diário de bordo: cabeçalho mais limpo — o título deixa de se partir em várias linhas e as ações (Adicionar / CSV / EASA) ficam alinhadas por baixo.',
+    ],
+  },
+  {
+    version: '0.8.11.3',
+    date: '2026-07-03',
+    highlights: [
+      'Tripulação do simulador agora reconhecida corretamente (a secção “Crew Information on Ground Activity” é lida como grelha transposta, tal como a dos voos). As escalas já importadas reprocessam sozinhas.',
+    ],
+  },
+  {
+    version: '0.8.11.2',
+    date: '2026-07-03',
+    highlights: [
+      'Sessão de simulador mostra agora o Início/Fim (UTC) e o local, além do check-in, e a tripulação escalada. As escalas já importadas reprocessam sozinhas.',
+    ],
+  },
+  {
+    version: '0.8.11.1',
+    date: '2026-07-03',
+    highlights: [
+      'Correção: a tripulação escalada para o simulador passa a aparecer mesmo quando a sessão só traz o check-in (sem horas de início/fim).',
+    ],
+  },
+  {
+    version: '0.8.11',
+    date: '2026-07-03',
+    highlights: [
+      'Tripulação escalada para o simulador: ao abrir um dia com sessão de Simulador/Formação, vês a tripulação do evento (com quem estás escalado), com função e toque para ver os voos partilhados. As escalas já importadas reprocessam sozinhas.',
+      'Caderneta EASA: nova secção FSTD (dispositivos de treino de simulação) na folha imprimível, com data, tipo de FSTD, duração e total.',
+    ],
+  },
   {
     version: '0.8.10',
     date: '2026-06-28',

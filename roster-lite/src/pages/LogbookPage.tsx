@@ -177,32 +177,38 @@ export default function LogbookPage() {
 
   return (
     <Stack spacing={2}>
-      <Box display="flex" alignItems="center" gap={1}>
-        <IconButton onClick={() => navigate(-1)}>
-          <ArrowBack />
-        </IconButton>
-        <Typography variant="h6" sx={{ flexGrow: 1 }}>Diário de bordo</Typography>
-        <Button size="small" variant="outlined" startIcon={<Add />} onClick={openAdd}>
-          Adicionar
-        </Button>
-        <Button
-          size="small"
-          variant="outlined"
-          startIcon={<Download />}
-          onClick={exportCsv}
-          disabled={entries.length === 0}
-        >
-          CSV
-        </Button>
-        <Button
-          size="small"
-          variant="outlined"
-          startIcon={<Print />}
-          onClick={() => navigate('/logbook/print')}
-          disabled={entries.length === 0}
-        >
-          EASA
-        </Button>
+      {/* Title on its own line so it never wraps, with the actions as a tidy row beneath:
+          a primary "Adicionar" and the two exports as secondary buttons, right-aligned. */}
+      <Box>
+        <Box display="flex" alignItems="center" gap={0.5}>
+          <IconButton edge="start" onClick={() => navigate(-1)}>
+            <ArrowBack />
+          </IconButton>
+          <Typography variant="h6" noWrap sx={{ flexGrow: 1 }}>Diário de bordo</Typography>
+        </Box>
+        <Stack direction="row" spacing={1} justifyContent="flex-end" flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>
+          <Button size="small" variant="contained" disableElevation startIcon={<Add />} onClick={openAdd}>
+            Adicionar
+          </Button>
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<Download />}
+            onClick={exportCsv}
+            disabled={entries.length === 0}
+          >
+            CSV
+          </Button>
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<Print />}
+            onClick={() => navigate('/logbook/print')}
+            disabled={entries.length === 0}
+          >
+            EASA
+          </Button>
+        </Stack>
       </Box>
 
       <Card variant="outlined">

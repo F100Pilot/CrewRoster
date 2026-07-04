@@ -5,7 +5,10 @@ import { extractPdf } from './pdf/extractText';
 import { reconstructLines } from './pdf/reconstructLines';
 import { interpret } from './pdf/interpret';
 import { interpretPgaGrid } from './pdf/pgaGrid';
-import { parseCrewInfo, attachCrewToDuties, reattachCrew, CREW_PARSER_VERSION, type CrewLeg } from './pdf/crewInfo';
+import {
+  parseCrewInfo, parseGroundCrewInfo, attachCrewToDuties, attachGroundCrewToDuties,
+  reattachCrew, CREW_PARSER_VERSION, type CrewLeg, type GroundCrewLeg,
+} from './pdf/crewInfo';
 
 export { CREW_PARSER_VERSION };
 
@@ -13,7 +16,7 @@ export { CREW_PARSER_VERSION };
 // re-apply to ALREADY-imported rosters. On app load a stored PDF roster whose parseVersion is
 // behind this is re-parsed from its saved PDF(s) — see RosterProvider — so improvements reach
 // the user without re-downloading. Bump this with any meaningful parser change.
-export const PARSE_VERSION = 2;
+export const PARSE_VERSION = 5;
 
 function sortByDate(duties: ParseResult['duties']): ParseResult['duties'] {
   return [...duties].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
@@ -25,18 +28,20 @@ function sortByDate(duties: ParseResult['duties']): ParseResult['duties'] {
 // parser improvements on load without the user having to re-import — see RosterProvider.
 export async function refreshCrewFromPdfs(duties: ParsedDuty[], buffers: ArrayBuffer[]): Promise<ParsedDuty[]> {
   const legs: CrewLeg[] = [];
+  const groundLegs: GroundCrewLeg[] = [];
   for (const buf of buffers) {
     try {
       const { tokens } = await extractPdf(buf);
       legs.push(...parseCrewInfo(tokens));
+      groundLegs.push(...parseGroundCrewInfo(tokens));
     } catch {
       // A single corrupt/unreadable PDF must not abort the refresh — skip it.
     }
   }
-  if (legs.length === 0) return duties;
+  if (legs.length === 0 && groundLegs.length === 0) return duties;
   // Work on a copy (with copied crew arrays) so callers can compare and avoid a needless write.
   const copy = duties.map((d) => ({ ...d, crew: d.crew?.map((c) => ({ ...c })) }));
-  reattachCrew(copy, legs);
+  reattachCrew(copy, legs, groundLegs);
   return copy;
 }
 
@@ -52,8 +57,10 @@ export async function parseRosterFile(file: File): Promise<ParseResult> {
     // Primary: the PGA "Individual duty plan" grid parser.
     const pgaDuties = interpretPgaGrid(extracted.tokens);
     if (pgaDuties.length > 0) {
-      // Attach the rostered crew (from the "Crew Information on Leg" section) to each flight.
+      // Attach the rostered crew (from the "Crew Information on Leg" section) to each flight,
+      // and the simulator/ground crew (from "Crew Information on Ground Activity") to those duties.
       attachCrewToDuties(pgaDuties, parseCrewInfo(extracted.tokens));
+      attachGroundCrewToDuties(pgaDuties, parseGroundCrewInfo(extracted.tokens));
       return { sourceType: 'pdf', duties: sortByDate(pgaDuties), rawText: extracted.rawText, warnings: [] };
     }
 
