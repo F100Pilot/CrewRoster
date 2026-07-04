@@ -20,11 +20,16 @@ const PRINT_CSS = `
   body.printing-easa .no-print { display: none !important; }
   .easa-page { break-after: page; }
   .easa-page:last-child { break-after: auto; }
+  /* On paper the whole sheet fits the landscape page — drop the on-screen min-width & type size. */
+  .easa-table { min-width: 0 !important; }
+  .easa-table th, .easa-table td { font-size: 9px !important; padding: 1px 2px !important; }
 }
-.easa-table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+/* On screen the table keeps a full, readable width and its wrapper scrolls horizontally, so no
+   cell is truncated on a phone; for print it collapses back to fit the page (rules above). */
+.easa-table { border-collapse: collapse; width: 100%; table-layout: fixed; min-width: 1040px; }
 .easa-table th, .easa-table td {
-  border: 1px solid #888; padding: 1px 2px; text-align: center; font-size: 9px; line-height: 1.25;
-  overflow: hidden; white-space: nowrap; color: #000;
+  border: 1px solid #888; padding: 3px 4px; text-align: center; font-size: 11px; line-height: 1.3;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #000;
 }
 .easa-table thead th { background: #e9e9ef; font-weight: 700; }
 .easa-table .lbl { text-align: right; font-weight: 700; background: #f4f4f8; }

@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.11.4';
+export const APP_VERSION = '0.8.11.5';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,13 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.11.5',
+    date: '2026-07-04',
+    highlights: [
+      'Caderneta EASA no telemóvel: a tabela deixa de cortar as células — mostra-se à largura toda com deslize horizontal e texto maior. Ao imprimir/guardar em PDF continua a caber na folha A4.',
+    ],
+  },
   {
     version: '0.8.11.4',
     date: '2026-07-03',
