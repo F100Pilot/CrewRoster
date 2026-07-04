@@ -7,8 +7,8 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.8.10`
-- **Próxima versão ao promover:** `0.8.11` (ou superior, conforme o âmbito)
+- **Produção (`master`) está em:** `0.8.11.5`
+- **Próxima versão ao promover:** `0.8.12` (ou superior, conforme o âmbito)
 
 ## Como promover tudo para produção (quando estiver pronto)
 
@@ -25,14 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **Secção FSTD na caderneta EASA:** a folha imprimível passa a incluir uma tabela
-  separada de sessões de simulador (data, tipo de FSTD, duração), com total.
-- **Tripulação escalada para o simulador:** a secção "Crew Information on Ground
-  Activity" do PDF passa a ser interpretada; no detalhe do dia, uma sessão de
-  Simulador/Formação mostra a tripulação escalada (com quem voas no evento), tocável
-  para ver os voos partilhados. A sessão passa também a mostrar o Início/Fim (UTC) e o
-  local. As escalas já importadas reprocessam sozinhas
-  (`PARSE_VERSION`/`CREW_PARSER_VERSION`).
+_(Vazio — tudo o que estava pendente foi promovido em `0.8.11.5`.)_
 
 ---
 
@@ -46,4 +39,4 @@ produção, em vez de promover uma a uma.
 
 ---
 
-_Última atualização: 2026-06-25._
+_Última atualização: 2026-07-04._
