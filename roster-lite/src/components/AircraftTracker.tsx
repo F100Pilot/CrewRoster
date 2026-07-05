@@ -30,6 +30,22 @@ function distanceNm(a: { lat: number; lon: number }, b: { lat: number; lon: numb
   return Math.round(2 * R * Math.asin(Math.min(1, Math.sqrt(s))));
 }
 
+// Initial great-circle bearing (degrees) from a to b, and the smallest angle between two bearings.
+function bearingDeg(a: { lat: number; lon: number }, b: { lat: number; lon: number }): number {
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const y = Math.sin(toRad(b.lon - a.lon)) * Math.cos(toRad(b.lat));
+  const x = Math.cos(toRad(a.lat)) * Math.sin(toRad(b.lat)) - Math.sin(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.cos(toRad(b.lon - a.lon));
+  return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
+}
+function angleDiff(a: number, b: number): number {
+  const d = Math.abs(a - b) % 360;
+  return d > 180 ? 360 - d : d;
+}
+// Minutes → "Hh MM" once past an hour, else "M min".
+function fmtEta(min: number): string {
+  return min >= 60 ? `${Math.floor(min / 60)}h${String(min % 60).padStart(2, '0')}` : `${min} min`;
+}
+
 export default function AircraftTracker({ reg, dep }: { reg: string; dep: string | null }) {
   const theme = useTheme();
   const dark = theme.palette.mode === 'dark';
@@ -83,6 +99,16 @@ export default function AircraftTracker({ reg, dep }: { reg: string; dep: string
   const distNm = pos && depCoord ? distanceNm(pos, depCoord) : null;
   // On the ground within a few NM of your departure airport → it has arrived where you'll board.
   const atDep = onGround && distNm != null && distNm <= 4;
+  // Is it actually flying towards your departure airport (track within 70° of the bearing to it)?
+  // Only then is a straight-line ETA meaningful — if it's off on another leg first, we don't guess.
+  const towardDep = !onGround && !!pos && !!depCoord && pos.track != null && distNm != null
+    && angleDiff(pos.track, bearingDeg(pos, depCoord)) < 70;
+  const etaRaw = towardDep && pos && pos.gsKt && pos.gsKt > 60 && distNm != null && distNm > 3
+    ? Math.round((distNm / pos.gsKt) * 60) : null;
+  const etaMin = etaRaw != null && etaRaw <= 240 ? etaRaw : null; // beyond ~4h it's likely multi-leg
+  // Vertical trend from the barometric rate (ft/min).
+  const trend = onGround || !pos || pos.baroRate == null ? null
+    : pos.baroRate > 250 ? '↑ a subir' : pos.baroRate < -250 ? '↓ a descer' : 'cruzeiro';
 
   return (
     <Box sx={{ mt: 1.25 }}>
@@ -138,13 +164,24 @@ export default function AircraftTracker({ reg, dep }: { reg: string; dep: string
             {[
               pos.flight ? `Voo ${pos.flight}` : null,
               onGround ? (atDep ? `no solo em ${dep}` : 'no solo') : (flLevel != null ? `FL${flLevel}` : null),
+              trend,
               !onGround && pos.gsKt != null ? `${pos.gsKt} kt` : null,
-              !atDep && distNm != null ? `~${distNm} NM de ${dep}` : null,
             ].filter(Boolean).join(' · ')}
             {pos.seenSec != null && (
               <Box component="span" sx={{ opacity: 0.7 }}> · há {Math.round(pos.seenSec)}s</Box>
             )}
           </Typography>
+          {(() => {
+            const rel = [
+              !atDep && distNm != null ? `~${distNm} NM de ${dep}` : null,
+              etaMin != null ? `chega em ~${fmtEta(etaMin)}` : null,
+            ].filter(Boolean).join(' · ');
+            return rel ? (
+              <Typography variant="caption" color={etaMin != null ? 'primary' : 'text.secondary'} display="block" sx={{ lineHeight: 1.4, fontWeight: etaMin != null ? 600 : 400 }}>
+                {rel}
+              </Typography>
+            ) : null;
+          })()}
         </>
       )}
     </Box>

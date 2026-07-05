@@ -15,6 +15,7 @@ export interface AircraftPosition {
   track: number | null; // heading, degrees
   altFt: number | null;
   gsKt: number | null; // ground speed, knots
+  baroRate: number | null; // vertical rate, ft/min (+climb / −descent)
   onGround: boolean;
   seenSec: number | null; // how many seconds ago the position was received
   source: string | null;
@@ -61,6 +62,7 @@ export async function fetchAircraftPosition(
         track: typeof data.track === 'number' ? data.track : null,
         altFt: typeof data.altFt === 'number' ? data.altFt : null,
         gsKt: typeof data.gsKt === 'number' ? data.gsKt : null,
+        baroRate: typeof data.baroRate === 'number' ? data.baroRate : null,
         onGround: !!data.onGround,
         seenSec: typeof data.seenSec === 'number' ? data.seenSec : null,
         source: data.source ?? null,

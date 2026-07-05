@@ -1050,6 +1050,9 @@ async function handleAcPos(request) {
       track: heading,
       altFt: onGround ? 0 : (typeof ac.alt_baro === 'number' ? ac.alt_baro : null),
       gsKt: typeof ac.gs === 'number' ? Math.round(ac.gs) : null,
+      // Vertical rate (ft/min) so the app can show climbing / cruising / descending.
+      baroRate: typeof ac.baro_rate === 'number' ? ac.baro_rate
+        : (typeof ac.geom_rate === 'number' ? ac.geom_rate : null),
       onGround,
       seenSec: typeof ac.seen_pos === 'number' ? ac.seen_pos
         : (typeof ac.seen === 'number' ? ac.seen : null),

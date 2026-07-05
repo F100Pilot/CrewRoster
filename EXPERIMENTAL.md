@@ -27,8 +27,9 @@ produção, em vez de promover uma a uma.
 
 - **Onde está a aeronave (mapa ao vivo):** no dia do voo e antes da partida, o detalhe
   do voo mostra num mini-mapa a posição ao vivo da aeronave que vais voar, no ar (rumo,
-  FL, velocidade, distância ao aeroporto) **ou já no solo** (com destaque quando já está
-  no teu aeroporto de partida). Fonte:
+  FL, velocidade, distância ao aeroporto, **ETA estimada** e **tendência vertical**
+  subir/cruzeiro/descer) **ou já no solo** (com destaque quando já está no teu aeroporto
+  de partida). Fonte:
   ADS-B aberto (airplanes.live/adsb.lol) via novo endpoint `POST /api/acpos` no worker.
   - **⚠️ Worker alterado** (`worker.js`): o `/api/acpos` só fica disponível depois de
     republicar o worker. Como o deploy automático do worker só corre no `master`, é
