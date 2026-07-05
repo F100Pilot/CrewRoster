@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, CircularProgress, IconButton, Tooltip, Typography } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { FlightTakeoff, Refresh } from '@mui/icons-material';
+import { FlightLand, FlightTakeoff, Refresh } from '@mui/icons-material';
 import { geoMercator, geoPath } from 'd3-geo';
 import { feature } from 'topojson-client';
 import worldTopo from 'world-atlas/countries-110m.json';
@@ -72,20 +72,25 @@ export default function AircraftTracker({ reg, dep }: { reg: string; dep: string
     return { landPath: path(WORLD) ?? '', acXY, depXY };
   }, [pos, depCoord]);
 
-  // Opportunistic: only show when the aircraft is actually airborne and located.
-  if (!loading && (!pos || pos.onGround)) return null;
+  // Opportunistic: only show when the aircraft is actually being tracked (airborne OR on the
+  // ground — the user wants to know it has landed too). Nothing to show when it isn't located.
+  if (!loading && !pos) return null;
 
   const landFill = dark ? '#2a2f38' : '#e6e8ec';
   const landStroke = dark ? '#3a4150' : '#c7ccd4';
-  const flLevel = pos?.altFt != null ? Math.round(pos.altFt / 100) : null;
+  const onGround = !!pos?.onGround;
+  const flLevel = !onGround && pos?.altFt != null ? Math.round(pos.altFt / 100) : null;
   const distNm = pos && depCoord ? distanceNm(pos, depCoord) : null;
+  // On the ground within a few NM of your departure airport → it has arrived where you'll board.
+  const atDep = onGround && distNm != null && distNm <= 4;
 
   return (
     <Box sx={{ mt: 1.25 }}>
       <Box display="flex" alignItems="center" gap={0.75} mb={0.5}>
-        <FlightTakeoff fontSize="small" sx={{ color: 'text.secondary' }} />
+        {onGround ? <FlightLand fontSize="small" sx={{ color: 'text.secondary' }} /> : <FlightTakeoff fontSize="small" sx={{ color: 'text.secondary' }} />}
         <Typography variant="caption" color="text.secondary" sx={{ flexGrow: 1 }}>
-          Aeronave a caminho{pos?.reg ? ` · ${pos.reg}` : ''}
+          {onGround ? (atDep ? `Aeronave já em ${dep}` : 'Aeronave no solo') : 'Aeronave a caminho'}
+          {pos?.reg ? ` · ${pos.reg}` : ''}
         </Typography>
         {loading && !pos ? (
           <CircularProgress size={14} />
@@ -122,19 +127,19 @@ export default function AircraftTracker({ reg, dep }: { reg: string; dep: string
                 </text>
               </>
             )}
-            {/* the aircraft, pointing along its track */}
+            {/* the aircraft, pointing along its track (orange once on the ground) */}
             {geo.acXY && (
               <g transform={`translate(${geo.acXY[0]} ${geo.acXY[1]}) rotate(${pos.track ?? 0})`}>
-                <path d="M0,-7 L5,6 L0,3 L-5,6 Z" fill="#e53935" stroke="#fff" strokeWidth={0.7} />
+                <path d="M0,-7 L5,6 L0,3 L-5,6 Z" fill={onGround ? '#fb8c00' : '#e53935'} stroke="#fff" strokeWidth={0.7} />
               </g>
             )}
           </Box>
           <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5, lineHeight: 1.4 }}>
             {[
               pos.flight ? `Voo ${pos.flight}` : null,
-              flLevel != null ? `FL${flLevel}` : null,
-              pos.gsKt != null ? `${pos.gsKt} kt` : null,
-              distNm != null ? `~${distNm} NM de ${dep}` : null,
+              onGround ? (atDep ? `no solo em ${dep}` : 'no solo') : (flLevel != null ? `FL${flLevel}` : null),
+              !onGround && pos.gsKt != null ? `${pos.gsKt} kt` : null,
+              !atDep && distNm != null ? `~${distNm} NM de ${dep}` : null,
             ].filter(Boolean).join(' · ')}
             {pos.seenSec != null && (
               <Box component="span" sx={{ opacity: 0.7 }}> · há {Math.round(pos.seenSec)}s</Box>
