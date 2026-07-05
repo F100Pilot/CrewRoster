@@ -976,6 +976,90 @@ async function handleFlic(request) {
   }
 }
 
+// --- POST /api/acpos -------------------------------------------------------
+// Live position of an aircraft by registration, for "where is the aircraft I'm about to fly".
+// Uses free, keyless ADS-B feeds (airplanes.live, adsb.lol) server-side (they serve no CORS, so
+// the browser can't read them). Only returns a position while the aircraft is actually airborne
+// and being received; otherwise { tracked: false }. Short-cached to spare the free feeds.
+const ACPOS_TTL_MS = 20_000;
+const acposCache = new Map(); // reg → { ts, data }
+const ACPOS_SOURCES = [
+  (reg) => `https://api.airplanes.live/v2/reg/${encodeURIComponent(reg)}`,
+  (reg) => `https://api.adsb.lol/v2/reg/${encodeURIComponent(reg)}`,
+];
+
+function acposPickPositioned(json) {
+  const list = Array.isArray(json && json.ac) ? json.ac : [];
+  const withPos = list.find((a) => typeof a.lat === 'number' && typeof a.lon === 'number');
+  return withPos || list[0] || null;
+}
+
+async function handleAcPos(request) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return jsonResponse({ error: 'Invalid JSON body' }, 400, request);
+  }
+  const reg = String(body.reg || '').toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 10);
+  if (!reg) return jsonResponse({ tracked: false }, 200, request);
+
+  const hit = acposCache.get(reg);
+  if (hit && Date.now() - hit.ts < ACPOS_TTL_MS) return jsonResponse(hit.data, 200, request);
+
+  // ADS-B databases may store the mark with or without the hyphen (CS-TPQ vs CSTPQ), so try both.
+  const regForms = reg.includes('-') ? [reg, reg.replace(/-/g, '')] : [reg];
+  let ac = null;
+  let source = null;
+  outer: for (const make of ACPOS_SOURCES) {
+    for (const rf of regForms) {
+      try {
+        const r = await fetch(make(rf), {
+          headers: { 'User-Agent': BROWSER_UA, Accept: 'application/json' },
+          redirect: 'follow',
+        });
+        if (!r.ok) continue;
+        const cand = acposPickPositioned(await r.json());
+        if (cand) {
+          ac = cand;
+          source = new URL(make(rf)).host;
+          if (typeof cand.lat === 'number' && typeof cand.lon === 'number') break outer;
+        }
+      } catch {
+        // try the next source/form
+      }
+    }
+  }
+
+  let data;
+  if (!ac || typeof ac.lat !== 'number' || typeof ac.lon !== 'number') {
+    data = { tracked: false, reg };
+  } else {
+    const heading =
+      typeof ac.track === 'number' ? ac.track
+        : typeof ac.true_heading === 'number' ? ac.true_heading
+          : typeof ac.nav_heading === 'number' ? ac.nav_heading : null;
+    const onGround = ac.alt_baro === 'ground';
+    data = {
+      tracked: true,
+      reg,
+      hex: ac.hex || null,
+      flight: (ac.flight || '').trim() || null,
+      lat: ac.lat,
+      lon: ac.lon,
+      track: heading,
+      altFt: onGround ? 0 : (typeof ac.alt_baro === 'number' ? ac.alt_baro : null),
+      gsKt: typeof ac.gs === 'number' ? Math.round(ac.gs) : null,
+      onGround,
+      seenSec: typeof ac.seen_pos === 'number' ? ac.seen_pos
+        : (typeof ac.seen === 'number' ? ac.seen : null),
+      source,
+    };
+  }
+  acposCache.set(reg, { ts: Date.now(), data });
+  return jsonResponse(data, 200, request);
+}
+
 // --- Router ----------------------------------------------------------------
 export default {
   async fetch(request, env) {
@@ -1004,6 +1088,8 @@ export default {
         return handleMetar(request);
       case '/api/flic':
         return handleFlic(request);
+      case '/api/acpos':
+        return handleAcPos(request);
       default:
         return jsonResponse({ error: 'Not found' }, 404, request);
     }
