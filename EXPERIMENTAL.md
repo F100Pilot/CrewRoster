@@ -25,7 +25,9 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(Vazio — tudo o que estava pendente foi promovido em `0.8.13`.)_
+- **Colunas Descolagens/Aterragens (dia/noite) na caderneta EASA impressa:** a folha
+  passa a incluir as descolagens e aterragens dia/noite (só as voadas como PF), com
+  subtotais por página e totais acumulados.
 
 ---
 

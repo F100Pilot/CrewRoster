@@ -1,10 +1,33 @@
 import { describe, it, expect } from 'vitest';
-import { paginateEasa, fstdSessions, hm, type EasaSector } from '../domain/easaLogbook';
-import type { ParsedDuty } from '../domain/types';
+import { easaSectors, paginateEasa, fstdSessions, hm, type EasaSector } from '../domain/easaLogbook';
+import type { LogbookRow, ParsedDuty } from '../domain/types';
+
+describe('easaSectors take-off/landing day/night', () => {
+  const row = (over: Partial<LogbookRow>): LogbookRow => ({
+    key: 'k', userId: 'u', date: '2026-06-21', flightNumber: 'TP100', from: 'LIS', to: 'OPO',
+    off: '12:00', on: '13:00', aircraft: 'E90', reg: 'CS-TPA', ...over,
+  });
+
+  it('counts a daytime sector as a day take-off and day landing (flown by me)', () => {
+    const [s] = easaSectors([row({})]);
+    expect([s.dayTo, s.nightTo, s.dayLdg, s.nightLdg]).toEqual([1, 0, 1, 0]);
+  });
+
+  it('counts a late-night sector as night take-off and night landing', () => {
+    const [s] = easaSectors([row({ off: '23:00', on: '23:45' })]);
+    expect([s.dayTo, s.nightTo, s.dayLdg, s.nightLdg]).toEqual([0, 1, 0, 1]);
+  });
+
+  it('does not count a segment a colleague flew', () => {
+    const [s] = easaSectors([row({ ldgSelf: false })]); // I did the take-off, colleague landed
+    expect([s.dayTo, s.nightTo, s.dayLdg, s.nightLdg]).toEqual([1, 0, 0, 0]);
+  });
+});
 
 const sec = (over: Partial<EasaSector> = {}): EasaSector => ({
   date: '2026-06-01', flightNumber: 'TP1', from: 'LIS', off: '08:00', to: 'OPO', on: '08:55',
-  type: 'E90', reg: 'CS-TPA', blockMin: 55, nightMin: 0, ifrMin: 55, dayLdg: 1, nightLdg: 0,
+  type: 'E90', reg: 'CS-TPA', blockMin: 55, nightMin: 0, ifrMin: 55,
+  dayTo: 1, nightTo: 0, dayLdg: 1, nightLdg: 0,
   ...over,
 });
 

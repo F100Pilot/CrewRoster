@@ -1,6 +1,6 @@
 import type { LogbookRow, ParsedDuty } from './types';
 import type { LogbookFunction } from '../storage/settings';
-import { rowBlock, rowNight, rowNightLanding, sortLogbook } from './logbook';
+import { rowBlock, rowNight, rowNightLanding, rowNightTakeoff, didTakeoff, didLanding, sortLogbook } from './logbook';
 import { diffMinutes } from '../utils/duration';
 
 // Builds the printable EASA logbook: one line per flown sector, paginated with per-page subtotals
@@ -22,8 +22,11 @@ export interface EasaSector {
   blockMin: number;
   nightMin: number;
   ifrMin: number; // = block
-  dayLdg: number; // 0/1
-  nightLdg: number; // 0/1
+  // Take-offs and landings I flew (Pilot Flying), split day/night — 0/1 each.
+  dayTo: number;
+  nightTo: number;
+  dayLdg: number;
+  nightLdg: number;
 }
 
 export interface EasaTotals {
@@ -32,6 +35,8 @@ export interface EasaTotals {
   ifr: number;
   pic: number;
   copilot: number;
+  dayTo: number;
+  nightTo: number;
   dayLdg: number;
   nightLdg: number;
 }
@@ -47,7 +52,10 @@ export interface EasaPage {
 export function easaSectors(rows: LogbookRow[]): EasaSector[] {
   return sortLogbook(rows).map((r) => {
     const block = rowBlock(r);
-    const nightLdg = rowNightLanding(r);
+    const toNight = rowNightTakeoff(r);
+    const ldgNight = rowNightLanding(r);
+    const toMine = didTakeoff(r);
+    const ldgMine = didLanding(r);
     return {
       date: r.date,
       flightNumber: r.flightNumber,
@@ -60,13 +68,15 @@ export function easaSectors(rows: LogbookRow[]): EasaSector[] {
       blockMin: block,
       nightMin: rowNight(r),
       ifrMin: block,
-      dayLdg: nightLdg ? 0 : 1,
-      nightLdg: nightLdg ? 1 : 0,
+      dayTo: toMine && !toNight ? 1 : 0,
+      nightTo: toMine && toNight ? 1 : 0,
+      dayLdg: ldgMine && !ldgNight ? 1 : 0,
+      nightLdg: ldgMine && ldgNight ? 1 : 0,
     };
   });
 }
 
-const zero = (): EasaTotals => ({ block: 0, night: 0, ifr: 0, pic: 0, copilot: 0, dayLdg: 0, nightLdg: 0 });
+const zero = (): EasaTotals => ({ block: 0, night: 0, ifr: 0, pic: 0, copilot: 0, dayTo: 0, nightTo: 0, dayLdg: 0, nightLdg: 0 });
 
 function add(a: EasaTotals, b: EasaTotals): EasaTotals {
   return {
@@ -75,6 +85,8 @@ function add(a: EasaTotals, b: EasaTotals): EasaTotals {
     ifr: a.ifr + b.ifr,
     pic: a.pic + b.pic,
     copilot: a.copilot + b.copilot,
+    dayTo: a.dayTo + b.dayTo,
+    nightTo: a.nightTo + b.nightTo,
     dayLdg: a.dayLdg + b.dayLdg,
     nightLdg: a.nightLdg + b.nightLdg,
   };
@@ -87,6 +99,8 @@ function sectorTotals(s: EasaSector, fn: LogbookFunction): EasaTotals {
     ifr: s.ifrMin,
     pic: fn === 'PIC' ? s.blockMin : 0,
     copilot: fn === 'COPILOT' ? s.blockMin : 0,
+    dayTo: s.dayTo,
+    nightTo: s.nightTo,
     dayLdg: s.dayLdg,
     nightLdg: s.nightLdg,
   };
