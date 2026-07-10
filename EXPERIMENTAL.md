@@ -7,7 +7,7 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.8.13`
+- **Produção (`master`) está em:** `0.8.13.1`
 - **Próxima versão ao promover:** `0.8.14` (ou superior, conforme o âmbito)
 
 ## Como promover tudo para produção (quando estiver pronto)
@@ -25,9 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **Colunas Descolagens/Aterragens (dia/noite) na caderneta EASA impressa:** a folha
-  passa a incluir as descolagens e aterragens dia/noite (só as voadas como PF), com
-  subtotais por página e totais acumulados.
+_(Vazio — tudo o que estava pendente foi promovido em `0.8.13.1`.)_
 
 ---
 
