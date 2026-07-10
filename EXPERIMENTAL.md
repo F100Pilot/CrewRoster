@@ -25,6 +25,11 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
+- **Descolagens/aterragens dia/noite + PF por setor:** no Diário, ao editar um setor
+  defines quem fez a descolagem e a aterragem (Eu / Colega); a app calcula dia/noite de
+  cada uma pelo sol e mostra na linha do voo. Totais "como PF" (dia/noite) e colunas
+  extra no CSV. Anotações preservadas ao reimportar a escala.
+
 - **Onde está a aeronave (mapa ao vivo):** no dia do voo e antes da partida, o detalhe
   do voo mostra num mini-mapa a posição ao vivo da aeronave que vais voar, no ar (rumo,
   FL, velocidade, distância ao aeroporto, **ETA estimada** e **tendência vertical**
