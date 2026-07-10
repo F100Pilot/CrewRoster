@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { Box, Chip, CircularProgress, IconButton, List, ListItem, ListItemButton, ListItemText, Popover, Tooltip, Typography } from '@mui/material';
 import { AirplaneTicket, Groups, Refresh } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -8,7 +8,11 @@ import { fetchFlicReg } from '../domain/flic';
 import { loadRegs } from '../storage/rosterStore';
 import { utcDateTime } from '../utils/duration';
 import { useRoster } from '../state/useRoster';
+import { aircraftTrackingEnabled } from '../domain/aircraftPosition';
 import type { AircraftReg, ParsedDuty } from '../domain/types';
+
+// Lazy so the map (d3-geo + world TopoJSON) only loads when a live aircraft is actually tracked.
+const AircraftTracker = lazy(() => import('./AircraftTracker'));
 
 // Friendly labels for the crew roles printed in the PDF.
 const ROLE_LABEL: Record<string, string> = { CP: 'Comandante', FO: 'Oficial Piloto', PU: 'Chefe de Cabine', ST: 'Tripulante' };
@@ -256,6 +260,15 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
             {!flicReg && !leg.reg && savedReg && savedRegInferred && ' Matrícula (*) inferida da rotação do dia.'}
           </Typography>
         </>
+      )}
+
+      {/* Where the inbound aircraft is now, while it's still airborne — only on the day and only
+          before our own flight has departed (after that we're on it). Renders nothing when the
+          aircraft isn't currently being tracked. */}
+      {aircraftTrackingEnabled() && isToday && notDepartedYet && displayReg && (
+        <Suspense fallback={null}>
+          <AircraftTracker reg={displayReg} dep={duty.departureAirport} />
+        </Suspense>
       )}
     </Box>
   );

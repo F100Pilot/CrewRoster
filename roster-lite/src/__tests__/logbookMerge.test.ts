@@ -53,6 +53,22 @@ describe('mergeLogbook', () => {
     expect(mergeLogbook([known], [flight({})], U)).toHaveLength(0);
   });
 
+  it('preserves the who-flew (PF) annotations across a roster refresh', () => {
+    const key = logbookRowKey(U, '2026-06-10', 'TP100', 'LIS', 'OPO');
+    // A non-edited row the user annotated (colleague landed), then the roster refreshes its tail.
+    const annotated: LogbookRow = {
+      key, userId: U, date: '2026-06-10', flightNumber: 'TP100', from: 'LIS', to: 'OPO',
+      off: '08:00', on: '09:30', aircraft: 'E90', reg: '', ldgSelf: false,
+    };
+    const regs = new Map<string, AircraftReg>([
+      ['2026-06-10|TP100|LIS-OPO', { key: 'x', userId: U, date: '2026-06-10', flightNumber: 'TP100', dep: 'LIS', arr: 'OPO', reg: 'CS-TPU', model: null, recordedAt: '' }],
+    ]);
+    const ups = mergeLogbook([annotated], [flight({})], U, regs);
+    expect(ups).toHaveLength(1); // reg changed → upsert
+    expect(ups[0].reg).toBe('CS-TPU');
+    expect(ups[0].ldgSelf).toBe(false); // annotation survives
+  });
+
   it('fills the tail from the resolved regs map', () => {
     const regs = new Map<string, AircraftReg>([
       ['2026-06-10|TP100|LIS-OPO', { key: 'u1|2026-06-10|TP100|LIS-OPO', userId: U, date: '2026-06-10', flightNumber: 'TP100', dep: 'LIS', arr: 'OPO', reg: 'CS-TPU', model: null, recordedAt: '' }],

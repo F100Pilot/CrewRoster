@@ -6,7 +6,8 @@ import {
 import { Add, ArrowBack, Download, Edit, ExpandLess, ExpandMore, FlightTakeoff, Print, Sync } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
-import { logbookCsvRows, landingsInRows, mergeLogbook, rowBlock, rowNight, sortLogbook } from '../domain/logbook';
+import { logbookCsvRows, landingsInRows, mergeLogbook, rowBlock, rowNight, sortLogbook, takeoffLandingCounts, didTakeoff, didLanding } from '../domain/logbook';
+import { sectorSun } from '../domain/sectorSun';
 import { backfillRegs, pendingBackfillCount, regMap, type BackfillResult } from '../domain/aircraftRegs';
 import { loadLogbook, putLogbookRows, deleteLogbookRow } from '../storage/rosterStore';
 import { getAeroDataBoxKey } from '../storage/settings';
@@ -69,6 +70,19 @@ export default function LogbookPage() {
     for (const e of entries) m.set(e.key, rowNight(e));
     return m;
   }, [entries]);
+
+  // Day/night for each sector's take-off (departure) and landing (arrival), from the sun.
+  // null = airports outside the network → unknown.
+  const dayNightByKey = useMemo(() => {
+    const m = new Map<string, { depDay: boolean | null; arrDay: boolean | null }>();
+    for (const e of entries) {
+      const s = sectorSun(e.from, e.to, e.date, e.off, e.on);
+      m.set(e.key, { depDay: s?.depDay ?? null, arrDay: s?.arrDay ?? null });
+    }
+    return m;
+  }, [entries]);
+  // My take-offs / landings, split day/night (all-time), counting only the ones I flew.
+  const tlTotals = useMemo(() => takeoffLandingCounts(entries), [entries]);
 
   const monthGroups = useMemo(() => {
     const groups: { key: string; label: string; rows: LogbookRow[]; block: number; night: number }[] = [];
@@ -232,6 +246,13 @@ export default function LogbookPage() {
               Abaixo de {RECENCY_REQUIRED} aterragens nos últimos {RECENCY_DAYS} dias (indicativo).
             </Typography>
           )}
+          {/* My take-offs / landings as Pilot Flying, split day/night (all-time). */}
+          {(tlTotals.toDay + tlTotals.toNight + tlTotals.ldgDay + tlTotals.ldgNight) > 0 && (
+            <Typography variant="caption" color="text.secondary" display="block" mt={1}>
+              Como PF · Descolagens: <strong>{tlTotals.toDay}</strong> dia · <strong>{tlTotals.toNight}</strong> noite
+              {' · '}Aterragens: <strong>{tlTotals.ldgDay}</strong> dia · <strong>{tlTotals.ldgNight}</strong> noite
+            </Typography>
+          )}
         </CardContent>
       </Card>
 
@@ -342,6 +363,11 @@ export default function LogbookPage() {
                     <TableCell>
                       <Box sx={{ fontWeight: 600 }}>{e.flightNumber}{e.edited ? ' ✎' : ''}</Box>
                       <Box sx={{ color: 'text.secondary', fontSize: '0.8rem' }}>{e.from}–{e.to}</Box>
+                      {/* Take-off / landing, day or night; dimmed when a colleague flew that one. */}
+                      <Box sx={{ mt: 0.25, fontSize: '0.72rem', display: 'flex', gap: 0.75, justifyContent: 'center' }}>
+                        <DayNightTag icon="🛫" day={dayNightByKey.get(e.key)?.depDay ?? null} mine={didTakeoff(e)} />
+                        <DayNightTag icon="🛬" day={dayNightByKey.get(e.key)?.arrDay ?? null} mine={didLanding(e)} />
+                      </Box>
                     </TableCell>
                     <TableCell sx={{ whiteSpace: 'nowrap' }}>
                       <Box>{formatDuration(rowBlock(e))}</Box>
@@ -388,5 +414,19 @@ export default function LogbookPage() {
         />
       )}
     </Stack>
+  );
+}
+
+// One take-off/landing tag: an icon + D (day, amber) / N (night, indigo) / — (unknown), dimmed and
+// marked "col." when a colleague flew that segment (so it isn't counted among mine).
+function DayNightTag({ icon, day, mine }: { icon: string; day: boolean | null; mine: boolean }) {
+  const label = day == null ? '—' : day ? 'D' : 'N';
+  const color = day === false ? '#5c6bc0' : day === true ? '#f9a825' : 'text.disabled';
+  return (
+    <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25, opacity: mine ? 1 : 0.4 }}>
+      <span>{icon}</span>
+      <Box component="span" sx={{ color, fontWeight: 700 }}>{label}</Box>
+      {!mine && <Box component="span" sx={{ fontSize: '0.6rem', color: 'text.secondary' }}>col.</Box>}
+    </Box>
   );
 }

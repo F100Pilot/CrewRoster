@@ -61,6 +61,39 @@ export function rowNightLanding(r: LogbookRow): boolean {
   return sectorSun(r.from, r.to, r.date, r.off, r.on)?.arrDay === false;
 }
 
+// Whether the take-off (departure) is at night, from the sun at the departure airport/time.
+export function rowNightTakeoff(r: LogbookRow): boolean {
+  return sectorSun(r.from, r.to, r.date, r.off, r.on)?.depDay === false;
+}
+
+// Did I perform the take-off / the landing (Pilot Flying)? Unset defaults to yes, so an
+// un-annotated logbook counts each sector as flown by me until I mark the exceptions.
+export const didTakeoff = (r: LogbookRow): boolean => r.toSelf !== false;
+export const didLanding = (r: LogbookRow): boolean => r.ldgSelf !== false;
+
+// My take-offs and landings split day/night — the EASA logbook tally. Counts only the ones I
+// flew (Pilot Flying), deduped by day+flight+route so a re-import can't inflate them. Pass a
+// window (refISO + days) to restrict to a trailing period (e.g. 90-day recency); omit for all-time.
+export interface TakeoffLandingCounts { toDay: number; toNight: number; ldgDay: number; ldgNight: number }
+
+export function takeoffLandingCounts(
+  rows: LogbookRow[], window?: { refISO: string; days: number },
+): TakeoffLandingCounts {
+  const fromISO = window ? windowStartISO(window.refISO, window.days) : null;
+  const seen = new Set<string>();
+  const out: TakeoffLandingCounts = { toDay: 0, toNight: 0, ldgDay: 0, ldgNight: 0 };
+  for (const r of sortLogbook(rows)) {
+    if (!r.from || !r.to || r.from === r.to) continue;
+    if (window && (r.date > window.refISO || (fromISO && r.date < fromISO))) continue;
+    const dedupe = `${r.date}|${r.flightNumber}|${r.from}-${r.to}`;
+    if (seen.has(dedupe)) continue;
+    seen.add(dedupe);
+    if (didTakeoff(r)) { if (rowNightTakeoff(r)) out.toNight++; else out.toDay++; }
+    if (didLanding(r)) { if (rowNightLanding(r)) out.ldgNight++; else out.ldgDay++; }
+  }
+  return out;
+}
+
 // Chronological order: by date, then by off-block time within the day.
 export function sortLogbook(rows: LogbookRow[]): LogbookRow[] {
   return [...rows].sort((a, b) => (a.date === b.date ? a.off.localeCompare(b.off) : a.date.localeCompare(b.date)));
@@ -93,6 +126,9 @@ export function mergeLogbook(
       aircraft: d.aircraftType ?? '',
       reg: lookup?.reg || cur?.reg || '', // never wipe a known tail with a blank
       regInferred: lookup?.reg ? !!lookup.inferred : (cur?.regInferred ?? false),
+      // Preserve who-flew annotations across roster refreshes (they aren't roster-derived).
+      toSelf: cur?.toSelf,
+      ldgSelf: cur?.ldgSelf,
     };
     if (!cur || cur.from !== next.from || cur.to !== next.to || cur.off !== next.off ||
         cur.on !== next.on || cur.aircraft !== next.aircraft || cur.reg !== next.reg ||
@@ -110,16 +146,22 @@ export function mergeLogbook(
 export function logbookCsvRows(rows: LogbookRow[]): string {
   const header = [
     'Data', 'Voo', 'De', 'Off (UTC)', 'Para', 'On (UTC)', 'Aeronave', 'Matrícula',
-    'Bloco', 'IFR', 'Noite', 'Aterr. dia', 'Aterr. noite',
+    'Bloco', 'IFR', 'Noite',
+    'Desc. dia', 'Desc. noite', 'Aterr. dia', 'Aterr. noite',
   ];
   const body = sortLogbook(rows).map((r) => {
     const block = rowBlock(r);
     const night = rowNight(r);
-    const nightLdg = rowNightLanding(r);
+    // Take-off/landing counts reflect only the ones I flew (Pilot Flying), split day/night.
+    const toMine = didTakeoff(r);
+    const ldgMine = didLanding(r);
+    const toNight = rowNightTakeoff(r);
+    const ldgNight = rowNightLanding(r);
     return [
       r.date, r.flightNumber, r.from, r.off, r.to, r.on, r.aircraft, r.reg,
       formatDuration(block), formatDuration(block), formatDuration(night),
-      nightLdg ? '0' : '1', nightLdg ? '1' : '0',
+      toMine && !toNight ? '1' : '0', toMine && toNight ? '1' : '0',
+      ldgMine && !ldgNight ? '1' : '0', ldgMine && ldgNight ? '1' : '0',
     ];
   });
   return [header, ...body].map((r) => r.map(csvCell).join(',')).join('\r\n');

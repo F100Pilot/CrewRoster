@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.11.5';
+export const APP_VERSION = '0.8.13';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,35 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.13',
+    date: '2026-07-05',
+    highlights: [
+      'Diário de bordo: em cada setor podes definir quem fez a descolagem e a aterragem (Eu / Colega) ao editar. A app calcula sozinha se cada uma foi de dia ou de noite (nascer/pôr do sol) e mostra-o na linha do voo.',
+      'Totais como PF: descolagens e aterragens, dia e noite, contando só as que voaste. O export CSV passa a incluir descolagem dia/noite além da aterragem.',
+    ],
+  },
+  {
+    version: '0.8.12.2',
+    date: '2026-07-05',
+    highlights: [
+      'Mapa da aeronave: mostra agora a ETA estimada até ao teu aeroporto (quando vem a caminho) e se está a subir, em cruzeiro ou a descer.',
+    ],
+  },
+  {
+    version: '0.8.12.1',
+    date: '2026-07-05',
+    highlights: [
+      'Mapa da aeronave: passa a mostrar também quando a aeronave já aterrou (no solo), e destaca quando já está no teu aeroporto de partida.',
+    ],
+  },
+  {
+    version: '0.8.12',
+    date: '2026-07-04',
+    highlights: [
+      'Onde está a aeronave: no dia do voo e antes de partires, o detalhe do voo mostra num mini-mapa a posição ao vivo da aeronave que vais voar, enquanto ela ainda está no ar (rumo, nível de voo, velocidade e distância ao teu aeroporto). Usa dados ADS-B abertos; só aparece quando a aeronave está a ser captada.',
+    ],
+  },
   {
     version: '0.8.11.5',
     date: '2026-07-04',

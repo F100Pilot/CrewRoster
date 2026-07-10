@@ -105,6 +105,10 @@ export interface LogbookRow {
   reg: string; // tail, '' if unknown
   regInferred?: boolean; // tail inferred from the day's rotation, not captured directly
   edited?: boolean; // added/edited by hand → not overwritten by roster merges
+  // Who was Pilot Flying: did I perform the take-off / the landing? undefined = assumed yes.
+  // Day vs night for each is derived from the sun at the respective airport/time (not stored).
+  toSelf?: boolean;
+  ldgSelf?: boolean;
 }
 
 // A crew document with an expiry the pilot wants to track (medical, licence, OPC/LPC,

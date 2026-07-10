@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import {
-  Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Stack,
-  TextField, Typography,
+  Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Stack,
+  TextField, ToggleButton, ToggleButtonGroup, Typography,
 } from '@mui/material';
-import { Close, DeleteOutline } from '@mui/icons-material';
+import { Bedtime, Close, DeleteOutline, WbSunny } from '@mui/icons-material';
 import type { LogbookRow } from '../domain/types';
 import { logbookRowKey } from '../storage/rosterStore';
+import { sectorSun } from '../domain/sectorSun';
 
 // Edit (or add) a single logbook row by hand. Saving marks the row `edited` so roster
 // re-imports never overwrite the correction; the key is rebuilt from date/flight/route so
@@ -33,6 +34,9 @@ export default function LogbookEditDialog({
   const [on, setOn] = useState('');
   const [aircraft, setAircraft] = useState('');
   const [reg, setReg] = useState('');
+  // Who was Pilot Flying for the take-off / the landing (day vs night is derived below).
+  const [toSelf, setToSelf] = useState(true);
+  const [ldgSelf, setLdgSelf] = useState(true);
 
   useEffect(() => {
     if (!open) return;
@@ -44,6 +48,8 @@ export default function LogbookEditDialog({
     setOn(initial?.on ?? '');
     setAircraft(initial?.aircraft ?? '');
     setReg(initial?.reg ?? '');
+    setToSelf(initial?.toSelf !== false);
+    setLdgSelf(initial?.ldgSelf !== false);
   }, [open, initial]);
 
   const upper = (s: string) => s.trim().toUpperCase();
@@ -67,9 +73,21 @@ export default function LogbookEditDialog({
       reg: upper(reg),
       regInferred: false,
       edited: true,
+      toSelf,
+      ldgSelf,
     };
     onSave({ row, previousKey: initial && initial.key !== row.key ? initial.key : null });
   }
+
+  // Day/night for each end, from the sun at the respective airport/time (once the form is valid).
+  const sun = validOff && validOn && from.trim() && to.trim() && validDate
+    ? sectorSun(upper(from), upper(to), date, off, on) : null;
+  const dayNightChip = (day: boolean | null | undefined) =>
+    day == null
+      ? <Chip size="small" variant="outlined" label="—" />
+      : day
+        ? <Chip size="small" icon={<WbSunny sx={{ color: '#ffb300 !important', fontSize: 15 }} />} label="Dia" variant="outlined" />
+        : <Chip size="small" icon={<Bedtime sx={{ color: '#5c6bc0 !important', fontSize: 14 }} />} label="Noite" variant="outlined" />;
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
@@ -111,9 +129,24 @@ export default function LogbookEditDialog({
             <TextField label="Matrícula" value={reg} size="small" fullWidth placeholder="CS-TPU"
               onChange={(e) => setReg(e.target.value)} />
           </Box>
+          {/* Who flew the take-off / landing (Pilot Flying). Day vs night is computed from the sun. */}
+          <Box>
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+              Piloto aos comandos (PF)
+            </Typography>
+            <Stack spacing={1}>
+              <PfRow
+                label="Descolagem" self={toSelf} onChange={setToSelf} chip={dayNightChip(sun?.depDay)}
+              />
+              <PfRow
+                label="Aterragem" self={ldgSelf} onChange={setLdgSelf} chip={dayNightChip(sun?.arrDay)}
+              />
+            </Stack>
+          </Box>
+
           <Typography variant="caption" color="text.secondary">
-            Horas em UTC (z). Guardar marca o setor como editado — não é substituído ao
-            reimportar a escala.
+            Horas em UTC (z). Dia/noite calculado pelo nascer/pôr do sol. Guardar marca o setor
+            como editado — não é substituído ao reimportar a escala.
           </Typography>
         </Stack>
       </DialogContent>
@@ -128,5 +161,30 @@ export default function LogbookEditDialog({
         <Button onClick={save} variant="contained" disabled={!valid}>Guardar</Button>
       </DialogActions>
     </Dialog>
+  );
+}
+
+// One "who flew it" row: a label, an Eu/Colega toggle, and the computed day/night chip.
+function PfRow({
+  label, self, onChange, chip,
+}: {
+  label: string;
+  self: boolean;
+  onChange: (v: boolean) => void;
+  chip: React.ReactNode;
+}) {
+  return (
+    <Box display="flex" alignItems="center" gap={1}>
+      <Typography variant="body2" sx={{ width: 88 }}>{label}</Typography>
+      <ToggleButtonGroup
+        exclusive size="small" value={self ? 'me' : 'other'}
+        onChange={(_, v) => { if (v != null) onChange(v === 'me'); }}
+      >
+        <ToggleButton value="me" sx={{ px: 1.25, py: 0.25 }}>Eu</ToggleButton>
+        <ToggleButton value="other" sx={{ px: 1.25, py: 0.25 }}>Colega</ToggleButton>
+      </ToggleButtonGroup>
+      <Box flexGrow={1} />
+      {chip}
+    </Box>
   );
 }
