@@ -26,7 +26,7 @@ const PRINT_CSS = `
 }
 /* On screen the table keeps a full, readable width and its wrapper scrolls horizontally, so no
    cell is truncated on a phone; for print it collapses back to fit the page (rules above). */
-.easa-table { border-collapse: collapse; width: 100%; table-layout: fixed; min-width: 1040px; }
+.easa-table { border-collapse: collapse; width: 100%; table-layout: fixed; min-width: 1180px; }
 .easa-table th, .easa-table td {
   border: 1px solid #888; padding: 3px 4px; text-align: center; font-size: 11px; line-height: 1.3;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #000;
@@ -37,19 +37,19 @@ const PRINT_CSS = `
 .easa-table .obs { text-align: left; }
 `;
 
-const COLS = 15;
+const COLS = 19;
+const cnt = (n: number) => (n > 0 ? String(n) : ''); // landing/take-off count, blank when zero
 
 function TotalsRow({ label, t, strong }: { label: string; t: EasaTotals; strong?: boolean }) {
   return (
     <tr className={strong ? 'tot' : undefined}>
       <td className="lbl" colSpan={7}>{label}</td>
-      <td>{hm(t.block)}</td>
-      <td>{hm(t.block)}</td>
+      <td>{cnt(t.dayTo)}</td><td>{cnt(t.nightTo)}</td>
+      <td>{cnt(t.dayLdg)}</td><td>{cnt(t.nightLdg)}</td>
+      <td>{hm(t.block)}</td><td>{hm(t.block)}</td>
       <td />
-      <td>{hm(t.night)}</td>
-      <td>{hm(t.ifr)}</td>
-      <td>{hm(t.pic)}</td>
-      <td>{hm(t.copilot)}</td>
+      <td>{hm(t.night)}</td><td>{hm(t.ifr)}</td>
+      <td>{hm(t.pic)}</td><td>{hm(t.copilot)}</td>
       <td />
     </tr>
   );
@@ -61,13 +61,15 @@ function PageTable({ page, picName, fn }: { page: EasaPage; picName: string; fn:
       <table className="easa-table">
         <colgroup>
           <col style={{ width: '5%' }} />
-          <col style={{ width: '5%' }} /><col style={{ width: '4%' }} />
-          <col style={{ width: '5%' }} /><col style={{ width: '4%' }} />
+          <col style={{ width: '4%' }} /><col style={{ width: '4%' }} />
+          <col style={{ width: '4%' }} /><col style={{ width: '4%' }} />
+          <col style={{ width: '5%' }} /><col style={{ width: '6%' }} />
+          <col style={{ width: '3.5%' }} /><col style={{ width: '3.5%' }} />
+          <col style={{ width: '3.5%' }} /><col style={{ width: '3.5%' }} />
           <col style={{ width: '6%' }} /><col style={{ width: '6%' }} />
+          <col style={{ width: '9%' }} />
+          <col style={{ width: '5%' }} /><col style={{ width: '5%' }} />
           <col style={{ width: '6%' }} /><col style={{ width: '6%' }} />
-          <col style={{ width: '10%' }} />
-          <col style={{ width: '6%' }} /><col style={{ width: '6%' }} />
-          <col style={{ width: '7%' }} /><col style={{ width: '7%' }} />
           <col style={{ width: 'auto' }} />
         </colgroup>
         <thead>
@@ -76,6 +78,8 @@ function PageTable({ page, picName, fn }: { page: EasaPage; picName: string; fn:
             <th colSpan={2}>Partida</th>
             <th colSpan={2}>Chegada</th>
             <th colSpan={2}>Aeronave</th>
+            <th colSpan={2}>Descolagens</th>
+            <th colSpan={2}>Aterragens</th>
             <th colSpan={2}>Tempo (multipiloto)</th>
             <th rowSpan={2}>Nome PIC</th>
             <th colSpan={2}>Condições</th>
@@ -86,6 +90,8 @@ function PageTable({ page, picName, fn }: { page: EasaPage; picName: string; fn:
             <th>Local</th><th>Hora</th>
             <th>Local</th><th>Hora</th>
             <th>Tipo</th><th>Matríc.</th>
+            <th>Dia</th><th>Noite</th>
+            <th>Dia</th><th>Noite</th>
             <th>Multip.</th><th>Total</th>
             <th>Noite</th><th>IFR</th>
             <th>PIC</th><th>Co-pil.</th>
@@ -98,6 +104,8 @@ function PageTable({ page, picName, fn }: { page: EasaPage; picName: string; fn:
               <td>{s.from}</td><td>{s.off}</td>
               <td>{s.to}</td><td>{s.on}</td>
               <td>{s.type}</td><td>{s.reg || ''}</td>
+              <td>{cnt(s.dayTo)}</td><td>{cnt(s.nightTo)}</td>
+              <td>{cnt(s.dayLdg)}</td><td>{cnt(s.nightLdg)}</td>
               <td>{hm(s.blockMin)}</td><td>{hm(s.blockMin)}</td>
               <td>{picName}</td>
               <td>{hm(s.nightMin)}</td><td>{hm(s.ifrMin)}</td>
