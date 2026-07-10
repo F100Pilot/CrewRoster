@@ -7,8 +7,8 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.8.11.5`
-- **Próxima versão ao promover:** `0.8.12` (ou superior, conforme o âmbito)
+- **Produção (`master`) está em:** `0.8.13`
+- **Próxima versão ao promover:** `0.8.14` (ou superior, conforme o âmbito)
 
 ## Como promover tudo para produção (quando estiver pronto)
 
@@ -25,22 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **Descolagens/aterragens dia/noite + PF por setor:** no Diário, ao editar um setor
-  defines quem fez a descolagem e a aterragem (Eu / Colega); a app calcula dia/noite de
-  cada uma pelo sol e mostra na linha do voo. Totais "como PF" (dia/noite) e colunas
-  extra no CSV. Anotações preservadas ao reimportar a escala.
-
-- **Onde está a aeronave (mapa ao vivo):** no dia do voo e antes da partida, o detalhe
-  do voo mostra num mini-mapa a posição ao vivo da aeronave que vais voar, no ar (rumo,
-  FL, velocidade, distância ao aeroporto, **ETA estimada** e **tendência vertical**
-  subir/cruzeiro/descer) **ou já no solo** (com destaque quando já está no teu aeroporto
-  de partida). Fonte:
-  ADS-B aberto (airplanes.live/adsb.lol) via novo endpoint `POST /api/acpos` no worker.
-  - **⚠️ Worker alterado** (`worker.js`): o `/api/acpos` só fica disponível depois de
-    republicar o worker. Como o deploy automático do worker só corre no `master`, é
-    preciso **disparar `deploy-worker.yml` manualmente na ref `claude/crew-per-flight`**
-    para testar no exp (o worker é partilhado por prod e exp). Ao promover para `master`,
-    o worker republica-se sozinho.
+_(Vazio — tudo o que estava pendente foi promovido em `0.8.13`.)_
 
 ---
 
@@ -54,4 +39,4 @@ produção, em vez de promover uma a uma.
 
 ---
 
-_Última atualização: 2026-07-04._
+_Última atualização: 2026-07-10._
