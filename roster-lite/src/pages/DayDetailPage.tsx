@@ -1,4 +1,4 @@
-import { Box, Card, CardContent, Chip, Divider, IconButton, Stack, Typography } from '@mui/material';
+import { Alert, Box, Card, CardContent, Chip, Divider, IconButton, Stack, Typography } from '@mui/material';
 import { ArrowBack, ChevronLeft, ChevronRight, FlightLand, FlightTakeoff, Groups, Hotel, IosShare, Phone, WbSunny, Bedtime, Brightness4 } from '@mui/icons-material';
 import { Link } from '@mui/material';
 import { addDays, format, parseISO } from 'date-fns';
@@ -118,6 +118,12 @@ export default function DayDetailPage() {
             />
           )}
         </Box>
+      )}
+
+      {duties.find((d) => d.dayWarning) && (
+        <Alert severity="warning" variant="outlined" sx={{ py: 0.5 }}>
+          {duties.find((d) => d.dayWarning)!.dayWarning}
+        </Alert>
       )}
 
       {duties.length === 0 && <Typography color="text.secondary">Sem registos neste dia.</Typography>}

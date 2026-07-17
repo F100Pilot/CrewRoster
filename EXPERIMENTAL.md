@@ -25,7 +25,13 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(Vazio — tudo o que estava pendente foi promovido em `0.8.13.2`.)_
+- **Margem de leitura adaptativa (grelha):** a margem esquerda de cada bloco ajusta-se ao
+  número de voos do dia (até um teto que cobre ~10 voos), travada para não invadir o bloco
+  vizinho. Fecha por completo a classe de bug do voo cortado no dia mais à esquerda.
+- **Verificação cruzada com o "Individual duty plan":** o leitor compara cada dia de voo
+  com o resumo (início/fim) do painel direito do PDF e marca `dayWarning` (⚠ verificar, na
+  lista e no detalhe do dia) quando o dia lido acaba antes do que o plano indica — possível
+  voo em falta — em vez de o mostrar em silêncio. Sobe o `PARSE_VERSION` → reprocessa sozinho.
 
 ---
 
