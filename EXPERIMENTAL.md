@@ -7,7 +7,7 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.8.13.1`
+- **Produção (`master`) está em:** `0.8.13.2`
 - **Próxima versão ao promover:** `0.8.14` (ou superior, conforme o âmbito)
 
 ## Como promover tudo para produção (quando estiver pronto)
@@ -25,11 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **Correção: voo perdido no dia mais à esquerda de um bloco (3+ voos):** a grelha
-  empilha os voos de um dia da direita para a esquerda; no dia mais à esquerda do bloco,
-  o último voo (que cresce para fora da margem) era cortado (ex.: LIS-SVQ a 30 Jul após
-  LIS-OPO-LIS). A margem esquerda passa a cobrir dias com vários voos, sem invadir o
-  bloco vizinho. Sobe o `PARSE_VERSION` → escalas já importadas reprocessam sozinhas.
+_(Vazio — tudo o que estava pendente foi promovido em `0.8.13.2`.)_
 
 ---
 
