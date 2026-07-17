@@ -424,8 +424,13 @@ function prepareBands(tokens: PositionedToken[]): { calendar: CalDay[]; bands: C
       // legs grow into the band, so +9 on the right is enough. But the LEFTMOST day's
       // later legs grow OUT past cols[0], so a multi-leg leftmost day (e.g. a LIS-OPO-LIS
       // then a LIS-SVQ positioning leg) needs a wider left margin or its last leg is
-      // dropped. Extend left generously, but never across a band packed to the left:
-      // stop halfway to the nearest day-header sitting to the left at this header's row.
+      // dropped. Extend left ADAPTIVELY — up to a generous cap that covers ~10 legs, far
+      // more than any real day — but never across a band packed to the left: stop just
+      // right of the nearest day-header sitting to the left at this header's row (whose
+      // own legs grow further left, so everything at/left of it belongs to that band).
+      // dayFor() later assigns each sub-column to its nearest header, so over-reaching into
+      // the empty band edge is harmless; the cap only guards against a far-left neighbour.
+      const LEFT_REACH = 60; // px ≈ 10 sub-columns at ~5.5px pitch
       const leftNeighborX = Math.max(
         ...rows.flatMap((r) => r.cells)
           .filter((c) => DOW.test(c.text) && c.x < 500 && c.x < cols[0].x - 4 && Math.abs(c.y - h.y) <= 12)
@@ -433,8 +438,8 @@ function prepareBands(tokens: PositionedToken[]): { calendar: CalDay[]; bands: C
         -Infinity,
       );
       const xMin = leftNeighborX > -Infinity
-        ? Math.max(cols[0].x - 26, (leftNeighborX + cols[0].x) / 2)
-        : cols[0].x - 26;
+        ? Math.max(leftNeighborX + 4, cols[0].x - LEFT_REACH)
+        : cols[0].x - LEFT_REACH;
       const xMax = Math.min(cols[cols.length - 1].x + 9, 493);
 
       const yTop = h.y;
@@ -495,6 +500,40 @@ function prepareBands(tokens: PositionedToken[]): { calendar: CalDay[]; bands: C
   return { calendar, bands };
 }
 
+// The roster's right-hand "Individual duty plan": a chronological, one-line-per-day summary
+// (date, start time, end time, duty-type code) printed beside the grid. It's an INDEPENDENT view
+// of the same schedule, so we use it to sanity-check the grid parse (see the cross-check in
+// interpretPgaGrid). Returns a map dateISO -> { start, end } in "HH:mm" UTC (null when the day has
+// no times, e.g. a day off). The panel sits to the right of the grid (x >= 505); its day labels
+// are the usual weekday+dd tokens, which we align to the calendar in chronological order.
+const HHMM4 = /^([01]\d|2[0-3])[0-5]\d$/; // 0800, 1300, 2010
+function parseDutyPlanSummary(tokens: PositionedToken[], calendar: CalDay[]): Map<string, { start: string | null; end: string | null }> {
+  const out = new Map<string, { start: string | null; end: string | null }>();
+  const days = tokens
+    .filter((t) => DOW.test(t.text) && t.x >= 505)
+    .sort((a, b) => a.page - b.page || b.y - a.y); // chronological: earlier pages, then top→bottom
+  let ci = 0;
+  for (const d of days) {
+    while (ci < calendar.length && calendar[ci].key !== d.text) ci++;
+    if (ci >= calendar.length) break; // ran past the calendar → stop rather than mis-date
+    const date = calendar[ci].date;
+    ci++;
+    if (out.has(date)) continue;
+    // The day's summary times sit on the same row, just left of the date label.
+    const times = tokens
+      .filter((t) => t.page === d.page && Math.abs(t.y - d.y) <= 6 && t.x >= 503 && t.x < d.x - 2 && HHMM4.test(t.text))
+      .sort((a, b) => b.x - a.x) // start (right) → end (left)
+      .map((t) => `${t.text.slice(0, 2)}:${t.text.slice(2)}`);
+    out.set(date, { start: times[0] ?? null, end: times.length > 1 ? times[times.length - 1] : null });
+  }
+  return out;
+}
+
+const toMinutes = (hhmm: string): number => {
+  const [h, m] = hhmm.split(':').map(Number);
+  return h * 60 + m;
+};
+
 export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
   const { calendar, bands } = prepareBands(tokens);
   const hotels = parseHotels(tokens); // "Hn" marker -> { name, phone }
@@ -549,6 +588,39 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
     );
     if (firstFlight) {
       firstFlight.reportingTime = subtractHour(firstFlight.departureTime!);
+    }
+  }
+
+  // ── Cross-check against the right-side "Individual duty plan" ────────────────────────
+  // The plan's per-day window (first departure → last arrival) is an independent view of the
+  // same schedule. If a day's parsed flights end BEFORE the plan says the day ends — or start
+  // AFTER it says the day starts — a leg was likely dropped (the exact failure mode where a
+  // multi-leg day's edge sub-column gets clipped). Flag it discreetly rather than silently
+  // showing a short day. Soft advisory: a >20-min gap only, same-day (skip midnight wraps).
+  const plan = parseDutyPlanSummary(tokens, calendar);
+  const minToHHMM = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+  for (const [date, arr] of byDate) {
+    const p = plan.get(date);
+    if (!p) continue;
+    const legs = arr.filter(
+      (d) => (d.dutyType === 'Flight Duty' || d.dutyType === 'Positioning') && d.departureTime && d.arrivalTime,
+    );
+    if (legs.length === 0) continue;
+    const deps = legs.map((d) => toMinutes(d.departureTime!));
+    const arrs = legs.map((d) => toMinutes(d.arrivalTime!));
+    const firstDep = Math.min(...deps);
+    const lastArr = Math.max(...arrs);
+    if (lastArr < firstDep) continue; // day spans midnight → times aren't comparable, skip
+    const parts: string[] = [];
+    if (p.end && toMinutes(p.end) - lastArr > 20 && toMinutes(p.end) >= firstDep) {
+      parts.push(`o dia termina às ${p.end}, mas o último voo lido chega às ${minToHHMM(lastArr)}`);
+    }
+    if (p.start && firstDep - toMinutes(p.start) > 20) {
+      parts.push(`o dia começa às ${p.start}, mas o primeiro voo lido parte às ${minToHHMM(firstDep)}`);
+    }
+    if (parts.length) {
+      const msg = `Possível voo em falta neste dia (${parts.join('; ')}). Confirma na escala oficial (PDFs).`;
+      for (const d of arr) d.dayWarning = msg;
     }
   }
 

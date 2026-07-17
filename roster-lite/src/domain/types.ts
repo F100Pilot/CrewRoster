@@ -16,6 +16,12 @@ export interface ParsedDuty {
   hotel?: { name: string; phone: string | null } | null;
   /** Crew rostered on this flight (from the PDF's "Crew Information on Leg" section). */
   crew?: CrewMember[];
+  /**
+   * A discreet advisory set when the parsed day disagrees with the PDF's right-side
+   * "Individual duty plan" summary (e.g. the day's end time is later than the last leg we
+   * read — a possible missing flight). Confirm against the official roster.
+   */
+  dayWarning?: string;
 }
 
 // One crew member on a leg, from the PDF "Crew Information on Leg" section.

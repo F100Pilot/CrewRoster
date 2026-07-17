@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Alert, Box, Button, Card, CardContent, Chip, Divider, IconButton, InputAdornment,
-  Popover, Stack, TextField, Typography,
+  Popover, Stack, TextField, Tooltip, Typography,
 } from '@mui/material';
 import {
   ChevronLeft, ChevronRight, Login, Today, InfoOutlined,
@@ -290,6 +290,16 @@ export default function RosterPage() {
                     label={CHANGE_STYLE[change].label}
                     sx={{ bgcolor: CHANGE_STYLE[change].color, color: '#fff', height: 18, fontSize: '0.65rem' }}
                   />
+                )}
+                {duties.some((d) => d.dayWarning) && (
+                  <Tooltip title={duties.find((d) => d.dayWarning)!.dayWarning!}>
+                    <Chip
+                      size="small"
+                      color="warning"
+                      label="⚠ verificar"
+                      sx={{ height: 18, fontSize: '0.65rem', fontWeight: 700, color: '#fff' }}
+                    />
+                  </Tooltip>
                 )}
               </Box>
               {duties[0]?.reportingTime && (() => {
