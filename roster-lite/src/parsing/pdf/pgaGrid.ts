@@ -417,9 +417,24 @@ function prepareBands(tokens: PositionedToken[]): { calendar: CalDay[]; bands: C
       // side, so a narrow band (e.g. the last 2 days of a month) sits to the right of a
       // wider band at nearly the same y. Without an x-bound, that neighbour's header
       // truncates this band's data slab to nothing (dropping those days), and this band
-      // would otherwise swallow the neighbour's columns. Margin covers a sub-column
-      // sitting slightly off its day-header cell.
-      const xMin = cols[0].x - 9;
+      // would otherwise swallow the neighbour's columns.
+      //
+      // A day stacks its legs right→left (the day header sits over the FIRST leg; later
+      // legs are sub-columns to its LEFT). For every day but the leftmost, those extra
+      // legs grow into the band, so +9 on the right is enough. But the LEFTMOST day's
+      // later legs grow OUT past cols[0], so a multi-leg leftmost day (e.g. a LIS-OPO-LIS
+      // then a LIS-SVQ positioning leg) needs a wider left margin or its last leg is
+      // dropped. Extend left generously, but never across a band packed to the left:
+      // stop halfway to the nearest day-header sitting to the left at this header's row.
+      const leftNeighborX = Math.max(
+        ...rows.flatMap((r) => r.cells)
+          .filter((c) => DOW.test(c.text) && c.x < 500 && c.x < cols[0].x - 4 && Math.abs(c.y - h.y) <= 12)
+          .map((c) => c.x),
+        -Infinity,
+      );
+      const xMin = leftNeighborX > -Infinity
+        ? Math.max(cols[0].x - 26, (leftNeighborX + cols[0].x) / 2)
+        : cols[0].x - 26;
       const xMax = Math.min(cols[cols.length - 1].x + 9, 493);
 
       const yTop = h.y;

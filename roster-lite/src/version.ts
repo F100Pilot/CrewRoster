@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.13.1';
+export const APP_VERSION = '0.8.13.2';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,13 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.13.2',
+    date: '2026-07-17',
+    highlights: [
+      'Correção: um voo do último dia de um bloco da escala podia desaparecer quando o dia tinha 3+ voos (ex.: LIS-OPO-LIS e depois LIS-SVQ a 30 Jul). O leitor do PDF passa a ler todos os voos desse dia. As escalas já importadas reprocessam sozinhas.',
+    ],
+  },
   {
     version: '0.8.13.1',
     date: '2026-07-10',
