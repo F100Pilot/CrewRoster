@@ -25,7 +25,11 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(Vazio — tudo o que estava pendente foi promovido em `0.8.13.1`.)_
+- **Correção: voo perdido no dia mais à esquerda de um bloco (3+ voos):** a grelha
+  empilha os voos de um dia da direita para a esquerda; no dia mais à esquerda do bloco,
+  o último voo (que cresce para fora da margem) era cortado (ex.: LIS-SVQ a 30 Jul após
+  LIS-OPO-LIS). A margem esquerda passa a cobrir dias com vários voos, sem invadir o
+  bloco vizinho. Sobe o `PARSE_VERSION` → escalas já importadas reprocessam sozinhas.
 
 ---
 
