@@ -7,7 +7,7 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.8.14`
+- **Produção (`master`) está em:** `0.8.14.1`
 - **Próxima versão ao promover:** `0.8.15` (ou superior, conforme o âmbito)
 
 ## Como promover tudo para produção (quando estiver pronto)
@@ -25,11 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **Correção: tripulação em falta quando um nome parecia um aeroporto.** Um fragmento de
-  primeiro nome de 3 letras (ex.: "RUI"), na coluna de identidade do voo abaixo da
-  tripulação, era lido como o aeroporto de chegada → a rota não batia certo e a tripulação
-  não era atribuída. Passa a ler os aeroportos da rota apenas acima da lista de tripulação.
-  Sobe o `CREW_PARSER_VERSION` → re-deriva a tripulação nas escalas já importadas.
+_(Vazio — tudo o que estava pendente foi promovido em `0.8.14.1`.)_
 
 ---
 
