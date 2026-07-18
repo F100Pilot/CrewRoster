@@ -38,6 +38,22 @@ describe('parseCrewInfo', () => {
     );
   });
 
+  // A wrapped crew first-name fragment can be a 3-letter uppercase token (e.g. "RUI") sitting in
+  // the identity column below the crew list. It must NOT be read as the arrival airport (which
+  // would then fail to match the flight's real route and drop the crew).
+  it('does not mistake a 3-letter crew name fragment below the crew for the arrival airport', () => {
+    const X = 200;
+    const legs = parseCrewInfo([
+      tok('cockpit:', X, 515),
+      tok('Mon05', X, 535), tok('TP', X, 504), tok('100', X, 489),
+      tok('LIS', X, 470), tok('0800', X, 455), tok('0930', X, 440), tok('AGP', X, 425), // route
+      tok('HOLDER, HOLDER, PU', X, 410), // a crew member in the identity column
+      tok('RUI', X, 395), // a wrapped first-name fragment BELOW the crew — not an airport
+    ]);
+    expect(legs).toHaveLength(1);
+    expect(legs[0]).toMatchObject({ flightNumber: 'TP100', dep: 'LIS', arr: 'AGP' });
+  });
+
   it('keeps the first name when present in the token', () => {
     const legs = parseCrewInfo([
       tok('cockpit:',200, 515),

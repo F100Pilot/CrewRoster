@@ -17,8 +17,9 @@ import { rotationChains } from '../../domain/aircraftRegs';
 // imported rosters (the app re-runs the parser on the stored PDF when a roster's stamp is
 // behind this — see refreshCrewFromPdfs). 1 = role required; 2 = optional role + inference;
 // 3 = crew on ground activities (simulator); 4 = + begin/end/location for ground activities;
-// 5 = ground-activity section parsed as a transposed grid (event: prefix, column geometry).
-export const CREW_PARSER_VERSION = 5;
+// 5 = ground-activity section parsed as a transposed grid (event: prefix, column geometry);
+// 6 = route airports read above the crew list (a name fragment is no longer taken as the arrival).
+export const CREW_PARSER_VERSION = 6;
 
 const DOW = /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\d{2}$/;
 const NUM = /^\d{2,4}$/;
@@ -105,7 +106,15 @@ export function parseCrewInfo(tokens: PositionedToken[]): CrewLeg[] {
     const after = col.filter((z) => z.y < num.y);
     const boundary = after.find((z) => DOW.test(z.text) || z.text === 'TP');
     const seg = boundary ? after.filter((z) => z.y > boundary.y) : after;
-    const airports = seg.filter((z) => AIRPORT.test(z.text));
+    // The route airports (departure, arrival) sit at the TOP of the column, above the leg's
+    // crew list. A wrapped crew first-name fragment can be a 3-letter uppercase token (e.g.
+    // "RUI") and would otherwise be mistaken for the arrival airport, so only read airports
+    // ABOVE the first crew/section-holder token (higher y = higher on the page).
+    const crewTopY = seg
+      .filter((z) => SECTION_PREFIX.test(z.text) || CREW.test(crewBody(z.text)))
+      .reduce((m, z) => Math.max(m, z.y), -Infinity);
+    const routeSeg = crewTopY > -Infinity ? seg.filter((z) => z.y > crewTopY) : seg;
+    const airports = routeSeg.filter((z) => AIRPORT.test(z.text));
 
     // The date sits just above the carrier (a bit wider in x).
     const dowTok = tokens
