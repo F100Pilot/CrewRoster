@@ -115,6 +115,9 @@ export interface LogbookRow {
   // Day vs night for each is derived from the sun at the respective airport/time (not stored).
   toSelf?: boolean;
   ldgSelf?: boolean;
+  /** Commander (the CP-role crew member) for this sector, captured from the roster crew.
+   *  Fills the EASA logbook's "Name PIC" column when the user flew as co-pilot. */
+  pic?: string;
 }
 
 // A crew document with an expiry the pilot wants to track (medical, licence, OPC/LPC,

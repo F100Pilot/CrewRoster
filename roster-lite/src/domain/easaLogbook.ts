@@ -27,6 +27,7 @@ export interface EasaSector {
   nightTo: number;
   dayLdg: number;
   nightLdg: number;
+  pic?: string; // commander for the sector (from the roster crew)
 }
 
 export interface EasaTotals {
@@ -72,6 +73,7 @@ export function easaSectors(rows: LogbookRow[]): EasaSector[] {
       nightTo: toMine && toNight ? 1 : 0,
       dayLdg: ldgMine && !ldgNight ? 1 : 0,
       nightLdg: ldgMine && ldgNight ? 1 : 0,
+      pic: r.pic,
     };
   });
 }

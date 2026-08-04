@@ -6,7 +6,7 @@ import { format, parseISO } from 'date-fns';
 import { useRoster } from '../state/useRoster';
 import { loadLogbook } from '../storage/rosterStore';
 import { getLogbookFunction, type LogbookFunction } from '../storage/settings';
-import { easaSectors, paginateEasa, fstdSessions, hm, type EasaPage, type EasaTotals } from '../domain/easaLogbook';
+import { easaSectors, paginateEasa, fstdSessions, hm, type EasaPage, type EasaSector, type EasaTotals } from '../domain/easaLogbook';
 import type { LogbookRow } from '../domain/types';
 
 // Scoped to body.printing-easa so it never affects printing of other pages: hide the whole app
@@ -55,7 +55,10 @@ function TotalsRow({ label, t, strong }: { label: string; t: EasaTotals; strong?
   );
 }
 
-function PageTable({ page, picName, fn }: { page: EasaPage; picName: string; fn: LogbookFunction }) {
+function PageTable({ page, userName, fn }: { page: EasaPage; userName: string; fn: LogbookFunction }) {
+  // "Name PIC" is the flight's commander: the user themselves when they flew as captain,
+  // otherwise the sector's commander captured from the roster crew.
+  const picFor = (s: EasaSector) => (fn === 'PIC' ? (userName || 'SELF') : (s.pic ?? ''));
   return (
     <Box className="easa-page" sx={{ mb: 2 }}>
       <table className="easa-table">
@@ -107,7 +110,7 @@ function PageTable({ page, picName, fn }: { page: EasaPage; picName: string; fn:
               <td>{cnt(s.dayTo)}</td><td>{cnt(s.nightTo)}</td>
               <td>{cnt(s.dayLdg)}</td><td>{cnt(s.nightLdg)}</td>
               <td>{hm(s.blockMin)}</td><td>{hm(s.blockMin)}</td>
-              <td>{picName}</td>
+              <td>{picFor(s)}</td>
               <td>{hm(s.nightMin)}</td><td>{hm(s.ifrMin)}</td>
               <td>{fn === 'PIC' ? hm(s.blockMin) : ''}</td>
               <td>{fn === 'COPILOT' ? hm(s.blockMin) : ''}</td>
@@ -141,8 +144,9 @@ export default function LogbookPrintPage() {
   const fn: LogbookFunction = userId ? getLogbookFunction(userId) : 'COPILOT';
   const fnLabel = fn === 'PIC' ? 'Comandante (PIC)' : 'Oficial Piloto (Co-piloto)';
   const pages = useMemo(() => paginateEasa(easaSectors(rows), fn), [rows, fn]);
-  // Name PIC: when flying as PIC the entry is "SELF"; as co-pilot the captain isn't known here.
-  const picName = fn === 'PIC' ? 'SELF' : '';
+  // "Name PIC": the user themselves when flying as PIC, otherwise each sector's commander
+  // (the CP captured from the roster crew).
+  const userName = activeUser?.name ?? '';
   // FSTD (simulator) sessions come from the roster, not the flight logbook.
   const fstd = useMemo(() => fstdSessions(roster?.duties ?? []), [roster]);
   const fstdTotal = fstd.reduce((s, f) => s + f.totalMin, 0);
@@ -186,7 +190,7 @@ export default function LogbookPrintPage() {
             <Typography sx={{ fontSize: 11, color: '#444' }}>Função: {fnLabel}</Typography>
           </Box>
           {pages.map((p) => (
-            <PageTable key={p.index} page={p} picName={picName} fn={fn} />
+            <PageTable key={p.index} page={p} userName={userName} fn={fn} />
           ))}
 
           {/* FSTD (simulator) section — its own sheet (the last flight page breaks before it). */}
