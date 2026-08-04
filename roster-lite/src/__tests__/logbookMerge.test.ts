@@ -53,6 +53,17 @@ describe('mergeLogbook', () => {
     expect(mergeLogbook([known], [flight({})], U)).toHaveLength(0);
   });
 
+  it('captures the commander (CP crew) as the sector PIC, and keeps it if a later refresh lacks crew', () => {
+    const withCrew = flight({ crew: [
+      { login: 'CMDR', surname: 'SILVA', role: 'CP', firstName: 'JOAO' },
+      { login: 'ME', surname: 'COSTA', role: 'FO' },
+    ] });
+    const rows = apply([], mergeLogbook([], [withCrew], U));
+    expect(rows[0].pic).toBe('JOAO SILVA');
+    // A later merge whose roster has no crew for this sector must not wipe the captured name.
+    expect(mergeLogbook(rows, [flight({})], U)).toHaveLength(0);
+  });
+
   it('preserves the who-flew (PF) annotations across a roster refresh', () => {
     const key = logbookRowKey(U, '2026-06-10', 'TP100', 'LIS', 'OPO');
     // A non-edited row the user annotated (colleague landed), then the roster refreshes its tail.

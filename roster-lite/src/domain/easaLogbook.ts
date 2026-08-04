@@ -27,6 +27,7 @@ export interface EasaSector {
   nightTo: number;
   dayLdg: number;
   nightLdg: number;
+  pic?: string; // commander for the sector (from the roster crew)
 }
 
 export interface EasaTotals {
@@ -39,11 +40,19 @@ export interface EasaTotals {
   nightTo: number;
   dayLdg: number;
   nightLdg: number;
+  fstd: number; // cumulative simulator (FSTD) session time — tracked apart from flight time
 }
+
+// A printed logbook line: either a flown sector or a simulator (FSTD) session. Simulators are
+// listed inline, in date order among the flights (not in a separate table), but their time is
+// kept out of the flight totals (block/night/IFR/PIC) and tallied only under `fstd`.
+export type EasaRow =
+  | { kind: 'flight'; sector: EasaSector }
+  | { kind: 'sim'; session: FstdSession };
 
 export interface EasaPage {
   index: number;
-  rows: EasaSector[];
+  rows: EasaRow[];
   page: EasaTotals; // this page only
   broughtForward: EasaTotals; // sum of all previous pages
   total: EasaTotals; // cumulative (brought forward + this page)
@@ -72,11 +81,12 @@ export function easaSectors(rows: LogbookRow[]): EasaSector[] {
       nightTo: toMine && toNight ? 1 : 0,
       dayLdg: ldgMine && !ldgNight ? 1 : 0,
       nightLdg: ldgMine && ldgNight ? 1 : 0,
+      pic: r.pic,
     };
   });
 }
 
-const zero = (): EasaTotals => ({ block: 0, night: 0, ifr: 0, pic: 0, copilot: 0, dayTo: 0, nightTo: 0, dayLdg: 0, nightLdg: 0 });
+const zero = (): EasaTotals => ({ block: 0, night: 0, ifr: 0, pic: 0, copilot: 0, dayTo: 0, nightTo: 0, dayLdg: 0, nightLdg: 0, fstd: 0 });
 
 function add(a: EasaTotals, b: EasaTotals): EasaTotals {
   return {
@@ -89,11 +99,17 @@ function add(a: EasaTotals, b: EasaTotals): EasaTotals {
     nightTo: a.nightTo + b.nightTo,
     dayLdg: a.dayLdg + b.dayLdg,
     nightLdg: a.nightLdg + b.nightLdg,
+    fstd: a.fstd + b.fstd,
   };
 }
 
-function sectorTotals(s: EasaSector, fn: LogbookFunction): EasaTotals {
+// One row's contribution to the running totals. A flown sector feeds the flight columns; a
+// simulator session feeds only the (separate) FSTD tally, never the flight totals.
+function rowTotals(r: EasaRow, fn: LogbookFunction): EasaTotals {
+  if (r.kind === 'sim') return { ...zero(), fstd: r.session.totalMin };
+  const s = r.sector;
   return {
+    ...zero(),
     block: s.blockMin,
     night: s.nightMin,
     ifr: s.ifrMin,
@@ -106,15 +122,28 @@ function sectorTotals(s: EasaSector, fn: LogbookFunction): EasaTotals {
   };
 }
 
-// Chunk the sectors into printed pages (default 16 rows/page), each with its own subtotal and the
-// brought-forward / running cumulative totals, as in a paper logbook.
-export function paginateEasa(sectors: EasaSector[], fn: LogbookFunction, perPage = 16): EasaPage[] {
+// Sort key: chronological, with a day's simulator session after that day's flights.
+const rowKey = (r: EasaRow): string =>
+  r.kind === 'flight' ? `${r.sector.date} ${r.sector.off}` : `${r.session.date} ~`;
+
+// Merge flights and simulator sessions into one chronological logbook, then chunk it into printed
+// pages (default 16 rows/page), each with its own subtotal and the brought-forward / running
+// cumulative totals, as in a paper logbook. Simulators appear inline; their time counts only
+// toward the FSTD tally, not the flight totals.
+export function paginateEasa(
+  sectors: EasaSector[], sims: FstdSession[], fn: LogbookFunction, perPage = 16,
+): EasaPage[] {
+  const rows: EasaRow[] = [
+    ...sectors.map((sector) => ({ kind: 'flight' as const, sector })),
+    ...sims.map((session) => ({ kind: 'sim' as const, session })),
+  ].sort((a, b) => (rowKey(a) < rowKey(b) ? -1 : rowKey(a) > rowKey(b) ? 1 : 0));
+
   const pages: EasaPage[] = [];
   let broughtForward = zero();
-  for (let i = 0; i < sectors.length; i += perPage) {
-    const chunk = sectors.slice(i, i + perPage);
+  for (let i = 0; i < rows.length; i += perPage) {
+    const chunk = rows.slice(i, i + perPage);
     let page = zero();
-    for (const s of chunk) page = add(page, sectorTotals(s, fn));
+    for (const r of chunk) page = add(page, rowTotals(r, fn));
     const total = add(broughtForward, page);
     pages.push({ index: pages.length, rows: chunk, page, broughtForward, total });
     broughtForward = total;

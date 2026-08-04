@@ -6,7 +6,7 @@ import { format, parseISO } from 'date-fns';
 import { useRoster } from '../state/useRoster';
 import { loadLogbook } from '../storage/rosterStore';
 import { getLogbookFunction, type LogbookFunction } from '../storage/settings';
-import { easaSectors, paginateEasa, fstdSessions, hm, type EasaPage, type EasaTotals } from '../domain/easaLogbook';
+import { easaSectors, paginateEasa, fstdSessions, hm, type EasaPage, type EasaSector, type EasaTotals } from '../domain/easaLogbook';
 import type { LogbookRow } from '../domain/types';
 
 // Scoped to body.printing-easa so it never affects printing of other pages: hide the whole app
@@ -50,12 +50,15 @@ function TotalsRow({ label, t, strong }: { label: string; t: EasaTotals; strong?
       <td />
       <td>{hm(t.night)}</td><td>{hm(t.ifr)}</td>
       <td>{hm(t.pic)}</td><td>{hm(t.copilot)}</td>
-      <td />
+      <td className="obs">{t.fstd > 0 ? `FSTD ${hm(t.fstd)}` : ''}</td>
     </tr>
   );
 }
 
-function PageTable({ page, picName, fn }: { page: EasaPage; picName: string; fn: LogbookFunction }) {
+function PageTable({ page, userName, fn }: { page: EasaPage; userName: string; fn: LogbookFunction }) {
+  // "Name PIC" is the flight's commander: the user themselves when they flew as captain,
+  // otherwise the sector's commander captured from the roster crew.
+  const picFor = (s: EasaSector) => (fn === 'PIC' ? (userName || 'SELF') : (s.pic ?? ''));
   return (
     <Box className="easa-page" sx={{ mb: 2 }}>
       <table className="easa-table">
@@ -98,21 +101,37 @@ function PageTable({ page, picName, fn }: { page: EasaPage; picName: string; fn:
           </tr>
         </thead>
         <tbody>
-          {page.rows.map((s, i) => (
-            <tr key={i}>
-              <td>{format(parseISO(s.date), 'dd/MM/yy')}</td>
-              <td>{s.from}</td><td>{s.off}</td>
-              <td>{s.to}</td><td>{s.on}</td>
-              <td>{s.type}</td><td>{s.reg || ''}</td>
-              <td>{cnt(s.dayTo)}</td><td>{cnt(s.nightTo)}</td>
-              <td>{cnt(s.dayLdg)}</td><td>{cnt(s.nightLdg)}</td>
-              <td>{hm(s.blockMin)}</td><td>{hm(s.blockMin)}</td>
-              <td>{picName}</td>
-              <td>{hm(s.nightMin)}</td><td>{hm(s.ifrMin)}</td>
-              <td>{fn === 'PIC' ? hm(s.blockMin) : ''}</td>
-              <td>{fn === 'COPILOT' ? hm(s.blockMin) : ''}</td>
-              <td className="obs">{s.flightNumber}</td>
-            </tr>
+          {page.rows.map((r, i) => (
+            r.kind === 'sim' ? (
+              // Simulator (FSTD) session, inline among the flights. Its time is not flight time,
+              // so the flight columns stay blank; the session length shows in Obs (and the FSTD tally).
+              <tr key={i}>
+                <td>{format(parseISO(r.session.date), 'dd/MM/yy')}</td>
+                <td /><td /><td /><td />
+                <td>{r.session.type}</td><td>SIM</td>
+                <td /><td /><td /><td />
+                <td /><td />
+                <td />
+                <td /><td />
+                <td /><td />
+                <td className="obs">Simulador · {hm(r.session.totalMin)}</td>
+              </tr>
+            ) : (
+              <tr key={i}>
+                <td>{format(parseISO(r.sector.date), 'dd/MM/yy')}</td>
+                <td>{r.sector.from}</td><td>{r.sector.off}</td>
+                <td>{r.sector.to}</td><td>{r.sector.on}</td>
+                <td>{r.sector.type}</td><td>{r.sector.reg || ''}</td>
+                <td>{cnt(r.sector.dayTo)}</td><td>{cnt(r.sector.nightTo)}</td>
+                <td>{cnt(r.sector.dayLdg)}</td><td>{cnt(r.sector.nightLdg)}</td>
+                <td>{hm(r.sector.blockMin)}</td><td>{hm(r.sector.blockMin)}</td>
+                <td>{picFor(r.sector)}</td>
+                <td>{hm(r.sector.nightMin)}</td><td>{hm(r.sector.ifrMin)}</td>
+                <td>{fn === 'PIC' ? hm(r.sector.blockMin) : ''}</td>
+                <td>{fn === 'COPILOT' ? hm(r.sector.blockMin) : ''}</td>
+                <td className="obs">{r.sector.flightNumber}</td>
+              </tr>
+            )
           ))}
           {/* pad to a constant height so every printed page looks the same */}
           {Array.from({ length: Math.max(0, 16 - page.rows.length) }).map((_, i) => (
@@ -140,12 +159,13 @@ export default function LogbookPrintPage() {
 
   const fn: LogbookFunction = userId ? getLogbookFunction(userId) : 'COPILOT';
   const fnLabel = fn === 'PIC' ? 'Comandante (PIC)' : 'Oficial Piloto (Co-piloto)';
-  const pages = useMemo(() => paginateEasa(easaSectors(rows), fn), [rows, fn]);
-  // Name PIC: when flying as PIC the entry is "SELF"; as co-pilot the captain isn't known here.
-  const picName = fn === 'PIC' ? 'SELF' : '';
-  // FSTD (simulator) sessions come from the roster, not the flight logbook.
+  // "Name PIC": the user themselves when flying as PIC, otherwise each sector's commander
+  // (the CP captured from the roster crew).
+  const userName = activeUser?.name ?? '';
+  // Simulator (FSTD) sessions come from the roster; they're listed inline among the flights
+  // (in date order) rather than in a separate table, with their time tallied apart from flight time.
   const fstd = useMemo(() => fstdSessions(roster?.duties ?? []), [roster]);
-  const fstdTotal = fstd.reduce((s, f) => s + f.totalMin, 0);
+  const pages = useMemo(() => paginateEasa(easaSectors(rows), fstd, fn), [rows, fstd, fn]);
   const hasContent = rows.length > 0 || fstd.length > 0;
 
   // Hide the app chrome only while this page is mounted (scopes the print rules).
@@ -186,39 +206,8 @@ export default function LogbookPrintPage() {
             <Typography sx={{ fontSize: 11, color: '#444' }}>Função: {fnLabel}</Typography>
           </Box>
           {pages.map((p) => (
-            <PageTable key={p.index} page={p} picName={picName} fn={fn} />
+            <PageTable key={p.index} page={p} userName={userName} fn={fn} />
           ))}
-
-          {/* FSTD (simulator) section — its own sheet (the last flight page breaks before it). */}
-          {fstd.length > 0 && (
-            <Box className="easa-fstd" sx={{ mt: 2 }}>
-              <Typography sx={{ fontWeight: 700, fontSize: 13, mb: 0.5 }}>
-                Dispositivos de treino de simulação (FSTD)
-              </Typography>
-              <table className="easa-table" style={{ width: 'auto', tableLayout: 'auto', minWidth: 360 }}>
-                <thead>
-                  <tr>
-                    <th style={{ padding: '2px 10px' }}>Data</th>
-                    <th style={{ padding: '2px 10px' }}>Tipo de FSTD</th>
-                    <th style={{ padding: '2px 10px' }}>Total da sessão</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {fstd.map((f, i) => (
-                    <tr key={i}>
-                      <td style={{ padding: '2px 10px' }}>{format(parseISO(f.date), 'dd/MM/yy')}</td>
-                      <td style={{ padding: '2px 10px' }}>{f.type}</td>
-                      <td style={{ padding: '2px 10px' }}>{hm(f.totalMin)}</td>
-                    </tr>
-                  ))}
-                  <tr className="tot">
-                    <td className="lbl" colSpan={2} style={{ padding: '2px 10px' }}>TOTAL FSTD</td>
-                    <td style={{ padding: '2px 10px' }}>{hm(fstdTotal)}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </Box>
-          )}
         </Box>
       )}
     </Box>

@@ -115,6 +115,10 @@ export function mergeLogbook(
     const cur = byKey.get(key);
     if (cur?.edited) continue; // respect manual edits
     const lookup = resolved.get(regMapKey(d.date, d.flightNumber, d.departureAirport, d.arrivalAirport));
+    // Commander (CP) for the sector, for the EASA "Name PIC" column. Keep a known name if a
+    // later roster refresh has no crew for this flight.
+    const cmd = (d.crew ?? []).find((c) => c.role === 'CP');
+    const pic = (cmd ? (cmd.firstName ? `${cmd.firstName} ${cmd.surname}` : cmd.surname) : undefined) || cur?.pic;
     const next: LogbookRow = {
       key, userId,
       date: d.date,
@@ -129,10 +133,11 @@ export function mergeLogbook(
       // Preserve who-flew annotations across roster refreshes (they aren't roster-derived).
       toSelf: cur?.toSelf,
       ldgSelf: cur?.ldgSelf,
+      ...(pic ? { pic } : {}),
     };
     if (!cur || cur.from !== next.from || cur.to !== next.to || cur.off !== next.off ||
         cur.on !== next.on || cur.aircraft !== next.aircraft || cur.reg !== next.reg ||
-        !!cur.regInferred !== !!next.regInferred) {
+        !!cur.regInferred !== !!next.regInferred || (cur.pic ?? '') !== (next.pic ?? '')) {
       upserts.push(next);
     }
   }
