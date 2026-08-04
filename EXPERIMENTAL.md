@@ -7,7 +7,7 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.8.14.1`
+- **Produção (`master`) está em:** `0.8.14.3`
 - **Próxima versão ao promover:** `0.8.15` (ou superior, conforme o âmbito)
 
 ## Como promover tudo para produção (quando estiver pronto)
@@ -25,16 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **Caderneta EASA — simuladores em linha na tabela dos voos.** Os FSTD deixam de ter uma
-  tabela separada; passam a ser linhas na mesma tabela, por ordem cronológica entre os voos
-  (Tipo = dispositivo, Matrícula = "SIM", Obs = "Simulador · H:MM"). O tempo de simulador
-  **não** entra nos totais de voo (bloco/noite/IFR/PIC) — é somado à parte na coluna Obs dos
-  totais como "FSTD H:MM" (`EasaTotals.fstd`).
-- **Caderneta EASA — "Nome PIC" = Comandante do voo.** Antes mostrava sempre "SELF". Agora:
-  se voas como Comandante → o teu nome; se voas como Oficial Piloto → o nome do Comandante,
-  obtido da tripulação (tripulante com função CP). O Comandante é capturado por setor no
-  diário (`LogbookRow.pic`) na sincronização com a escala e persiste; setores antigos sem
-  tripulação conhecida ficam em branco.
+_(Vazio — tudo o que estava pendente foi promovido em `0.8.14.3`.)_
 
 ---
 
