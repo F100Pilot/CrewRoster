@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.14.2';
+export const APP_VERSION = '0.8.14.3';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,13 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.14.3',
+    date: '2026-08-04',
+    highlights: [
+      'Caderneta EASA: os simuladores passam a aparecer como linhas na própria tabela dos voos, por ordem cronológica (marcados como “Simulador”), em vez de numa tabela à parte. O tempo de simulador não conta para os totais de voo — é somado à parte (“FSTD”).',
+    ],
+  },
   {
     version: '0.8.14.2',
     date: '2026-07-18',

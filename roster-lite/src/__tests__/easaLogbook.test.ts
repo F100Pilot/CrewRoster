@@ -69,7 +69,7 @@ describe('paginateEasa', () => {
   const rows = Array.from({ length: 5 }, () => sec({ blockMin: 60, ifrMin: 60, nightMin: 30 }));
 
   it('puts all block time in the PIC column when function is PIC', () => {
-    const [p] = paginateEasa(rows, 'PIC', 16);
+    const [p] = paginateEasa(rows, [], 'PIC', 16);
     expect(p.page.block).toBe(300);
     expect(p.page.pic).toBe(300);
     expect(p.page.copilot).toBe(0);
@@ -79,14 +79,26 @@ describe('paginateEasa', () => {
   });
 
   it('puts all block time in the co-pilot column when function is COPILOT', () => {
-    const [p] = paginateEasa(rows, 'COPILOT', 16);
+    const [p] = paginateEasa(rows, [], 'COPILOT', 16);
     expect(p.page.copilot).toBe(300);
     expect(p.page.pic).toBe(0);
   });
 
+  it('lists simulator sessions inline in date order without adding to flight totals', () => {
+    const flights = [sec({ date: '2026-06-01', blockMin: 60 }), sec({ date: '2026-06-03', blockMin: 60 })];
+    const sims = [{ date: '2026-06-02', type: 'E90', totalMin: 210 }];
+    const [p] = paginateEasa(flights, sims, 'PIC', 16);
+    // Merged chronologically: flight, sim, flight.
+    expect(p.rows.map((r) => r.kind)).toEqual(['flight', 'sim', 'flight']);
+    // Sim time is tallied under FSTD only; flight block totals are untouched.
+    expect(p.page.fstd).toBe(210);
+    expect(p.page.block).toBe(120);
+    expect(p.page.pic).toBe(120);
+  });
+
   it('paginates and carries forward cumulative totals', () => {
     const many = Array.from({ length: 20 }, () => sec({ blockMin: 60 }));
-    const pages = paginateEasa(many, 'PIC', 16);
+    const pages = paginateEasa(many, [], 'PIC', 16);
     expect(pages).toHaveLength(2);
     expect(pages[0].rows).toHaveLength(16);
     expect(pages[1].rows).toHaveLength(4);
