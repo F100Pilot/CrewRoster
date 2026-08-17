@@ -213,6 +213,7 @@ const DUTY_COLOR: Record<string, string> = {
   'Simulator':       '6', // tangerine
   'Positioning':     '3', // grape
   'Office Duty':     '1', // lavender
+  'Medical':         '11', // tomato
 };
 
 function gcalDateTime(dateISO: string, hhmm: string): string {

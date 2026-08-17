@@ -178,8 +178,16 @@ function classifyDuty(name: string): { dutyType: string; dutyCode: string } | nu
   // Falta (absence): FAL, or with a reason suffix in parentheses e.g. FAL(PD). Keep the full
   // code on the chip so the reason stays visible.
   if (/^FAL(\(.*\))?$/.test(n)) return { dutyType: 'Absence', dutyCode: n };
+  // Medical: the aeromedical exam block, usually several back-to-back slots on one day —
+  // IM (inspeção médica), VIM and MED. Keep the exact code on the chip.
+  if (/^(MED|VIM|IM)$/.test(n)) return { dutyType: 'Medical', dutyCode: n };
   return null;
 }
+
+// Duty codes that are also valid 3-letter IATA codes (e.g. MED = Medina). Inside a flight
+// segment such a token is the route's airport, never a new duty, so the segmenter must not
+// treat it as a starter there — see parseSubColumn.
+const AIRPORT_LIKE_DUTY = /^(MED)$/;
 
 // Annotations attach to the current entry rather than starting a new one
 // (line-training markers, hotel markers, crew names, the [FT]/[DT]/[FDP] block).
@@ -252,7 +260,11 @@ export function parseSubColumn(
     // A standalone "DH" before the flight code means the sector is flown as deadhead
     // (positioning as a passenger). It applies to the NEXT flight starter.
     if (/^DH$/i.test(w)) { pendingDH = true; continue; }
-    const starter = CARRIER.test(w) || classifyDuty(w) !== null;
+    // A duty code starts a new entry — except a code that is also an airport (MED), which
+    // inside a flight segment is that flight's departure/arrival, not a duty of its own.
+    const inFlight = cur !== null && CARRIER.test(cur.tokens[0]);
+    const starter = CARRIER.test(w) ||
+      (classifyDuty(w) !== null && !(inFlight && AIRPORT_LIKE_DUTY.test(w.toUpperCase())));
     if (starter) {
       cur = { tokens: [w], notes: [], dh: pendingDH, hotelRef: pendingHotel };
       pendingDH = false;
@@ -312,9 +324,10 @@ export function parseSubColumn(
     const named = classifyDuty(words[0]);
     if (named) {
       const isFree = named.dutyType === 'Day Off';
-      // Training and simulator sessions carry a scheduled start/end block in the grid
-      // (e.g. FPE-LEARN 07:45–08:15, E90-FRA-1 17:00–21:00); show it as Início/Fim.
-      const isTimed = named.dutyType === 'Training' || named.dutyType === 'Simulator';
+      // Training, simulator and medical slots carry a scheduled start/end block in the grid
+      // (e.g. FPE-LEARN 07:45–08:15, E90-FRA-1 17:00–21:00, IM 07:00–11:00); show it as Início/Fim.
+      const isTimed = named.dutyType === 'Training' || named.dutyType === 'Simulator' ||
+        named.dutyType === 'Medical';
       const times = words.map(toTime).filter((t): t is string => !!t);
       duties.push({
         date,
