@@ -7,7 +7,7 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.8.14.3`
+- **Produção (`master`) está em:** `0.8.14.4`
 - **Próxima versão ao promover:** `0.8.15` (ou superior, conforme o âmbito)
 
 ## Como promover tudo para produção (quando estiver pronto)
@@ -25,13 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **Correção: códigos médicos (IM / VIM / MED) não eram reconhecidos.** Um dia composto só
-  por marcações médicas (caso real: 9 Set com IM 07:00-11:00, VIM 11:00-11:30, MED
-  11:30-12:00, em três sub-colunas) não produzia qualquer duty e **desaparecia** da escala.
-  Novo `dutyType: 'Medical'` no `classifyDuty` (a cor/etiqueta "Médico" já existiam), com
-  horas de início/fim (entram no `isTimed`) e entrada na legenda de códigos. `MED` também é
-  IATA (Medina), por isso o segmentador só o trata como código quando **não** está dentro de
-  um segmento de voo (`AIRPORT_LIKE_DUTY`). Sobe o `PARSE_VERSION` → reprocessa sozinho.
+_(Vazio — tudo o que estava pendente foi promovido em `0.8.14.4`.)_
 
 ---
 
