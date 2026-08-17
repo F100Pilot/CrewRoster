@@ -25,6 +25,7 @@ const CODES: { code: string; dutyType: string; label: string }[] = [
   { code: 'VAC / F / PLIC / SLIC', dutyType: 'Vacation', label: 'Férias / licenças' },
   { code: 'RLIC', dutyType: 'Vacation', label: 'Licença de casamento' },
   { code: 'FAL', dutyType: 'Absence', label: 'Falta (ausência)' },
+  { code: 'IM / VIM / MED', dutyType: 'Medical', label: 'Inspeção / exames médicos' },
 ];
 
 export default function CodesPage() {
