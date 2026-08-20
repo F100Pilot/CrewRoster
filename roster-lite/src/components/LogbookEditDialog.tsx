@@ -8,9 +8,10 @@ import type { LogbookRow } from '../domain/types';
 import { logbookRowKey } from '../storage/rosterStore';
 import { sectorSun } from '../domain/sectorSun';
 
-// Edit (or add) a single logbook row by hand. Saving marks the row `edited` so roster
-// re-imports never overwrite the correction; the key is rebuilt from date/flight/route so
-// changing any of those re-files the row (the old one is removed by the caller).
+// Edit (or add) a single logbook row by hand. Changing the flight data marks the row `edited`
+// so roster re-imports never overwrite the correction (annotating who was Pilot Flying does
+// not — see save()); the key is rebuilt from date/flight/route so changing any of those
+// re-files the row (the old one is removed by the caller).
 export interface LogbookEditResult { row: LogbookRow; previousKey: string | null }
 
 const TIME_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
@@ -60,6 +61,19 @@ export default function LogbookEditDialog({
 
   function save() {
     if (!valid) return;
+    // `edited` freezes the row against roster syncs, protecting a manual correction. Only the
+    // flight data earns that: annotating who was Pilot Flying says nothing about the times, and
+    // freezing on it would stop a flown sector from ever picking up its final times from a later
+    // download. So mark the row edited only when the flight data itself actually changed.
+    const flightDataChanged = !initial ||
+      initial.date !== date ||
+      initial.flightNumber !== upper(flight) ||
+      initial.from !== upper(from) ||
+      initial.to !== upper(to) ||
+      initial.off !== off ||
+      initial.on !== on ||
+      initial.aircraft !== aircraft.trim() ||
+      initial.reg !== upper(reg);
     const row: LogbookRow = {
       key: logbookRowKey(userId, date, upper(flight), upper(from), upper(to)),
       userId,
@@ -71,8 +85,8 @@ export default function LogbookEditDialog({
       on,
       aircraft: aircraft.trim(),
       reg: upper(reg),
-      regInferred: false,
-      edited: true,
+      regInferred: flightDataChanged ? false : (initial.regInferred ?? false),
+      edited: flightDataChanged ? true : initial.edited,
       toSelf,
       ldgSelf,
     };
@@ -145,8 +159,9 @@ export default function LogbookEditDialog({
           </Box>
 
           <Typography variant="caption" color="text.secondary">
-            Horas em UTC (z). Dia/noite calculado pelo nascer/pôr do sol. Guardar marca o setor
-            como editado — não é substituído ao reimportar a escala.
+            Horas em UTC (z). Dia/noite calculado pelo nascer/pôr do sol. Se alterares os dados
+            do voo, o setor fica marcado como editado e deixa de ser atualizado pela escala.
+            Marcar quem foi PF não o congela.
           </Typography>
         </Stack>
       </DialogContent>

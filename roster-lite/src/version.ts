@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.14.4';
+export const APP_VERSION = '0.8.15';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,14 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.15',
+    date: '2026-08-17',
+    highlights: [
+      'Sincronizar a escala passa a atualizar os voos já realizados: o download começa por omissão 7 dias atrás, por isso os setores voados recentemente recebem as horas finais e o Diário fica com elas (podes sempre mudar a data de início).',
+      'Marcar quem foi PF (descolagem/aterragem) deixa de congelar o setor — as horas continuam a ser atualizadas pela escala. Só alterar os dados do voo à mão é que o protege de futuras sincronizações.',
+    ],
+  },
   {
     version: '0.8.14.4',
     date: '2026-08-16',
