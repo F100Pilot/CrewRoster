@@ -23,6 +23,7 @@ import {
 import { format, parseISO } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { fetchRoster, SessionExpiredError } from '../services/crewlinkApi';
+import { defaultBeginDate } from '../domain/rosterWindow';
 import { useRoster } from '../state/useRoster';
 import { savePdf } from '../storage/rosterStore';
 import { downloadBlob } from '../utils/download';
@@ -45,7 +46,7 @@ export default function ImportPage() {
   const navigate = useNavigate();
 
   const today = new Date();
-  const [beginDate, setBeginDate] = useState(format(today, 'yyyy-MM-dd'));
+  const [beginDate, setBeginDate] = useState(defaultBeginDate(today));
   const [endDate, setEndDate] = useState('');
   const [downloading, setDownloading] = useState(false);
   const [downloadStatus, setDownloadStatus] = useState('');

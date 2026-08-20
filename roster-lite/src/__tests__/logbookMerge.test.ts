@@ -88,3 +88,31 @@ describe('mergeLogbook', () => {
     expect(ups[0].reg).toBe('CS-TPU');
   });
 });
+
+// A re-downloaded roster carries the final times once a sector has been operated, so the
+// logbook must take them — that is the whole point of syncing after flying.
+describe('mergeLogbook — re-sync updates an operated sector', () => {
+  const key = logbookRowKey(U, '2026-06-10', 'TP100', 'LIS', 'OPO');
+  const stored = (over: Partial<LogbookRow> = {}): LogbookRow => ({
+    key, userId: U, date: '2026-06-10', flightNumber: 'TP100', from: 'LIS', to: 'OPO',
+    off: '08:00', on: '09:30', aircraft: 'E90', reg: 'CS-TPU', ...over,
+  });
+  const reflown = flight({ departureTime: '08:14', arrivalTime: '09:41' });
+
+  it('takes the new times for a row the roster owns', () => {
+    const ups = mergeLogbook([stored()], [reflown], U);
+    expect(ups).toHaveLength(1);
+    expect([ups[0].off, ups[0].on]).toEqual(['08:14', '09:41']);
+  });
+
+  it('still updates a row that only carries a who-flew annotation', () => {
+    // Marking PF must not freeze the sector — those flags are preserved, the times refresh.
+    const ups = mergeLogbook([stored({ ldgSelf: false })], [reflown], U);
+    expect([ups[0].off, ups[0].on]).toEqual(['08:14', '09:41']);
+    expect(ups[0].ldgSelf).toBe(false);
+  });
+
+  it('leaves a hand-corrected row alone', () => {
+    expect(mergeLogbook([stored({ edited: true })], [reflown], U)).toHaveLength(0);
+  });
+});

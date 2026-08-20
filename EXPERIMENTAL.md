@@ -25,7 +25,16 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(Vazio — tudo o que estava pendente foi promovido em `0.8.14.4`.)_
+- **Sincronização passa a atualizar voos já executados.** O download começava sempre em
+  **hoje** (`DownloadRosterDialog`/`ImportPage`), por isso um setor já voado — cujas horas o
+  CrewLink só reescreve depois de operado — nunca voltava a entrar no PDF e o Diário ficava
+  com as horas planeadas para sempre. Nova constante `SYNC_LOOKBACK_DAYS = 7`
+  (`domain/rosterWindow.ts`): o download começa por omissão 7 dias atrás. `mergeDuties` já faz
+  override por dia e o `mergeLogbook` já atualizava as horas — faltava só a janela.
+- **Marcar PF deixa de congelar o setor.** O diálogo de edição punha `edited: true` em
+  qualquer gravação, incluindo só marcar quem foi PF — o que travava para sempre a
+  sincronização das horas desse setor. Agora só marca `edited` quando os **dados do voo**
+  mudam mesmo; correções manuais continuam protegidas.
 
 ---
 

@@ -6,6 +6,7 @@ import {
 import { CloudDownload, Close, Login, CheckCircle, NotificationsActive } from '@mui/icons-material';
 import { format, parseISO } from 'date-fns';
 import { login, fetchRoster, SessionExpiredError } from '../services/crewlinkApi';
+import { defaultBeginDate, SYNC_LOOKBACK_DAYS } from '../domain/rosterWindow';
 import { useRoster, type RosterImportPreview } from '../state/useRoster';
 import { savePdf } from '../storage/rosterStore';
 import { getCredentials } from '../storage/settings';
@@ -124,7 +125,7 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
   const loginCodeRef = useRef<HTMLInputElement>(null);
   const loginPwRef = useRef<HTMLInputElement>(null);
 
-  const [beginDate, setBeginDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [beginDate, setBeginDate] = useState(defaultBeginDate());
   const [endDate, setEndDate] = useState('');
   const [downloading, setDownloading] = useState(false);
   const [status, setStatus] = useState('');
@@ -485,6 +486,8 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
           <Stack spacing={2} pt={0.5}>
             <Typography variant="body2" color="text.secondary">
               Escolhe o intervalo de datas. Deixa a data fim em branco para o máximo disponível.
+              Começa {SYNC_LOOKBACK_DAYS} dias atrás para os voos já realizados serem atualizados com as
+              horas finais (no Diário também).
             </Typography>
             {error && <Alert severity="error">{error}</Alert>}
             {status && !error && (
