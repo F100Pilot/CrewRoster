@@ -25,7 +25,11 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(Vazio — tudo o que estava pendente foi promovido em `0.8.15`.)_
+- **Correção: nome da app cortado no telemóvel.** A toolbar tinha 6 ações e espremia o título
+  para "CrewRos…". A **Legenda de códigos** e o **Terminar sessão CrewLink** passaram para um
+  menu de overflow (⋮) e os ícones ficaram `size="small"`; ficam na barra o avatar, Pesquisar,
+  Definições e Descarregar (as âncoras do tutorial mantêm-se). Verificado a 360px: o título
+  deixa de truncar.
 
 ---
 
