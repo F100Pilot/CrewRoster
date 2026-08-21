@@ -1,11 +1,11 @@
 import { type ReactNode, useEffect, useState } from 'react';
 import {
-  AppBar, Box, Container, IconButton, Paper, Toolbar, Tooltip, Typography, BottomNavigation,
-  BottomNavigationAction,
+  AppBar, Box, Container, IconButton, ListItemIcon, ListItemText, Menu, MenuItem, Paper,
+  Toolbar, Tooltip, Typography, BottomNavigation, BottomNavigationAction,
 } from '@mui/material';
 import {
   CalendarMonth, FormatListBulleted, CloudDownload, PictureAsPdf, Logout, HelpOutline,
-  Settings, MenuBook, QueryStats, Public, Badge, Search,
+  Settings, MenuBook, QueryStats, Public, Badge, Search, MoreVert,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
@@ -42,6 +42,9 @@ export default function Layout({ children }: { children: ReactNode }) {
   const current = NAV.findIndex((n) => n.path === location.pathname);
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // Overflow menu for the rarely-used actions: on a phone the toolbar had one icon too many
+  // and squeezed the app name to "CrewRos…", so only the frequent actions stay on the bar.
+  const [moreAnchor, setMoreAnchor] = useState<null | HTMLElement>(null);
 
   // First-run walkthrough: once a profile exists, run the guided tour a single time.
   // Delay so the AppBar/nav are painted (driver.js anchors to those elements).
@@ -65,39 +68,42 @@ export default function Layout({ children }: { children: ReactNode }) {
               {APP_VERSION_LABEL}
             </Typography>
           </Box>
-          {sessionToken && (
-            <Tooltip title="Terminar sessão CrewLink">
-              <IconButton
-                color="inherit"
-                onClick={() => setSessionToken(null)}
-              >
-                <Logout />
-              </IconButton>
-            </Tooltip>
-          )}
           <UserSwitcher />
           <Tooltip title="Pesquisar">
-            <IconButton color="inherit" onClick={() => navigate('/search')} aria-label="Pesquisar">
+            <IconButton size="small" color="inherit" onClick={() => navigate('/search')} aria-label="Pesquisar">
               <Search />
             </IconButton>
           </Tooltip>
-          <IconButton
-            color="inherit"
-            onClick={() => navigate('/codes')}
-            title="Legenda de códigos"
-          >
-            <HelpOutline />
-          </IconButton>
           <Tooltip title="Definições">
-            <IconButton color="inherit" onClick={() => setSettingsOpen(true)} data-tour="settings">
+            <IconButton size="small" color="inherit" onClick={() => setSettingsOpen(true)} data-tour="settings">
               <Settings />
             </IconButton>
           </Tooltip>
           <Tooltip title="Descarregar / atualizar escala">
-            <IconButton color="inherit" onClick={() => setDownloadOpen(true)} data-tour="download">
+            <IconButton size="small" color="inherit" onClick={() => setDownloadOpen(true)} data-tour="download">
               <CloudDownload />
             </IconButton>
           </Tooltip>
+          <Tooltip title="Mais">
+            <IconButton
+              size="small" color="inherit" aria-label="Mais opções"
+              onClick={(e) => setMoreAnchor(e.currentTarget)}
+            >
+              <MoreVert />
+            </IconButton>
+          </Tooltip>
+          <Menu anchorEl={moreAnchor} open={Boolean(moreAnchor)} onClose={() => setMoreAnchor(null)}>
+            <MenuItem onClick={() => { setMoreAnchor(null); navigate('/codes'); }}>
+              <ListItemIcon><HelpOutline fontSize="small" /></ListItemIcon>
+              <ListItemText>Legenda de códigos</ListItemText>
+            </MenuItem>
+            {sessionToken && (
+              <MenuItem onClick={() => { setMoreAnchor(null); setSessionToken(null); }}>
+                <ListItemIcon><Logout fontSize="small" /></ListItemIcon>
+                <ListItemText>Terminar sessão CrewLink</ListItemText>
+              </MenuItem>
+            )}
+          </Menu>
         </Toolbar>
       </AppBar>
       <Container maxWidth="md" sx={{ py: 2 }}>
