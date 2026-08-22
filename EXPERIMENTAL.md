@@ -25,7 +25,13 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(Vazio — tudo o que estava pendente foi promovido em `0.8.15.1`.)_
+- **"Onde está a aeronave" passa a explicar-se em vez de desaparecer.** O painel só era
+  desenhado com posição ADS-B *e* matrícula conhecida, pelo que ficava invisível na maioria
+  dos casos — o utilizador não o encontrava. Agora, em qualquer voo de hoje ainda por partir,
+  aparece sempre: com o mapa quando há posição, senão com o motivo ("matrícula ainda
+  desconhecida" / "sem posição neste momento") e botão de atualizar. O `AircraftTracker` aceita
+  `reg: null`, e o `FlightInfo` deixou de desistir cedo (`showTracker`) quando não há chave
+  AeroDataBox/matrícula/tripulação. Verificado no browser em ambos os casos.
 
 ---
 
