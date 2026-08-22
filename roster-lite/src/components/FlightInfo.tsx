@@ -124,20 +124,23 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
     return () => { alive = false; };
   }, [isToday, flightNumber, dep, arr, date, userId]);
 
-  // Feature off (no API key) and nothing recorded → stay out of the way, UNLESS there's
-  // crew to show (the crew "i" lives in this banner) or a FLIC tail for today.
-  if (!configured && !savedReg && !flicReg && !crew.length) return null;
-
-  // The tail to show: FLIC wins on the day (most current), then a live AeroDataBox leg, then a
-  // previously-recorded/inferred tail.
-  const displayReg = flicReg ?? leg?.reg ?? savedReg ?? null;
-  const displayRegInferred = !flicReg && !leg?.reg && savedRegInferred;
-
   // A flight that hasn't reached its scheduled departure can't have departed/arrived. AeroDataBox
   // sometimes returns a stale (previous-day) operation, so suppress impossible "completed" states
   // until the flight is actually due.
   const stdUtc = duty.departureTime ? utcDateTime(date, duty.departureTime) : null;
   const notDepartedYet = stdUtc ? Date.now() < stdUtc.getTime() : false;
+  // Today's not-yet-departed flight always gets the "where is the aircraft" panel — it explains
+  // itself even with no tail yet, so it must survive the bail-out below.
+  const showTracker = aircraftTrackingEnabled() && isToday && notDepartedYet;
+
+  // Feature off (no API key) and nothing recorded → stay out of the way, UNLESS there's
+  // crew to show (the crew "i" lives in this banner), a FLIC tail for today, or the tracker.
+  if (!configured && !savedReg && !flicReg && !crew.length && !showTracker) return null;
+
+  // The tail to show: FLIC wins on the day (most current), then a live AeroDataBox leg, then a
+  // previously-recorded/inferred tail.
+  const displayReg = flicReg ?? leg?.reg ?? savedReg ?? null;
+  const displayRegInferred = !flicReg && !leg?.reg && savedRegInferred;
   const COMPLETED_STATUS = /arriv|depart|land|en[\s-]?route|airborne|in\s*air|active/i;
   const showLegStatus = !!leg?.status && !(notDepartedYet && COMPLETED_STATUS.test(leg.status));
 
@@ -262,10 +265,10 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
         </>
       )}
 
-      {/* Where the inbound aircraft is now, while it's still airborne — only on the day and only
-          before our own flight has departed (after that we're on it). Renders nothing when the
-          aircraft isn't currently being tracked. */}
-      {aircraftTrackingEnabled() && isToday && notDepartedYet && displayReg && (
+      {/* Where the inbound aircraft is now — only on the day and only before our own flight has
+          departed (after that we're on it). Shown even without a known tail: the panel then says
+          so, instead of the whole feature silently disappearing. */}
+      {showTracker && (
         <Suspense fallback={null}>
           <AircraftTracker reg={displayReg} dep={duty.departureAirport} />
         </Suspense>

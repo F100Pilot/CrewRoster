@@ -10,9 +10,13 @@ import { fetchAircraftPosition, type AircraftPosition } from '../domain/aircraft
 import { airportCoord } from '../domain/airportCoords';
 
 // A small offline map (same D3 + bundled world TopoJSON as the Map page — no tiles) showing where
-// the aircraft that will operate this flight currently is, while it's still airborne. Lazy-loaded,
-// so the world data / d3 only load when a live aircraft is actually shown. Renders nothing when the
-// aircraft isn't being tracked (on the ground / out of coverage), keeping it opportunistic.
+// the aircraft that will operate this flight currently is. Lazy-loaded, so the world data / d3 only
+// load when this panel is mounted.
+//
+// The panel used to render nothing whenever the position was unavailable, which made the whole
+// feature invisible — users couldn't tell it existed, let alone why it was empty. It now always
+// states its situation on a flight day: the map when the aircraft is located, otherwise the reason
+// (registration not known yet / not currently picked up by ADS-B).
 
 const WORLD = feature(worldTopo as any, (worldTopo as any).objects.countries) as unknown as FeatureCollection;
 const W = 320;
@@ -46,14 +50,16 @@ function fmtEta(min: number): string {
   return min >= 60 ? `${Math.floor(min / 60)}h${String(min % 60).padStart(2, '0')}` : `${min} min`;
 }
 
-export default function AircraftTracker({ reg, dep }: { reg: string; dep: string | null }) {
+// `reg` is null while the tail is still unknown — the panel then explains that instead of hiding.
+export default function AircraftTracker({ reg, dep }: { reg: string | null; dep: string | null }) {
   const theme = useTheme();
   const dark = theme.palette.mode === 'dark';
   const [pos, setPos] = useState<AircraftPosition | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!!reg);
   const aliveRef = useRef(true);
 
   const load = useCallback((force = false) => {
+    if (!reg) return; // nothing to look up without a tail
     setLoading(true);
     fetchAircraftPosition(reg, { force })
       .then((p) => { if (aliveRef.current) setPos(p); })
@@ -62,10 +68,11 @@ export default function AircraftTracker({ reg, dep }: { reg: string; dep: string
 
   useEffect(() => {
     aliveRef.current = true;
+    if (!reg) { setPos(null); setLoading(false); return () => { aliveRef.current = false; }; }
     load();
     const t = setInterval(() => load(true), REFRESH_MS); // keep the position fresh while open
     return () => { aliveRef.current = false; clearInterval(t); };
-  }, [load]);
+  }, [load, reg]);
 
   const depCoord = useMemo(() => airportCoord(dep), [dep]);
 
@@ -88,9 +95,36 @@ export default function AircraftTracker({ reg, dep }: { reg: string; dep: string
     return { landPath: path(WORLD) ?? '', acXY, depXY };
   }, [pos, depCoord]);
 
-  // Opportunistic: only show when the aircraft is actually being tracked (airborne OR on the
-  // ground — the user wants to know it has landed too). Nothing to show when it isn't located.
-  if (!loading && !pos) return null;
+  // No position to draw: say why rather than vanishing. Without a tail we don't know which
+  // aircraft to follow; with one, it simply isn't being picked up right now (out of ADS-B
+  // coverage, or not yet powered up).
+  if (!loading && !pos) {
+    return (
+      <Box sx={{ mt: 1.25 }}>
+        <Box display="flex" alignItems="center" gap={0.75}>
+          <FlightTakeoff fontSize="small" sx={{ color: 'text.disabled' }} />
+          <Typography variant="caption" color="text.secondary" sx={{ flexGrow: 1 }}>
+            Onde está a aeronave —{' '}
+            {reg
+              ? `${reg} sem posição neste momento`
+              : 'matrícula ainda desconhecida'}
+          </Typography>
+          {reg && (
+            <Tooltip title="Atualizar posição">
+              <IconButton size="small" onClick={() => load(true)} sx={{ p: 0.25 }} aria-label="Atualizar posição da aeronave">
+                <Refresh sx={{ fontSize: 16 }} />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Box>
+        <Typography variant="caption" color="text.disabled" display="block" sx={{ mt: 0.25 }}>
+          {reg
+            ? 'A aeronave ainda não está a ser captada (fora de cobertura ADS-B ou ainda no solo sem transponder).'
+            : 'Assim que a matrícula for conhecida (FLIC no próprio dia, ou dados do voo), mostra-se aqui a posição ao vivo.'}
+        </Typography>
+      </Box>
+    );
+  }
 
   const landFill = dark ? '#2a2f38' : '#e6e8ec';
   const landStroke = dark ? '#3a4150' : '#c7ccd4';
