@@ -7,7 +7,7 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.8.15.2`
+- **Produção (`master`) está em:** `0.8.15.3`
 - **Próxima versão ao promover:** `0.8.16` (ou superior, conforme o âmbito)
 
 ## Como promover tudo para produção (quando estiver pronto)
@@ -25,11 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **O aviso de alteração de escala ignora dias já voados.** Desde que o download passou a
-  abranger 7 dias para trás (0.8.15), as horas finais dos voos já realizados eram lidas como
-  "a escala mudou" — ruído em cada sincronização, e ainda forçava o passo de revisão no
-  download (`hasRealChanges`). O `diffRosters` aceita agora um `todayISO` e descarta as
-  alterações em dias anteriores a hoje; hoje e o futuro continuam a contar.
+_(Vazio — tudo o que estava pendente foi promovido em `0.8.15.3`.)_
 
 ---
 
