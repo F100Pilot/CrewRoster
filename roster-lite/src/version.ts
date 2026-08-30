@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.15.2';
+export const APP_VERSION = '0.8.15.3';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,13 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.15.3',
+    date: '2026-08-22',
+    highlights: [
+      'Sincronizar a escala deixa de avisar “dias mudaram” por causa de voos já realizados. Como o download abrange também a semana anterior (para o Diário receber as horas reais), esses acertos apareciam como alterações — agora só contam as mudanças de hoje em diante.',
+    ],
+  },
   {
     version: '0.8.15.2',
     date: '2026-08-22',

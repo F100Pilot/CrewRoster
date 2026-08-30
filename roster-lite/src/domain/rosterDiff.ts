@@ -31,13 +31,19 @@ function groupByDate(duties: ParsedDuty[]): Map<string, ParsedDuty[]> {
 // Compares a previous roster's duties against a freshly imported set and returns,
 // per affected date, whether it was added, removed, or modified. Dates that are
 // identical (same signature) produce no entry. Result is sorted by date.
-export function diffRosters(prev: ParsedDuty[], next: ParsedDuty[]): DayChange[] {
+//
+// `todayISO`, when given, drops changes on days already in the past. A sync covers the
+// preceding days too (so the logbook picks up the times each flight actually flew), and those
+// settled times differ from what was planned — reporting them as "the roster changed" is noise:
+// the day is flown, there is nothing left to act on. Changes from today onwards still count.
+export function diffRosters(prev: ParsedDuty[], next: ParsedDuty[], todayISO?: string): DayChange[] {
   const prevByDay = groupByDate(prev);
   const nextByDay = groupByDate(next);
   const dates = new Set([...prevByDay.keys(), ...nextByDay.keys()]);
 
   const changes: DayChange[] = [];
   for (const date of dates) {
+    if (todayISO && date < todayISO) continue; // already flown — not an actionable change
     const before = prevByDay.get(date);
     const after = nextByDay.get(date);
     if (before && !after) changes.push({ date, type: 'removed' });

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import type { CrewRole, Roster, UserProfile } from '../domain/types';
 import { parseRosterFile, PARSE_VERSION } from '../parsing';
 import { diffRosters } from '../domain/rosterDiff';
+import { todayISO } from '../domain/rosterWindow';
 import { mergeDuties } from '../domain/rosterMerge';
 import {
   assignOrphanPdfs, clearRoster, deleteUser as deleteUserDB, getActiveUserId,
@@ -249,7 +250,7 @@ export function RosterProvider({ children }: { children: ReactNode }) {
         // download's window can differ, since the rest is kept verbatim).
         const previous = await loadRoster(userId);
         const mergedDuties = mergeDuties(previous?.duties ?? [], result.duties);
-        const changes = previous ? diffRosters(previous.duties, mergedDuties) : [];
+        const changes = previous ? diffRosters(previous.duties, mergedDuties, todayISO()) : [];
         const next: Roster = {
           id: userId,
           fileName: file.name,
@@ -282,7 +283,7 @@ export function RosterProvider({ children }: { children: ReactNode }) {
     const result = await parseRosterFile(file);
     const previous = await loadRoster(userId);
     const mergedDuties = mergeDuties(previous?.duties ?? [], result.duties);
-    const changes = previous ? diffRosters(previous.duties, mergedDuties) : [];
+    const changes = previous ? diffRosters(previous.duties, mergedDuties, todayISO()) : [];
     const next: Roster = {
       id: userId,
       fileName: file.name,

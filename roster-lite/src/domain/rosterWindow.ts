@@ -13,3 +13,9 @@ export const SYNC_LOOKBACK_DAYS = 7;
 export function defaultBeginDate(today: Date = new Date()): string {
   return format(subDays(today, SYNC_LOOKBACK_DAYS), 'yyyy-MM-dd');
 }
+
+/** Today as YYYY-MM-DD (local). The cut-off for "still actionable": a sync reaches back over
+ *  days already flown, and their settled times must not be reported as roster changes. */
+export function todayISO(today: Date = new Date()): string {
+  return format(today, 'yyyy-MM-dd');
+}

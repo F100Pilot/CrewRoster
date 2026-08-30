@@ -36,6 +36,31 @@ describe('diffRosters', () => {
     expect(diffRosters(prev, next)).toEqual([{ date: '2026-06-03', type: 'removed' }]);
   });
 
+  // A sync reaches a week back so the logbook gets each flight's real times; those settled
+  // times differ from the plan, but the day is flown — reporting it as a roster change is noise.
+  describe('past days (already flown)', () => {
+    const prev = [duty({ date: '2026-06-04', dutyCode: 'TP100', flightNumber: 'TP100', departureTime: '08:00' })];
+    const next = [duty({ date: '2026-06-04', dutyCode: 'TP100', flightNumber: 'TP100', departureTime: '08:12' })];
+
+    it('ignores a change on a day before todayISO', () => {
+      expect(diffRosters(prev, next, '2026-06-05')).toEqual([]);
+    });
+
+    it('still reports the change on today itself', () => {
+      expect(diffRosters(prev, next, '2026-06-04')).toEqual([{ date: '2026-06-04', type: 'modified' }]);
+    });
+
+    it('still reports future days while dropping past ones', () => {
+      const p2 = [...prev, duty({ date: '2026-06-20', dutyCode: 'OFF' })];
+      const n2 = [...next, duty({ date: '2026-06-20', dutyCode: 'TP900', flightNumber: 'TP900' })];
+      expect(diffRosters(p2, n2, '2026-06-05')).toEqual([{ date: '2026-06-20', type: 'modified' }]);
+    });
+
+    it('reports every change when no cut-off is given', () => {
+      expect(diffRosters(prev, next)).toEqual([{ date: '2026-06-04', type: 'modified' }]);
+    });
+  });
+
   it('flags a modified day when a flight time changes', () => {
     const prev = [duty({ date: '2026-06-04', dutyCode: 'TP100', flightNumber: 'TP100', departureTime: '08:00' })];
     const next = [duty({ date: '2026-06-04', dutyCode: 'TP100', flightNumber: 'TP100', departureTime: '09:30' })];
