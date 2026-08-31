@@ -148,6 +148,10 @@ function classifyDuty(name: string): { dutyType: string; dutyCode: string } | nu
   // PLS_TEIA/TEIC, PLS_ROST, PLS_TRACK. Treated as a free (non-flying) day.
   if (/^PLS_/.test(n)) return { dutyType: 'Day Off', dutyCode: n };
   if (/^E\d{2}-[A-Z]{3}-\d$/.test(n)) return { dutyType: 'Simulator', dutyCode: n }; // E90-VIE-1
+  // From Sep 2026 the LIS simulator uses base-prefixed codes instead: LIS-EBT-1 / LIS-EBT-2
+  // (EBT session day 1 / day 2) and LIS-OTHER (a session outside the EBT scheme). Accept any
+  // base so another simulator location follows the same shape.
+  if (/^[A-Z]{3}-(EBT-\d|OTHER)$/.test(n)) return { dutyType: 'Simulator', dutyCode: n };
   if (/^GAB\d$/.test(n)) return { dutyType: 'Office Duty', dutyCode: n };
   if (/^SIM/.test(n)) return { dutyType: 'Simulator', dutyCode: 'SIM' };
   if (/^(SBY|STBY)/.test(n)) return { dutyType: 'Standby Airport', dutyCode: 'SBY' };

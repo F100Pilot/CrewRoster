@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.15.3';
+export const APP_VERSION = '0.8.15.4';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,13 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.15.4',
+    date: '2026-08-31',
+    highlights: [
+      'Novos códigos de simulador de Lisboa reconhecidos: LIS-EBT-1, LIS-EBT-2 (sessões EBT dia 1/2) e LIS-OTHER. Antes apareciam como “E90 · Other”, com a hora de início tomada por check-in. Passam a surgir como Simulador, com início/fim e a tripulação da sessão. As escalas já importadas reprocessam sozinhas.',
+    ],
+  },
   {
     version: '0.8.15.3',
     date: '2026-08-22',

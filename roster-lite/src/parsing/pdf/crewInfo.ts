@@ -18,8 +18,9 @@ import { rotationChains } from '../../domain/aircraftRegs';
 // behind this — see refreshCrewFromPdfs). 1 = role required; 2 = optional role + inference;
 // 3 = crew on ground activities (simulator); 4 = + begin/end/location for ground activities;
 // 5 = ground-activity section parsed as a transposed grid (event: prefix, column geometry);
-// 6 = route airports read above the crew list (a name fragment is no longer taken as the arrival).
-export const CREW_PARSER_VERSION = 6;
+// 6 = route airports read above the crew list (a name fragment is no longer taken as the arrival);
+// 7 = new simulator codes (LIS-EBT-1/-2, LIS-OTHER) recognised as ground activities.
+export const CREW_PARSER_VERSION = 7;
 
 const DOW = /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\d{2}$/;
 const NUM = /^\d{2,4}$/;
@@ -183,7 +184,9 @@ export function parseCrewInfo(tokens: PositionedToken[]): CrewLeg[] {
 // the crew listed just below on "crew on event:" lines. There is no carrier/flight number, so
 // the activity is identified by its date + code — the same code the duty grid stores as the
 // Simulator duty's dutyCode (see classifyDuty: E90-VIE-1 style).
-const GROUND_CODE = /^E\d{2}-[A-Z]{3}-\d$/; // E90-FRA-1, E90-VIE-1
+// Simulator/ground activity codes: the original E90-FRA-1 shape and, from Sep 2026, the
+// base-prefixed LIS-EBT-1 / LIS-EBT-2 / LIS-OTHER used by the Lisbon simulator.
+const GROUND_CODE = /^(E\d{2}-[A-Z]{3}-\d|[A-Z]{3}-(EBT-\d|OTHER))$/;
 const HHMM = /^([01]\d|2[0-3])[0-5]\d$/; // 1700, 2100 → begin/end columns
 
 export interface GroundCrewLeg {
