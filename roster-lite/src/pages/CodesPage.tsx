@@ -13,6 +13,8 @@ const CODES: { code: string; dutyType: string; label: string }[] = [
   { code: 'GAB1 / GAB2', dutyType: 'Office Duty', label: 'Serviço de gabinete (escritório)' },
   { code: 'FPE-LEARN', dutyType: 'Training', label: 'Formação (e-learning)' },
   { code: 'SIM / E90-…', dutyType: 'Simulator', label: 'Simulador' },
+  { code: 'LIS-EBT-1 / LIS-EBT-2', dutyType: 'Simulator', label: 'Sessão de simulador EBT (dia 1 / dia 2)' },
+  { code: 'LIS-OTHER', dutyType: 'Simulator', label: 'Sessão de simulador fora do âmbito EBT' },
   { code: 'SBY / STBY', dutyType: 'Standby Airport', label: 'Reserva (standby)' },
   { code: 'A1 / A2+ / A3++ / A4… A8', dutyType: 'Standby Home', label: 'Assistência (pilotos e cabina) — reserva com janela horária' },
   { code: 'H7+ / H9+ / H12+ / H509 / R24…', dutyType: 'Standby Home', label: 'Assistência (pilotos e cabina) — reserva com janela horária' },
