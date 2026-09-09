@@ -391,7 +391,9 @@ function GroundCrew({ crew, myCode }: { crew: NonNullable<ParsedDuty['crew']>; m
   );
 }
 
-// One endpoint of a flight: airport code, UTC time, and the airport's local time.
+// One endpoint of a flight: airport code, the airport's local time (what the crew reads
+// off the clock at the gate) and the UTC time in brackets underneath. When we don't know
+// the airport's timezone there's no local time to lead with, so UTC takes the top line.
 function TimePoint({
   airport,
   utc,
@@ -409,14 +411,14 @@ function TimePoint({
         {airport || '—'}
       </Typography>
       <Typography variant="body2" fontWeight={600} color="primary.main">
-        {utc || '—'}
+        {lt || utc || '—'}
         <Typography component="span" variant="body2" fontWeight={700} color="text.secondary">
-          {' z'}
+          {lt ? ' LT' : ' z'}
         </Typography>
       </Typography>
-      {lt && (
+      {lt && utc && (
         <Typography variant="caption" color="text.secondary" display="block">
-          ({lt} LT)
+          ({utc} z)
         </Typography>
       )}
       <Typography variant="caption" color="text.secondary" display="block">

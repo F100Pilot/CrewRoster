@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.15.5';
+export const APP_VERSION = '0.8.15.6';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,13 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.15.6',
+    date: '2026-09-09',
+    highlights: [
+      'No detalhe do voo, as horas de partida e chegada (STD/STA) passam a aparecer primeiro em hora local (LT), com a hora UTC entre parênteses por baixo. Antes era ao contrário.',
+    ],
+  },
   {
     version: '0.8.15.5',
     date: '2026-09-09',
