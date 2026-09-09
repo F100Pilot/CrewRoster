@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import { dutyColor } from '../theme';
-import { toLocalTime } from '../utils/localTime';
+import { toLocalTime, checkInTimeLabel } from '../utils/localTime';
 import { diffMinutes, formatDuration } from '../utils/duration';
 import { dayStats } from '../domain/dutyStats';
 import { restBefore } from '../domain/restPeriods';
@@ -148,12 +148,7 @@ export default function DayDetailPage() {
               <Chip label={duty.dutyType} variant="outlined" size="small" />
               {duty.reportingTime && (
                 <Chip
-                  // Local time at the departure airport — the clock the crew reports against.
-                  // UTC only as a fallback, when that airport's timezone isn't known.
-                  label={(() => {
-                    const lt = toLocalTime(date, duty.reportingTime, duty.departureAirport);
-                    return lt ? `Check-in ${lt} LT` : `Check-in ${duty.reportingTime}z`;
-                  })()}
+                  label={`Check-in ${checkInTimeLabel(date, duty.reportingTime, duty.departureAirport)}`}
                   size="small"
                   color="primary"
                   variant="outlined"

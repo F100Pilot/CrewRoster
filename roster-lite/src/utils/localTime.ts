@@ -57,6 +57,19 @@ export function toLocalTime(
   return formatInTz(dt, tz);
 }
 
+// The check-in (apresentação) as the crew reads it: local time at the departure airport, which
+// is the clock they actually report against. Falls back to UTC ("z") only when that airport's
+// timezone isn't known — better a UTC time than none. Callers add their own prefix
+// ("Check-in …" / "Apres. …") so every surface — app and calendar exports — shows one rule.
+export function checkInTimeLabel(
+  dateISO: string | null | undefined,
+  utcHHMM: string,
+  airport: string | null | undefined
+): string {
+  const lt = toLocalTime(dateISO, utcHHMM, airport);
+  return lt ? `${lt} LT` : `${utcHHMM}z`;
+}
+
 // The device's IANA timezone, e.g. "Europe/Lisbon".
 export function userTimeZone(): string {
   try {

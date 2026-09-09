@@ -19,7 +19,7 @@ import MonthStatsCard from '../components/MonthStatsCard';
 import FtlCard from '../components/FtlCard';
 import { autoCaptureRecent } from '../domain/aircraftRegs';
 import { getAeroDataBoxKey } from '../storage/settings';
-import { toLocalTime } from '../utils/localTime';
+import { checkInTimeLabel } from '../utils/localTime';
 import type { ParsedDuty, ChangeType } from '../domain/types';
 
 const CHANGE_STYLE: Record<ChangeType, { color: string; label: string }> = {
@@ -302,16 +302,13 @@ export default function RosterPage() {
                   </Tooltip>
                 )}
               </Box>
-              {duties[0]?.reportingTime && (() => {
-                const lt = toLocalTime(date, duties[0].reportingTime, duties[0].departureAirport);
-                return (
-                  <Chip
-                    size="small"
-                    variant="outlined"
-                    label={lt ? `Apres. ${lt} LT` : `Apres. ${duties[0].reportingTime}z`}
-                  />
-                );
-              })()}
+              {duties[0]?.reportingTime && (
+                <Chip
+                  size="small"
+                  variant="outlined"
+                  label={`Apres. ${checkInTimeLabel(date, duties[0].reportingTime, duties[0].departureAirport)}`}
+                />
+              )}
             </Box>
             <Box display="flex" flexWrap="wrap" gap={0.5}>
               {duties.map((d, i) => (

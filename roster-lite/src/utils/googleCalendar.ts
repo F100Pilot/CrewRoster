@@ -6,6 +6,7 @@
 import { addDays, format, parseISO } from 'date-fns';
 import type { ParsedDuty, Roster } from '../domain/types';
 import { alarmLeadMinutes } from './icsExport';
+import { checkInTimeLabel } from './localTime';
 import { getCheckinLeadMinutes } from '../storage/settings';
 
 const CALENDAR_API = 'https://www.googleapis.com/calendar/v3';
@@ -242,7 +243,7 @@ function dutyToEvent(duty: ParsedDuty): Record<string, unknown> {
   if (duty.departureAirport) event.location = duty.departureAirport;
 
   const desc: string[] = [];
-  if (duty.reportingTime) desc.push(`Check-in ${duty.reportingTime}z`);
+  if (duty.reportingTime) desc.push(`Check-in ${checkInTimeLabel(duty.date, duty.reportingTime, duty.departureAirport)}`);
   if (duty.aircraftType)  desc.push(duty.aircraftType);
   if (duty.observations)  desc.push(duty.observations);
   if (desc.length) event.description = desc.join(' · ');

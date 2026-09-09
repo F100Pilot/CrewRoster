@@ -22,7 +22,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
     version: '0.8.15.5',
     date: '2026-09-09',
     highlights: [
-      'A apresentação (check-in) passa a ser mostrada só em hora local (LT) — no banner do próximo serviço, na lista e no detalhe do dia. Antes vinha em UTC com a local entre parênteses. As horas dos voos continuam em UTC (z) com a local por baixo.',
+      'A apresentação (check-in) passa a ser mostrada só em hora local (LT) — no banner do próximo serviço, na lista, no detalhe do dia e também nos eventos exportados para o calendário (ICS / Google Calendar), incluindo o lembrete. Antes vinha em UTC com a local entre parênteses. As horas dos voos continuam em UTC (z) com a local por baixo.',
     ],
   },
   {
