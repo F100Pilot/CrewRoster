@@ -148,12 +148,12 @@ export default function DayDetailPage() {
               <Chip label={duty.dutyType} variant="outlined" size="small" />
               {duty.reportingTime && (
                 <Chip
-                  label={
-                    `Check-in ${duty.reportingTime}z` +
-                    (toLocalTime(date, duty.reportingTime, duty.departureAirport)
-                      ? ` · ${toLocalTime(date, duty.reportingTime, duty.departureAirport)} LT`
-                      : '')
-                  }
+                  // Local time at the departure airport — the clock the crew reports against.
+                  // UTC only as a fallback, when that airport's timezone isn't known.
+                  label={(() => {
+                    const lt = toLocalTime(date, duty.reportingTime, duty.departureAirport);
+                    return lt ? `Check-in ${lt} LT` : `Check-in ${duty.reportingTime}z`;
+                  })()}
                   size="small"
                   color="primary"
                   variant="outlined"

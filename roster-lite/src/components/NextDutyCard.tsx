@@ -65,7 +65,9 @@ export default function NextDutyCard({ duties }: { duties: ParsedDuty[] }) {
               <Typography variant="body2">{format(parseISO(duty.date), 'EEE, dd MMM')}</Typography>
               {checkIn && (
                 <Typography variant="body2" fontWeight={700}>
-                  · Check-in {checkIn}z{lt ? ` (${lt} LT)` : ''}
+                  {/* Check-in in the airport's local time — that's the clock the crew reports
+                      against. Falls back to UTC only when the airport's timezone isn't known. */}
+                  · Check-in {lt ? `${lt} LT` : `${checkIn}z`}
                 </Typography>
               )}
             </Stack>
