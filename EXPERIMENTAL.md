@@ -25,7 +25,15 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(Vazio — tudo o que estava pendente foi promovido em `0.8.15.5`.)_
+### `0.8.15.6` — horas do voo em hora local (LT)
+
+No detalhe do voo, a partida e a chegada (STD/STA) mostram agora a **hora local
+do aeroporto** na linha principal (`06:30 LT`) e o **UTC entre parênteses** por
+baixo (`(05:30 z)`) — antes era ao contrário. Se o fuso do aeroporto for
+desconhecido, o UTC volta a ocupar a linha principal.
+
+A barra dia/noite e o cartão de nascer/pôr do sol mantêm-se em UTC (o bloco está
+rotulado "(UTC)" e é lido contra as horas do sol).
 
 ---
 
