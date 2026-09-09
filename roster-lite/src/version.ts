@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.15.4';
+export const APP_VERSION = '0.8.15.5';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,13 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.15.5',
+    date: '2026-09-09',
+    highlights: [
+      'A apresentação (check-in) passa a ser mostrada só em hora local (LT) — no banner do próximo serviço, na lista, no detalhe do dia e também nos eventos exportados para o calendário (ICS / Google Calendar), incluindo o lembrete. Antes vinha em UTC com a local entre parênteses. As horas dos voos continuam em UTC (z) com a local por baixo.',
+    ],
+  },
   {
     version: '0.8.15.4',
     date: '2026-08-31',

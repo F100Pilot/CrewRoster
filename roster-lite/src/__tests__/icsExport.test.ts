@@ -59,8 +59,25 @@ describe('buildIcs', () => {
     expect(ics).toContain('DTEND:20260620T091000Z');
     expect(ics).toContain('SUMMARY:TP868 LIS-BLQ');
     expect(ics).toContain('LOCATION:LIS');
-    expect(ics).toContain('DESCRIPTION:Check-in 05:15z');
+    // Check-in is written in the departure airport's local time — Lisbon is UTC+1 in June.
+    expect(ics).toContain('DESCRIPTION:Check-in 06:15 LT');
     expect(ics.endsWith('END:VCALENDAR')).toBe(true);
+  });
+
+  it('falls back to UTC in the check-in when the airport timezone is unknown', () => {
+    const ics = buildIcs(
+      roster([
+        duty({
+          flightNumber: 'TP999',
+          departureAirport: 'ZZZ', // not in the timezone table
+          arrivalAirport: 'LIS',
+          departureTime: '06:15',
+          arrivalTime: '09:10',
+          reportingTime: '05:15',
+        }),
+      ])
+    );
+    expect(ics).toContain('DESCRIPTION:Check-in 05:15z');
   });
 
   it('rolls the end date forward when a flight crosses midnight', () => {

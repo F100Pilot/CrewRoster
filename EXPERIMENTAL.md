@@ -25,7 +25,14 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(Vazio — tudo o que estava pendente foi promovido em `0.8.15.4`.)_
+- **Apresentação (check-in) só em hora local (LT).** No `NextDutyCard` e no detalhe do dia
+  mostrava-se `04:30z (05:30 LT)`; passa a `05:30 LT` (a lista já era assim). Recorre a UTC
+  apenas quando o fuso do aeroporto é desconhecido (`toLocalTime` devolve null). As horas
+  dos voos (STD/STA) mantêm-se em UTC com a local por baixo — só a apresentação mudou.
+  Nota da Legenda de códigos atualizada. Abrange também os eventos exportados para o
+  calendário (descrição do ICS e do Google Calendar, e o texto do lembrete). A regra vive
+  agora num único sítio — `checkInTimeLabel()` em `utils/localTime.ts` — usada pelas cinco
+  superfícies, em vez de repetida em cada uma.
 
 ---
 

@@ -61,8 +61,10 @@ export default function CodesPage() {
         </CardContent>
       </Card>
       <Typography variant="caption" color="text.secondary">
-        Todas as horas da escala são em UTC (Zulu, "z"). A hora local (LT) de cada aeroporto é
-        mostrada entre parênteses no detalhe de cada voo.
+        As horas da escala são em UTC (Zulu, "z"); a hora local (LT) de cada aeroporto aparece
+        entre parênteses no detalhe de cada voo. A <strong>apresentação (check-in)</strong> é
+        mostrada em <strong>hora local</strong> — só recorre a UTC se o fuso do aeroporto for
+        desconhecido.
       </Typography>
     </Stack>
   );

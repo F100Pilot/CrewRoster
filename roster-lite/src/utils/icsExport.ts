@@ -5,6 +5,7 @@ import { addDays, format, parseISO } from 'date-fns';
 import type { ParsedDuty, Roster } from '../domain/types';
 import { diffMinutes } from './duration';
 import { getCheckinLeadMinutes } from '../storage/settings';
+import { checkInTimeLabel } from './localTime';
 
 function pad(n: number): string {
   return String(n).padStart(2, '0');
@@ -62,7 +63,7 @@ function eventLines(d: ParsedDuty, idx: number, stamp: string, leadMin: number):
   if (d.departureAirport) lines.push(`LOCATION:${esc(d.departureAirport)}`);
 
   const desc: string[] = [];
-  if (d.reportingTime) desc.push(`Check-in ${d.reportingTime}z`);
+  if (d.reportingTime) desc.push(`Check-in ${checkInTimeLabel(d.date, d.reportingTime, d.departureAirport)}`);
   if (d.aircraftType) desc.push(d.aircraftType);
   if (d.observations) desc.push(d.observations);
   if (desc.length) lines.push(`DESCRIPTION:${esc(desc.join(' · '))}`);
@@ -70,7 +71,9 @@ function eventLines(d: ParsedDuty, idx: number, stamp: string, leadMin: number):
   // Check-in reminder: a display alarm a configurable time before the report/departure.
   const lead = alarmLeadMinutes(d, leadMin);
   if (lead !== null) {
-    const label = d.reportingTime ? `Check-in ${d.reportingTime}z — ${summaryFor(d)}` : `Voo ${summaryFor(d)}`;
+    const label = d.reportingTime
+      ? `Check-in ${checkInTimeLabel(d.date, d.reportingTime, d.departureAirport)} — ${summaryFor(d)}`
+      : `Voo ${summaryFor(d)}`;
     lines.push(
       'BEGIN:VALARM',
       'ACTION:DISPLAY',

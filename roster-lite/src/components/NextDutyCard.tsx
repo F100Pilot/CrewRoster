@@ -4,7 +4,7 @@ import { format, parseISO } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import type { ParsedDuty } from '../domain/types';
 import { countdownTo, utcDateTime } from '../utils/duration';
-import { toLocalTime } from '../utils/localTime';
+import { checkInTimeLabel } from '../utils/localTime';
 
 // The instant a duty "starts" for countdown purposes: check-in, else departure, else
 // the start of the day. Used to pick and rank the next upcoming duty.
@@ -32,7 +32,7 @@ export default function NextDutyCard({ duties }: { duties: ParsedDuty[] }) {
 
   const checkIn = duty.reportingTime;
   const counts = checkIn ? countdownTo(utcDateTime(duty.date, checkIn), now) : countdownTo(startInstant(duty), now);
-  const lt = checkIn ? toLocalTime(duty.date, checkIn, duty.departureAirport) : null;
+  const checkInLabel = checkIn ? checkInTimeLabel(duty.date, checkIn, duty.departureAirport) : null;
   const isToday = duty.date === format(now, 'yyyy-MM-dd');
 
   return (
@@ -65,7 +65,7 @@ export default function NextDutyCard({ duties }: { duties: ParsedDuty[] }) {
               <Typography variant="body2">{format(parseISO(duty.date), 'EEE, dd MMM')}</Typography>
               {checkIn && (
                 <Typography variant="body2" fontWeight={700}>
-                  · Check-in {checkIn}z{lt ? ` (${lt} LT)` : ''}
+                  · Check-in {checkInLabel}
                 </Typography>
               )}
             </Stack>
