@@ -25,7 +25,19 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(Vazio — tudo o que estava pendente foi promovido em `0.8.15.6`.)_
+### `0.8.16` — limites de serviço e recência noturna
+
+- **Limites de serviço (ORO.FTL.210)** no painel de limites, ao lado do tempo de voo:
+  60h/7 dias, 110h/14 e 190h/28. Cada barra é a **pior janela** de dias consecutivos da
+  escala, dias futuros incluídos. O serviço conta da apresentação à última chegada; um
+  dia só de reserva em casa conta a 25% (`HOME_STANDBY_FACTOR` em `dutyTime.ts` — é o
+  único número aqui que outro operador pode definir de forma diferente).
+- **Recência noturna** na página Documentos, a par da recência de aterragens.
+  Informativa: o FCL.060(b)(2) dispensa quem tem IR válido.
+- **Correção — descanso entre serviços**: um voo que terminava depois da meia-noite
+  fechava o período de serviço cedo demais e inflacionava o descanso seguinte (14h em
+  vez de 10h30 no caso testado). `restPeriods.ts` e `dutyTime.ts` passam a partilhar a
+  mesma janela de serviço.
 
 ---
 
