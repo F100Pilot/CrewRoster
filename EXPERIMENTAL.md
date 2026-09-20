@@ -31,12 +31,19 @@ _(Vazio — tudo o que estava pendente foi promovido em `0.8.16`.)_
 
 ## TODO / Backlog (decidir mais tarde)
 
-- **Painel de FTL / fadiga** (contadores 7/14/28 dias e 12 meses, avisos de
-  limite, FDP máximo). _Precisa dos limites reais da Portugália._
+- **FDP máximo do dia** (ORO.FTL.205: hora de apresentação × nº de setores), para
+  mostrar a margem que resta quando o dia derrapa. É tabela do regulamento; a parte
+  difícil é a aclimatação. _O resto do painel de FTL — limites de tempo de voo e de
+  serviço 7/14/28 dias, com aviso de pico — já foi enviado em `0.8.16`._
 - **Lembretes locais (notificações da PWA)** para check-in e documentos a expirar.
-- **Componente de vento cruzado** por pista (precisa de BD de pistas).
-- **Estimador de ajudas de custo / per diem** (precisa das taxas).
+- **Componente de vento cruzado** por pista. _A BD de pistas deixou de ser um bloqueio:
+  a `runways.csv` do OurAirports é domínio público e bastam os ~40 aeroportos da rede,
+  num JSON pequeno carregado em lazy como o `airportCoordsFallback.json`._
+- **Estimador de ajudas de custo / per diem** (precisa das taxas da PGA — bloqueado).
+- **Percentagem da reserva em casa** no cálculo do tempo de serviço: está a 25%
+  (`HOME_STANDBY_FACTOR` em `src/domain/dutyTime.ts`), o valor habitual do ORO.FTL.225.
+  Confirmar contra o acordo da Portugália.
 
 ---
 
-_Última atualização: 2026-07-10._
+_Última atualização: 2026-09-20._
