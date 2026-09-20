@@ -8,7 +8,7 @@ Serve para **juntar várias alterações** e depois fazer **um único deploy** p
 produção, em vez de promover uma a uma.
 
 - **Produção (`master`) está em:** `0.8.16`
-- **Próxima versão ao promover:** `0.8.16` (ou superior, conforme o âmbito)
+- **Próxima versão ao promover:** `0.8.17` (ou superior, conforme o âmbito)
 
 ## Como promover tudo para produção (quando estiver pronto)
 
