@@ -210,6 +210,42 @@ export function recencyStatus(rows: LogbookRow[], refISO: string, required = 3, 
   return { landings90, current, validUntil };
 }
 
+// Night take-off/landing recency. FCL.060(b)(2)(i) asks for at least one take-off and one
+// landing at night in the preceding 90 days to fly at night carrying passengers — but
+// point (ii) exempts the holder of a valid instrument rating, which an airline pilot
+// normally has. So this is shown for information, not as a licence limitation.
+export interface NightRecency {
+  takeoffs: number; // night take-offs I flew in the window
+  landings: number; // night landings I flew in the window
+  current: boolean; // at least one of each
+  validUntil: string | null; // when the older of the two lapses
+}
+
+export function nightRecencyStatus(rows: LogbookRow[], refISO: string, days = 90): NightRecency {
+  const { toNight, ldgNight } = takeoffLandingCounts(rows, { refISO, days });
+
+  // The most recent night take-off and night landing I flew — they set when currency runs
+  // out. Sorted ascending, so the last match of each is the latest.
+  let lastTakeoff: string | null = null;
+  let lastLanding: string | null = null;
+  for (const r of sortLogbook(rows)) {
+    if (r.date > refISO || !r.from || !r.to || r.from === r.to) continue;
+    if (didTakeoff(r) && rowNightTakeoff(r)) lastTakeoff = r.date;
+    if (didLanding(r) && rowNightLanding(r)) lastLanding = r.date;
+  }
+
+  const current = toNight >= 1 && ldgNight >= 1;
+  let validUntil: string | null = null;
+  if (current && lastTakeoff && lastLanding) {
+    // Currency lapses `days` after the OLDER of the two, since both are required.
+    const older = lastTakeoff < lastLanding ? lastTakeoff : lastLanding;
+    const d = new Date(`${older}T00:00:00Z`);
+    d.setUTCDate(d.getUTCDate() + days);
+    validUntil = d.toISOString().slice(0, 10);
+  }
+  return { takeoffs: toNight, landings: ldgNight, current, validUntil };
+}
+
 // Landings (deduped operated sectors) in the trailing `days`-day window ending at refISO.
 export function landingsInRows(rows: LogbookRow[], refISO: string, days = 90): number {
   const fromISO = windowStartISO(refISO, days);

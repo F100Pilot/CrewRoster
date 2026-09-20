@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.15.6';
+export const APP_VERSION = '0.8.16';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,15 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.16',
+    date: '2026-09-20',
+    highlights: [
+      'O painel de limites passa a mostrar também o TEMPO DE SERVIÇO (ORO.FTL.210): 60h em 7 dias, 110h em 14 e 190h em 28. Como já acontecia no tempo de voo, cada barra é a PIOR janela de dias consecutivos da escala — incluindo dias ainda por voar —, por isso avisa antes de se chegar ao limite e não depois. O serviço conta da apresentação à última chegada; um dia só de reserva em casa conta a 25%.',
+      'Nova recência noturna na página Documentos, ao lado da recência de aterragens: descolagens e aterragens noturnas que fizeste como piloto aos comandos nos últimos 90 dias, e até quando são válidas. Informativo — o FCL.060(b)(2) dispensa quem tem IR válido.',
+      'Corrigido o cálculo do descanso entre serviços quando um voo termina depois da meia-noite: a hora de chegada (ex. 01:30) era lida como anterior à apresentação e o descanso aparecia maior do que era na realidade — até mais 3h30 num caso típico.',
+    ],
+  },
   {
     version: '0.8.15.6',
     date: '2026-09-09',

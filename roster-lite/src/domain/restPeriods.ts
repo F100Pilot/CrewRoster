@@ -1,5 +1,5 @@
 import type { ParsedDuty } from './types';
-import { utcDateTime } from '../utils/duration';
+import { dutyWindow } from './dutyTime';
 
 // Rest between consecutive duty periods. A "duty period" is one calendar day that
 // has at least one timed duty: it starts at the earliest reporting/departure time
@@ -22,26 +22,13 @@ interface Period {
   end: Date;
 }
 
+// The day's duty window. Shared with the cumulative duty-time maths so both read a day
+// the same way — in particular a duty that ends after midnight, whose arrival time is a
+// smaller number than its report and would otherwise cut the period short and overstate
+// the rest that follows it.
 function buildPeriod(date: string, duties: ParsedDuty[]): Period | null {
-  const starts: string[] = [];
-  const ends: string[] = [];
-  for (const d of duties) {
-    if (d.reportingTime) starts.push(d.reportingTime);
-    if (d.departureTime) {
-      starts.push(d.departureTime);
-      ends.push(d.departureTime);
-    }
-    if (d.arrivalTime) ends.push(d.arrivalTime);
-  }
-  if (starts.length === 0 || ends.length === 0) return null;
-
-  const minStart = starts.reduce((a, b) => (a < b ? a : b));
-  const maxEnd = ends.reduce((a, b) => (a > b ? a : b));
-  const start = utcDateTime(date, minStart);
-  let end = utcDateTime(date, maxEnd);
-  // Last arrival earlier than first report ⇒ the duty crossed midnight.
-  if (end.getTime() < start.getTime()) end = new Date(end.getTime() + 24 * 60 * 60 * 1000);
-  return { date, start, end };
+  const w = dutyWindow(date, duties);
+  return w ? { date, start: w.start, end: w.end } : null;
 }
 
 export function restPeriods(duties: ParsedDuty[]): RestInfo[] {
