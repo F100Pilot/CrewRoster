@@ -3,12 +3,12 @@ import {
   Alert, Box, Button, Card, CardContent, Chip, Dialog, DialogActions, DialogContent,
   DialogTitle, IconButton, List, ListItem, ListItemText, Stack, TextField, Typography,
 } from '@mui/material';
-import { Add, ArrowBack, Bedtime, Close, DeleteOutline, Edit, FlightLand } from '@mui/icons-material';
+import { Add, ArrowBack, Close, DeleteOutline, Edit, FlightLand } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { differenceInCalendarDays, format, parseISO } from 'date-fns';
 import { useRoster } from '../state/useRoster';
 import { loadDocuments, putDocument, deleteDocument, loadLogbook } from '../storage/rosterStore';
-import { recencyStatus, nightRecencyStatus } from '../domain/logbook';
+import { recencyStatus } from '../domain/logbook';
 import type { CrewDocument, LogbookRow } from '../domain/types';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
@@ -20,11 +20,6 @@ function expiryChip(expiry: string): { color: 'default' | 'warning' | 'error' | 
   if (days <= 30) return { color: 'error', label: `${days}d` };
   if (days <= 90) return { color: 'warning', label: `${days}d` };
   return { color: 'success', label: `${days}d` };
-}
-
-// "1 aterragem" / "3 aterragens" — the counts below are often exactly one.
-function plural(n: number, one: string, many: string): string {
-  return `${n} ${n === 1 ? one : many}`;
 }
 
 export default function DocumentsPage() {
@@ -49,7 +44,6 @@ export default function DocumentsPage() {
   }, [reload]);
 
   const recency = useMemo(() => recencyStatus(rows, today), [rows, today]);
-  const nightRecency = useMemo(() => nightRecencyStatus(rows, today), [rows, today]);
 
   // ── Add / edit dialog ───────────────────────────────────────────────────────────
   const [open, setOpen] = useState(false);
@@ -87,26 +81,31 @@ export default function DocumentsPage() {
         <Button size="small" variant="outlined" startIcon={<Add />} onClick={openAdd}>Adicionar</Button>
       </Box>
 
-      {/* Take-off/landing recency — pilots only. Day and night side by side. */}
+      {/* Take-off/landing recency — pilots only. */}
       {isPilot && (
-        <Box display="grid" gap={1} gridTemplateColumns={{ xs: '1fr', sm: '1fr 1fr' }}>
-          <RecencyCard
-            icon={<FlightLand fontSize="small" color="action" />}
-            title="Recência (3 em 90 dias)"
-            current={recency.current}
-            detail={`${plural(recency.landings90, 'aterragem', 'aterragens')} nos últimos 90 dias`}
-            validUntil={recency.validUntil}
-            note="Indicativo, calculado do diário de bordo. Não substitui o registo oficial."
-          />
-          <RecencyCard
-            icon={<Bedtime fontSize="small" color="action" />}
-            title="Recência noturna (1 em 90 dias)"
-            current={nightRecency.current}
-            detail={`${plural(nightRecency.takeoffs, 'descolagem', 'descolagens')} · ${plural(nightRecency.landings, 'aterragem', 'aterragens')} à noite`}
-            validUntil={nightRecency.validUntil}
-            note="Informativo: o FCL.060(b)(2) dispensa quem tem IR válido. Dia/noite estimados pela posição do sol."
-          />
-        </Box>
+        <Card variant="outlined">
+          <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
+            <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
+              <FlightLand fontSize="small" color="action" />
+              <Typography variant="subtitle2" sx={{ flexGrow: 1 }}>Recência (3 em 90 dias)</Typography>
+              <Chip
+                size="small"
+                label={recency.current ? 'Em dia' : 'Em falta'}
+                color={recency.current ? 'success' : 'warning'}
+                sx={{ color: '#fff' }}
+              />
+            </Box>
+            <Typography variant="body2" color="text.secondary" mt={0.5}>
+              {recency.landings90} aterragens nos últimos 90 dias
+              {recency.current && recency.validUntil
+                ? ` · válida até ${format(parseISO(recency.validUntil), 'dd/MM/yyyy')}`
+                : ''}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Indicativo, calculado do diário de bordo. Não substitui o registo oficial.
+            </Typography>
+          </CardContent>
+        </Card>
       )}
 
       {docs.length === 0 ? (
@@ -168,37 +167,5 @@ export default function DocumentsPage() {
         </DialogActions>
       </Dialog>
     </Stack>
-  );
-}
-
-// One recency tile: a state chip, the counts behind it, and when it lapses.
-function RecencyCard({ icon, title, current, detail, validUntil, note }: {
-  icon: React.ReactNode;
-  title: string;
-  current: boolean;
-  detail: string;
-  validUntil: string | null;
-  note: string;
-}) {
-  return (
-    <Card variant="outlined">
-      <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
-        <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
-          {icon}
-          <Typography variant="subtitle2" sx={{ flexGrow: 1 }}>{title}</Typography>
-          <Chip
-            size="small"
-            label={current ? 'Em dia' : 'Em falta'}
-            color={current ? 'success' : 'warning'}
-            sx={{ color: '#fff' }}
-          />
-        </Box>
-        <Typography variant="body2" color="text.secondary" mt={0.5}>
-          {detail}
-          {current && validUntil ? ` · válida até ${format(parseISO(validUntil), 'dd/MM/yyyy')}` : ''}
-        </Typography>
-        <Typography variant="caption" color="text.secondary">{note}</Typography>
-      </CardContent>
-    </Card>
   );
 }
