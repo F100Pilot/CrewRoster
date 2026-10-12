@@ -36,6 +36,17 @@ produção, em vez de promover uma a uma.
   escolha fica guardada no dispositivo. _A decidir com o utilizador se fica, se passa a
   predefinição, ou se sai._
 
+### `0.8.17.1` — correções
+
+- **OFF fantasma no último dia do período** (ex. 31/10 com OFF + RLIC, quando a
+  escala só tem RLIC): a caixa de totais impressa ao lado desse dia ("Off days",
+  "Duty time"…) entrava na banda pela margem adaptativa. As sub-colunas com rótulos
+  da caixa são agora descartadas. `PARSE_VERSION` → 10: as escalas guardadas são
+  relidas sozinhas.
+- **Zoom com dois dedos no PDF**: deixa de derivar e de piscar (transform durante o
+  gesto, commit síncrono no fim, redesenho fora do ecrã). Deriva do ponto focal
+  medida: 12–15 px → 0 px.
+
 ---
 
 ## TODO / Backlog (decidir mais tarde)
