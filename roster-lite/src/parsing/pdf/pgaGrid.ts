@@ -17,6 +17,10 @@ const AIRPORT = /^[A-Z]{3}$/;
 const TIME = /^([0-2]\d)([0-5]\d)$/; // 0440 -> 04:40
 const AIRCRAFT = /^(E\d{2}|A\d{3}|B\d{3})$/i; // E90, E95, A320...
 const CARRIER = /^(TP|LH|NI|S4|DH\/[A-Z0-9]{2,3})$/i; // own carrier, or deadhead on ANY airline (DH/TP, DH/AY…)
+// Labels of the period totals box printed beside the grid, whole or split into words. Matched
+// case-SENSITIVELY on purpose: they are mixed-case, while everything in a day cell (duty codes,
+// airports, aircraft, crew names) is upper-case — so a surname such as SUM can never match.
+const TOTALS_LABEL = /^(Flight time|flight time|Flight|Duty time|Off days|Off|days|time|Vacation|Sickness|Sum|\(net\)|Fict\.|Alt\.|flight duty|period)$/;
 
 interface Row {
   y: number;
@@ -472,16 +476,24 @@ function prepareBands(tokens: PositionedToken[]): { calendar: CalDay[]; bands: C
         (t) => t.x >= xMin && t.x <= xMax && t.y < yTop - 2 && t.y > yBot && t.text.trim(),
       );
 
-      const subs: { x: number; tokens: PositionedToken[] }[] = [];
+      const allSubs: { x: number; tokens: PositionedToken[] }[] = [];
       for (const t of [...data].sort((a, b) => a.x - b.x)) {
-        const s = subs.find((s) => Math.abs(s.x - t.x) <= 3);
+        const s = allSubs.find((s) => Math.abs(s.x - t.x) <= 3);
         if (s) {
           s.tokens.push(t);
           s.x = Math.round((s.x * (s.tokens.length - 1) + t.x) / s.tokens.length);
         } else {
-          subs.push({ x: t.x, tokens: [t] });
+          allSubs.push({ x: t.x, tokens: [t] });
         }
       }
+      // The period's totals box ("Flight time", "Vacation", "Off days", "Duty time"…) is drawn
+      // transposed right after the last day — i.e. just LEFT of the leftmost header, inside the
+      // reach the adaptive margin above opens for a multi-leg leftmost day. Its labels then land
+      // in that day's band, and when the PDF splits one into words, "Off" alone reads as a day
+      // off: a vacation day (RLIC) showed up as "OFF + RLIC". Drop every sub-column that carries
+      // one of the box's labels; those are fixed NetLine strings, and none can occur in a day
+      // cell, whose codes, airports and crew names are all printed in capitals.
+      const subs = allSubs.filter((s) => !s.tokens.some((t) => TOTALS_LABEL.test(t.text.trim())));
 
       const colKeys = cols.map((c) => c.token);
       bands.push({ cols, colKeys, subs, cand: bandCandidates(colKeys, calendar) });
