@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { Alert, Box, CircularProgress, IconButton, Stack } from '@mui/material';
 import { ZoomIn, ZoomOut, ZoomOutMap } from '@mui/icons-material';
 import * as pdfjs from 'pdfjs-dist';
@@ -15,9 +16,14 @@ const MAX_CANVAS_PX = 4096; // safe per-dimension canvas limit on mobile GPUs
 // inline, canvas rendering via pdf.js works everywhere.
 //
 // Crispness: pages are RE-RENDERED at the current zoom's pixel resolution (not just
-// CSS-stretched), so text stays sharp when zoomed. During a pinch the existing
-// bitmap is CSS-scaled (briefly soft); once the gesture settles we re-render at the
-// new resolution. Zoom grows the host layout width so native scrolling pans.
+// CSS-stretched), so text stays sharp when zoomed. Zoom grows the host layout width so
+// native scrolling pans.
+//
+// Pinch: during the gesture nothing in the layout changes — the host is only scaled and
+// moved with a CSS transform (GPU, every frame), keeping the point between the fingers
+// under the fingers. When the fingers lift, the new zoom is committed in ONE synchronous
+// step: layout width, scroll position and transform reset together, so no frame shows the
+// scroll clamped to the old size (which is what made the old pinch drift and jump).
 export default function PdfCanvasViewer({ blob }: { blob: Blob }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const hostRef = useRef<HTMLDivElement>(null);
@@ -61,21 +67,30 @@ export default function PdfCanvasViewer({ blob }: { blob: Blob }) {
         host.appendChild(canvas);
         canvasesRef.current[p - 1] = canvas;
       }
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) continue;
+
+      // Render off-screen, then swap the finished bitmap in. Resizing the visible canvas
+      // first would blank the page until pdf.js finished drawing it — a white flash on
+      // every page after each zoom.
+      const off = document.createElement('canvas');
+      off.width = viewport.width;
+      off.height = viewport.height;
+      const offCtx = off.getContext('2d');
+      if (!offCtx) continue;
 
       // Cancel any in-flight render on this/other canvas before starting a new one.
       taskRef.current?.cancel();
       try {
-        const task = page.render({ canvasContext: ctx, viewport });
+        const task = page.render({ canvasContext: offCtx, viewport });
         taskRef.current = task;
         await task.promise;
       } catch (e) {
         if ((e as { name?: string })?.name === 'RenderingCancelledException') return;
         throw e;
       }
+      if (token !== renderTokenRef.current) return;
+      canvas.width = off.width;
+      canvas.height = off.height;
+      canvas.getContext('2d')?.drawImage(off, 0, 0);
     }
   }
 
@@ -122,59 +137,101 @@ export default function PdfCanvasViewer({ blob }: { blob: Blob }) {
     return () => clearTimeout(t);
   }, [zoom]);
 
-  // Apply a zoom change while keeping the focal point fixed (scroll grows with layout).
-  // Reads the live zoom from a ref (not state) so it works inside stable handlers.
-  const applyZoom = (next: number, focalX: number, focalY: number) => {
+  // Commit a zoom so that the content point (cx, cy) — in the layout coordinates of the
+  // CURRENT zoom — ends up at (fx, fy) in the viewport. flushSync applies the new layout
+  // width synchronously, so the scroll is set against the NEW size (setting it first, as
+  // before, let the browser clamp it to the old one). Reads the live zoom from a ref so it
+  // works inside the stable touch handlers.
+  const commitZoom = (next: number, cx: number, cy: number, fx: number, fy: number) => {
     const prev = zoomRef.current;
     const clamped = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, next));
-    if (clamped === prev) return;
     const el = scrollRef.current;
+    const host = hostRef.current;
+    if (clamped !== prev) {
+      zoomRef.current = clamped;
+      flushSync(() => setZoom(clamped));
+    }
+    if (host) host.style.transform = '';
     if (el) {
       const ratio = clamped / prev;
-      el.scrollLeft = (el.scrollLeft + focalX) * ratio - focalX;
-      el.scrollTop = (el.scrollTop + focalY) * ratio - focalY;
+      el.scrollLeft = cx * ratio - fx;
+      el.scrollTop = cy * ratio - fy;
     }
-    zoomRef.current = clamped;
-    setZoom(clamped);
   };
 
   // Pinch-to-zoom (two fingers). Attached ONCE (empty deps) so the gesture isn't
-  // interrupted by re-subscription on every zoom change — handlers read zoomRef. Bound
-  // non-passively to prevent the browser's own page zoom during the gesture.
+  // interrupted by re-subscription on every zoom change. Bound non-passively to prevent
+  // the browser's own page zoom during the gesture.
   useEffect(() => {
     const el = scrollRef.current;
-    if (!el) return;
-    let startDist = 0;
-    let startZoom = 1;
+    const host = hostRef.current;
+    if (!el || !host) return;
+    // The pinch in progress: start distance and zoom, the content point that was under the
+    // fingers when it began, and the latest scale and midpoint.
+    let g: { dist: number; zoom: number; cx: number; cy: number; s: number; fx: number; fy: number } | null = null;
     const dist = (t: TouchList) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+    const mid = (t: TouchList) => {
+      const rect = el.getBoundingClientRect();
+      return {
+        fx: (t[0].clientX + t[1].clientX) / 2 - rect.left,
+        fy: (t[0].clientY + t[1].clientY) / 2 - rect.top,
+      };
+    };
 
     const onStart = (e: TouchEvent) => {
-      if (e.touches.length === 2) { startDist = dist(e.touches); startZoom = zoomRef.current; }
+      if (e.touches.length !== 2) return;
+      const { fx, fy } = mid(e.touches);
+      g = {
+        dist: dist(e.touches), zoom: zoomRef.current,
+        cx: el.scrollLeft + fx, cy: el.scrollTop + fy, s: 1, fx, fy,
+      };
+      host.style.transformOrigin = '0 0';
+      host.style.willChange = 'transform';
     };
     const onMove = (e: TouchEvent) => {
-      if (e.touches.length === 2 && startDist > 0) {
-        e.preventDefault();
-        const rect = el.getBoundingClientRect();
-        const fx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
-        const fy = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
-        applyZoom(startZoom * (dist(e.touches) / startDist), fx, fy);
-      }
+      if (!g || e.touches.length !== 2) return;
+      e.preventDefault();
+      const { fx, fy } = mid(e.touches);
+      // Clamp the scale so the preview never shows a zoom the commit would then undo.
+      const target = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, g.zoom * (dist(e.touches) / g.dist)));
+      g.s = target / g.zoom;
+      g.fx = fx;
+      g.fy = fy;
+      // Put the starting content point under the CURRENT midpoint: scaling and two-finger
+      // panning in one. Uses the live scroll, so a native scroll still running underneath
+      // is compensated instead of making the page drift.
+      const tx = fx + el.scrollLeft - g.cx * g.s;
+      const ty = fy + el.scrollTop - g.cy * g.s;
+      host.style.transform = `translate(${tx}px, ${ty}px) scale(${g.s})`;
     };
-    const onEnd = (e: TouchEvent) => { if (e.touches.length < 2) startDist = 0; };
+    const onEnd = (e: TouchEvent) => {
+      if (!g || e.touches.length >= 2) return;
+      const done = g;
+      g = null;
+      host.style.willChange = '';
+      // The content point is fixed in layout coordinates and the scroll is set absolutely,
+      // so whatever native scroll happened during the pinch doesn't matter here.
+      commitZoom(done.zoom * done.s, done.cx, done.cy, done.fx, done.fy);
+    };
 
     el.addEventListener('touchstart', onStart, { passive: true });
     el.addEventListener('touchmove', onMove, { passive: false });
     el.addEventListener('touchend', onEnd, { passive: true });
+    el.addEventListener('touchcancel', onEnd, { passive: true });
     return () => {
       el.removeEventListener('touchstart', onStart);
       el.removeEventListener('touchmove', onMove);
       el.removeEventListener('touchend', onEnd);
+      el.removeEventListener('touchcancel', onEnd);
     };
   }, []);
 
+  // Buttons zoom about the centre of the view.
   const stepZoom = (delta: number) => {
     const el = scrollRef.current;
-    applyZoom(zoom + delta, (el?.clientWidth ?? 0) / 2, (el?.clientHeight ?? 0) / 2);
+    const fx = (el?.clientWidth ?? 0) / 2;
+    const fy = (el?.clientHeight ?? 0) / 2;
+    commitZoom(zoomRef.current + delta, (el?.scrollLeft ?? 0) + fx, (el?.scrollTop ?? 0) + fy, fx, fy);
   };
   const resetZoom = () => {
     zoomRef.current = 1;
@@ -205,7 +262,7 @@ export default function PdfCanvasViewer({ blob }: { blob: Blob }) {
           WebkitOverflowScrolling: 'touch',
         }}
       >
-        <Box ref={hostRef} sx={{ width: `${zoom * 100}%`, transition: 'width 0.05s linear' }} />
+        <Box ref={hostRef} sx={{ width: `${zoom * 100}%` }} />
       </Box>
 
       <Stack

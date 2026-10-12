@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.17';
+export const APP_VERSION = '0.8.17.1';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,14 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.17.1',
+    date: '2026-10-12',
+    highlights: [
+      'Corrigido: no último dia do período da escala podia aparecer um "OFF" que não existe (ex. 31/10 com OFF + RLIC, quando a escala só tem RLIC). O parser estava a ler a caixa de totais impressa ao lado desse dia — "Off days", "Duty time"… — como se fosse um serviço. As escalas já importadas são corrigidas automaticamente ao abrir a app.',
+      'Zoom com dois dedos no PDF muito mais estável: o ponto entre os dedos fica agora debaixo deles durante todo o gesto, e as páginas já não piscam em branco quando são redesenhadas com mais nitidez.',
+    ],
+  },
   {
     version: '0.8.17',
     date: '2026-10-12',
