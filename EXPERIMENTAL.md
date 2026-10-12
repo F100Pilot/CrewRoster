@@ -25,7 +25,16 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(Vazio — tudo o que estava pendente foi promovido em `0.8.16`.)_
+### `0.8.17` — mapa em globo
+
+- Alternância **Plano / Globo** no mapa de voos. O globo é uma projeção ortográfica do
+  `d3-geo` que já estava no projeto — **zero dependências novas** (o chunk `geo` passou de
+  127 para 129,5 KB). Arrastar para rodar, + / − para aproximar, botão para recentrar na
+  rede; as rotas seguem a ortodrómica. Afastado, as etiquetas escondem-se para não se
+  sobreporem.
+- **Plano continua a ser a predefinição** (mais legível para uma rede regional); a
+  escolha fica guardada no dispositivo. _A decidir com o utilizador se fica, se passa a
+  predefinição, ou se sai._
 
 ---
 
