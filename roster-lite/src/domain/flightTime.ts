@@ -1,5 +1,6 @@
 import type { ParsedDuty } from './types';
 import { diffMinutes } from '../utils/duration';
+import { peakQuarter, peakWindow, trailingSum, type DayAmount, type PeakQuarter, type PeakWindow } from './limitWindows';
 
 // EASA ORO.FTL flight-time limits (apply to both flight and cabin crew). Stored as
 // minutes. These are the headline rolling/period caps a crew member watches.
@@ -98,5 +99,48 @@ export function cumulativeFlightTime(duties: ParsedDuty[], refISO: string): Flig
     days28: blockInRange(duties, isoDate(d28), refISO),
     months12: blockInRange(duties, isoDate(m12), refISO),
     calendarYear: blockInRange(duties, yearStart, refISO),
+  };
+}
+
+// ── Company agreement (pilots) ───────────────────────────────────────────────────────────
+
+// RUPT cl. 30.1 — 90h per month, 270h per calendar quarter, 850h per year. The agreement's
+// "month" is four consecutive weeks (cl. 6, def. 20) and its "year" 52 weeks (def. 2), so both are
+// rolling windows of days. Stored as minutes.
+export const AE_FLIGHT_LIMITS = {
+  days28: 90 * 60,
+  quarter: 270 * 60,
+  year: 850 * 60,
+};
+
+// Flight time per day for the company-agreement limits: operated block time plus simulator
+// sessions, which RUPT cl. 30.2 also counts as flight time (qualification courses excepted —
+// the roster doesn't tell those apart, so every session counts, the cautious reading).
+export function aeFlightDays(duties: ParsedDuty[]): DayAmount[] {
+  const byDate = new Map<string, number>();
+  const add = (date: string, min: number) => byDate.set(date, (byDate.get(date) ?? 0) + min);
+  for (const f of operatedFlights(duties)) add(f.date, diffMinutes(f.departureTime!, f.arrivalTime!));
+  for (const d of duties) {
+    if (d.dutyType === 'Simulator' && d.departureTime && d.arrivalTime) {
+      add(d.date, diffMinutes(d.departureTime, d.arrivalTime));
+    }
+  }
+  return [...byDate.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([date, minutes]) => ({ date, minutes }));
+}
+
+export interface AeFlightTotals {
+  days28: PeakWindow;
+  quarter: PeakQuarter;
+  year: number; // the 52 weeks ending at refISO
+}
+
+// The three RUPT cl. 30 windows: the 28-day one at its worst point in the roster, the heaviest
+// calendar quarter from the current one on, and the trailing 52 weeks.
+export function aeFlightTime(duties: ParsedDuty[], refISO: string): AeFlightTotals {
+  const days = aeFlightDays(duties);
+  return {
+    days28: peakWindow(days, 28),
+    quarter: peakQuarter(days, refISO),
+    year: trailingSum(days, refISO, 52 * 7),
   };
 }

@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
 import { Box, Card, CardContent, LinearProgress, Tooltip, Typography } from '@mui/material';
 import { Timer } from '@mui/icons-material';
-import { cumulativeFlightTime, peak28FlightTime, FTL_LIMITS } from '../domain/flightTime';
-import { peakDutyTime, DUTY_LIMITS } from '../domain/dutyTime';
+import { aeFlightTime, cumulativeFlightTime, peak28FlightTime, AE_FLIGHT_LIMITS, FTL_LIMITS } from '../domain/flightTime';
+import { aeDutyTime, peakDutyTime, AE_DUTY_LIMITS, DUTY_LIMITS, EASA_RULES } from '../domain/dutyTime';
 import { formatDuration } from '../utils/duration';
 import { format, parseISO } from 'date-fns';
-import type { ParsedDuty } from '../domain/types';
+import type { CrewRole, ParsedDuty } from '../domain/types';
 
 function barColor(pct: number): 'success' | 'warning' | 'error' {
   if (pct >= 90) return 'error';
@@ -50,39 +50,72 @@ function LimitGroup({ title, rows }: { title: string; rows: Row[] }) {
   );
 }
 
-// Flight time and duty against the EASA FTL caps. Every "pico" bar is the WORST window of
-// consecutive days anywhere in the roster (future included) — that is the actual EASA test
-// ("any N consecutive days"), so it warns before a breach instead of after. The 12-month
-// and calendar-year flight-time bars are trailing-to-today. Indicative — it depends on the
-// imported history being complete, and on how the operator counts home standby.
-export default function FtlCard({ duties }: { duties: ParsedDuty[] }) {
-  const { totals, peak, duty } = useMemo(() => ({
-    totals: cumulativeFlightTime(duties, new Date().toISOString().slice(0, 10)),
-    peak: peak28FlightTime(duties),
-    duty: peakDutyTime(duties),
-  }), [duties]);
+const AE_TOOLTIP =
+  'Limites do Acordo de Empresa SIPLA (RUPT). Tempo de voo, cl. 30: 90h em 4 semanas, 270h por trimestre, ' +
+  '850h por ano — o simulador também conta. Tempo de trabalho, cl. 31: 50h em 7 dias, 180h em 28, 480h por ' +
+  'trimestre, 1800h por ano. O serviço vai da apresentação até 30 min depois dos calços; assistência em casa ' +
+  'conta 25%, no aeroporto 50%, a reserva de 24h não conta. As barras de pico são a pior janela da escala, ' +
+  'dias futuros incluídos; o trimestre é o mais pesado a partir do atual. Indicativo: depende do histórico importado.';
 
-  const flightRows: Row[] = [
-    { label: '28 dias (pico)', used: peak.minutes, limit: FTL_LIMITS.days28, note: peakNote(peak.endDate, 28) },
-    { label: '12 meses (até hoje)', used: totals.months12, limit: FTL_LIMITS.months12 },
-    { label: 'Ano civil (até hoje)', used: totals.calendarYear, limit: FTL_LIMITS.calendarYear },
-  ];
+const EASA_TOOLTIP =
+  'Tempo de voo e tempo de serviço do ORO.FTL.210. As barras de pico são a pior janela de dias consecutivos da ' +
+  'escala, incluindo dias futuros. O serviço conta da apresentação à última chegada; um dia só de reserva em casa ' +
+  'conta a 25%, a percentagem habitual — a tua companhia pode usar outra. Indicativo: depende do histórico importado.';
 
-  const dutyRows: Row[] = [
-    { label: '7 dias (pico)', used: duty.days7.minutes, limit: DUTY_LIMITS.days7, note: peakNote(duty.days7.endDate, 7) },
-    { label: '14 dias (pico)', used: duty.days14.minutes, limit: DUTY_LIMITS.days14, note: peakNote(duty.days14.endDate, 14) },
-    { label: '28 dias (pico)', used: duty.days28.minutes, limit: DUTY_LIMITS.days28, note: peakNote(duty.days28.endDate, 28) },
-  ];
+// Flight time and duty against their caps. Pilots are measured against the Portugália / SIPLA
+// company agreement (RUPT cl. 30–31), stricter than EASA on every window; cabin crew against the
+// EASA ORO.FTL figures, as the SIPLA agreement covers pilots only. Every "pico" bar is the WORST
+// window of consecutive days anywhere in the roster (future included) — the actual test ("any N
+// consecutive days"), so it warns before a breach instead of after. Indicative — it depends on
+// the imported history being complete.
+export default function FtlCard({ duties, role = 'pilot' }: { duties: ParsedDuty[]; role?: CrewRole }) {
+  const today = new Date().toISOString().slice(0, 10);
+  const pilot = role !== 'cabin';
+  const { flightRows, dutyRows } = useMemo(() => {
+    if (pilot) {
+      const f = aeFlightTime(duties, today);
+      const d = aeDutyTime(duties, today);
+      const quarterNote = (label: string | null) => (label ? `Trimestre mais pesado: ${label}` : undefined);
+      return {
+        flightRows: [
+          { label: '4 semanas (pico)', used: f.days28.minutes, limit: AE_FLIGHT_LIMITS.days28, note: peakNote(f.days28.endDate, 28) },
+          { label: 'Trimestre (pico)', used: f.quarter.minutes, limit: AE_FLIGHT_LIMITS.quarter, note: quarterNote(f.quarter.label) },
+          { label: 'Ano (52 semanas)', used: f.year, limit: AE_FLIGHT_LIMITS.year },
+        ] as Row[],
+        dutyRows: [
+          { label: '7 dias (pico)', used: d.days7.minutes, limit: AE_DUTY_LIMITS.days7, note: peakNote(d.days7.endDate, 7) },
+          { label: '28 dias (pico)', used: d.days28.minutes, limit: AE_DUTY_LIMITS.days28, note: peakNote(d.days28.endDate, 28) },
+          { label: 'Trimestre (pico)', used: d.quarter.minutes, limit: AE_DUTY_LIMITS.quarter, note: quarterNote(d.quarter.label) },
+          { label: 'Ano (52 semanas)', used: d.year, limit: AE_DUTY_LIMITS.year },
+        ] as Row[],
+      };
+    }
+    const totals = cumulativeFlightTime(duties, today);
+    const peak = peak28FlightTime(duties);
+    const duty = peakDutyTime(duties, EASA_RULES);
+    return {
+      flightRows: [
+        { label: '28 dias (pico)', used: peak.minutes, limit: FTL_LIMITS.days28, note: peakNote(peak.endDate, 28) },
+        { label: '12 meses (até hoje)', used: totals.months12, limit: FTL_LIMITS.months12 },
+        { label: 'Ano civil (até hoje)', used: totals.calendarYear, limit: FTL_LIMITS.calendarYear },
+      ] as Row[],
+      dutyRows: [
+        { label: '7 dias (pico)', used: duty.days7.minutes, limit: DUTY_LIMITS.days7, note: peakNote(duty.days7.endDate, 7) },
+        { label: '14 dias (pico)', used: duty.days14.minutes, limit: DUTY_LIMITS.days14, note: peakNote(duty.days14.endDate, 14) },
+        { label: '28 dias (pico)', used: duty.days28.minutes, limit: DUTY_LIMITS.days28, note: peakNote(duty.days28.endDate, 28) },
+      ] as Row[],
+    };
+  }, [duties, pilot, today]);
 
   return (
     <Card variant="outlined">
       <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
         <Box display="flex" alignItems="center" gap={1} mb={1}>
           <Timer fontSize="small" color="action" />
-          <Typography variant="subtitle2">Limites EASA</Typography>
-          <Tooltip title="Tempo de voo e tempo de serviço do ORO.FTL.210. As barras de pico são a pior janela de dias consecutivos da escala, incluindo dias futuros. O serviço conta da apresentação à última chegada; um dia só de reserva em casa conta a 25%, a percentagem habitual — a tua companhia pode usar outra. Indicativo: depende do histórico importado.">
+          <Typography variant="subtitle2">{pilot ? 'Limites AE' : 'Limites EASA'}</Typography>
+          <Tooltip title={pilot ? AE_TOOLTIP : EASA_TOOLTIP}>
             <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto' }}>
-              EASA
+              {pilot ? 'RUPT' : 'EASA'}
             </Typography>
           </Tooltip>
         </Box>

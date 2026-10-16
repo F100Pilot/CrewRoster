@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  DUTY_LIMITS, HOME_STANDBY_FACTOR, dutyDays, peakDutyTime, peakDutyWindow,
+  AE_DUTY_LIMITS, DUTY_LIMITS, HOME_STANDBY_FACTOR, PGA_PILOT_RULES, aeDutyTime, dutyDays, peakDutyTime,
+  peakDutyWindow,
 } from '../domain/dutyTime';
 import type { ParsedDuty } from '../domain/types';
 
@@ -64,13 +65,22 @@ describe('dutyDays', () => {
     expect(d.minutes).toBe(720 * HOME_STANDBY_FACTOR);
   });
 
-  it('counts a standby that turned into a flight as a full duty day', () => {
+  it('counts a standby that turned into a flight at its share until the report, then the work in full', () => {
     const [d] = dutyDays([
       duty({ date: '2026-06-09', dutyType: 'Standby Home', departureTime: '06:00', arrivalTime: '10:00' }),
       duty({ date: '2026-06-09', dutyType: 'Flight Duty', departureTime: '11:00', arrivalTime: '15:00' }),
     ]);
     expect(d.partial).toBe(false);
-    expect(d.minutes).toBe(540); // 06:00 → 15:00 in full
+    expect(d.minutes).toBe(240 + 240 * HOME_STANDBY_FACTOR); // flight 11–15 in full + standby 06–10 at 25%
+  });
+
+  it('does not count twice the part of a standby that overlaps the work', () => {
+    const [d] = dutyDays([
+      duty({ date: '2026-06-09', dutyType: 'Standby Home', departureTime: '06:00', arrivalTime: '16:00' }),
+      duty({ date: '2026-06-09', dutyType: 'Flight Duty', departureTime: '11:00', arrivalTime: '15:00' }),
+    ]);
+    // 06–11 and 15–16 as standby (6h at 25%); 11–15 once, as work.
+    expect(d.minutes).toBe(240 + 360 * HOME_STANDBY_FACTOR);
   });
 
   it('counts airport standby, simulator and training in full', () => {
@@ -80,7 +90,7 @@ describe('dutyDays', () => {
       duty({ date: '2026-06-12', dutyType: 'Training', departureTime: '09:00', arrivalTime: '12:00' }),
     ]);
     expect(days.map((d) => d.minutes)).toEqual([240, 240, 180]);
-    expect(days.every((d) => !d.partial)).toBe(true);
+    expect(days.map((d) => d.partial)).toEqual([true, false, false]); // the standby-only day
   });
 });
 
@@ -120,5 +130,63 @@ describe('peakDutyTime', () => {
 
   it('keeps the regulation figures', () => {
     expect(DUTY_LIMITS).toEqual({ days7: 3600, days14: 6600, days28: 11400 });
+  });
+});
+
+// Company agreement (pilots): RUPT cl. 31 limits, cl. 19.7 / 20.4 standby shares, cl. 6 def. 42
+// debriefing; standby windows from the DOV code notice of Feb 2025.
+describe('dutyDays — company agreement (pilots)', () => {
+  const pilot = (ds: ParsedDuty[]) => dutyDays(ds, PGA_PILOT_RULES);
+
+  it('keeps the agreement figures', () => {
+    expect(AE_DUTY_LIMITS).toEqual({ days7: 3000, days28: 10800, quarter: 28800, year: 108000 });
+  });
+
+  it('adds 30 min of debriefing after the last sector', () => {
+    expect(pilot([flightDay('2026-06-01')])[0].minutes).toBe(330 + 30);
+  });
+
+  it('adds no debriefing when the day ends on a positioning leg', () => {
+    const [d] = pilot([
+      flightDay('2026-06-01', '05:30', '06:00', '08:00'),
+      duty({ date: '2026-06-01', dutyType: 'Positioning', dutyCode: 'DH', departureTime: '09:00', arrivalTime: '10:30' }),
+    ]);
+    expect(d.minutes).toBe(300); // 05:30 → 10:30, dead-head ends at its arrival (cl. 17)
+  });
+
+  it('counts a pilot home standby from the DOV window, at 25%, even with only a start time', () => {
+    // H7+ is 07:00–17:00 local: 10h. The grid gives at most the start, never the end.
+    const [d] = pilot([duty({ date: '2026-06-02', dutyType: 'Standby Home', dutyCode: 'H7+', reportingTime: '06:00' })]);
+    expect(d).toMatchObject({ span: 600, minutes: 150, partial: true });
+  });
+
+  it('counts the short early standby H509 as 4h', () => {
+    const [d] = pilot([duty({ date: '2026-06-02', dutyType: 'Standby Home', dutyCode: 'H509' })]);
+    expect(d.span).toBe(240);
+  });
+
+  it('counts airport standby at 50%', () => {
+    const [d] = pilot([duty({ date: '2026-06-03', dutyType: 'Standby Airport', dutyCode: 'SBY', departureTime: '06:00', arrivalTime: '10:00' })]);
+    expect(d.minutes).toBe(120);
+  });
+
+  it('does not count the 24-hour reserve at all', () => {
+    const [d] = pilot([duty({ date: '2026-06-04', dutyType: 'Standby Home', dutyCode: 'R24' })]);
+    expect(d).toMatchObject({ span: 1440, minutes: 0 });
+  });
+
+  it('measures the 7- and 28-day windows, the quarter and the year', () => {
+    // 8 flight days of 10h30 counted (report 06:00, last on-blocks 16:00, +30 debrief).
+    const days = Array.from({ length: 8 }, (_, i) => flightDay(`2026-10-${String(i + 1).padStart(2, '0')}`, '06:00', '07:00', '16:00'));
+    const t = aeDutyTime(days, '2026-10-16');
+    expect(t.days7.minutes).toBe(7 * 630);
+    expect(t.days28.minutes).toBe(8 * 630);
+    expect(t.quarter).toEqual({ minutes: 8 * 630, label: '4.º trim. 2026' });
+    expect(t.year).toBe(8 * 630);
+  });
+
+  it('measures the quarter from the current one on, leaving past quarters out', () => {
+    const t = aeDutyTime([flightDay('2026-09-30'), flightDay('2026-10-01')], '2026-10-16');
+    expect(t.quarter).toEqual({ minutes: 360, label: '4.º trim. 2026' });
   });
 });

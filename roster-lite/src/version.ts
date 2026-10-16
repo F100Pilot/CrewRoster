@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.17.1';
+export const APP_VERSION = '0.8.18';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,16 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.18',
+    date: '2026-10-16',
+    highlights: [
+      'Para pilotos, o painel de limites passa a usar o Acordo de Empresa SIPLA (RUPT), mais apertado do que a EASA: tempo de voo 90h em 4 semanas, 270h por trimestre e 850h por ano, com o simulador a contar; tempo de trabalho 50h em 7 dias, 180h em 28, 480h por trimestre e 1800h por ano. A tripulação de cabine mantém os limites EASA.',
+      'O tempo de serviço passa a contar como o AE manda: até 30 min depois dos calços do último setor; assistência em casa a 25% (com a duração de cada código H, segundo a DOV), no aeroporto a 50%, e a reserva de 24h não conta. Antes, as assistências em casa ficavam de fora da contagem.',
+      'Novo no detalhe do dia: o FDP planeado contra o máximo da tabela do AE (hora de apresentação em Lisboa × setores), incluindo a regra das apresentações fora da base entre as 22:00 e as 06:00. Fica a laranja a menos de 30 min do limite e a vermelho se o ultrapassar.',
+      'O descanso mínimo segue o AE: 12h na base e 10h fora, ou a duração do serviço anterior se for maior, mais 2h quando esse serviço tocou as 02:00–05:59 de Lisboa. Quando falta descanso, o chip mostra também o mínimo devido.',
+    ],
+  },
   {
     version: '0.8.17.1',
     date: '2026-10-12',

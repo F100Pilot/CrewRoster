@@ -1,4 +1,4 @@
-import { Alert, Box, Card, CardContent, Chip, Divider, IconButton, Stack, Typography } from '@mui/material';
+import { Alert, Box, Card, CardContent, Chip, Divider, IconButton, Stack, Tooltip, Typography } from '@mui/material';
 import { ArrowBack, ChevronLeft, ChevronRight, FlightLand, FlightTakeoff, Groups, Hotel, IosShare, Phone, WbSunny, Bedtime, Brightness4 } from '@mui/icons-material';
 import { Link } from '@mui/material';
 import { addDays, format, parseISO } from 'date-fns';
@@ -10,6 +10,8 @@ import { toLocalTime, checkInTimeLabel } from '../utils/localTime';
 import { diffMinutes, formatDuration } from '../utils/duration';
 import { dayStats } from '../domain/dutyStats';
 import { restBefore } from '../domain/restPeriods';
+import { workWindow, PGA_PILOT_RULES } from '../domain/dutyTime';
+import { fdpForDay, type FdpInfo } from '../domain/fdp';
 import { sectorSun } from '../domain/sectorSun';
 import { shareDayImage } from '../utils/shareDay';
 import type { ParsedDuty } from '../domain/types';
@@ -25,7 +27,14 @@ export default function DayDetailPage() {
   const location = useLocation();
   const duties = (roster?.duties ?? []).filter((d) => d.date === date);
   const stats = dayStats(duties);
-  const rest = date ? restBefore(roster?.duties ?? [], date) : null;
+  // Pilots are measured against the company agreement (RUPT); cabin crew keep the generic rules.
+  const pilot = (activeUser?.role ?? 'pilot') === 'pilot';
+  const rest = date ? restBefore(roster?.duties ?? [], date, pilot ? 'pilot' : 'cabin') : null;
+  // On duty until 30 min after the last on-blocks (RUPT cl. 6, def. 42) — the figure the limits use.
+  const dutyMinutes = stats && pilot && date
+    ? workWindow(date, duties, PGA_PILOT_RULES)?.span ?? stats.dutyMinutes
+    : stats?.dutyMinutes;
+  const fdp = pilot && duties.length ? fdpForDay(duties, rest) : null;
 
   // When arriving from a specific flight (e.g. the "com quem voo" list), open ON that flight and
   // highlight it; otherwise open at the top. Re-runs when stepping to another day (arrows/swipe).
@@ -100,22 +109,35 @@ export default function DayDetailPage() {
         )}
       </Box>
 
-      {(stats || (rest && rest.restMinutes !== null)) && (
+      {(stats || fdp || (rest && rest.restMinutes !== null)) && (
         <Box display="flex" gap={1} flexWrap="wrap">
           {stats && (
             <>
               <Chip size="small" color="primary" variant="outlined" label={`Bloco ${formatDuration(stats.blockMinutes)}`} />
-              <Chip size="small" variant="outlined" label={`Serviço ${formatDuration(stats.dutyMinutes)}`} />
+              <Tooltip title={pilot ? 'Da apresentação até 30 min depois dos calços do último setor (RUPT).' : ''}>
+                <Chip size="small" variant="outlined" label={`Serviço ${formatDuration(dutyMinutes ?? stats.dutyMinutes)}`} />
+              </Tooltip>
             </>
           )}
+          {fdp && <FdpChip fdp={fdp} />}
           {rest && rest.restMinutes !== null && (
-            <Chip
-              size="small"
-              variant={rest.short ? 'filled' : 'outlined'}
-              color={rest.short ? 'warning' : 'default'}
-              label={`Descanso ${formatDuration(rest.restMinutes)}`}
-              sx={rest.short ? { color: '#fff' } : undefined}
-            />
+            <Tooltip
+              title={pilot
+                ? `Mínimo ${formatDuration(rest.requiredMinutes)} (RUPT cl. 25/34): ${rest.away ? '10h fora da base' : '12h na base'}, ` +
+                  'ou a duração do serviço anterior se for maior; +2h se esse serviço tocou as 02:00–05:59 de Lisboa. ' +
+                  'Indicativo — irregularidades e a autoridade do comandante podem reduzi-lo.'
+                : 'Indicativo: abaixo de 12h.'}
+            >
+              <Chip
+                size="small"
+                variant={rest.short ? 'filled' : 'outlined'}
+                color={rest.short ? 'warning' : 'default'}
+                label={rest.short && pilot
+                  ? `Descanso ${formatDuration(rest.restMinutes)} · mín ${formatDuration(rest.requiredMinutes)}`
+                  : `Descanso ${formatDuration(rest.restMinutes)}`}
+                sx={rest.short ? { color: '#fff' } : undefined}
+              />
+            </Tooltip>
           )}
         </Box>
       )}
@@ -388,6 +410,29 @@ function GroundCrew({ crew, myCode }: { crew: NonNullable<ParsedDuty['crew']>; m
         ))}
       </Stack>
     </Box>
+  );
+}
+
+// The day's flight duty period against its maximum (RUPT cl. 35). Red once over, amber within
+// 30 min of it, otherwise a quiet outline — it's the number to glance at when a day runs late.
+function FdpChip({ fdp }: { fdp: FdpInfo }) {
+  const margin = fdp.max - fdp.planned;
+  const over = margin < 0;
+  const tight = !over && margin <= 30;
+  const why = fdp.rule === 'night-away'
+    ? 'Apresentação fora da base entre as 22:00 e as 06:00: máximo de 6h, ou 9h com 16h de repouso antes, incluindo uma noite local (cl. 35.3).'
+    : `Tabela da cl. 35.1 para apresentação às ${fdp.reportLocal} (Lisboa) e ${fdp.sectors} ${fdp.sectors === 1 ? 'setor' : 'setores'}.`;
+  const extra = fdp.beyondTable ? ' Mais de 4 setores: o AE só planeia até 4 aterragens (cl. 15.12); usado o limite legal.' : '';
+  return (
+    <Tooltip title={`PSV da apresentação aos calços do último setor. ${why}${extra} Indicativo.`}>
+      <Chip
+        size="small"
+        variant={over || tight ? 'filled' : 'outlined'}
+        color={over ? 'error' : tight ? 'warning' : 'default'}
+        label={`FDP ${formatDuration(fdp.planned)} / máx ${formatDuration(fdp.max)}`}
+        sx={over || tight ? { color: '#fff' } : undefined}
+      />
+    </Tooltip>
   );
 }
 
