@@ -190,3 +190,36 @@ describe('dutyDays — company agreement (pilots)', () => {
     expect(t.quarter).toEqual({ minutes: 360, label: '4.º trim. 2026' });
   });
 });
+
+// A day with no flying counts its sessions, not the gap between them (RRRGS cl. 12.1 a, RUPT def. 46).
+describe('dutyDays — dias só em terra', () => {
+  const session = (date: string, code: string, from: string, to: string, type = 'Training') =>
+    duty({ date, dutyType: type, dutyCode: code, reportingTime: from, departureTime: from, arrivalTime: to });
+  const courseDay = (date: string) => [session(date, 'FP1', '09:30', '12:30'), session(date, 'FP2', '14:00', '17:00')];
+
+  it('leaves the lunch break between two training sessions out', () => {
+    const [d] = dutyDays(courseDay('2026-10-25'), PGA_PILOT_RULES);
+    expect(d.minutes).toBe(360); // 3h + 3h, not 09:30 → 17:00
+  });
+
+  it('counts overlapping sessions once', () => {
+    const [d] = dutyDays([
+      session('2026-10-25', 'FP1', '09:00', '12:00'),
+      session('2026-10-25', 'SIM', '11:00', '13:00', 'Simulator'),
+    ], PGA_PILOT_RULES);
+    expect(d.minutes).toBe(240); // 09:00 → 13:00
+  });
+
+  it('keeps the whole span on a day that includes flying', () => {
+    const [d] = dutyDays([
+      session('2026-10-25', 'RGTC1', '08:00', '09:00'),
+      duty({ date: '2026-10-25', dutyType: 'Flight Duty', reportingTime: '11:00', departureTime: '12:00', arrivalTime: '13:00' }),
+    ], PGA_PILOT_RULES);
+    expect(d.minutes).toBe(5 * 60 + 30); // 08:00 → 13:00 + 30 min debrief
+  });
+
+  it('puts a six-day course at 36h in the 7-day window, not 45h', () => {
+    const days = ['25', '26', '27', '28', '29', '30'].flatMap((d) => courseDay(`2026-10-${d}`));
+    expect(aeDutyTime(days, '2026-10-16').days7.minutes).toBe(36 * 60);
+  });
+});

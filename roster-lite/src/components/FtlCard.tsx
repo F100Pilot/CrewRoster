@@ -7,9 +7,11 @@ import { formatDuration } from '../utils/duration';
 import { format, parseISO } from 'date-fns';
 import type { CrewRole, ParsedDuty } from '../domain/types';
 
-function barColor(pct: number): 'success' | 'warning' | 'error' {
-  if (pct >= 90) return 'error';
-  if (pct >= 75) return 'warning';
+// Red only once the limit is actually exceeded — a bar at 90% that already read red looked like
+// a breach; amber from 90% as the heads-up; green below.
+function barColor(used: number, limit: number): 'success' | 'warning' | 'error' {
+  if (used > limit) return 'error';
+  if (used >= limit * 0.9) return 'warning';
   return 'success';
 }
 
@@ -39,7 +41,7 @@ function LimitGroup({ title, rows }: { title: string; rows: Row[] }) {
             <LinearProgress
               variant="determinate"
               value={pct}
-              color={barColor(pct)}
+              color={barColor(used, limit)}
               sx={{ height: 6, borderRadius: 3 }}
             />
           </Box>

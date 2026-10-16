@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.18.1';
+export const APP_VERSION = '0.8.18.2';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,14 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.18.2',
+    date: '2026-10-16',
+    highlights: [
+      'Nos dias só em terra (formação, simulador, gabinete, médicas), o tempo de serviço passa a somar as sessões e deixa de contar o intervalo entre elas — por exemplo, o almoço entre FP1 e FP2. Os dias com voo mantêm a contagem da apresentação ao fim do serviço.',
+      'As barras dos limites só ficam vermelhas quando o limite é ultrapassado; a laranja a partir de 90%, a verde abaixo disso.',
+    ],
+  },
   {
     version: '0.8.18.1',
     date: '2026-10-16',

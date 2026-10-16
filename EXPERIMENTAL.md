@@ -55,6 +55,14 @@ está no repositório, só os valores, com a cláusula ao lado no código) — e
   (dias úteis) — o RLIC aparecia como "licença de casamento". H = assistência em casa
   (pilotos), A = cabina, R24 = reserva de 24h, SBY = assistência no aeroporto.
 
+### `0.8.18.2` — dias em terra e cores das barras
+
+- **Dias só em terra** (formação, simulador, gabinete, médicas): o serviço é a soma das
+  sessões, sem o intervalo entre elas (RRRGS cl. 12.1 a; RUPT def. 46). Caso real: um curso
+  FP1 09:30–12:30 + FP2 14:00–17:00 durante 6 dias dava 45h no pico de 7 dias; passa a 36h.
+  Dias com voo mantêm o período inteiro.
+- **Cores**: vermelho só acima do limite, laranja a partir de 90%, verde abaixo.
+
 ---
 
 ## TODO / Backlog (decidir mais tarde)

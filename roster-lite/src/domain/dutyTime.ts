@@ -160,9 +160,38 @@ function standbySlot(d: ParsedDuty): { start: string | null; minutes: number } |
 // A standby that ran into a call-out stops counting where the work begins (RUPT cl. 19.4: it
 // ends at the report time), so the overlap is counted once, as work. Returns null for a day with
 // nothing countable — a day off, or a duty the parser couldn't time.
+// On a day with no flying — only training, simulator, office or medical work — the time between
+// sessions (a lunch break between FP1 and FP2, say) is not duty: each activity is logged with its
+// own start and end (RRRGS cl. 12.1 a), and duty is the time spent working or available for it
+// (RUPT cl. 6, def. 46). So such a day counts the union of its timed sessions, not the span from
+// the first start to the last end. A day that includes flying keeps the span: the ground time
+// between sectors is part of the flight duty. Null when no session on the day has both times.
+const FLYING = new Set(['Flight Duty', 'Positioning']);
+function groundSessionsMinutes(work: ParsedDuty[], w: DutyWindow): number | null {
+  if (work.some((d) => FLYING.has(d.dutyType))) return null;
+  const at = (t: string) => (toMinutes(t) - w.open + 1440) % 1440;
+  const sessions = work
+    .filter((d) => d.departureTime && d.arrivalTime)
+    .map((d) => {
+      const from = at(d.departureTime!);
+      return [from, from + ((toMinutes(d.arrivalTime!) - toMinutes(d.departureTime!) + 1440) % 1440)] as const;
+    })
+    .sort((a, b) => a[0] - b[0]);
+  if (sessions.length === 0) return null;
+  // Union, so overlapping or repeated sessions count once.
+  let total = 0;
+  let [curFrom, curTo] = sessions[0];
+  for (const [from, to] of sessions.slice(1)) {
+    if (from <= curTo) curTo = Math.max(curTo, to);
+    else { total += curTo - curFrom; [curFrom, curTo] = [from, to]; }
+  }
+  return total + (curTo - curFrom);
+}
+
 function dutyDay(date: string, duties: ParsedDuty[], rules: DutyRules): DutyDay | null {
   const w = workWindow(date, duties, rules);
-  let span = w?.span ?? 0;
+  const work = duties.filter((d) => !FREE.has(d.dutyType) && !STANDBY.has(d.dutyType));
+  let span = w ? groundSessionsMinutes(work, w) ?? w.span : 0;
   let minutes = span;
   let anyStandby = false;
 
