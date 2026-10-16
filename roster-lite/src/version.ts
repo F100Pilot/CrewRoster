@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.18';
+export const APP_VERSION = '0.8.18.1';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,14 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.18.1',
+    date: '2026-10-16',
+    highlights: [
+      'Nova opção nas Definições: Base (Lisboa ou Porto). O descanso mínimo, a regra do FDP para apresentações fora da base e as noites fora nas estatísticas passam a contar a partir da tua base.',
+      'Legenda de códigos corrigida: PLIC, SLIC e RLIC são férias (dias de calendário) e F são férias em atraso (dias úteis) — o RLIC aparecia, por engano, como licença de casamento. As assistências H são dos pilotos, as A da cabina, e o R24 é a reserva de 24 horas.',
+    ],
+  },
   {
     version: '0.8.18',
     date: '2026-10-16',

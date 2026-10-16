@@ -71,8 +71,9 @@ function includesLocalNight(restStart: Date, restEnd: Date): boolean {
 }
 
 // The FDP of one day's duties, against its maximum. Null when the day has no operated sector.
-// `rest` is the rest that preceded the day (restBefore), used by the away-from-base night rule.
-export function fdpForDay(dayDuties: ParsedDuty[], rest?: RestInfo | null): FdpInfo | null {
+// `rest` is the rest that preceded the day (restBefore), used by the away-from-base night rule;
+// `base` is the pilot's home base.
+export function fdpForDay(dayDuties: ParsedDuty[], rest?: RestInfo | null, base: string = HOME_BASE): FdpInfo | null {
   const work = dayDuties.filter((d) => !isStandby(d));
   const sectors = work.filter((d) => d.dutyType === 'Flight Duty' && d.departureTime && d.arrivalTime);
   if (sectors.length === 0) return null;
@@ -94,7 +95,7 @@ export function fdpForDay(dayDuties: ParsedDuty[], rest?: RestInfo | null): FdpI
   const firstLeg = work
     .filter((d) => d.departureAirport && d.departureTime)
     .reduce<ParsedDuty | null>((a, b) => (!a || at(b.departureTime!) < at(a.departureTime!) ? b : a), null);
-  const away = !!firstLeg && firstLeg.departureAirport!.toUpperCase() !== HOME_BASE;
+  const away = !!firstLeg && firstLeg.departureAirport!.toUpperCase() !== base;
   if (away && (reportMin >= 22 * 60 || reportMin < 6 * 60)) {
     let cap = 6 * 60;
     if (rest?.restMinutes != null && rest.restMinutes >= 16 * 60) {

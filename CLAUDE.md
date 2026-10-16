@@ -132,7 +132,12 @@ Things learned over this collaboration that should persist across sessions:
   cl. 25/34 (rest), cl. 35 (FDP table, Lisbon reference). Cabin crew stay on EASA (SIPLA covers
   pilots only). The AE text is NOT in the repo — only values, each with its clause in a comment.
   Standby code windows (H509, H7+… pilots; A1…A8 cabin) come from the DOV notice of Feb 2025
-  (`src/domain/standbyWindows.ts`). A/H codes are home standby.
+  (`src/domain/standbyWindows.ts`). A/H codes are home standby (H = pilots, A = cabin).
+- **Pilot base is a per-profile setting** (Settings → Base: Lisboa/Porto, `UserProfile.base`,
+  default LIS; `baseOf()` in `dutyStats.ts`). Never hardcode LIS for at-base/away logic.
+- **PLIC / SLIC / RLIC are holiday types** (calendar days); F = carried-over holidays (working
+  days). Per-diem values in the RRRGS are marked "sujeito a confirmação" — the user will send
+  confirmed values / an updated AE; don't build the per-diem estimator on them until then.
 - **Backlog:** the rest of the AE items (folgas check, ES/LF/ND, per diem, duty-pay/block-pay
   credits, holiday counter), PWA local reminders, crosswind (runway DB). See `EXPERIMENTAL.md`
   (TODO/Backlog) and `roster-lite/TODO.md`.

@@ -45,6 +45,16 @@ está no repositório, só os valores, com a cláusula ao lado no código) — e
 - Decisões: "mês" = 4 semanas e "ano" = 52 semanas (cl. 6 def. 20 e 2); trimestre = civil,
   o mais pesado a partir do atual.
 
+### `0.8.18.1` — base do piloto e legenda de códigos
+
+- **Definições → Base (Lisboa / Porto)**, guardada no perfil (`UserProfile.base`, omissão
+  `LIS`). Entra no descanso (base vs fora), na regra do FDP fora da base (cl. 35.3) e nas
+  noites fora das estatísticas do mês. Ambas em Europe/Lisbon, por isso a hora de referência
+  não muda.
+- **Legenda corrigida**: PLIC / SLIC / RLIC = férias (dias de calendário), F = férias em atraso
+  (dias úteis) — o RLIC aparecia como "licença de casamento". H = assistência em casa
+  (pilotos), A = cabina, R24 = reserva de 24h, SBY = assistência no aeroporto.
+
 ---
 
 ## TODO / Backlog (decidir mais tarde)

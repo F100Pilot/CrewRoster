@@ -77,3 +77,16 @@ describe('fdpForDay', () => {
     expect(fdpForDay(legs)).toMatchObject({ sectors: 5, beyondTable: true });
   });
 });
+
+describe('fdpForDay — base do piloto', () => {
+  // Report 04:30Z = 05:30 Lisbon, short rest before.
+  const early = (from: string, to: string) => [leg('2026-06-10', from, to, '05:30', '07:10', '04:30')];
+
+  it('caps an early start in Lisbon for a Porto pilot (away from base)', () => {
+    expect(fdpForDay(early('LIS', 'OPO'), rest('2026-06-10', 12 * 60), 'OPO')).toMatchObject({ rule: 'night-away', max: t('06:00') });
+  });
+
+  it('uses the table for an early start in Porto for a Porto pilot (at base)', () => {
+    expect(fdpForDay(early('OPO', 'LIS'), rest('2026-06-10', 12 * 60), 'OPO')).toMatchObject({ rule: 'table', max: t('12:30') });
+  });
+});

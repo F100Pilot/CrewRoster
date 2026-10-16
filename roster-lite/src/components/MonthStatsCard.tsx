@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { Box, Card, CardContent, Stack, Typography } from '@mui/material';
 import { Flight, AccessTime, EventBusy, WorkHistory, Today as TodayIcon, Hotel } from '@mui/icons-material';
-import { timedFlights, nightsAwayFromBase } from '../domain/dutyStats';
+import { baseOf, timedFlights, nightsAwayFromBase } from '../domain/dutyStats';
+import { useRoster } from '../state/useRoster';
 import { diffMinutes, formatDuration } from '../utils/duration';
 import type { ParsedDuty } from '../domain/types';
 
@@ -17,6 +18,8 @@ interface Stat {
 
 // Tier 2 — at-a-glance monthly totals: block time, flights, duty days, off days, standby.
 export default function MonthStatsCard({ duties }: Props) {
+  // Nights away are counted from the profile's own base (Lisboa or Porto).
+  const base = baseOf(useRoster().activeUser);
   const stats = useMemo<Stat[]>(() => {
     const flights = timedFlights(duties);
     const blockMinutes = flights.reduce(
@@ -28,7 +31,7 @@ export default function MonthStatsCard({ duties }: Props) {
     ).size;
     const offDays = duties.filter((d) => d.dutyType === 'Day Off' || d.dutyType === 'Vacation').length;
     const standby = duties.filter((d) => d.dutyType.startsWith('Standby') || d.dutyType === 'Reserve').length;
-    const nightsAway = nightsAwayFromBase(duties);
+    const nightsAway = nightsAwayFromBase(duties, base);
 
     return [
       { icon: <AccessTime fontSize="small" />, value: formatDuration(blockMinutes), label: 'Bloco' },
@@ -38,7 +41,7 @@ export default function MonthStatsCard({ duties }: Props) {
       { icon: <EventBusy fontSize="small" />, value: String(offDays), label: 'Folgas' },
       { icon: <Hotel fontSize="small" />, value: String(nightsAway), label: 'Fora' },
     ];
-  }, [duties]);
+  }, [duties, base]);
 
   return (
     <Card variant="outlined" sx={{ bgcolor: 'background.paper' }}>

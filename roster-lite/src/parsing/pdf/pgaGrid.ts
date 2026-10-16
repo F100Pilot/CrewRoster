@@ -166,7 +166,7 @@ function classifyDuty(name: string): { dutyType: string; dutyCode: string } | nu
   if (/^H(\d+\+|\d{3})$/.test(n)) return { dutyType: 'Standby Home', dutyCode: n };
   if (n === 'R24') return { dutyType: 'Standby Home', dutyCode: n };
   if (/^A\d\+{0,2}$/.test(n)) return { dutyType: 'Standby Home', dutyCode: n };
-  // Vacation: F (carried-over, working days), PLIC/SLIC/RLIC (calendar days), plus the
+  // Vacation: F (carried-over, working days), PLIC/SLIC/RLIC (holiday types, calendar days), plus the
   // older VAC/AN.
   if (/^(VAC|AN|F|PLIC|SLIC|RLIC)$/.test(n)) return { dutyType: 'Vacation', dutyCode: n };
   // Cabin line checks / exam flights: verified (WPNC/W_EXAM) and verifier (VPNC/V_EXAM).

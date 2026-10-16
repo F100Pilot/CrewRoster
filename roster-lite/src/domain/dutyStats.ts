@@ -1,4 +1,4 @@
-import type { ParsedDuty } from './types';
+import type { CrewBase, ParsedDuty } from './types';
 import { diffMinutes } from '../utils/duration';
 
 // Flights (and positioning legs) that have both endpoints timed, in departure order.
@@ -13,8 +13,12 @@ export function timedFlights(duties: ParsedDuty[]): ParsedDuty[] {
     .sort((a, b) => (a.departureTime! < b.departureTime! ? -1 : 1));
 }
 
-// Portugália's home base. Used to count nights spent down-route.
-export const HOME_BASE = 'LIS';
+// Portugália's main base — the default for profiles that haven't chosen one. Used to count
+// nights spent down-route and, for pilots, to tell rest and FDPs at base from those away.
+export const HOME_BASE: CrewBase = 'LIS';
+
+// A profile's base, falling back to the main one.
+export const baseOf = (user?: { base?: CrewBase } | null): CrewBase => user?.base ?? HOME_BASE;
 
 // How many nights in this set of duties were spent away from base. We walk the days
 // in order, tracking where the crew member ends up: a day's last flight sets the new

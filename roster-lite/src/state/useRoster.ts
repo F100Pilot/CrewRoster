@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import type { CrewRole, DayChange, Roster, UserProfile } from '../domain/types';
+import type { CrewBase, CrewRole, DayChange, Roster, UserProfile } from '../domain/types';
 
 // A parsed-but-not-yet-saved import: the roster that WOULD become current, the changes it
 // introduces vs what's stored, and any parser warnings. Lets the UI show the diff and let
@@ -33,6 +33,7 @@ export interface RosterState {
   switchUser: (userId: string) => Promise<void>;
   createUser: (name: string, crewCode?: string, role?: CrewRole) => Promise<UserProfile>;
   renameUser: (userId: string, name: string, crewCode?: string, role?: CrewRole) => Promise<void>;
+  setUserBase: (userId: string, base: CrewBase) => Promise<void>;
   deleteUser: (userId: string) => Promise<void>;
 }
 

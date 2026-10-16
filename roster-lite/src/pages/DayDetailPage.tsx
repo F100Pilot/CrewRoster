@@ -8,7 +8,7 @@ import { useRoster } from '../state/useRoster';
 import { dutyColor } from '../theme';
 import { toLocalTime, checkInTimeLabel } from '../utils/localTime';
 import { diffMinutes, formatDuration } from '../utils/duration';
-import { dayStats } from '../domain/dutyStats';
+import { baseOf, dayStats } from '../domain/dutyStats';
 import { restBefore } from '../domain/restPeriods';
 import { workWindow, PGA_PILOT_RULES } from '../domain/dutyTime';
 import { fdpForDay, type FdpInfo } from '../domain/fdp';
@@ -29,12 +29,13 @@ export default function DayDetailPage() {
   const stats = dayStats(duties);
   // Pilots are measured against the company agreement (RUPT); cabin crew keep the generic rules.
   const pilot = (activeUser?.role ?? 'pilot') === 'pilot';
-  const rest = date ? restBefore(roster?.duties ?? [], date, pilot ? 'pilot' : 'cabin') : null;
+  const base = baseOf(activeUser);
+  const rest = date ? restBefore(roster?.duties ?? [], date, pilot ? 'pilot' : 'cabin', base) : null;
   // On duty until 30 min after the last on-blocks (RUPT cl. 6, def. 42) — the figure the limits use.
   const dutyMinutes = stats && pilot && date
     ? workWindow(date, duties, PGA_PILOT_RULES)?.span ?? stats.dutyMinutes
     : stats?.dutyMinutes;
-  const fdp = pilot && duties.length ? fdpForDay(duties, rest) : null;
+  const fdp = pilot && duties.length ? fdpForDay(duties, rest, base) : null;
 
   // When arriving from a specific flight (e.g. the "com quem voo" list), open ON that flight and
   // highlight it; otherwise open at the top. Re-runs when stepping to another day (arrows/swipe).

@@ -101,3 +101,20 @@ describe('restPeriods — company agreement (pilots)', () => {
     expect(r[1].restMinutes).toBe(28 * 60); // to the 12:00 report, not to the 06:00 standby
   });
 });
+
+describe('restPeriods — base do piloto', () => {
+  const leg = (date: string, from: string, to: string, report: string | null, off: string, on: string) =>
+    duty({ date, dutyType: 'Flight Duty', departureAirport: from, arrivalAirport: to, reportingTime: report, departureTime: off, arrivalTime: on });
+  const days = [
+    leg('2026-06-01', 'LIS', 'OPO', '05:30', '06:30', '07:30'),
+    leg('2026-06-02', 'OPO', 'LIS', '08:00', '09:00', '10:00'),
+  ];
+
+  it('a night in Porto is at base for a Porto pilot (12h)…', () => {
+    expect(restPeriods(days, 'pilot', 'OPO')[1]).toMatchObject({ away: false, requiredMinutes: 12 * 60 });
+  });
+
+  it('…and away for a Lisbon pilot (10h)', () => {
+    expect(restPeriods(days, 'pilot', 'LIS')[1]).toMatchObject({ away: true, requiredMinutes: 10 * 60 });
+  });
+});

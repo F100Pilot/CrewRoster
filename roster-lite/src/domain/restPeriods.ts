@@ -65,9 +65,9 @@ function touchesCriticalWindow(p: Period): boolean {
 }
 
 // The minimum rest owed before `next`, after `prev`, under the company agreement.
-function aeRequiredRest(prev: Period, next: Period): { required: number; away: boolean } {
+function aeRequiredRest(prev: Period, next: Period, base: string): { required: number; away: boolean } {
   const where = endAirport(prev);
-  const away = !!where && where !== HOME_BASE;
+  const away = !!where && where !== base;
   const groundNext = !next.duties.some(isFlying);
   const floor = away ? 10 * 60 : prev.duties.some(isFlying) && groundNext ? 9 * 60 : 12 * 60;
   const prevSpan = Math.round((prev.end.getTime() - prev.start.getTime()) / MIN);
@@ -75,8 +75,8 @@ function aeRequiredRest(prev: Period, next: Period): { required: number; away: b
 }
 
 // `role` selects the rule set: 'pilot' for the company agreement, anything else (cabin, or not
-// given) for the generic 12h heads-up.
-export function restPeriods(duties: ParsedDuty[], role?: CrewRole): RestInfo[] {
+// given) for the generic 12h heads-up. `base` is the pilot's home base (at base vs away).
+export function restPeriods(duties: ParsedDuty[], role?: CrewRole, base: string = HOME_BASE): RestInfo[] {
   const pilot = role === 'pilot';
   const byDate = new Map<string, ParsedDuty[]>();
   for (const d of duties) {
@@ -100,12 +100,12 @@ export function restPeriods(duties: ParsedDuty[], role?: CrewRole): RestInfo[] {
     const rest = Math.round((p.start.getTime() - periods[i - 1].end.getTime()) / MIN);
     if (rest < 0) return none;
     if (!pilot) return { ...none, restMinutes: rest, short: rest < MIN_REST_MINUTES };
-    const { required, away } = aeRequiredRest(periods[i - 1], p);
+    const { required, away } = aeRequiredRest(periods[i - 1], p, base);
     return { date: p.date, restMinutes: rest, requiredMinutes: required, away, short: rest < required };
   });
 }
 
 // Rest before a specific day's duty period, or null if not applicable.
-export function restBefore(duties: ParsedDuty[], date: string, role?: CrewRole): RestInfo | null {
-  return restPeriods(duties, role).find((r) => r.date === date) ?? null;
+export function restBefore(duties: ParsedDuty[], date: string, role?: CrewRole, base: string = HOME_BASE): RestInfo | null {
+  return restPeriods(duties, role, base).find((r) => r.date === date) ?? null;
 }
