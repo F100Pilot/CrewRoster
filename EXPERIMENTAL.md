@@ -7,8 +7,8 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.8.17.1`
-- **Próxima versão ao promover:** `0.8.18` (ou superior, conforme o âmbito)
+- **Produção (`master`) está em:** `0.8.18.3`
+- **Próxima versão ao promover:** `0.8.19` (ou superior, conforme o âmbito)
 
 ## Como promover tudo para produção (quando estiver pronto)
 
@@ -25,53 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-### `0.8.18` — limites do Acordo de Empresa SIPLA (pilotos) e FDP máximo
-
-Fonte: AE Portugália/SIPLA 2023 — RUPT e RRRGS (fornecidos pelo utilizador; o texto **não**
-está no repositório, só os valores, com a cláusula ao lado no código) — e a nota da DOV
-"Netline | Atualização sobre Novos Códigos" (14/02/2025) para os horários das assistências.
-
-- **Painel "Limites AE"** (pilotos): voo 90h/4 semanas, 270h/trimestre, 850h/ano, simulador
-  incluído (RUPT cl. 30); serviço 50h/7 dias, 180h/28, 480h/trimestre, 1800h/ano (cl. 31).
-  Cabine mantém EASA (o AE SIPLA só cobre pilotos).
-- **Contagem do serviço**: +30 min de debriefing após o último setor (cl. 6 def. 42);
-  assistência em casa 25% (H-codes, duração pela tabela da DOV), no aeroporto 50%, R24 não
-  conta (cl. 19.7, 20.4). Corrige: as assistências em casa nunca contavam (a escala só traz o
-  início).
-- **FDP máximo** no detalhe do dia (cl. 35.1, hora de Lisboa × setores; cl. 35.3 fora da base
-  22:00–06:00 → 6h/9h).
-- **Descanso mínimo do AE** (cl. 25/34): 12h base / 10h fora / 9h antes de solo, ou a duração do
-  serviço anterior; +2h se tocou 02:00–05:59 Lisboa.
-- Decisões: "mês" = 4 semanas e "ano" = 52 semanas (cl. 6 def. 20 e 2); trimestre = civil,
-  o mais pesado a partir do atual.
-
-### `0.8.18.1` — base do piloto e legenda de códigos
-
-- **Definições → Base (Lisboa / Porto)**, guardada no perfil (`UserProfile.base`, omissão
-  `LIS`). Entra no descanso (base vs fora), na regra do FDP fora da base (cl. 35.3) e nas
-  noites fora das estatísticas do mês. Ambas em Europe/Lisbon, por isso a hora de referência
-  não muda.
-- **Legenda corrigida**: PLIC / SLIC / RLIC = férias (dias de calendário), F = férias em atraso
-  (dias úteis) — o RLIC aparecia como "licença de casamento". H = assistência em casa
-  (pilotos), A = cabina, R24 = reserva de 24h, SBY = assistência no aeroporto.
-
-### `0.8.18.2` — dias em terra e cores das barras
-
-- **Dias só em terra** (formação, simulador, gabinete, médicas): o serviço é a soma das
-  sessões, sem o intervalo entre elas (RRRGS cl. 12.1 a; RUPT def. 46). Caso real: um curso
-  FP1 09:30–12:30 + FP2 14:00–17:00 durante 6 dias dava 45h no pico de 7 dias; passa a 36h.
-  Dias com voo mantêm o período inteiro.
-- **Cores**: vermelho só acima do limite, laranja a partir de 90%, verde abaixo.
-
-### `0.8.18.3` — S.EXT. e gabinete
-
-- **`S.EXT.` (serviço externo)** reconhecido como trabalho em terra (`Office Duty`) com início
-  e fim. Antes os dias desapareciam: o código tem pontos e nenhum dígito, por isso nem a rede
-  de segurança dos códigos desconhecidos o apanhava (caso real: 25–30 out e 4–5 nov).
-- **Gabinete (GAB1/GAB2)** passa a guardar a hora de fim → conta para os limites de serviço
-  (antes só tinha início e ficava de fora). O detalhe do dia mostra Início/Fim também para
-  gabinete, serviço externo e médicas.
-- `PARSE_VERSION` → 11: as escalas guardadas são relidas sozinhas.
+_(Vazio — tudo o que estava pendente foi promovido em `0.8.18.3`.)_
 
 ---
 
