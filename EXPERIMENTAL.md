@@ -25,7 +25,11 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(Vazio — tudo o que estava pendente foi promovido em `0.8.18.3`.)_
+### `0.8.18.4` — horas das sessões em terra em hora local
+
+- No detalhe do dia, o Início/Fim de formação, simulador, gabinete, serviço externo e médicas
+  passa a mostrar a **hora local** do aeroporto, com o **UTC entre parênteses** por baixo —
+  igual aos voos (STD/STA). Sem fuso conhecido, fica só o UTC.
 
 ---
 

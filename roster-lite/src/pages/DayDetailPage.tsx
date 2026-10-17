@@ -250,22 +250,8 @@ export default function DayDetailPage() {
                 <Box sx={{ bgcolor: 'rgba(128,128,128,0.14)', borderRadius: 2, p: 2, mb: 2 }}>
                   {(duty.departureTime || duty.arrivalTime) && (
                     <Box display="flex" justifyContent="space-around">
-                      <Box textAlign="center">
-                        <Typography variant="body2" fontWeight={600} color="primary.main">
-                          {duty.departureTime || '—'}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Início (UTC)
-                        </Typography>
-                      </Box>
-                      <Box textAlign="center">
-                        <Typography variant="body2" fontWeight={600} color="primary.main">
-                          {duty.arrivalTime || '—'}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Fim (UTC)
-                        </Typography>
-                      </Box>
+                      <SlotTime label="Início" utc={duty.departureTime} lt={toLocalTime(date, duty.departureTime, duty.departureAirport)} />
+                      <SlotTime label="Fim" utc={duty.arrivalTime} lt={toLocalTime(date, duty.arrivalTime, duty.departureAirport)} />
                     </Box>
                   )}
                   {duty.departureAirport && (
@@ -435,6 +421,30 @@ function FdpChip({ fdp }: { fdp: FdpInfo }) {
         sx={over || tight ? { color: '#fff' } : undefined}
       />
     </Tooltip>
+  );
+}
+
+// Start or end of a ground slot (training, simulator, office, medical), read the same way as a
+// flight's times: local time of the airport first, UTC in brackets underneath — or UTC alone
+// when the airport's timezone isn't known.
+function SlotTime({ label, utc, lt }: { label: string; utc: string | null; lt: string | null }) {
+  return (
+    <Box textAlign="center">
+      <Typography variant="body2" fontWeight={600} color="primary.main">
+        {lt || utc || '—'}
+        <Typography component="span" variant="body2" fontWeight={700} color="text.secondary">
+          {lt ? ' LT' : utc ? ' z' : ''}
+        </Typography>
+      </Typography>
+      {lt && utc && (
+        <Typography variant="caption" color="text.secondary" display="block">
+          ({utc} z)
+        </Typography>
+      )}
+      <Typography variant="caption" color="text.secondary" display="block">
+        {label}
+      </Typography>
+    </Box>
   );
 }
 
