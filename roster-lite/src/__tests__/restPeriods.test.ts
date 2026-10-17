@@ -52,3 +52,69 @@ describe('restPeriods', () => {
     expect(r[1].restMinutes).toBe(42 * 60); // 12:00 day 1 → 06:00 day 3
   });
 });
+
+// Company agreement (pilots): RUPT cl. 25 and 34.
+describe('restPeriods — company agreement (pilots)', () => {
+  const leg = (date: string, from: string, to: string, report: string | null, off: string, on: string) =>
+    duty({ date, dutyType: 'Flight Duty', departureAirport: from, arrivalAirport: to, reportingTime: report, departureTime: off, arrivalTime: on });
+
+  it('measures rest from 30 min after on-blocks and asks 12h at base', () => {
+    const r = restPeriods([
+      leg('2026-06-01', 'OPO', 'LIS', '05:30', '06:30', '07:30'),
+      leg('2026-06-02', 'LIS', 'OPO', '08:00', '09:00', '10:00'),
+    ], 'pilot');
+    expect(r[1]).toMatchObject({ restMinutes: 24 * 60, requiredMinutes: 12 * 60, away: false, short: false });
+  });
+
+  it('asks 10h away from base — or the length of the previous duty when longer', () => {
+    // Day 1: report 08:00, ends at FNC 18:00 + 30 → a 10h30 duty, so 10h30 of rest are owed.
+    const r = restPeriods([
+      leg('2026-06-01', 'LIS', 'FNC', '08:00', '16:00', '18:00'),
+      leg('2026-06-02', 'FNC', 'LIS', '04:30', '05:30', '07:10'),
+    ], 'pilot');
+    expect(r[1]).toMatchObject({ restMinutes: 10 * 60, requiredMinutes: 10 * 60 + 30, away: true, short: true });
+  });
+
+  it('adds 2h after a duty that touched 02:00–05:59 Lisbon time', () => {
+    // 01:00Z–03:00Z in June is 02:00–04:00 Lisbon, ending at base: 12h + 2h.
+    const r = restPeriods([
+      leg('2026-06-01', 'OPO', 'LIS', '00:00', '01:00', '03:00'),
+      leg('2026-06-02', 'LIS', 'OPO', '15:00', '16:00', '17:00'),
+    ], 'pilot');
+    expect(r[1].requiredMinutes).toBe(14 * 60);
+  });
+
+  it('asks only 9h at base before ground work that follows flying', () => {
+    const r = restPeriods([
+      leg('2026-06-01', 'OPO', 'LIS', '13:00', '14:00', '16:00'),
+      duty({ date: '2026-06-02', dutyType: 'Training', dutyCode: 'RGTC1', departureTime: '01:30', arrivalTime: '05:00' }),
+    ], 'pilot');
+    expect(r[1]).toMatchObject({ restMinutes: 9 * 60, requiredMinutes: 9 * 60, short: false });
+  });
+
+  it('leaves a standby out of the duty period', () => {
+    const r = restPeriods([
+      leg('2026-06-01', 'OPO', 'LIS', '05:30', '06:30', '07:30'),
+      duty({ date: '2026-06-02', dutyType: 'Standby Home', dutyCode: 'H7+', reportingTime: '06:00' }),
+      leg('2026-06-02', 'LIS', 'OPO', '12:00', '13:00', '14:00'),
+    ], 'pilot');
+    expect(r[1].restMinutes).toBe(28 * 60); // to the 12:00 report, not to the 06:00 standby
+  });
+});
+
+describe('restPeriods — base do piloto', () => {
+  const leg = (date: string, from: string, to: string, report: string | null, off: string, on: string) =>
+    duty({ date, dutyType: 'Flight Duty', departureAirport: from, arrivalAirport: to, reportingTime: report, departureTime: off, arrivalTime: on });
+  const days = [
+    leg('2026-06-01', 'LIS', 'OPO', '05:30', '06:30', '07:30'),
+    leg('2026-06-02', 'OPO', 'LIS', '08:00', '09:00', '10:00'),
+  ];
+
+  it('a night in Porto is at base for a Porto pilot (12h)…', () => {
+    expect(restPeriods(days, 'pilot', 'OPO')[1]).toMatchObject({ away: false, requiredMinutes: 12 * 60 });
+  });
+
+  it('…and away for a Lisbon pilot (10h)', () => {
+    expect(restPeriods(days, 'pilot', 'LIS')[1]).toMatchObject({ away: true, requiredMinutes: 10 * 60 });
+  });
+});

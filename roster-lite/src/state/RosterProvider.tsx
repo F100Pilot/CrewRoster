@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import type { CrewRole, Roster, UserProfile } from '../domain/types';
+import type { CrewBase, CrewRole, Roster, UserProfile } from '../domain/types';
 import { parseRosterFile, PARSE_VERSION } from '../parsing';
 import { diffRosters } from '../domain/rosterDiff';
 import { todayISO } from '../domain/rosterWindow';
@@ -211,6 +211,15 @@ export function RosterProvider({ children }: { children: ReactNode }) {
     if (activeUser?.id === userId) setActiveUser(updated);
   }, [users, activeUser]);
 
+  const setUserBase = useCallback(async (userId: string, base: CrewBase) => {
+    const user = users.find((u) => u.id === userId);
+    if (!user || user.base === base) return;
+    const updated: UserProfile = { ...user, base };
+    await saveUser(updated);
+    setUsers((prev) => prev.map((u) => (u.id === userId ? updated : u)));
+    if (activeUser?.id === userId) setActiveUser(updated);
+  }, [users, activeUser]);
+
   const deleteUserFn = useCallback(async (userId: string) => {
     await deleteUserDB(userId);
     clearUserGCalData(userId);
@@ -333,10 +342,10 @@ export function RosterProvider({ children }: { children: ReactNode }) {
       roster, loading, importing, error, loadError, warnings, sessionToken,
       importFile, previewImport, applyImport, clear, dismissChanges, setSessionToken,
       users, activeUser,
-      switchUser, createUser, renameUser, deleteUser: deleteUserFn,
+      switchUser, createUser, renameUser, setUserBase, deleteUser: deleteUserFn,
     }),
     [roster, loading, importing, error, loadError, warnings, sessionToken, setSessionToken,
-     importFile, previewImport, applyImport, clear, dismissChanges, users, activeUser, switchUser, createUser, renameUser, deleteUserFn]
+     importFile, previewImport, applyImport, clear, dismissChanges, users, activeUser, switchUser, createUser, renameUser, setUserBase, deleteUserFn]
   );
 
   return <RosterContext.Provider value={value}>{children}</RosterContext.Provider>;

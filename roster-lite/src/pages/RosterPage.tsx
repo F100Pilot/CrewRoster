@@ -206,7 +206,7 @@ export default function RosterPage() {
 
       <MonthStatsCard duties={monthDuties} />
 
-      <FtlCard duties={roster.duties} />
+      <FtlCard duties={roster.duties} role={activeUser?.role ?? 'pilot'} />
 
       <TextField
         size="small"

@@ -25,24 +25,67 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(Vazio — tudo o que estava pendente foi promovido em `0.8.17.1`.)_
+### `0.8.18` — limites do Acordo de Empresa SIPLA (pilotos) e FDP máximo
+
+Fonte: AE Portugália/SIPLA 2023 — RUPT e RRRGS (fornecidos pelo utilizador; o texto **não**
+está no repositório, só os valores, com a cláusula ao lado no código) — e a nota da DOV
+"Netline | Atualização sobre Novos Códigos" (14/02/2025) para os horários das assistências.
+
+- **Painel "Limites AE"** (pilotos): voo 90h/4 semanas, 270h/trimestre, 850h/ano, simulador
+  incluído (RUPT cl. 30); serviço 50h/7 dias, 180h/28, 480h/trimestre, 1800h/ano (cl. 31).
+  Cabine mantém EASA (o AE SIPLA só cobre pilotos).
+- **Contagem do serviço**: +30 min de debriefing após o último setor (cl. 6 def. 42);
+  assistência em casa 25% (H-codes, duração pela tabela da DOV), no aeroporto 50%, R24 não
+  conta (cl. 19.7, 20.4). Corrige: as assistências em casa nunca contavam (a escala só traz o
+  início).
+- **FDP máximo** no detalhe do dia (cl. 35.1, hora de Lisboa × setores; cl. 35.3 fora da base
+  22:00–06:00 → 6h/9h).
+- **Descanso mínimo do AE** (cl. 25/34): 12h base / 10h fora / 9h antes de solo, ou a duração do
+  serviço anterior; +2h se tocou 02:00–05:59 Lisboa.
+- Decisões: "mês" = 4 semanas e "ano" = 52 semanas (cl. 6 def. 20 e 2); trimestre = civil,
+  o mais pesado a partir do atual.
+
+### `0.8.18.1` — base do piloto e legenda de códigos
+
+- **Definições → Base (Lisboa / Porto)**, guardada no perfil (`UserProfile.base`, omissão
+  `LIS`). Entra no descanso (base vs fora), na regra do FDP fora da base (cl. 35.3) e nas
+  noites fora das estatísticas do mês. Ambas em Europe/Lisbon, por isso a hora de referência
+  não muda.
+- **Legenda corrigida**: PLIC / SLIC / RLIC = férias (dias de calendário), F = férias em atraso
+  (dias úteis) — o RLIC aparecia como "licença de casamento". H = assistência em casa
+  (pilotos), A = cabina, R24 = reserva de 24h, SBY = assistência no aeroporto.
+
+### `0.8.18.2` — dias em terra e cores das barras
+
+- **Dias só em terra** (formação, simulador, gabinete, médicas): o serviço é a soma das
+  sessões, sem o intervalo entre elas (RRRGS cl. 12.1 a; RUPT def. 46). Caso real: um curso
+  FP1 09:30–12:30 + FP2 14:00–17:00 durante 6 dias dava 45h no pico de 7 dias; passa a 36h.
+  Dias com voo mantêm o período inteiro.
+- **Cores**: vermelho só acima do limite, laranja a partir de 90%, verde abaixo.
+
+### `0.8.18.3` — S.EXT. e gabinete
+
+- **`S.EXT.` (serviço externo)** reconhecido como trabalho em terra (`Office Duty`) com início
+  e fim. Antes os dias desapareciam: o código tem pontos e nenhum dígito, por isso nem a rede
+  de segurança dos códigos desconhecidos o apanhava (caso real: 25–30 out e 4–5 nov).
+- **Gabinete (GAB1/GAB2)** passa a guardar a hora de fim → conta para os limites de serviço
+  (antes só tinha início e ficava de fora). O detalhe do dia mostra Início/Fim também para
+  gabinete, serviço externo e médicas.
+- `PARSE_VERSION` → 11: as escalas guardadas são relidas sozinhas.
 
 ---
 
 ## TODO / Backlog (decidir mais tarde)
 
-- **FDP máximo do dia** (ORO.FTL.205: hora de apresentação × nº de setores), para
-  mostrar a margem que resta quando o dia derrapa. É tabela do regulamento; a parte
-  difícil é a aclimatação. _O resto do painel de FTL — limites de tempo de voo e de
-  serviço 7/14/28 dias, com aviso de pico — já foi enviado em `0.8.16`._
+- **Do AE SIPLA, ainda por fazer** (ver análise de 16/10/2026): verificação das folgas
+  (RUPT cl. 21: ≥10/mês, ≥111/ano, ≤6 dias entre períodos, 2×72h ou 1×96h, sáb+dom a cada
+  6 semanas), Early Start / Late Finish / Night Duty (cl. 22), estimador de per diem
+  (RRRGS cl. 9, tabela A2.2 — valores marcados "sujeito a confirmação" no documento),
+  créditos de duty-pay/block-pay vs plafonds (RRRGS cl. 2/12), contador de 42 dias de férias.
 - **Lembretes locais (notificações da PWA)** para check-in e documentos a expirar.
 - **Componente de vento cruzado** por pista. _A BD de pistas deixou de ser um bloqueio:
   a `runways.csv` do OurAirports é domínio público e bastam os ~40 aeroportos da rede,
   num JSON pequeno carregado em lazy como o `airportCoordsFallback.json`._
-- **Estimador de ajudas de custo / per diem** (precisa das taxas da PGA — bloqueado).
-- **Percentagem da reserva em casa** no cálculo do tempo de serviço: está a 25%
-  (`HOME_STANDBY_FACTOR` em `src/domain/dutyTime.ts`), o valor habitual do ORO.FTL.225.
-  Confirmar contra o acordo da Portugália.
 
 ---
 

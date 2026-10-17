@@ -127,9 +127,20 @@ Things learned over this collaboration that should persist across sessions:
 - **When a fix "doesn't appear,"** suspect a stale stored roster (crew is baked at
   import time) or a stale PWA build before assuming a parser bug — re-import / hard
   refresh first.
-- **Backlog (not started, needs real data from the user):** FTL/fatigue panel (real PGA
-  limits), PWA local reminders, crosswind component (runway DB), per-diem estimator.
-  See `EXPERIMENTAL.md` (TODO/Backlog) and `roster-lite/TODO.md`.
+- **Company agreement (AE Portugália/SIPLA 2023) is the source for PILOT limits** (since 0.8.18):
+  RUPT cl. 30–31 (flight/duty limits), cl. 19.7/20.4 (standby 25% home / 50% airport / R24 0%),
+  cl. 25/34 (rest), cl. 35 (FDP table, Lisbon reference). Cabin crew stay on EASA (SIPLA covers
+  pilots only). The AE text is NOT in the repo — only values, each with its clause in a comment.
+  Standby code windows (H509, H7+… pilots; A1…A8 cabin) come from the DOV notice of Feb 2025
+  (`src/domain/standbyWindows.ts`). A/H codes are home standby (H = pilots, A = cabin).
+- **Pilot base is a per-profile setting** (Settings → Base: Lisboa/Porto, `UserProfile.base`,
+  default LIS; `baseOf()` in `dutyStats.ts`). Never hardcode LIS for at-base/away logic.
+- **PLIC / SLIC / RLIC are holiday types** (calendar days); F = carried-over holidays (working
+  days). Per-diem values in the RRRGS are marked "sujeito a confirmação" — the user will send
+  confirmed values / an updated AE; don't build the per-diem estimator on them until then.
+- **Backlog:** the rest of the AE items (folgas check, ES/LF/ND, per diem, duty-pay/block-pay
+  credits, holiday counter), PWA local reminders, crosswind (runway DB). See `EXPERIMENTAL.md`
+  (TODO/Backlog) and `roster-lite/TODO.md`.
 
 ## Useful docs in this repo
 

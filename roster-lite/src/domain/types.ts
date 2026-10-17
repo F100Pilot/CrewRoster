@@ -47,11 +47,16 @@ export interface DayChange {
 // rest apply to both. Treat a missing role as 'pilot' for backward compatibility.
 export type CrewRole = 'pilot' | 'cabin';
 
+// The crew member's home base (RBO). Rest and FDP rules differ at base and away from it, and the
+// monthly stats count nights away. Both are Europe/Lisbon, so local-time references don't change.
+export type CrewBase = 'LIS' | 'OPO';
+
 export interface UserProfile {
   id: string;
   name: string;
   crewCode?: string;
   role?: CrewRole; // default 'pilot'
+  base?: CrewBase; // default 'LIS'
   createdAt: string;
 }
 

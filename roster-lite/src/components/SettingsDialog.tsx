@@ -21,6 +21,8 @@ import { operatedFlights } from '../domain/flightTime';
 import { downloadIcs } from '../utils/icsExport';
 import { startTour } from '../tour';
 import { useRoster } from '../state/useRoster';
+import { baseOf } from '../domain/dutyStats';
+import type { CrewBase } from '../domain/types';
 import {
   downloadBackup, readBackupFile, restoreBackup, BackupError, type BackupSummary,
 } from '../storage/backup';
@@ -29,7 +31,7 @@ import {
 // view can show aircraft registration, gate/terminal and status. The key is stored on
 // this device only and forwarded to the proxy per request — never committed or shared.
 export default function SettingsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { roster, clear, activeUser } = useRoster();
+  const { roster, clear, activeUser, setUserBase } = useRoster();
   const { mode, setMode } = useColorMode();
   const navigate = useNavigate();
   const [key, setKey] = useState('');
@@ -227,6 +229,29 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
               </ToggleButton>
             </ToggleButtonGroup>
           </Box>
+
+          {activeUser && (
+            <>
+              <Divider />
+              {/* The profile's home base: rest and FDP rules differ at base and away from it, and
+                  the monthly stats count nights away from it. Saved on the profile right away. */}
+              <Box display="flex" alignItems="center" gap={1}>
+                <Box flexGrow={1}>
+                  <Typography variant="subtitle2">Base</Typography>
+                  <Typography variant="body2" color="text.secondary">Para descanso, FDP e noites fora</Typography>
+                </Box>
+                <ToggleButtonGroup
+                  size="small"
+                  exclusive
+                  value={baseOf(activeUser)}
+                  onChange={(_, v: CrewBase | null) => { if (v) setUserBase(activeUser.id, v); }}
+                >
+                  <ToggleButton value="LIS" sx={{ px: 1.5 }}>Lisboa</ToggleButton>
+                  <ToggleButton value="OPO" sx={{ px: 1.5 }}>Porto</ToggleButton>
+                </ToggleButtonGroup>
+              </Box>
+            </>
+          )}
 
           <Divider />
 
