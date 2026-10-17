@@ -63,6 +63,16 @@ está no repositório, só os valores, com a cláusula ao lado no código) — e
   Dias com voo mantêm o período inteiro.
 - **Cores**: vermelho só acima do limite, laranja a partir de 90%, verde abaixo.
 
+### `0.8.18.3` — S.EXT. e gabinete
+
+- **`S.EXT.` (serviço externo)** reconhecido como trabalho em terra (`Office Duty`) com início
+  e fim. Antes os dias desapareciam: o código tem pontos e nenhum dígito, por isso nem a rede
+  de segurança dos códigos desconhecidos o apanhava (caso real: 25–30 out e 4–5 nov).
+- **Gabinete (GAB1/GAB2)** passa a guardar a hora de fim → conta para os limites de serviço
+  (antes só tinha início e ficava de fora). O detalhe do dia mostra Início/Fim também para
+  gabinete, serviço externo e médicas.
+- `PARSE_VERSION` → 11: as escalas guardadas são relidas sozinhas.
+
 ---
 
 ## TODO / Backlog (decidir mais tarde)

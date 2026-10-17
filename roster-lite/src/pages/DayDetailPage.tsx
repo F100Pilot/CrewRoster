@@ -244,7 +244,8 @@ export default function DayDetailPage() {
 
             {duty.flightNumber && date && <FlightWeather duty={duty} date={date} />}
 
-            {(duty.dutyType === 'Training' || duty.dutyType === 'Simulator') &&
+            {/* Ground slots with a scheduled block: training, simulator, office/external, medical. */}
+            {['Training', 'Simulator', 'Office Duty', 'Medical'].includes(duty.dutyType) &&
               (duty.departureTime || duty.arrivalTime || (duty.crew && duty.crew.length > 0)) && (
                 <Box sx={{ bgcolor: 'rgba(128,128,128,0.14)', borderRadius: 2, p: 2, mb: 2 }}>
                   {(duty.departureTime || duty.arrivalTime) && (

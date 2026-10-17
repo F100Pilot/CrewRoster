@@ -157,6 +157,9 @@ function classifyDuty(name: string): { dutyType: string; dutyCode: string } | nu
   // base so another simulator location follows the same shape.
   if (/^[A-Z]{3}-(EBT-\d|OTHER)$/.test(n)) return { dutyType: 'Simulator', dutyCode: n };
   if (/^GAB\d$/.test(n)) return { dutyType: 'Office Duty', dutyCode: n };
+  // "S.EXT." = serviço externo (external duty on the ground, e.g. 08:00–16:00). Printed with dots,
+  // and no digit, so the unknown-code safety net below never caught it and the day went missing.
+  if (/^S\.?EXT\.?$/.test(n)) return { dutyType: 'Office Duty', dutyCode: 'S.EXT.' };
   if (/^SIM/.test(n)) return { dutyType: 'Simulator', dutyCode: 'SIM' };
   if (/^(SBY|STBY)/.test(n)) return { dutyType: 'Standby Airport', dutyCode: 'SBY' };
   // Assistances (standby/reserve with a time window), for BOTH pilots and cabin crew.
@@ -332,10 +335,12 @@ export function parseSubColumn(
     const named = classifyDuty(words[0]);
     if (named) {
       const isFree = named.dutyType === 'Day Off';
-      // Training, simulator and medical slots carry a scheduled start/end block in the grid
-      // (e.g. FPE-LEARN 07:45–08:15, E90-FRA-1 17:00–21:00, IM 07:00–11:00); show it as Início/Fim.
+      // Training, simulator, medical and office/external slots carry a scheduled start/end block
+      // in the grid (e.g. FPE-LEARN 07:45–08:15, E90-FRA-1 17:00–21:00, IM 07:00–11:00, GAB1
+      // 08:30–12:00, S.EXT. 08:00–16:00); show it as Início/Fim. Without the end, the duty-time
+      // limits had nothing to measure and those days never counted.
       const isTimed = named.dutyType === 'Training' || named.dutyType === 'Simulator' ||
-        named.dutyType === 'Medical';
+        named.dutyType === 'Medical' || named.dutyType === 'Office Duty';
       const times = words.map(toTime).filter((t): t is string => !!t);
       duties.push({
         date,
