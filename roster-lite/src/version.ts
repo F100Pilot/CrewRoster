@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.20';
+export const APP_VERSION = '0.8.21';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,15 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.21',
+    date: '2026-10-29',
+    highlights: [
+      'Planeado vs. realizado (experimental, pilotos): quando sincronizas a escala depois de voar, a app guarda agora as horas planeadas de cada voo antes de as substituir pelas voadas. Em "Limites e AE" há um novo cartão, mês a mês, com os atrasos, o serviço a mais face ao planeado, as extensões por autoridade do comandante (RUPT cl. 27 — 2h de duty-pay, RRRGS cl. 2.6) e os descansos reduzidos (RUPT cl. 34.3/36 — o tempo reduzido em duty-pay, RRRGS cl. 2.8). Serve para confirmar o recibo do mês seguinte. Os PDFs guardados são relidos uma vez para reconstruir o histórico.',
+      'No detalhe do dia, um voo que não correu como planeado mostra a hora planeada e o atraso na chegada.',
+      'Atalhos da app: mantém o ícone carregado (Android) para abrir diretamente Hoje, Calendário, Limites e AE ou Diário de voo. Só na app instalada — pode ser preciso reinstalar o ícone.',
+    ],
+  },
   {
     version: '0.8.20',
     date: '2026-10-29',

@@ -36,6 +36,17 @@ Em `0.8.20` (na exp):
   papel); meses sem escala guardada ficam "sem escala" (traço), nunca 0.
   `domain/monthlyTotals.ts`, `components/MonthlyChart.tsx`.
 
+Em `0.8.21` (na exp):
+
+- **Planeado vs. realizado** (pilotos, experimental) — o merge guarda o planeado de cada setor
+  quando uma sincronização depois do dia traz as horas voadas (`ParsedDuty.planned`/`settled`,
+  `mergeDuties(…, asOfISO)`); `PARSE_VERSION` 12 relê os PDFs guardados por ordem para reconstruir
+  o histórico. Cartão em `/limites` (atrasos, serviço a mais, extensões do comandante RUPT cl. 27 /
+  RRRGS cl. 2.6, descansos reduzidos RUPT cl. 34.3/36 / RRRGS cl. 2.8) e linha "Planeado … ·
+  chegada +X" no detalhe do dia. `domain/planVsFlown.ts`, `components/PlanVsFlownCard.tsx`.
+- **Atalhos da app (Android)** — `shortcuts` no `public/manifest.json`: Hoje (nova rota `/hoje`),
+  Calendário, Limites e AE, Diário. Só se veem na PWA instalada (produção; a exp não tem PWA).
+
 ---
 
 ## TODO / Backlog (decidir mais tarde)

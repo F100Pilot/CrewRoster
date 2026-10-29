@@ -75,6 +75,12 @@ confirmar no portal e descarregar a nova escala.
 - Top aeroportos e distribuição de frotas.
 - **Heatmap de atividade anual** (estilo GitHub) por bloco voado.
 - **Evolução mensal** — colunas de bloco ou serviço por mês (últimos 12 meses), toque para ler o valor.
+
+### Planeado vs. realizado (pilotos, experimental)
+- Ao sincronizar depois do voo, as horas planeadas ficam guardadas em cada setor (`planned`).
+- Cartão em "Limites e AE": atrasos, serviço a mais, extensões por autoridade do comandante
+  (RUPT cl. 27 / RRRGS cl. 2.6) e descansos reduzidos (RUPT cl. 34.3/36 / RRRGS cl. 2.8), por mês.
+- No detalhe do dia: hora planeada e atraso na chegada.
 - **Pesquisa global** (lupa no topo): voos, aeroportos, rotas, colegas, datas.
 - **Partilhar o mês** como imagem (totais + rotas mais voadas).
 
@@ -108,7 +114,7 @@ confirmar no portal e descarregar a nova escala.
 |---|---|
 | UI | React 19 + MUI 7 + Emotion |
 | Build | Vite 7 + TypeScript 5 |
-| Testes | Vitest 3 (375 testes) |
+| Testes | Vitest 3 (384 testes) |
 | PDF parsing | pdf.js (pdfjs-dist 4) |
 | Persistência local | IndexedDB via idb 8 |
 | Datas | date-fns 4 |
@@ -176,7 +182,7 @@ antes→depois por dia alterado.
 cd roster-lite
 npm install
 npm run dev        # http://localhost:5173
-npm test           # testes unitários (Vitest) — 375 testes
+npm test           # testes unitários (Vitest) — 384 testes
 npm run typecheck  # verificação de tipos TypeScript (tsc -b)
 npm run lint       # ESLint
 npm run build      # gera dist/ (site estático)
