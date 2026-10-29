@@ -47,6 +47,11 @@ export default function AeComplianceCard({ duties }: { duties: ParsedDuty[] }) {
                   <Typography variant="caption" color="text.secondary" display="block" lineHeight={1.35}>
                     {c.detail}
                   </Typography>
+                  {c.note && (
+                    <Typography variant="caption" color="text.secondary" display="block" lineHeight={1.35} fontStyle="italic">
+                      {c.note}
+                    </Typography>
+                  )}
                 </Box>
             </Box>
           ))}

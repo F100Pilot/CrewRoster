@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.19.1';
+export const APP_VERSION = '0.8.19.2';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,14 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.19.2',
+    date: '2026-10-29',
+    highlights: [
+      'O aviso do descanso semanal diz agora quando o descanso começou e qual era o limite — por exemplo, "o descanso só começa 30/10 às 16:00 (limite: 30/10 às 14:00)".',
+      'Os avisos de folgas que envolvam serviço externo (S.EXT.) ou formação lembram que, se for curso de qualificação ou de comando, as regras de folga não se aplicam (RUPT cl. 7.1). O descanso semanal aplica-se sempre, também em cursos.',
+    ],
+  },
   {
     version: '0.8.19.1',
     date: '2026-10-29',

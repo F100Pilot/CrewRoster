@@ -164,3 +164,25 @@ describe('férias (cl. 38)', () => {
     expect(c).toEqual({ year: 2026, calendarDays: 4, carriedDays: 2, entitlement: 42 });
   });
 });
+
+describe('textos dos avisos', () => {
+  it('says when the late weekly rest began and what the limit was', () => {
+    // Folgas 01–02/06, then 6 ground days 03–08 ending 16:00Z (17:00 local), then folgas.
+    const d = roster('2026-06-01', 'OO') .concat(
+      ['03', '04', '05', '06', '07', '08'].map((x) => base(`2026-06-${x}`, { dutyType: 'Office Duty', dutyCode: 'S.EXT.', departureTime: '08:00', arrivalTime: '16:00' })),
+      roster('2026-06-09', 'OO'));
+    expect(check(d, 'descanso-semanal').detail).toBe('o descanso só começa 08/06 às 17:00 (limite: 08/06 às 14:00)');
+  });
+
+  it('notes the course exception on a folga warning that involves training or S.EXT.', () => {
+    expect(check(roster('2026-06-01', 'OOFFFTFFFOO'), 'intervalo-folgas').note).toMatch(/cl\. 7\.1/);
+  });
+
+  it('adds no such note when the stretch is all flying', () => {
+    expect(check(roster('2026-06-01', 'OOFFFFFFFOO'), 'intervalo-folgas').note).toBeUndefined();
+  });
+
+  it('never adds it to the weekly rest, which courses do not waive', () => {
+    expect(check(roster('2026-06-01', 'TTTTTTTTOO'), 'descanso-semanal').note).toBeUndefined();
+  });
+});

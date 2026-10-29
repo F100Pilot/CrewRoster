@@ -22,6 +22,7 @@ export interface ComplianceCheck {
   clause: string;
   status: CheckStatus;
   detail: string;
+  note?: string; // a caveat shown under the detail
 }
 
 type DayKind = 'folga' | 'leave' | 'work' | 'free' | 'unknown';
@@ -50,6 +51,15 @@ const addDays = (iso: string, n: number): string => {
 const daysBetween = (a: string, b: string) => Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / DAY);
 const ddmm = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
 const weekday = (iso: string) => new Date(`${iso}T00:00:00Z`).getUTCDay(); // 0 = Sunday
+const hhmm = (min: number) => `${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`;
+
+// cl. 7.1 — the folga rules don't apply during the theoretical and simulator instruction of a
+// qualification or command course. The roster doesn't say whether an external duty (S.EXT. —
+// a course, a meeting, anything) or a training day is such a course, so a folga warning that
+// involves one carries this caveat instead of being dropped. The weekly rest has no such
+// exception (cl. 7.3–7.5 keep it), so it never gets the note.
+const COURSE_NOTE = 'Inclui serviço externo ou formação: se for curso de qualificação ou de comando, as regras de folga não se aplicam (cl. 7.1).';
+const isCourseLike = (d: ParsedDuty) => d.dutyType === 'Training' || d.dutyCode.toUpperCase() === 'S.EXT.';
 
 interface Day { date: string; kind: DayKind; duties: ParsedDuty[] }
 
@@ -68,6 +78,11 @@ function timeline(duties: ParsedDuty[]): Day[] {
     out.push({ date: iso, kind: ds.length ? kindOf(ds) : 'unknown', duties: ds });
   }
   return out;
+}
+
+// Whether any day from `from` to `to` (inclusive) has an external duty or a training day.
+function involvesCourse(days: Day[], from: string, to: string): boolean {
+  return days.some((d) => d.date >= from && d.date <= to && d.duties.some(isCourseLike));
 }
 
 // Runs of consecutive folga days — a "período de folga" needs at least 48h, i.e. 2 days (def. 27).
@@ -115,9 +130,9 @@ function checkMonthly(days: Day[], fromISO: string): ComplianceCheck {
   if (months.length === 0) return { ...base, status: 'na', detail: 'Escala do mês incompleta — sem dados para verificar.' };
   const short = months.filter((m) => m.count < m.required);
   const describe = (m: (typeof months)[number]) => `${monthName(m.month)}: ${m.count} (mín. ${m.required})`;
-  return short.length
-    ? { ...base, status: 'warn', detail: short.map(describe).join(' · ') }
-    : { ...base, status: 'ok', detail: months.map(describe).join(' · ') };
+  if (!short.length) return { ...base, status: 'ok', detail: months.map(describe).join(' · ') };
+  const course = short.some((m) => involvesCourse(days, `${m.month}-01`, `${m.month}-31`));
+  return { ...base, status: 'warn', detail: short.map(describe).join(' · '), note: course ? COURSE_NOTE : undefined };
 }
 
 // ── cl. 21.4 — a month with exactly 10 folga days (and no leave) needs two folga periods of 72h
@@ -131,9 +146,13 @@ function checkLongFolgas(days: Day[], fromISO: string): ComplianceCheck {
     const inMonth = runs.filter((r) => r.from.slice(0, 7) <= m.month && r.to.slice(0, 7) >= m.month);
     return !(inMonth.filter((r) => r.length >= 3).length >= 2 || inMonth.some((r) => r.length >= 4));
   });
-  return bad.length
-    ? { ...base, status: 'warn', detail: `${bad.map((m) => monthName(m.month)).join(', ')}: falta um período de 96h ou dois de 72h.` }
-    : { ...base, status: 'ok', detail: `${months.map((m) => monthName(m.month)).join(', ')}: cumprido.` };
+  if (!bad.length) return { ...base, status: 'ok', detail: `${months.map((m) => monthName(m.month)).join(', ')}: cumprido.` };
+  const course = bad.some((m) => involvesCourse(days, `${m.month}-01`, `${m.month}-31`));
+  return {
+    ...base, status: 'warn',
+    detail: `${bad.map((m) => monthName(m.month)).join(', ')}: falta um período de 96h ou dois de 72h.`,
+    note: course ? COURSE_NOTE : undefined,
+  };
 }
 
 // ── cl. 21.3 — at most 6 days between folga periods. Leave and unknown days break the stretch.
@@ -163,7 +182,11 @@ function checkInterval(days: Day[], fromISO: string): ComplianceCheck {
   if (prev) close(prev);
   const known = days.filter((d) => d.date >= fromISO && d.kind !== 'unknown').length;
   if (breaches.length) {
-    return { ...base, status: 'warn', detail: breaches.map((b) => `${b.length} dias seguidos (${ddmm(b.from)}–${ddmm(b.to)})`).join(' · ') };
+    return {
+      ...base, status: 'warn',
+      detail: breaches.map((b) => `${b.length} dias seguidos (${ddmm(b.from)}–${ddmm(b.to)})`).join(' · '),
+      note: breaches.some((b) => involvesCourse(days, b.from, b.to)) ? COURSE_NOTE : undefined,
+    };
   }
   return known >= 7
     ? { ...base, status: 'ok', detail: 'Nunca mais de 6 dias entre períodos de folga.' }
@@ -191,7 +214,11 @@ function checkWeekend(days: Day[], fromISO: string): ComplianceCheck {
     }
   }
   if (breaches.length) {
-    return { ...base, status: 'warn', detail: breaches.map((b) => `sem sábado+domingo de folga de ${ddmm(b.since)} a ${ddmm(b.at)}`).join(' · ') };
+    return {
+      ...base, status: 'warn',
+      detail: breaches.map((b) => `sem sábado+domingo de folga de ${ddmm(b.since)} a ${ddmm(b.at)}`).join(' · '),
+      note: breaches.some((b) => involvesCourse(days, b.since, b.at)) ? COURSE_NOTE : undefined,
+    };
   }
   if (!lastWeekend) return { ...base, status: 'na', detail: 'Nenhum fim de semana de folga na escala importada.' };
   return { ...base, status: 'ok', detail: `Último: ${ddmm(lastWeekend)} · o próximo até ${ddmm(addDays(lastWeekend, 42))}.` };
@@ -225,7 +252,8 @@ function checkWeeklyRest(days: Day[], fromISO: string): ComplianceCheck {
   // previous one ended as day 1.
   const deadline = (endMs: number) => lisbonMidnightUtc(addDays(lisbonLocal(endMs).date, 5)) + 14 * HOUR;
 
-  const breaches: { from: number; to: number }[] = [];
+  // `late` is when the rest actually began (null if it hadn't by the end of the roster).
+  const breaches: { from: number; deadline: number; late: number | null }[] = [];
   let checked = false;
   for (const seg of segments) {
     const segStart = lisbonMidnightUtc(seg[0].date);
@@ -253,19 +281,26 @@ function checkWeeklyRest(days: Day[], fromISO: string): ComplianceCheck {
     // past the imported roster — so it's a breach only if even that free time began too late.
     let prevEnd = segStart;
     for (const [s, e] of rests) {
-      if (s > deadline(prevEnd)) breaches.push({ from: prevEnd, to: s });
+      if (s > deadline(prevEnd)) breaches.push({ from: prevEnd, deadline: deadline(prevEnd), late: s });
       prevEnd = e;
     }
     const trailingFree = Math.min(free, segEnd);
-    if (prevEnd < segEnd && trailingFree > deadline(prevEnd)) breaches.push({ from: prevEnd, to: trailingFree });
+    if (prevEnd < segEnd && trailingFree > deadline(prevEnd)) {
+      // If the free time after the last duty begins inside the roster, that's the earliest the
+      // rest could start — already late; if the roster ends while still on duty, it hasn't begun.
+      breaches.push({ from: prevEnd, deadline: deadline(prevEnd), late: trailingFree < segEnd ? trailingFree : null });
+    }
     if (segEnd - segStart >= 7 * DAY) checked = true;
   }
 
-  const recent = breaches.filter((b) => lisbonLocal(b.to).date >= fromISO);
+  const at = (ms: number) => { const l = lisbonLocal(ms); return `${ddmm(l.date)} às ${hhmm(l.minutes)}`; };
+  const recent = breaches.filter((b) => lisbonLocal(b.late ?? b.deadline).date >= fromISO);
   if (recent.length) {
     return {
       ...base, status: 'warn',
-      detail: recent.map((b) => `sem 36h livres com 2 noites entre ${ddmm(lisbonLocal(b.from).date)} e ${ddmm(lisbonLocal(b.to).date)}`).join(' · '),
+      detail: recent.map((b) => (b.late !== null
+        ? `o descanso só começa ${at(b.late)} (limite: ${at(b.deadline)})`
+        : `sem descanso de 36h desde ${ddmm(lisbonLocal(b.from).date)} (limite: ${at(b.deadline)})`)).join(' · '),
     };
   }
   return checked

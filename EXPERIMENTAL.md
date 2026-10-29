@@ -60,8 +60,15 @@ produção, em vez de promover uma a uma.
   (`src/domain/limitRows.ts`, partilhado).
 - Cláusula de cada verificação passa a aparecer na própria linha (no telemóvel não há hover).
 - Correção: hora de Lisboa nos dias de mudança de hora (meia-noite local e a hora repetida).
-- Por confirmar com o utilizador: o aviso de descanso semanal 25–30/10 na escala real vem de 6
-  dias seguidos de S.EXT. (fim às 16:00 do 6.º dia, depois das 14:00 da cl. 15.2).
+
+### `0.8.19.2` — avisos mais claros; nota dos cursos
+
+- **Descanso semanal**: o aviso diz quando o descanso começou e qual era o limite (ex.: "o
+  descanso só começa 30/10 às 16:00 (limite: 30/10 às 14:00)"). Mantém-se para qualquer tipo
+  de serviço — a cl. 7 não dispensa o descanso semanal, nem em cursos (7.3–7.5).
+- **S.EXT. é qualquer serviço externo** (curso, reunião…), confirmado pelo utilizador. Os
+  avisos de **folgas** que envolvam S.EXT. ou formação levam a nota da cl. 7.1 (se for curso de
+  qualificação ou de comando, as regras de folga não se aplicam), em vez de serem escondidos.
 
 ---
 
