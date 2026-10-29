@@ -43,12 +43,28 @@ const hhmm = (min: number): string => {
   return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
 };
 
+// Minutes Lisbon is ahead of UTC on a date (60 in summer, 0 in winter).
+export function lisbonOffsetMinutes(dateISO: string): number {
+  const noonLocal = toLocalTime(dateISO, '12:00', 'LIS') ?? '12:00';
+  return toMinutes(noonLocal) - 12 * 60;
+}
+
+// The instant of local midnight in Lisbon at the start of a date, as epoch milliseconds.
+export function lisbonMidnightUtc(dateISO: string): number {
+  return new Date(`${dateISO}T00:00:00Z`).getTime() - lisbonOffsetMinutes(dateISO) * 60000;
+}
+
+// The Lisbon local date and minutes-after-midnight of an instant.
+export function lisbonLocal(ms: number): { date: string; minutes: number } {
+  const utcDate = new Date(ms).toISOString().slice(0, 10);
+  const local = new Date(ms + lisbonOffsetMinutes(utcDate) * 60000);
+  return { date: local.toISOString().slice(0, 10), minutes: local.getUTCHours() * 60 + local.getUTCMinutes() };
+}
+
 // A Lisbon local clock time on a given date, as the UTC "HH:mm" the rest of the app works in.
 // The offset is read for that date, so summer and winter time both come out right.
 export function lisbonLocalToUtc(dateISO: string, localHHMM: string): string {
-  const noonLocal = toLocalTime(dateISO, '12:00', 'LIS') ?? '12:00';
-  const offset = toMinutes(noonLocal) - 12 * 60;
-  return hhmm(toMinutes(localHHMM) - offset);
+  return hhmm(toMinutes(localHHMM) - lisbonOffsetMinutes(dateISO));
 }
 
 // The window of a standby code on a date, in UTC: its start and duration. Null for a code the

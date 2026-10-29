@@ -6,6 +6,7 @@ import { aeDutyTime, peakDutyTime, AE_DUTY_LIMITS, DUTY_LIMITS, EASA_RULES } fro
 import { formatDuration } from '../utils/duration';
 import { format, parseISO } from 'date-fns';
 import type { CrewRole, ParsedDuty } from '../domain/types';
+import AeDisclaimer, { ExperimentalChip } from './AeDisclaimer';
 
 // Red only once the limit is actually exceeded — a bar at 90% that already read red looked like
 // a breach; amber from 90% as the heads-up; green below.
@@ -115,6 +116,7 @@ export default function FtlCard({ duties, role = 'pilot' }: { duties: ParsedDuty
         <Box display="flex" alignItems="center" gap={1} mb={1}>
           <Timer fontSize="small" color="action" />
           <Typography variant="subtitle2">{pilot ? 'Limites AE' : 'Limites EASA'}</Typography>
+          {pilot && <ExperimentalChip />}
           <Tooltip title={pilot ? AE_TOOLTIP : EASA_TOOLTIP}>
             <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto' }}>
               {pilot ? 'RUPT' : 'EASA'}
@@ -130,6 +132,7 @@ export default function FtlCard({ duties, role = 'pilot' }: { duties: ParsedDuty
           <LimitGroup title="Tempo de voo" rows={flightRows} />
           <LimitGroup title="Serviço" rows={dutyRows} />
         </Box>
+        {pilot && <AeDisclaimer />}
       </CardContent>
     </Card>
   );

@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.18.4';
+export const APP_VERSION = '0.8.19';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,16 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.19',
+    date: '2026-10-29',
+    highlights: [
+      'Novo painel "Conformidade AE" (pilotos), na lista, por baixo dos limites: verifica a escala a partir deste mês contra o RUPT — folgas no mês (mínimo 10), intervalo máximo de 6 dias entre períodos de folga, folgas de 72h/96h nos meses com 10, um sábado e domingo de folga a cada 6 semanas, descanso semanal de 36h com duas noites, e Early Start / Late Finish / Night Duty (no máximo 2 seguidos e 3 entre folgas). Os problemas aparecem primeiro, com as datas.',
+      'No detalhe do dia, um chip indica quando o serviço é Early Start, Late Finish ou Night Duty.',
+      'Nas Estatísticas, o contador de férias do ano: dias de PLIC / SLIC / RLIC na escala contra os 42 do AE, e as F (em atraso) à parte.',
+      'Toda a análise do Acordo de Empresa — limites, FDP, descanso e conformidade — está marcada como experimental: pode conter erros, confirma sempre na escala oficial e no AE.',
+    ],
+  },
   {
     version: '0.8.18.4',
     date: '2026-10-17',

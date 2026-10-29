@@ -17,6 +17,7 @@ import DutyChip from '../components/DutyChip';
 import NextDutyCard from '../components/NextDutyCard';
 import MonthStatsCard from '../components/MonthStatsCard';
 import FtlCard from '../components/FtlCard';
+import AeComplianceCard from '../components/AeComplianceCard';
 import { autoCaptureRecent } from '../domain/aircraftRegs';
 import { getAeroDataBoxKey } from '../storage/settings';
 import { checkInTimeLabel } from '../utils/localTime';
@@ -207,6 +208,8 @@ export default function RosterPage() {
       <MonthStatsCard duties={monthDuties} />
 
       <FtlCard duties={roster.duties} role={activeUser?.role ?? 'pilot'} />
+
+      {(activeUser?.role ?? 'pilot') === 'pilot' && <AeComplianceCard duties={roster.duties} />}
 
       <TextField
         size="small"

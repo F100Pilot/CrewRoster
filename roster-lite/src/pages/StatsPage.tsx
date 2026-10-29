@@ -9,6 +9,8 @@ import { loadLogbook } from '../storage/rosterStore';
 import { logbookStats } from '../domain/logbook';
 import { blockByDate, activeYears, groundActivityByDate } from '../domain/activity';
 import YearHeatmap from '../components/YearHeatmap';
+import AeDisclaimer, { ExperimentalChip } from '../components/AeDisclaimer';
+import { holidayCount } from '../domain/aeCompliance';
 import { formatDuration } from '../utils/duration';
 import type { LogbookRow } from '../domain/types';
 
@@ -33,6 +35,10 @@ export default function StatsPage() {
   const minutesByDate = useMemo(() => blockByDate(rows), [rows]);
   const groundByDate = useMemo(() => groundActivityByDate(roster?.duties ?? []), [roster]);
   const years = useMemo(() => activeYears(rows, groundByDate.keys()), [rows, groundByDate]);
+  // Holiday days this year against the pilots' 42 (RUPT cl. 38) — from the roster, so it shows
+  // even before the logbook has any flights.
+  const pilot = (activeUser?.role ?? 'pilot') === 'pilot';
+  const holidays = useMemo(() => holidayCount(roster?.duties ?? [], new Date().getFullYear()), [roster]);
 
   return (
     <Stack spacing={2}>
@@ -40,6 +46,31 @@ export default function StatsPage() {
         <IconButton onClick={() => navigate(-1)}><ArrowBack /></IconButton>
         <Typography variant="h6" sx={{ flexGrow: 1 }}>Estatísticas</Typography>
       </Box>
+
+      {pilot && roster && (
+        <Card variant="outlined">
+          <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
+            <Box display="flex" alignItems="center" gap={1} mb={0.75}>
+              <Typography variant="subtitle2" sx={{ flexGrow: 1 }}>Férias {holidays.year}</Typography>
+              <ExperimentalChip />
+            </Box>
+            <Box display="flex" justifyContent="space-between" mb={0.25}>
+              <Typography variant="caption" color="text.secondary">PLIC / SLIC / RLIC (dias de calendário)</Typography>
+              <Typography variant="caption" fontWeight={600}>{holidays.calendarDays} / {holidays.entitlement}</Typography>
+            </Box>
+            <LinearProgress
+              variant="determinate"
+              value={Math.min(100, Math.round((holidays.calendarDays / holidays.entitlement) * 100))}
+              sx={{ height: 6, borderRadius: 3 }}
+            />
+            <Typography variant="caption" color="text.secondary" display="block" mt={0.75}>
+              {holidays.carriedDays > 0 ? `Mais ${holidays.carriedDays} de F (férias em atraso, dias úteis). ` : ''}
+              Gozadas e planeadas, tal como estão na escala importada (RUPT cl. 38).
+            </Typography>
+            <AeDisclaimer />
+          </CardContent>
+        </Card>
+      )}
 
       {rows.length === 0 ? (
         <Alert severity="info">
