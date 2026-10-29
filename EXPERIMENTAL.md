@@ -7,8 +7,8 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.8.19.2`
-- **Próxima versão ao promover:** `0.8.20` (ou superior, conforme o âmbito)
+- **Produção (`master`) está em:** `0.8.21`
+- **Próxima versão ao promover:** `0.8.22` (ou superior, conforme o âmbito)
 
 ## Como promover tudo para produção (quando estiver pronto)
 
@@ -25,27 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-Em `0.8.20` (na exp):
-
-- **Documentos a expirar na lista** — linha por cima do resumo dos limites quando um
-  documento expira em ≤60 dias ou já expirou (vermelho ≤30, amarelo antes); toque →
-  Documentos. Só pilotos (a cabina não tem Documentos). `domain/documentAlerts.ts`,
-  `components/DocumentAlertCard.tsx`.
-- **Evolução mensal nas Estatísticas** — colunas de bloco/serviço por mês, últimos 12
-  meses, toque para ler. Serviço contado como nos limites (`dutyDays` com as regras do
-  papel); meses sem escala guardada ficam "sem escala" (traço), nunca 0.
-  `domain/monthlyTotals.ts`, `components/MonthlyChart.tsx`.
-
-Em `0.8.21` (na exp):
-
-- **Planeado vs. realizado** (pilotos, experimental) — o merge guarda o planeado de cada setor
-  quando uma sincronização depois do dia traz as horas voadas (`ParsedDuty.planned`/`settled`,
-  `mergeDuties(…, asOfISO)`); `PARSE_VERSION` 12 relê os PDFs guardados por ordem para reconstruir
-  o histórico. Cartão em `/limites` (atrasos, serviço a mais, extensões do comandante RUPT cl. 27 /
-  RRRGS cl. 2.6, descansos reduzidos RUPT cl. 34.3/36 / RRRGS cl. 2.8) e linha "Planeado … ·
-  chegada +X" no detalhe do dia. `domain/planVsFlown.ts`, `components/PlanVsFlownCard.tsx`.
-- **Atalhos da app (Android)** — `shortcuts` no `public/manifest.json`: Hoje (nova rota `/hoje`),
-  Calendário, Limites e AE, Diário. Só se veem na PWA instalada (produção; a exp não tem PWA).
+_(Vazio — tudo o que estava pendente foi promovido em `0.8.21`.)_
 
 ---
 
