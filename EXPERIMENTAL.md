@@ -25,7 +25,50 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(Vazio — tudo o que estava pendente foi promovido em `0.8.18.3`.)_
+### `0.8.18.4` — horas das sessões em terra em hora local
+
+- No detalhe do dia, o Início/Fim de formação, simulador, gabinete, serviço externo e médicas
+  passa a mostrar a **hora local** do aeroporto, com o **UTC entre parênteses** por baixo —
+  igual aos voos (STD/STA). Sem fuso conhecido, fica só o UTC.
+
+### `0.8.19` — Conformidade AE e contador de férias (experimental)
+
+- **Painel "Conformidade AE"** (pilotos, na lista): a escala a partir deste mês contra o
+  RUPT — folgas no mês ≥10, reduzidas 2 por 7 dias de ausência/férias (cl. 21.2, 21.14–15);
+  ≤6 dias entre períodos de folga de ≥48h (21.3); 2×72h ou 1×96h nos meses com 10 (21.4);
+  sábado+domingo de folga a cada 6 semanas, suspenso por férias (21.8); descanso semanal de
+  36h com 2 noites locais, a começar até às 14:00 do 6.º dia (15.2); ES/LF/ND ≤2 seguidos e
+  ≤3 entre folgas, 3 ES seguidos se cercados por folgas (22). Lógica em
+  `src/domain/aeCompliance.ts`. Só julga dias cobertos pela escala importada; dias sem
+  registo quebram a contagem.
+- **Chips Early Start / Late Finish / Night Duty** no detalhe do dia (hora da base; ES =
+  05:00–06:29 como na cl. 22.7).
+- **Contador de férias** nas Estatísticas: PLIC/SLIC/RLIC do ano vs 42 (cl. 38), F à parte.
+- **Aviso "experimental"** em tudo o que vem do AE (cartões Limites AE, Conformidade e Férias;
+  dicas do FDP, do descanso e dos ES/LF/ND) — texto único em `AeDisclaimer.tsx`.
+- Decisões: "dia de folga" = W_OFF / OFF / *_RQST (PLS_* e X não contam, def. 11); um dia de
+  folga isolado não é "período de folga" (def. 27, ≥48h); não se modelam o regime alternativo
+  de 11 dias (21.5) nem as exceções por irregularidade.
+
+### `0.8.19.1` — página "Limites e AE"
+
+- Os cartões **Limites**, **Conformidade AE** e **Férias** saem da lista e das Estatísticas para
+  uma página própria, **`/limites` — "Limites e AE"** (pilotos; "Limites" para cabina), com o
+  aviso experimental uma vez no topo. Acesso pela linha de resumo na lista e pelo menu ⋮.
+- **Linha de resumo** na lista (`LimitsSummaryCard`): o valor mais perto do limite + nº de pontos
+  do AE a verificar; barra lateral verde / laranja / vermelha. Mesmos números da página
+  (`src/domain/limitRows.ts`, partilhado).
+- Cláusula de cada verificação passa a aparecer na própria linha (no telemóvel não há hover).
+- Correção: hora de Lisboa nos dias de mudança de hora (meia-noite local e a hora repetida).
+
+### `0.8.19.2` — avisos mais claros; nota dos cursos
+
+- **Descanso semanal**: o aviso diz quando o descanso começou e qual era o limite (ex.: "o
+  descanso só começa 30/10 às 16:00 (limite: 30/10 às 14:00)"). Mantém-se para qualquer tipo
+  de serviço — a cl. 7 não dispensa o descanso semanal, nem em cursos (7.3–7.5).
+- **S.EXT. é qualquer serviço externo** (curso, reunião…), confirmado pelo utilizador. Os
+  avisos de **folgas** que envolvam S.EXT. ou formação levam a nota da cl. 7.1 (se for curso de
+  qualificação ou de comando, as regras de folga não se aplicam), em vez de serem escondidos.
 
 ---
 

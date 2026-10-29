@@ -135,6 +135,12 @@ Things learned over this collaboration that should persist across sessions:
   (`src/domain/standbyWindows.ts`). A/H codes are home standby (H = pilots, A = cabin).
 - **Pilot base is a per-profile setting** (Settings → Base: Lisboa/Porto, `UserProfile.base`,
   default LIS; `baseOf()` in `dutyStats.ts`). Never hardcode LIS for at-base/away logic.
+- **S.EXT. = any external duty** (course, meeting, …) → Office Duty, timed. RUPT cl. 7.1 waives the
+  FOLGA rules for qualification/command courses but never the weekly rest; the app can't tell a
+  course apart, so folga warnings involving S.EXT./training carry a caveat instead of being dropped.
+- **AE analysis is labelled experimental everywhere it shows** (user request): `AeDisclaimer.tsx`.
+  Limits / compliance / holidays live on `/limites`; the roster list only has a one-line summary
+  (user wants the first page light).
 - **PLIC / SLIC / RLIC are holiday types** (calendar days); F = carried-over holidays (working
   days). Per-diem values in the RRRGS are marked "sujeito a confirmação" — the user will send
   confirmed values / an updated AE; don't build the per-diem estimator on them until then.

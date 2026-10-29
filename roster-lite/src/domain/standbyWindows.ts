@@ -43,12 +43,37 @@ const hhmm = (min: number): string => {
   return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
 };
 
+// Minutes Lisbon is ahead of UTC on a date (60 in summer, 0 in winter).
+export function lisbonOffsetMinutes(dateISO: string): number {
+  const noonLocal = toLocalTime(dateISO, '12:00', 'LIS') ?? '12:00';
+  return toMinutes(noonLocal) - 12 * 60;
+}
+
+// The instant of local midnight in Lisbon at the start of a date, as epoch milliseconds. The
+// clocks change at 01:00 UTC, after midnight, so midnight still runs on the PREVIOUS day's offset
+// — on the last Sunday of October local midnight is 23:00 UTC the day before.
+export function lisbonMidnightUtc(dateISO: string): number {
+  const prev = new Date(`${dateISO}T00:00:00Z`);
+  prev.setUTCDate(prev.getUTCDate() - 1);
+  return new Date(`${dateISO}T00:00:00Z`).getTime() - lisbonOffsetMinutes(prev.toISOString().slice(0, 10)) * 60000;
+}
+
+const LISBON_CLOCK = new Intl.DateTimeFormat('en-GB', {
+  timeZone: 'Europe/Lisbon', year: 'numeric', month: '2-digit', day: '2-digit',
+  hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+});
+
+// The Lisbon local date and minutes-after-midnight of an instant — read from the timezone
+// database at that very instant, so the hour around a clock change comes out right too.
+export function lisbonLocal(ms: number): { date: string; minutes: number } {
+  const p = Object.fromEntries(LISBON_CLOCK.formatToParts(new Date(ms)).map((x) => [x.type, x.value]));
+  return { date: `${p.year}-${p.month}-${p.day}`, minutes: (Number(p.hour) % 24) * 60 + Number(p.minute) };
+}
+
 // A Lisbon local clock time on a given date, as the UTC "HH:mm" the rest of the app works in.
 // The offset is read for that date, so summer and winter time both come out right.
 export function lisbonLocalToUtc(dateISO: string, localHHMM: string): string {
-  const noonLocal = toLocalTime(dateISO, '12:00', 'LIS') ?? '12:00';
-  const offset = toMinutes(noonLocal) - 12 * 60;
-  return hhmm(toMinutes(localHHMM) - offset);
+  return hhmm(toMinutes(localHHMM) - lisbonOffsetMinutes(dateISO));
 }
 
 // The window of a standby code on a date, in UTC: its start and duration. Null for a code the

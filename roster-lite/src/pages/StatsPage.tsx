@@ -41,6 +41,7 @@ export default function StatsPage() {
         <Typography variant="h6" sx={{ flexGrow: 1 }}>Estatísticas</Typography>
       </Box>
 
+
       {rows.length === 0 ? (
         <Alert severity="info">
           Sem voos no diário ainda. Importa a escala e as estatísticas aparecem aqui.

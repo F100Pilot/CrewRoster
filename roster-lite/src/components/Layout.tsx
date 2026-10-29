@@ -4,7 +4,7 @@ import {
   Toolbar, Tooltip, Typography, BottomNavigation, BottomNavigationAction,
 } from '@mui/material';
 import {
-  CalendarMonth, FormatListBulleted, CloudDownload, PictureAsPdf, Logout, HelpOutline,
+  CalendarMonth, FormatListBulleted, CloudDownload, PictureAsPdf, Logout, HelpOutline, Timer,
   Settings, MenuBook, QueryStats, Public, Badge, Search, MoreVert,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -93,6 +93,10 @@ export default function Layout({ children }: { children: ReactNode }) {
             </IconButton>
           </Tooltip>
           <Menu anchorEl={moreAnchor} open={Boolean(moreAnchor)} onClose={() => setMoreAnchor(null)}>
+            <MenuItem onClick={() => { setMoreAnchor(null); navigate('/limites'); }}>
+              <ListItemIcon><Timer fontSize="small" /></ListItemIcon>
+              <ListItemText>Limites e AE</ListItemText>
+            </MenuItem>
             <MenuItem onClick={() => { setMoreAnchor(null); navigate('/codes'); }}>
               <ListItemIcon><HelpOutline fontSize="small" /></ListItemIcon>
               <ListItemText>Legenda de códigos</ListItemText>

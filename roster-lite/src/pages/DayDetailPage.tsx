@@ -12,6 +12,8 @@ import { baseOf, dayStats } from '../domain/dutyStats';
 import { restBefore } from '../domain/restPeriods';
 import { workWindow, PGA_PILOT_RULES } from '../domain/dutyTime';
 import { fdpForDay, type FdpInfo } from '../domain/fdp';
+import { dutyTags, type DutyTag } from '../domain/aeCompliance';
+import { AE_DISCLAIMER } from '../components/AeDisclaimer';
 import { sectorSun } from '../domain/sectorSun';
 import { shareDayImage } from '../utils/shareDay';
 import type { ParsedDuty } from '../domain/types';
@@ -36,6 +38,7 @@ export default function DayDetailPage() {
     ? workWindow(date, duties, PGA_PILOT_RULES)?.span ?? stats.dutyMinutes
     : stats?.dutyMinutes;
   const fdp = pilot && duties.length ? fdpForDay(duties, rest, base) : null;
+  const tags = pilot && date ? dutyTags(date, duties) : [];
 
   // When arriving from a specific flight (e.g. the "com quem voo" list), open ON that flight and
   // highlight it; otherwise open at the top. Re-runs when stepping to another day (arrows/swipe).
@@ -110,7 +113,7 @@ export default function DayDetailPage() {
         )}
       </Box>
 
-      {(stats || fdp || (rest && rest.restMinutes !== null)) && (
+      {(stats || fdp || tags.length > 0 || (rest && rest.restMinutes !== null)) && (
         <Box display="flex" gap={1} flexWrap="wrap">
           {stats && (
             <>
@@ -121,12 +124,13 @@ export default function DayDetailPage() {
             </>
           )}
           {fdp && <FdpChip fdp={fdp} />}
+          {tags.map((t) => <TagChip key={t} tag={t} />)}
           {rest && rest.restMinutes !== null && (
             <Tooltip
               title={pilot
                 ? `Mínimo ${formatDuration(rest.requiredMinutes)} (RUPT cl. 25/34): ${rest.away ? '10h fora da base' : '12h na base'}, ` +
                   'ou a duração do serviço anterior se for maior; +2h se esse serviço tocou as 02:00–05:59 de Lisboa. ' +
-                  'Indicativo — irregularidades e a autoridade do comandante podem reduzi-lo.'
+                  `Irregularidades e a autoridade do comandante podem reduzi-lo. ${AE_DISCLAIMER}`
                 : 'Indicativo: abaixo de 12h.'}
             >
               <Chip
@@ -250,22 +254,8 @@ export default function DayDetailPage() {
                 <Box sx={{ bgcolor: 'rgba(128,128,128,0.14)', borderRadius: 2, p: 2, mb: 2 }}>
                   {(duty.departureTime || duty.arrivalTime) && (
                     <Box display="flex" justifyContent="space-around">
-                      <Box textAlign="center">
-                        <Typography variant="body2" fontWeight={600} color="primary.main">
-                          {duty.departureTime || '—'}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Início (UTC)
-                        </Typography>
-                      </Box>
-                      <Box textAlign="center">
-                        <Typography variant="body2" fontWeight={600} color="primary.main">
-                          {duty.arrivalTime || '—'}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Fim (UTC)
-                        </Typography>
-                      </Box>
+                      <SlotTime label="Início" utc={duty.departureTime} lt={toLocalTime(date, duty.departureTime, duty.departureAirport)} />
+                      <SlotTime label="Fim" utc={duty.arrivalTime} lt={toLocalTime(date, duty.arrivalTime, duty.departureAirport)} />
                     </Box>
                   )}
                   {duty.departureAirport && (
@@ -426,7 +416,7 @@ function FdpChip({ fdp }: { fdp: FdpInfo }) {
     : `Tabela da cl. 35.1 para apresentação às ${fdp.reportLocal} (Lisboa) e ${fdp.sectors} ${fdp.sectors === 1 ? 'setor' : 'setores'}.`;
   const extra = fdp.beyondTable ? ' Mais de 4 setores: o AE só planeia até 4 aterragens (cl. 15.12); usado o limite legal.' : '';
   return (
-    <Tooltip title={`PSV da apresentação aos calços do último setor. ${why}${extra} Indicativo.`}>
+    <Tooltip title={`PSV da apresentação aos calços do último setor. ${why}${extra} ${AE_DISCLAIMER}`}>
       <Chip
         size="small"
         variant={over || tight ? 'filled' : 'outlined'}
@@ -434,6 +424,46 @@ function FdpChip({ fdp }: { fdp: FdpInfo }) {
         label={`FDP ${formatDuration(fdp.planned)} / máx ${formatDuration(fdp.max)}`}
         sx={over || tight ? { color: '#fff' } : undefined}
       />
+    </Tooltip>
+  );
+}
+
+// Start or end of a ground slot (training, simulator, office, medical), read the same way as a
+// flight's times: local time of the airport first, UTC in brackets underneath — or UTC alone
+// when the airport's timezone isn't known.
+function SlotTime({ label, utc, lt }: { label: string; utc: string | null; lt: string | null }) {
+  return (
+    <Box textAlign="center">
+      <Typography variant="body2" fontWeight={600} color="primary.main">
+        {lt || utc || '—'}
+        <Typography component="span" variant="body2" fontWeight={700} color="text.secondary">
+          {lt ? ' LT' : utc ? ' z' : ''}
+        </Typography>
+      </Typography>
+      {lt && utc && (
+        <Typography variant="caption" color="text.secondary" display="block">
+          ({utc} z)
+        </Typography>
+      )}
+      <Typography variant="caption" color="text.secondary" display="block">
+        {label}
+      </Typography>
+    </Box>
+  );
+}
+
+// Early Start / Late Finish / Night Duty (RUPT def. 14, 19, 22; cl. 22.7), in base time.
+const TAG_INFO: Record<DutyTag, { label: string; why: string }> = {
+  ES: { label: 'Early Start', why: 'Apresentação entre as 05:00 e as 06:29 (hora da base).' },
+  LF: { label: 'Late Finish', why: 'Fim do serviço entre as 00:00 e as 01:59 (hora da base).' },
+  ND: { label: 'Night Duty', why: 'Serviço que toca o período das 02:00 às 04:59 (hora da base).' },
+};
+
+function TagChip({ tag }: { tag: DutyTag }) {
+  const info = TAG_INFO[tag];
+  return (
+    <Tooltip title={`${info.why} No máximo 2 seguidos e 3 entre períodos de folga (RUPT cl. 22). ${AE_DISCLAIMER}`}>
+      <Chip size="small" variant="outlined" color="secondary" label={info.label} />
     </Tooltip>
   );
 }

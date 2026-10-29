@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.18.3';
+export const APP_VERSION = '0.8.19.2';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,38 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.19.2',
+    date: '2026-10-29',
+    highlights: [
+      'O aviso do descanso semanal diz agora quando o descanso começou e qual era o limite — por exemplo, "o descanso só começa 30/10 às 16:00 (limite: 30/10 às 14:00)".',
+      'Os avisos de folgas que envolvam serviço externo (S.EXT.) ou formação lembram que, se for curso de qualificação ou de comando, as regras de folga não se aplicam (RUPT cl. 7.1). O descanso semanal aplica-se sempre, também em cursos.',
+    ],
+  },
+  {
+    version: '0.8.19.1',
+    date: '2026-10-29',
+    highlights: [
+      'A lista fica mais leve: os limites, a conformidade com o AE e o contador de férias passam para uma página própria, "Limites e AE". Na lista fica só uma linha de resumo — o valor mais perto do limite e quantos pontos do AE há a verificar, a cor de acordo — que abre essa página com um toque. Também está no menu ⋮.',
+    ],
+  },
+  {
+    version: '0.8.19',
+    date: '2026-10-29',
+    highlights: [
+      'Novo painel "Conformidade AE" (pilotos), na lista, por baixo dos limites: verifica a escala a partir deste mês contra o RUPT — folgas no mês (mínimo 10), intervalo máximo de 6 dias entre períodos de folga, folgas de 72h/96h nos meses com 10, um sábado e domingo de folga a cada 6 semanas, descanso semanal de 36h com duas noites, e Early Start / Late Finish / Night Duty (no máximo 2 seguidos e 3 entre folgas). Os problemas aparecem primeiro, com as datas.',
+      'No detalhe do dia, um chip indica quando o serviço é Early Start, Late Finish ou Night Duty.',
+      'Nas Estatísticas, o contador de férias do ano: dias de PLIC / SLIC / RLIC na escala contra os 42 do AE, e as F (em atraso) à parte.',
+      'Toda a análise do Acordo de Empresa — limites, FDP, descanso e conformidade — está marcada como experimental: pode conter erros, confirma sempre na escala oficial e no AE.',
+    ],
+  },
+  {
+    version: '0.8.18.4',
+    date: '2026-10-17',
+    highlights: [
+      'No detalhe do dia, o início e o fim das sessões em terra (formação, simulador, gabinete, serviço externo, médicas) passam a aparecer em hora local, com a hora UTC entre parênteses por baixo — como já acontece nos voos.',
+    ],
+  },
   {
     version: '0.8.18.3',
     date: '2026-10-17',

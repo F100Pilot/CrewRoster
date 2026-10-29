@@ -16,7 +16,7 @@ import UploadDropzone from '../components/UploadDropzone';
 import DutyChip from '../components/DutyChip';
 import NextDutyCard from '../components/NextDutyCard';
 import MonthStatsCard from '../components/MonthStatsCard';
-import FtlCard from '../components/FtlCard';
+import LimitsSummaryCard from '../components/LimitsSummaryCard';
 import { autoCaptureRecent } from '../domain/aircraftRegs';
 import { getAeroDataBoxKey } from '../storage/settings';
 import { checkInTimeLabel } from '../utils/localTime';
@@ -206,7 +206,8 @@ export default function RosterPage() {
 
       <MonthStatsCard duties={monthDuties} />
 
-      <FtlCard duties={roster.duties} role={activeUser?.role ?? 'pilot'} />
+      {/* Limits and the agreement checks live on their own page; one line here leads to it. */}
+      <LimitsSummaryCard duties={roster.duties} role={activeUser?.role ?? 'pilot'} />
 
       <TextField
         size="small"

@@ -156,6 +156,15 @@ function standbySlot(d: ParsedDuty): { start: string | null; minutes: number } |
   return { start: d.reportingTime ?? d.departureTime ?? known.start, minutes: known.minutes };
 }
 
+// A standby's occupied interval as real instants, or null when it can't be timed. Used where a
+// standby must be placed on the clock (the weekly-rest check), not only measured.
+export function standbyInterval(d: ParsedDuty): { start: Date; end: Date } | null {
+  const slot = standbySlot(d);
+  if (!slot?.start) return null;
+  const start = new Date(`${d.date}T${slot.start}:00Z`);
+  return { start, end: new Date(start.getTime() + slot.minutes * 60000) };
+}
+
 // The counted duty of a single day: the work window in full, plus each standby at its share.
 // A standby that ran into a call-out stops counting where the work begins (RUPT cl. 19.4: it
 // ends at the report time), so the overlap is counted once, as work. Returns null for a day with
