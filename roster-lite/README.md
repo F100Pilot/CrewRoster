@@ -74,6 +74,7 @@ confirmar no portal e descarregar a nova escala.
 - Sectores, aeroportos visitados e tipos de aeronave.
 - Top aeroportos e distribuição de frotas.
 - **Heatmap de atividade anual** (estilo GitHub) por bloco voado.
+- **Evolução mensal** — colunas de bloco ou serviço por mês (últimos 12 meses), toque para ler o valor.
 - **Pesquisa global** (lupa no topo): voos, aeroportos, rotas, colegas, datas.
 - **Partilhar o mês** como imagem (totais + rotas mais voadas).
 
@@ -85,6 +86,7 @@ confirmar no portal e descarregar a nova escala.
 ### Documentos & recência (pilotos)
 - Tracking de validade de documentos de tripulação (médico, licença, OPC/LPC,
   passaporte…) com alertas de cor (verde / amarelo / vermelho).
+- Linha de aviso na lista quando um documento expira nos próximos 60 dias (toque → Documentos).
 - Cálculo de **recência** — últimas 3 aterragens nos últimos 90 dias, com contagem
   regressiva.
 
@@ -106,7 +108,7 @@ confirmar no portal e descarregar a nova escala.
 |---|---|
 | UI | React 19 + MUI 7 + Emotion |
 | Build | Vite 7 + TypeScript 5 |
-| Testes | Vitest 3 (207 testes) |
+| Testes | Vitest 3 (375 testes) |
 | PDF parsing | pdf.js (pdfjs-dist 4) |
 | Persistência local | IndexedDB via idb 8 |
 | Datas | date-fns 4 |
@@ -174,7 +176,7 @@ antes→depois por dia alterado.
 cd roster-lite
 npm install
 npm run dev        # http://localhost:5173
-npm test           # testes unitários (Vitest) — 207 testes
+npm test           # testes unitários (Vitest) — 375 testes
 npm run typecheck  # verificação de tipos TypeScript (tsc -b)
 npm run lint       # ESLint
 npm run build      # gera dist/ (site estático)

@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.19.2';
+export const APP_VERSION = '0.8.20';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,14 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.20',
+    date: '2026-10-29',
+    highlights: [
+      'Documentos a expirar aparecem na lista: quando um documento (medical, licença, OPC…) expira nos próximos 60 dias ou já expirou, surge uma linha por cima do resumo dos limites — vermelha a 30 dias ou menos, amarela antes disso. Um toque abre os Documentos. Sem nada a expirar, a linha não aparece.',
+      'Nas Estatísticas, novo gráfico "Evolução mensal": horas de bloco ou de serviço por mês nos últimos 12 meses. Toca numa coluna para ver o valor. O serviço é contado como nos limites e só aparece nos meses com escala guardada; o mês corrente inclui o planeado.',
+    ],
+  },
   {
     version: '0.8.19.2',
     date: '2026-10-29',

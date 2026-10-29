@@ -9,6 +9,10 @@ import { loadLogbook } from '../storage/rosterStore';
 import { logbookStats } from '../domain/logbook';
 import { blockByDate, activeYears, groundActivityByDate } from '../domain/activity';
 import YearHeatmap from '../components/YearHeatmap';
+import MonthlyChart from '../components/MonthlyChart';
+import { monthlyTotals } from '../domain/monthlyTotals';
+import { dutyRulesFor } from '../domain/dutyTime';
+import { todayISO } from '../domain/rosterWindow';
 import { formatDuration } from '../utils/duration';
 import type { LogbookRow } from '../domain/types';
 
@@ -33,6 +37,11 @@ export default function StatsPage() {
   const minutesByDate = useMemo(() => blockByDate(rows), [rows]);
   const groundByDate = useMemo(() => groundActivityByDate(roster?.duties ?? []), [roster]);
   const years = useMemo(() => activeYears(rows, groundByDate.keys()), [rows, groundByDate]);
+  const role = activeUser?.role;
+  const months = useMemo(
+    () => monthlyTotals(rows, roster?.duties ?? [], dutyRulesFor(role), todayISO()),
+    [rows, roster, role],
+  );
 
   return (
     <Stack spacing={2}>
@@ -59,6 +68,8 @@ export default function StatsPage() {
               </Box>
             </CardContent>
           </Card>
+
+          <MonthlyChart months={months} />
 
           {/* Per year */}
           <Card variant="outlined">

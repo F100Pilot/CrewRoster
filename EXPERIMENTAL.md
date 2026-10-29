@@ -25,17 +25,24 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(Vazio — tudo o que estava pendente foi promovido em `0.8.19.2`.)_
+Em `0.8.20` (na exp):
+
+- **Documentos a expirar na lista** — linha por cima do resumo dos limites quando um
+  documento expira em ≤60 dias ou já expirou (vermelho ≤30, amarelo antes); toque →
+  Documentos. Só pilotos (a cabina não tem Documentos). `domain/documentAlerts.ts`,
+  `components/DocumentAlertCard.tsx`.
+- **Evolução mensal nas Estatísticas** — colunas de bloco/serviço por mês, últimos 12
+  meses, toque para ler. Serviço contado como nos limites (`dutyDays` com as regras do
+  papel); meses sem escala guardada ficam "sem escala" (traço), nunca 0.
+  `domain/monthlyTotals.ts`, `components/MonthlyChart.tsx`.
 
 ---
 
 ## TODO / Backlog (decidir mais tarde)
 
-- **Do AE SIPLA, ainda por fazer** (ver análise de 16/10/2026): verificação das folgas
-  (RUPT cl. 21: ≥10/mês, ≥111/ano, ≤6 dias entre períodos, 2×72h ou 1×96h, sáb+dom a cada
-  6 semanas), Early Start / Late Finish / Night Duty (cl. 22), estimador de per diem
-  (RRRGS cl. 9, tabela A2.2 — valores marcados "sujeito a confirmação" no documento),
-  créditos de duty-pay/block-pay vs plafonds (RRRGS cl. 2/12), contador de 42 dias de férias.
+- **Do AE SIPLA, ainda por fazer**: estimador de per diem (RRRGS cl. 9, tabela A2.2 —
+  aguarda valores confirmados / AE atualizado), créditos de duty-pay/block-pay vs plafonds
+  (RRRGS cl. 2/12), mínimo anual de 111 folgas, regime alternativo de 11 dias.
 - **Lembretes locais (notificações da PWA)** para check-in e documentos a expirar.
 - **Componente de vento cruzado** por pista. _A BD de pistas deixou de ser um bloqueio:
   a `runways.csv` do OurAirports é domínio público e bastam os ~40 aeroportos da rede,
@@ -43,4 +50,4 @@ _(Vazio — tudo o que estava pendente foi promovido em `0.8.19.2`.)_
 
 ---
 
-_Última atualização: 2026-09-20._
+_Última atualização: 2026-10-29._
