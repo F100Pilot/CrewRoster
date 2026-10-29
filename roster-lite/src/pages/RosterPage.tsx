@@ -17,6 +17,7 @@ import DutyChip from '../components/DutyChip';
 import NextDutyCard from '../components/NextDutyCard';
 import MonthStatsCard from '../components/MonthStatsCard';
 import LimitsSummaryCard from '../components/LimitsSummaryCard';
+import DocumentAlertCard from '../components/DocumentAlertCard';
 import { autoCaptureRecent } from '../domain/aircraftRegs';
 import { getAeroDataBoxKey } from '../storage/settings';
 import { checkInTimeLabel } from '../utils/localTime';
@@ -205,6 +206,10 @@ export default function RosterPage() {
       </Box>
 
       <MonthStatsCard duties={monthDuties} />
+
+      {/* Status lines: a document about to expire (only when one is — Documents is a pilot
+          page), then the limits summary. */}
+      {activeUser && activeUser.role !== 'cabin' && <DocumentAlertCard userId={activeUser.id} />}
 
       {/* Limits and the agreement checks live on their own page; one line here leads to it. */}
       <LimitsSummaryCard duties={roster.duties} role={activeUser?.role ?? 'pilot'} />

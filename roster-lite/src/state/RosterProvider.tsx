@@ -36,7 +36,9 @@ async function reparseStoredRoster(roster: Roster, userId: string): Promise<Rost
         const file = new File([p.blob], p.fileName, { type: 'application/pdf' });
         const result = await parseRosterFile(file);
         if (result.duties.length === 0) continue;
-        duties = mergeDuties(duties, result.duties); // per-day override: re-parsed dates win
+        // Per-day override: re-parsed dates win. Replaying the PDFs in download order also
+        // rebuilds the planned-vs-flown record from the history.
+        duties = mergeDuties(duties, result.duties, p.downloadedAt.slice(0, 10));
         rawText = result.rawText;
         reparsed = true;
       } catch {
@@ -258,7 +260,7 @@ export function RosterProvider({ children }: { children: ReactNode }) {
         // diff old-vs-merged to highlight what changed (only dates inside the new
         // download's window can differ, since the rest is kept verbatim).
         const previous = await loadRoster(userId);
-        const mergedDuties = mergeDuties(previous?.duties ?? [], result.duties);
+        const mergedDuties = mergeDuties(previous?.duties ?? [], result.duties, todayISO());
         const changes = previous ? diffRosters(previous.duties, mergedDuties, todayISO()) : [];
         const next: Roster = {
           id: userId,
@@ -291,7 +293,7 @@ export function RosterProvider({ children }: { children: ReactNode }) {
     const userId = activeUser.id;
     const result = await parseRosterFile(file);
     const previous = await loadRoster(userId);
-    const mergedDuties = mergeDuties(previous?.duties ?? [], result.duties);
+    const mergedDuties = mergeDuties(previous?.duties ?? [], result.duties, todayISO());
     const changes = previous ? diffRosters(previous.duties, mergedDuties, todayISO()) : [];
     const next: Roster = {
       id: userId,

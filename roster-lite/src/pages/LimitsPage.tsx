@@ -5,10 +5,13 @@ import { useRoster } from '../state/useRoster';
 import FtlCard from '../components/FtlCard';
 import AeComplianceCard from '../components/AeComplianceCard';
 import HolidayCard from '../components/HolidayCard';
+import PlanVsFlownCard from '../components/PlanVsFlownCard';
+import { baseOf } from '../domain/dutyStats';
 import { AE_DISCLAIMER } from '../components/AeDisclaimer';
 
 // Everything measured against the rules in one place, off the roster list: flight and duty
-// limits for everyone; for pilots, the company-agreement compliance checks and the holiday count.
+// limits for everyone; for pilots, the company-agreement compliance checks, planned vs flown and
+// the holiday count.
 // The AE analysis is experimental, said once at the top rather than on every card.
 export default function LimitsPage() {
   const navigate = useNavigate();
@@ -33,6 +36,7 @@ export default function LimitsPage() {
           )}
           <FtlCard duties={roster.duties} role={activeUser?.role ?? 'pilot'} />
           {pilot && <AeComplianceCard duties={roster.duties} />}
+          {pilot && <PlanVsFlownCard duties={roster.duties} base={baseOf(activeUser)} />}
           {pilot && <HolidayCard duties={roster.duties} />}
         </>
       )}

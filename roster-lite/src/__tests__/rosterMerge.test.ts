@@ -49,3 +49,47 @@ describe('mergeDuties', () => {
     expect(mergeDuties(previous, [])).toEqual(previous);
   });
 });
+
+describe('mergeDuties — planned vs flown', () => {
+  const leg = (date: string, off: string, on: string, extra: Partial<ParsedDuty> = {}): ParsedDuty => ({
+    ...duty(date, 'FLT', 'TP1940'),
+    departureAirport: 'LIS', arrivalAirport: 'OPO', departureTime: off, arrivalTime: on, reportingTime: '06:15',
+    ...extra,
+  });
+
+  it('keeps the plan when a sync after the day brings the flown times', () => {
+    const planned = mergeDuties([], [leg('2026-10-10', '07:00', '08:00')], '2026-10-01');
+    expect(planned[0].planned).toBeUndefined();
+    expect(planned[0].settled).toBeUndefined();
+    const flown = mergeDuties(planned, [leg('2026-10-10', '07:25', '08:30')], '2026-10-12');
+    expect(flown[0]).toMatchObject({ departureTime: '07:25', settled: true });
+    expect(flown[0].planned).toEqual({ reportingTime: '06:15', departureTime: '07:00', arrivalTime: '08:00' });
+  });
+
+  it('keeps the first plan across later syncs, and never takes flown times for a plan', () => {
+    const a = mergeDuties([], [leg('2026-10-10', '07:00', '08:00')], '2026-10-01');
+    const b = mergeDuties(a, [leg('2026-10-10', '07:25', '08:30')], '2026-10-12');
+    const c = mergeDuties(b, [leg('2026-10-10', '07:26', '08:31')], '2026-10-20');
+    expect(c[0].planned?.departureTime).toBe('07:00');
+    // First seen only after the day: nothing to compare with.
+    const late = mergeDuties([], [leg('2026-10-10', '07:25', '08:30')], '2026-10-12');
+    const later = mergeDuties(late, [leg('2026-10-10', '07:26', '08:31')], '2026-10-20');
+    expect(later[0].planned).toBeUndefined();
+  });
+
+  it('on the day itself takes the plan from the earlier version, without settling it', () => {
+    const a = mergeDuties([], [leg('2026-10-10', '07:00', '08:00')], '2026-10-09');
+    const b = mergeDuties(a, [leg('2026-10-10', '07:25', '08:30')], '2026-10-10');
+    expect(b[0].planned?.departureTime).toBe('07:00');
+    expect(b[0].settled).toBeUndefined();
+    const c = mergeDuties(b, [leg('2026-10-10', '07:25', '08:30')], '2026-10-11');
+    expect(c[0]).toMatchObject({ settled: true, planned: { departureTime: '07:00' } });
+  });
+
+  it('records nothing when the flight went as planned or the day is still ahead', () => {
+    const a = mergeDuties([], [leg('2026-10-10', '07:00', '08:00')], '2026-10-01');
+    expect(mergeDuties(a, [leg('2026-10-10', '07:00', '08:00')], '2026-10-12')[0].planned).toBeUndefined();
+    // A change to a future day is a roster change, not a delay.
+    expect(mergeDuties(a, [leg('2026-10-10', '09:00', '10:00')], '2026-10-05')[0].planned).toBeUndefined();
+  });
+});

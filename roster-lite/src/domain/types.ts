@@ -22,6 +22,20 @@ export interface ParsedDuty {
    * read — a possible missing flight). Confirm against the official roster.
    */
   dayWarning?: string;
+  /**
+   * The times this sector was planned with, kept when a sync after the day replaced them with
+   * the flown ones (CrewLink reports past days with their actual times). Only set when they
+   * differ. See `mergeDuties`.
+   */
+  planned?: PlannedTimes;
+  /** Imported after its day had passed: the times are the flown ones, not a plan. */
+  settled?: boolean;
+}
+
+export interface PlannedTimes {
+  reportingTime: string | null;
+  departureTime: string | null;
+  arrivalTime: string | null;
 }
 
 // One crew member on a leg, from the PDF "Crew Information on Leg" section.

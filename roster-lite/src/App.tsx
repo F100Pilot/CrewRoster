@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { todayISO } from './domain/rosterWindow';
 import { Box, Button, CircularProgress, Stack, Typography } from '@mui/material';
 import { ErrorOutline, Refresh } from '@mui/icons-material';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -99,6 +100,8 @@ function AppRoutes() {
           <Route path="/debug" element={<DebugPage />} />
           <Route path="/codes" element={<CodesPage />} />
           <Route path="/limites" element={<LimitsPage />} />
+          {/* Today's day, as a stable link — the target of the app shortcut "Hoje". */}
+          <Route path="/hoje" element={<Navigate to={`/day/${todayISO()}`} replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>

@@ -13,6 +13,7 @@ import { restBefore } from '../domain/restPeriods';
 import { workWindow, PGA_PILOT_RULES } from '../domain/dutyTime';
 import { fdpForDay, type FdpInfo } from '../domain/fdp';
 import { dutyTags, type DutyTag } from '../domain/aeCompliance';
+import { LATE_MINUTES } from '../domain/planVsFlown';
 import { AE_DISCLAIMER } from '../components/AeDisclaimer';
 import { sectorSun } from '../domain/sectorSun';
 import { shareDayImage } from '../utils/shareDay';
@@ -221,6 +222,7 @@ export default function DayDetailPage() {
                       .join(' · ')}
                   </Typography>
                 )}
+                <PlannedLine duty={duty} date={date} />
                 <SunNightLine
                   duty={duty}
                   date={date}
@@ -465,6 +467,28 @@ function TagChip({ tag }: { tag: DutyTag }) {
     <Tooltip title={`${info.why} No máximo 2 seguidos e 3 entre períodos de folga (RUPT cl. 22). ${AE_DISCLAIMER}`}>
       <Chip size="small" variant="outlined" color="secondary" label={info.label} />
     </Tooltip>
+  );
+}
+
+// The plan a flown sector replaced (kept when the roster was synced after the day), so the day
+// reads "planned 08:00 → 09:00, arrived +25". Nothing when it went as planned.
+function PlannedLine({ duty, date }: { duty: ParsedDuty; date: string | undefined }) {
+  const p = duty.planned;
+  if (!p?.departureTime || !p.arrivalTime || !duty.arrivalTime) return null;
+  if (p.departureTime === duty.departureTime && p.arrivalTime === duty.arrivalTime) return null;
+  const offLt = date ? toLocalTime(date, p.departureTime, duty.departureAirport) : null;
+  const onLt = date ? toLocalTime(date, p.arrivalTime, duty.arrivalAirport) : null;
+  const delta = ((diffMinutes(p.arrivalTime, duty.arrivalTime) + 720) % 1440) - 720;
+  const late = delta >= LATE_MINUTES;
+  return (
+    <Typography variant="caption" color="text.secondary" display="block" textAlign="center" mt={0.25}>
+      Planeado {offLt && onLt ? `${offLt} → ${onLt} LT` : `${p.departureTime} → ${p.arrivalTime} z`}
+      {delta !== 0 && (
+        <Box component="span" fontWeight={700} color={late ? 'warning.main' : 'text.secondary'}>
+          {' · chegada '}{delta > 0 ? '+' : '−'}{formatDuration(Math.abs(delta))}
+        </Box>
+      )}
+    </Typography>
   );
 }
 

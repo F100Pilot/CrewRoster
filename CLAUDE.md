@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (207 tests) — keep green
+npm test           # vitest run (384 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -144,6 +144,11 @@ Things learned over this collaboration that should persist across sessions:
 - **PLIC / SLIC / RLIC are holiday types** (calendar days); F = carried-over holidays (working
   days). Per-diem values in the RRRGS are marked "sujeito a confirmação" — the user will send
   confirmed values / an updated AE; don't build the per-diem estimator on them until then.
+- **Planned vs flown** (since 0.8.21): CrewLink reports past days with the times actually flown.
+  `mergeDuties(prev, incoming, asOfISO)` keeps the last pre-day version of each sector in
+  `ParsedDuty.planned` and marks past-day imports `settled` (so flown times are never taken for a
+  plan). The reparse replays saved PDFs in download order with their dates, rebuilding history.
+  `domain/planVsFlown.ts` derives delays, extra FDP, commander's extensions and reduced rests.
 - **Backlog:** the rest of the AE items (folgas check, ES/LF/ND, per diem, duty-pay/block-pay
   credits, holiday counter), PWA local reminders, crosswind (runway DB). See `EXPERIMENTAL.md`
   (TODO/Backlog) and `roster-lite/TODO.md`.
