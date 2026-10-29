@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
-import { Box, Card, CardContent, Tooltip, Typography } from '@mui/material';
+import { Box, Card, CardContent, Typography } from '@mui/material';
 import { CheckCircle, FactCheck, WarningAmber } from '@mui/icons-material';
 import { aeCompliance, type ComplianceCheck } from '../domain/aeCompliance';
-import AeDisclaimer, { ExperimentalChip } from './AeDisclaimer';
+import { ExperimentalChip } from './AeDisclaimer';
 import type { ParsedDuty } from '../domain/types';
 
 const ORDER: Record<ComplianceCheck['status'], number> = { warn: 0, ok: 1, na: 2 };
@@ -35,19 +35,20 @@ export default function AeComplianceCard({ duties }: { duties: ParsedDuty[] }) {
 
         <Box display="flex" flexDirection="column" gap={0.75}>
           {judged.map((c) => (
-            <Tooltip key={c.id} title={c.clause} placement="top-start">
-              <Box display="flex" gap={1} alignItems="flex-start">
+            <Box key={c.id} display="flex" gap={1} alignItems="flex-start">
                 {c.status === 'warn'
                   ? <WarningAmber fontSize="small" color="warning" sx={{ mt: '1px' }} />
                   : <CheckCircle fontSize="small" color="success" sx={{ mt: '1px' }} />}
                 <Box minWidth={0}>
-                  <Typography variant="body2" fontWeight={600} lineHeight={1.3}>{c.label}</Typography>
+                  <Typography variant="body2" fontWeight={600} lineHeight={1.3}>
+                    {c.label}
+                    <Typography component="span" variant="caption" color="text.disabled" fontWeight={400}> · {c.clause}</Typography>
+                  </Typography>
                   <Typography variant="caption" color="text.secondary" display="block" lineHeight={1.35}>
                     {c.detail}
                   </Typography>
                 </Box>
-              </Box>
-            </Tooltip>
+            </Box>
           ))}
           {pending.length > 0 && (
             <Typography variant="caption" color="text.disabled">
@@ -55,8 +56,6 @@ export default function AeComplianceCard({ duties }: { duties: ParsedDuty[] }) {
             </Typography>
           )}
         </Box>
-
-        <AeDisclaimer />
       </CardContent>
     </Card>
   );

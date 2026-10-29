@@ -49,16 +49,25 @@ export function lisbonOffsetMinutes(dateISO: string): number {
   return toMinutes(noonLocal) - 12 * 60;
 }
 
-// The instant of local midnight in Lisbon at the start of a date, as epoch milliseconds.
+// The instant of local midnight in Lisbon at the start of a date, as epoch milliseconds. The
+// clocks change at 01:00 UTC, after midnight, so midnight still runs on the PREVIOUS day's offset
+// — on the last Sunday of October local midnight is 23:00 UTC the day before.
 export function lisbonMidnightUtc(dateISO: string): number {
-  return new Date(`${dateISO}T00:00:00Z`).getTime() - lisbonOffsetMinutes(dateISO) * 60000;
+  const prev = new Date(`${dateISO}T00:00:00Z`);
+  prev.setUTCDate(prev.getUTCDate() - 1);
+  return new Date(`${dateISO}T00:00:00Z`).getTime() - lisbonOffsetMinutes(prev.toISOString().slice(0, 10)) * 60000;
 }
 
-// The Lisbon local date and minutes-after-midnight of an instant.
+const LISBON_CLOCK = new Intl.DateTimeFormat('en-GB', {
+  timeZone: 'Europe/Lisbon', year: 'numeric', month: '2-digit', day: '2-digit',
+  hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+});
+
+// The Lisbon local date and minutes-after-midnight of an instant — read from the timezone
+// database at that very instant, so the hour around a clock change comes out right too.
 export function lisbonLocal(ms: number): { date: string; minutes: number } {
-  const utcDate = new Date(ms).toISOString().slice(0, 10);
-  const local = new Date(ms + lisbonOffsetMinutes(utcDate) * 60000);
-  return { date: local.toISOString().slice(0, 10), minutes: local.getUTCHours() * 60 + local.getUTCMinutes() };
+  const p = Object.fromEntries(LISBON_CLOCK.formatToParts(new Date(ms)).map((x) => [x.type, x.value]));
+  return { date: `${p.year}-${p.month}-${p.day}`, minutes: (Number(p.hour) % 24) * 60 + Number(p.minute) };
 }
 
 // A Lisbon local clock time on a given date, as the UTC "HH:mm" the rest of the app works in.

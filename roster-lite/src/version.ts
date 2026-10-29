@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.19';
+export const APP_VERSION = '0.8.19.1';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,13 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.19.1',
+    date: '2026-10-29',
+    highlights: [
+      'A lista fica mais leve: os limites, a conformidade com o AE e o contador de férias passam para uma página própria, "Limites e AE". Na lista fica só uma linha de resumo — o valor mais perto do limite e quantos pontos do AE há a verificar, a cor de acordo — que abre essa página com um toque. Também está no menu ⋮.',
+    ],
+  },
   {
     version: '0.8.19',
     date: '2026-10-29',

@@ -26,6 +26,7 @@ const SavedPdfsPage = lazy(() => import('./pages/SavedPdfsPage'));
 const PdfViewerPage = lazy(() => import('./pages/PdfViewerPage'));
 const CrewSearchPage = lazy(() => import('./pages/CrewSearchPage'));
 const SearchPage = lazy(() => import('./pages/SearchPage'));
+const LimitsPage = lazy(() => import('./pages/LimitsPage'));
 
 function RouteFallback() {
   return (
@@ -97,6 +98,7 @@ function AppRoutes() {
           <Route path="/documents" element={<DocumentsPage />} />
           <Route path="/debug" element={<DebugPage />} />
           <Route path="/codes" element={<CodesPage />} />
+          <Route path="/limites" element={<LimitsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>

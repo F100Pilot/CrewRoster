@@ -50,6 +50,19 @@ produção, em vez de promover uma a uma.
   folga isolado não é "período de folga" (def. 27, ≥48h); não se modelam o regime alternativo
   de 11 dias (21.5) nem as exceções por irregularidade.
 
+### `0.8.19.1` — página "Limites e AE"
+
+- Os cartões **Limites**, **Conformidade AE** e **Férias** saem da lista e das Estatísticas para
+  uma página própria, **`/limites` — "Limites e AE"** (pilotos; "Limites" para cabina), com o
+  aviso experimental uma vez no topo. Acesso pela linha de resumo na lista e pelo menu ⋮.
+- **Linha de resumo** na lista (`LimitsSummaryCard`): o valor mais perto do limite + nº de pontos
+  do AE a verificar; barra lateral verde / laranja / vermelha. Mesmos números da página
+  (`src/domain/limitRows.ts`, partilhado).
+- Cláusula de cada verificação passa a aparecer na própria linha (no telemóvel não há hover).
+- Correção: hora de Lisboa nos dias de mudança de hora (meia-noite local e a hora repetida).
+- Por confirmar com o utilizador: o aviso de descanso semanal 25–30/10 na escala real vem de 6
+  dias seguidos de S.EXT. (fim às 16:00 do 6.º dia, depois das 14:00 da cl. 15.2).
+
 ---
 
 ## TODO / Backlog (decidir mais tarde)
