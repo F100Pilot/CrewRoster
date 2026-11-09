@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (399 tests) — keep green
+npm test           # vitest run (402 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -129,6 +129,10 @@ Things learned over this collaboration that should persist across sessions:
 - **When a fix "doesn't appear,"** suspect a stale stored roster (crew is baked at
   import time) or a stale PWA build before assuming a parser bug — re-import / hard
   refresh first.
+- **"Works on exp, not in production" with identical code = different stored data**, usually because the
+  installed app and the exp page run in different browsers (separate storage). Seen with the pay
+  estimate: a stale September roster without instructor marks. Fix: re-import the PDF there, or
+  Backup → Exportar on one side and Importar on the other.
 - **Company agreement (AE Portugália/SIPLA 2023) is the source for PILOT limits** (since 0.8.18):
   RUPT cl. 30–31 (flight/duty limits), cl. 19.7/20.4 (standby 25% home / 50% airport / R24 0%),
   cl. 25/34 (rest), cl. 35 (FDP table, Lisbon reference). Cabin crew stay on EASA (SIPLA covers
@@ -180,6 +184,13 @@ Things learned over this collaboration that should persist across sessions:
   is automatic: `unionBaseAuto()` = all fixed pay minus the command lines "Anuid. técnica Comando"
   (`veCommand`, part of VE) and "Prémio de chefia" (`chiefBonus`, part of extras) — matched a real
   payslip to the cent (user wants it automatic); a typed `unionBase` still overrides, under Avançado.
+- **Holiday / Christmas subsidies** (since 0.8.27): each = RB (VB+VE+VS) — RRRGS cl. 7/8. Christmas on the
+  **November** payslip (user: PGA pays it with the end-of-November pay, though the AE says "até 15 de
+  dezembro"); holiday subsidy on the payslip of the month before the first holidays of ≥ 10 working days
+  (`autoHolidayPayMonth()` from the roster's Vacation runs), with a tick box on the pay card to confirm /
+  correct it (`holidayPay: {year, month}`, month 0 = not this year). IRS
+  withheld apart per subsidy (CIRS art. 99.º-C), SS 11%, pension 14×/year (cl. 16.2). Union fee on
+  subsidies not applied — to confirm against a June/December payslip.
 - **Settings are tabbed** (since 0.8.24): Perfil · Vencimento (pilots only) · App · Dados · Ajuda in
   `SettingsDialog.tsx`; last tab in localStorage `crewroster.settingsTab`. Guardar only on Perfil/App
   (the rest saves on change). New settings go in the tab for their subject, not at the bottom.

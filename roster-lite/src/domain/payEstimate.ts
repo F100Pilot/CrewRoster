@@ -67,6 +67,10 @@ export interface PaySettings {
   pensionAuto: boolean; // compute the pension-plan lines from the RB (RRRGS cl. 16)
   unionPct: number; // union fee, % of the base below; 0 = typed into fixedDeductions instead
   unionBase: number; // € the fee is a percentage of; 0 = automatic (unionBaseAuto)
+  // The pilot's own word on which payslip carries the holiday subsidy, ticked on the pay card:
+  // { year, month } (1–12), or month 0 for "not in any month I've seen". null, or another year,
+  // = automatic from the roster (the month before the first holidays of 10+ working days, cl. 7.3).
+  holidayPay: { year: number; month: number } | null;
 }
 
 export const DEFAULT_PAY_SETTINGS: PaySettings = {
@@ -80,6 +84,7 @@ export const DEFAULT_PAY_SETTINGS: PaySettings = {
   perDiemExemptIrs: 88, perDiemExemptSs: 140,
   pensionAuto: false,
   unionPct: 0, unionBase: 0,
+  holidayPay: null,
 };
 
 // The union fee's base, worked out from a real commander's payslip (the same 1% in two months):
@@ -194,6 +199,11 @@ export interface PayEstimate {
   instructorValue: number;
   lineTrainingDays: number;
   lineTrainingValue: number;
+  // Paid in this payslip on top of the month's pay (RRRGS cl. 7 and 8): each one RB.
+  holidaySubsidy: number;
+  christmasSubsidy: number;
+  holidayPayMonth: number | null; // the payslip month that carries the holiday subsidy, if known
+  holidayPayAuto: boolean; // that month comes from the roster, not from the pilot's tick
   holidayDays: number; // days of holidays taken, which cut the plafonds
   variable: number; // everything above the RB, paid the month after
   includesPlanned: boolean; // the month isn't over yet
@@ -214,6 +224,46 @@ const FLYING = new Set(['Flight Duty', 'Positioning', 'Simulator']);
 // Ground duties that earn per diem B (cl. 9.1.b).
 const GROUND_B = new Set(['Training', 'Office Duty', 'Medical']);
 const isHoliday = (d: ParsedDuty) => d.dutyType === 'Vacation';
+export const CHRISTMAS_PAY_MONTH = 11; // paid with the November pay (user, from PGA payslips)
+const nextMonth = (month: string) => {
+  const [y, m] = month.split('-').map(Number);
+  return m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, '0')}`;
+};
+
+// RRRGS cl. 7.3: the holiday subsidy is paid in one go, with the pay of the month before the
+// first holidays of ten working days or more. Found from the roster's runs of holiday days in
+// `year` (weekends and national holidays inside a run don't count as working days). 0 when the
+// roster doesn't show such a run — the pilot can set the month by hand.
+export function autoHolidayPayMonth(duties: ParsedDuty[], year: number): number {
+  const off = new Set(nationalHolidays(year));
+  const dates = [...new Set(duties.filter((d) => isHoliday(d) && d.date.startsWith(`${year}-`)).map((d) => d.date))].sort();
+  let start: string | null = null;
+  let prev: string | null = null;
+  let working = 0;
+  const isWorking = (iso: string) => {
+    const wd = new Date(`${iso}T12:00:00Z`).getUTCDay();
+    return wd !== 0 && wd !== 6 && !off.has(iso);
+  };
+  // A run carries on over days off that aren't working days (a weekend left as a day off).
+  const joins = (from: string, to: string) => {
+    for (let d = nextDate(from); d < to; d = nextDate(d)) if (isWorking(d)) return false;
+    return true;
+  };
+  for (const iso of [...dates, '']) {
+    if (iso && prev && joins(prev, iso)) {
+      if (isWorking(iso)) working++;
+    } else {
+      if (start && working >= 10) {
+        const m = Number(start.slice(5, 7));
+        return m === 1 ? 0 : m - 1; // a run from January would be paid in the previous year's December
+      }
+      start = iso || null;
+      working = iso && isWorking(iso) ? 1 : 0;
+    }
+    prev = iso || prev;
+  }
+  return 0;
+}
 
 function byDate(duties: ParsedDuty[]): Map<string, ParsedDuty[]> {
   const m = new Map<string, ParsedDuty[]>();
@@ -362,6 +412,20 @@ export function payEstimate(
 
   const pension = pensionLines(s);
   const rb = s.vb + s.ve + s.vs + s.extras + pension.contribution;
+  // ── Subsidies (RRRGS cl. 7 and 8), each one RB (VB + VE + VS), on the payslip this estimate is
+  // paid in (the month after the work). Christmas: the AE says "até 15 de dezembro"; the PGA pays
+  // it with the November pay, received at the end of November. Holidays: with the pay of the
+  // month before the first holidays of 10 working days or more — from the roster, unless the
+  // pilot ticked the month on the card.
+  const paidIn = nextMonth(month);
+  const paidYear = Number(paidIn.slice(0, 4));
+  const paidMonth = Number(paidIn.slice(5, 7));
+  const subsidyRb = cents(s.vb + s.ve + s.vs);
+  const ticked = s.holidayPay && s.holidayPay.year === paidYear ? s.holidayPay.month : null;
+  const holidayPayMonth = ticked ?? autoHolidayPayMonth(duties, paidYear);
+  const holidaySubsidy = holidayPayMonth === paidMonth ? subsidyRb : 0;
+  const christmasSubsidy = paidMonth === CHRISTMAS_PAY_MONTH ? subsidyRb : 0;
+
   const variable = overtimeVal + perDiemValue + complementValue + extensionValue + reductionValue + instructorValue + lineTrainingValue;
   const lastDay = `${month}-${String(daysInMonth(month)).padStart(2, '0')}`;
   return {
@@ -389,6 +453,10 @@ export function payEstimate(
     instructorValue,
     lineTrainingDays,
     lineTrainingValue,
+    holidaySubsidy,
+    christmasSubsidy,
+    holidayPayMonth: holidayPayMonth || null,
+    holidayPayAuto: ticked === null,
     holidayDays,
     variable,
     includesPlanned: todayISO < lastDay,
@@ -405,6 +473,9 @@ export interface NetEstimate {
   pensionDeposit: number;
   union: number;
   fixedDeductions: number;
+  // The subsidies' own withholding: by law (CIRS art. 99.º-C) they are taxed apart from the
+  // month's pay, each one on its own through the same table.
+  subsidyIrs: number;
   net: number;
 }
 
@@ -422,11 +493,21 @@ export function netEstimate(r: PayEstimate, s: PaySettings): NetEstimate {
   const irsBase = fixedTaxable + variableTaxed + travelTaxable(s.perDiemExemptIrs);
   const ssBase = fixedTaxable + variableTaxed + travelTaxable(s.perDiemExemptSs);
   const irs = irsRetention(irsBase, s.irsTable || 'I', s.dependents || 0);
-  const ss = Math.round(ssBase * SS_RATE * 100) / 100;
+  // Subsidies: SS like any pay, IRS withheld apart for each one, and the pension plan applies to
+  // them too (it "incide 14 vezes por ano", RRRGS cl. 16.2) — the PGA's 6,5% as a non-taxable
+  // abono, the 7,5% deposit taken off.
+  const subsidies = [r.holidaySubsidy, r.christmasSubsidy].filter((v) => v > 0);
+  const subsidyTotal = subsidies.reduce((a, v) => a + v, 0);
+  const subsidyIrs = subsidies.reduce((a, v) => a + irsRetention(v, s.irsTable || 'I', s.dependents || 0), 0);
+  const subsidyPension = { contribution: pension.contribution * subsidies.length, deposit: pension.deposit * subsidies.length };
+  const ss = Math.round((ssBase + subsidyTotal) * SS_RATE * 100) / 100;
   const fixedDeductions = s.fixedDeductions || 0;
   const union = unionFee(s);
+  const pensionDeposit = cents(pension.deposit + subsidyPension.deposit);
+  const grossAll = gross + subsidyTotal + subsidyPension.contribution;
   return {
-    gross, irsBase, irs, irsRate: irsBase > 0 ? irs / irsBase : 0, ssBase, ss, pensionDeposit: pension.deposit, union, fixedDeductions,
-    net: gross - irs - ss - pension.deposit - union - fixedDeductions,
+    gross: grossAll, irsBase, irs, irsRate: irsBase > 0 ? irs / irsBase : 0, ssBase, ss, pensionDeposit, union, fixedDeductions,
+    subsidyIrs,
+    net: grossAll - irs - subsidyIrs - ss - pensionDeposit - union - fixedDeductions,
   };
 }
