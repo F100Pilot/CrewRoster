@@ -23,6 +23,9 @@ import { getAeroDataBoxKey } from '../storage/settings';
 import { checkInTimeLabel } from '../utils/localTime';
 import type { ParsedDuty, ChangeType } from '../domain/types';
 
+// Wide enough for the widest "EEE, dd MMM" (e.g. "Wed, 28 Sep") in bold.
+const DATE_COLUMN = '6.6em';
+
 const CHANGE_STYLE: Record<ChangeType, { color: string; label: string }> = {
   added: { color: '#2e7d32', label: 'Novo' },
   modified: { color: '#ed6c02', label: 'Alterado' },
@@ -279,7 +282,12 @@ export default function RosterPage() {
           <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
             <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
               <Box display="flex" alignItems="center" gap={1}>
-                <Typography variant="subtitle2" fontWeight={isToday ? 700 : 600} color={isToday ? 'primary.main' : 'text.primary'}>
+                {/* A fixed-width date column, so the labels after it (Hoje, Novo, …) line up from
+                    one card to the next whatever the weekday and month names measure. */}
+                <Typography
+                  variant="subtitle2" fontWeight={isToday ? 700 : 600} color={isToday ? 'primary.main' : 'text.primary'}
+                  sx={{ minWidth: DATE_COLUMN, flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}
+                >
                   {format(parseISO(date), 'EEE, dd MMM')}
                 </Typography>
                 {isToday && (

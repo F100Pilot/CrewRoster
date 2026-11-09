@@ -35,6 +35,11 @@ Em `0.8.22` (na exp):
   `domain/holidaysPT.ts`, `components/PayEstimateCard.tsx`, `components/PaySettingsSection.tsx`.
   Por validar contra um recibo real.
 
+Em `0.8.22.1` (na exp):
+
+- **Etiquetas alinhadas na lista** — a data de cada dia tem largura fixa (`DATE_COLUMN` em
+  `RosterPage.tsx`), por isso Hoje / Novo / Alterado / ⚠ verificar começam todas na mesma coluna.
+
 ---
 
 ## TODO / Backlog (decidir mais tarde)
