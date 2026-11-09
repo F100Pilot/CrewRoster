@@ -92,6 +92,7 @@ Em `0.8.24` (na exp):
 - **Definições em abas** — Perfil · Vencimento (só pilotos) · App · Dados · Ajuda (`SettingsDialog.tsx`,
   última aba em `crewroster.settingsTab`). Vencimento com segmentos Valores / Descontos e um "Avançado ·
   isenções" fechado. "Guardar" só aparece em Perfil e App (o resto grava ao mudar).
+- `0.8.24.1`: AE (SIPLA) só para pilotos — confirmado em todas as vistas; menu "Limites" sem "AE" para cabina.
 
 ---
 

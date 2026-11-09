@@ -135,6 +135,9 @@ Things learned over this collaboration that should persist across sessions:
   pilots only). The AE text is NOT in the repo — only values, each with its clause in a comment.
   Standby code windows (H509, H7+… pilots; A1…A8 cabin) come from the DOV notice of Feb 2025
   (`src/domain/standbyWindows.ts`). A/H codes are home standby (H = pilots, A = cabin).
+- **Every AE calculation is pilots-only (SIPLA)** — user rule. Limits/compliance/rest minima/FDP/
+  ES-LF-ND/holidays/planned-vs-flown/pay are gated on `role !== 'cabin'`; cabin crew get EASA only and
+  no "AE" wording. Any new AE feature must be gated the same way.
 - **Pilot base is a per-profile setting** (Settings → Base: Lisboa/Porto, `UserProfile.base`,
   default LIS; `baseOf()` in `dutyStats.ts`). Never hardcode LIS for at-base/away logic.
 - **S.EXT. = any external duty** (course, meeting, …) → Office Duty, timed. RUPT cl. 7.1 waives the

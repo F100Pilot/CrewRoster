@@ -95,7 +95,8 @@ export default function Layout({ children }: { children: ReactNode }) {
           <Menu anchorEl={moreAnchor} open={Boolean(moreAnchor)} onClose={() => setMoreAnchor(null)}>
             <MenuItem onClick={() => { setMoreAnchor(null); navigate('/limites'); }}>
               <ListItemIcon><Timer fontSize="small" /></ListItemIcon>
-              <ListItemText>Limites e AE</ListItemText>
+              {/* The AE (SIPLA) is the pilots' agreement — cabin crew only see the EASA limits there. */}
+              <ListItemText>{activeUser?.role === 'cabin' ? 'Limites' : 'Limites e AE'}</ListItemText>
             </MenuItem>
             <MenuItem onClick={() => { setMoreAnchor(null); navigate('/codes'); }}>
               <ListItemIcon><HelpOutline fontSize="small" /></ListItemIcon>
