@@ -76,6 +76,13 @@ Em `0.8.22.7` (na exp):
 - **Definições do vencimento mais claras** — nomes exatos das linhas do recibo em VE / VS / outros
   fixos, e o total da parte fixa para conferir (faltava a anuidade de Comando e as diuturnidades).
 
+Em `0.8.23` (na exp):
+
+- **Líquido na estimativa de vencimento** — IRS pelas tabelas de retenção 2026 (continente, tabelas
+  I–III, `domain/irsWithholding.ts`), SS 11%, descontos fixos; per diem dos dias fora com parte isenta
+  (média de dois recibos reais), dos dias na base tributado. Novos campos em Definições → Descontos.
+  Recibos de setembro e outubro reproduzidos a poucos euros.
+
 ---
 
 ## TODO / Backlog (decidir mais tarde)

@@ -86,6 +86,7 @@ confirmar no portal e descarregar a nova escala.
 - Desligada por omissão; liga-se em Definições, com o VB, VE e VS do próprio recibo (guardados só no dispositivo).
 - Bruto estimado pelo RRRGS: RB + horas acima dos plafonds (duty-pay/block-pay, 3% / 6% do VB por hora),
   per diem A/B, prestação complementar, extensões do comandante e descansos reduzidos; noturno e feriados nacionais.
+- Líquido: IRS pelas tabelas de retenção de 2026 (continente), Segurança Social 11% e descontos fixos.
 - **Pesquisa global** (lupa no topo): voos, aeroportos, rotas, colegas, datas.
 - **Partilhar o mês** como imagem (totais + rotas mais voadas).
 
@@ -119,7 +120,7 @@ confirmar no portal e descarregar a nova escala.
 |---|---|
 | UI | React 19 + MUI 7 + Emotion |
 | Build | Vite 7 + TypeScript 5 |
-| Testes | Vitest 3 (393 testes) |
+| Testes | Vitest 3 (397 testes) |
 | PDF parsing | pdf.js (pdfjs-dist 4) |
 | Persistência local | IndexedDB via idb 8 |
 | Datas | date-fns 4 |
@@ -187,7 +188,7 @@ antes→depois por dia alterado.
 cd roster-lite
 npm install
 npm run dev        # http://localhost:5173
-npm test           # testes unitários (Vitest) — 393 testes
+npm test           # testes unitários (Vitest) — 397 testes
 npm run typecheck  # verificação de tipos TypeScript (tsc -b)
 npm run lint       # ESLint
 npm run build      # gera dist/ (site estático)

@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (393 tests) — keep green
+npm test           # vitest run (397 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -166,6 +166,12 @@ Things learned over this collaboration that should persist across sessions:
   with a flight marked LIFUS_INS or FAM_INS (mark in its own sub-column just left of its leg; the
   parser attaches it to the nearest flight sub-column on its right), paid once per day. Variable items
   paid the month after.
+- **Net pay** (since 0.8.23): `domain/irsWithholding.ts` holds the 2026 mainland withholding tables
+  I–III (Despacho 233-A/2026; replace yearly); `netEstimate()` = gross − IRS (on the month's whole
+  taxable pay, floor to €) − SS 11% − fixed deductions. Non-taxable: the pilot's `nonTaxableFixed`
+  (PGA pension contribution) and the exempt per diem of days away (`perDiemExemptIrs/Ss` per day,
+  default = average of two real payslips); per diem for days at base ("… T") is taxed in full.
+  Verified to within a few euros on two real payslips.
 - **Backlog:** the rest of the AE items (folgas check, ES/LF/ND, per diem, duty-pay/block-pay
   credits, holiday counter), PWA local reminders, crosswind (runway DB). See `EXPERIMENTAL.md`
   (TODO/Backlog) and `roster-lite/TODO.md`.
