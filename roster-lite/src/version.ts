@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.21';
+export const APP_VERSION = '0.8.22';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,13 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.22',
+    date: '2026-11-09',
+    highlights: [
+      'Estimativa de vencimento (experimental, pilotos): liga-a em Definições → Estimativa de vencimento e mete o teu VB, VE e VS do recibo. Os valores ficam só no teu telemóvel. Em "Limites e AE" aparece o bruto estimado do recibo do mês seguinte: a base, as horas acima dos plafonds (duty-pay ou block-pay, o que pagar mais, a 3% / 6% do VB por hora), o per diem A/B, a prestação complementar, as extensões do comandante e os descansos reduzidos, pelas regras do RRRGS. Conta o noturno (23h–06h, +25%) e os feriados nacionais (+100%). É uma estimativa: confirma sempre no recibo.',
+    ],
+  },
   {
     version: '0.8.21',
     date: '2026-10-29',

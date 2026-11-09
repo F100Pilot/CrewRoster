@@ -23,6 +23,7 @@ import { startTour } from '../tour';
 import { useRoster } from '../state/useRoster';
 import { baseOf } from '../domain/dutyStats';
 import type { CrewBase } from '../domain/types';
+import PaySettingsSection from './PaySettingsSection';
 import {
   downloadBackup, readBackupFile, restoreBackup, BackupError, type BackupSummary,
 } from '../storage/backup';
@@ -320,6 +321,13 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
               <ToggleButton value="COPILOT">Oficial Piloto</ToggleButton>
             </ToggleButtonGroup>
           </Box>
+
+          {activeUser && activeUser.role !== 'cabin' && (
+            <>
+              <Divider />
+              <PaySettingsSection userId={activeUser.id} />
+            </>
+          )}
 
           <Divider />
 

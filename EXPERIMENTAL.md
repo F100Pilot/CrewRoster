@@ -25,7 +25,15 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(Vazio — tudo o que estava pendente foi promovido em `0.8.21`.)_
+Em `0.8.22` (na exp):
+
+- **Estimativa de vencimento** (pilotos, experimental, desligada por omissão) — Definições →
+  "Estimativa de vencimento": categoria, VB, VE, VS, complementos e per diem (valores do AE como
+  ponto de partida). Guardado só no dispositivo (`crewroster.pay.<userId>`). Cartão em `/limites`
+  com o bruto do recibo do mês seguinte: RB + excedentes duty-pay/block-pay (o mais favorável),
+  per diem A/B, complementar (cl. 10), extensões e descansos reduzidos. `domain/payEstimate.ts`,
+  `domain/holidaysPT.ts`, `components/PayEstimateCard.tsx`, `components/PaySettingsSection.tsx`.
+  Por validar contra um recibo real.
 
 ---
 

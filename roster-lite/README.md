@@ -81,6 +81,11 @@ confirmar no portal e descarregar a nova escala.
 - Cartão em "Limites e AE": atrasos, serviço a mais, extensões por autoridade do comandante
   (RUPT cl. 27 / RRRGS cl. 2.6) e descansos reduzidos (RUPT cl. 34.3/36 / RRRGS cl. 2.8), por mês.
 - No detalhe do dia: hora planeada e atraso na chegada.
+
+### Estimativa de vencimento (pilotos, experimental)
+- Desligada por omissão; liga-se em Definições, com o VB, VE e VS do próprio recibo (guardados só no dispositivo).
+- Bruto estimado pelo RRRGS: RB + horas acima dos plafonds (duty-pay/block-pay, 3% / 6% do VB por hora),
+  per diem A/B, prestação complementar, extensões do comandante e descansos reduzidos; noturno e feriados nacionais.
 - **Pesquisa global** (lupa no topo): voos, aeroportos, rotas, colegas, datas.
 - **Partilhar o mês** como imagem (totais + rotas mais voadas).
 
@@ -114,7 +119,7 @@ confirmar no portal e descarregar a nova escala.
 |---|---|
 | UI | React 19 + MUI 7 + Emotion |
 | Build | Vite 7 + TypeScript 5 |
-| Testes | Vitest 3 (384 testes) |
+| Testes | Vitest 3 (390 testes) |
 | PDF parsing | pdf.js (pdfjs-dist 4) |
 | Persistência local | IndexedDB via idb 8 |
 | Datas | date-fns 4 |
@@ -182,7 +187,7 @@ antes→depois por dia alterado.
 cd roster-lite
 npm install
 npm run dev        # http://localhost:5173
-npm test           # testes unitários (Vitest) — 384 testes
+npm test           # testes unitários (Vitest) — 390 testes
 npm run typecheck  # verificação de tipos TypeScript (tsc -b)
 npm run lint       # ESLint
 npm run build      # gera dist/ (site estático)

@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (384 tests) — keep green
+npm test           # vitest run (390 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -149,6 +149,12 @@ Things learned over this collaboration that should persist across sessions:
   `ParsedDuty.planned` and marks past-day imports `settled` (so flown times are never taken for a
   plan). The reparse replays saved PDFs in download order with their dates, rebuilding history.
   `domain/planVsFlown.ts` derives delays, extra FDP, commander's extensions and reduced rests.
+- **Pay estimate** (since 0.8.22, exp): `domain/payEstimate.ts` applies the RRRGS (RB, plafonds
+  table 2.1 cut per holiday day, 3%/6% VB/h, per diem A/B cl. 9, complement cl. 10, cl. 2.6/2.8
+  from planVsFlown, night 25% and national holidays 100% via `holidaysPT.ts`). **Personal figures
+  (VB, VE, VS…) are typed by each pilot in Settings and kept in localStorage
+  (`crewroster.pay.<userId>`) — NEVER put anyone's pay values in the code or repo.** Off by default.
+  Per diem defaults are the AE's "sujeito a confirmação" values, editable.
 - **Backlog:** the rest of the AE items (folgas check, ES/LF/ND, per diem, duty-pay/block-pay
   credits, holiday counter), PWA local reminders, crosswind (runway DB). See `EXPERIMENTAL.md`
   (TODO/Backlog) and `roster-lite/TODO.md`.

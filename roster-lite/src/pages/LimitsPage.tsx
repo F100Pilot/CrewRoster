@@ -6,6 +6,7 @@ import FtlCard from '../components/FtlCard';
 import AeComplianceCard from '../components/AeComplianceCard';
 import HolidayCard from '../components/HolidayCard';
 import PlanVsFlownCard from '../components/PlanVsFlownCard';
+import PayEstimateCard from '../components/PayEstimateCard';
 import { baseOf } from '../domain/dutyStats';
 import { AE_DISCLAIMER } from '../components/AeDisclaimer';
 
@@ -37,6 +38,7 @@ export default function LimitsPage() {
           <FtlCard duties={roster.duties} role={activeUser?.role ?? 'pilot'} />
           {pilot && <AeComplianceCard duties={roster.duties} />}
           {pilot && <PlanVsFlownCard duties={roster.duties} base={baseOf(activeUser)} />}
+          {pilot && activeUser && <PayEstimateCard duties={roster.duties} base={baseOf(activeUser)} userId={activeUser.id} />}
           {pilot && <HolidayCard duties={roster.duties} />}
         </>
       )}
