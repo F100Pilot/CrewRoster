@@ -25,7 +25,20 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(nada — tudo promovido em `0.8.27.1`)_
+Em `0.8.28` (na exp) — auditoria de código:
+
+- **Vencimento:** subsídios sobre todos os fixos; férias = fixos ÷ 30 × 42; pensões 6,5%/7,5% do subsídio
+  (bate ao cêntimo com o recibo de julho).
+- **Segurança:** backup sem credenciais CrewLink nem chaves do Google; perfil apagado leva os dados de
+  vencimento; CSP no `index.html`; pdf.js sem `eval`; worker — cookie de sessão só para netline.pga.pt,
+  `sessionToken` validado, erros com CORS (502), `Vary: Origin`, cache limitado, `hops` redigidos;
+  workflow do worker com `contents: read`; dependências: react-router e afins atualizados, vitest 5.
+- **Código morto removido:** sincronização Google Calendar (sem UI), re-parse só de tripulação
+  (`refreshCrewFromPdfs`/`reattachCrew`/`crewParserVersion`), exports sem uso.
+- **Desempenho:** pdf.js, tutorial e README carregados a pedido (−135 KB gzip no arranque).
+- **Bug:** "hoje" em hora local em todo o lado (antes UTC em 14 sítios).
+- **Privacidade:** nomes reais de tripulantes nos testes substituídos por sintéticos.
+- **Worker:** as alterações só ficam ativas quando o `worker.js` for para o `master` (deploy automático).
 
 ---
 

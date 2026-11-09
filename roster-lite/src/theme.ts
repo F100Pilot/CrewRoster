@@ -41,8 +41,6 @@ export function createAppTheme(mode: ColorMode): Theme {
   });
 }
 
-const theme = createAppTheme('light');
-
 // Duty type -> color, ported from the original pages. Used by chips and the calendar.
 export const DUTY_COLORS: Record<string, string> = {
   'Flight Duty': '#1976d2',
@@ -63,5 +61,3 @@ export const DUTY_COLORS: Record<string, string> = {
 export function dutyColor(dutyType: string): string {
   return DUTY_COLORS[dutyType] || '#9e9e9e';
 }
-
-export default theme;

@@ -23,6 +23,7 @@ import { getAeroDataBoxKey } from '../storage/settings';
 import { checkInTimeLabel } from '../utils/localTime';
 import { MARK_SHORT, dayMarks, isInstructorMark } from '../domain/dutyMarks';
 import type { ParsedDuty, ChangeType } from '../domain/types';
+import { todayISO } from '../domain/rosterWindow';
 
 // Wide enough for the widest "EEE, dd MMM" (e.g. "Wed, 28 Sep") in bold.
 const DATE_COLUMN = '6.6em';
@@ -80,7 +81,7 @@ export default function RosterPage() {
   const [infoAnchor, setInfoAnchor] = useState<null | HTMLElement>(null);
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
-  const todayISO = format(new Date(), 'yyyy-MM-dd');
+  const today = todayISO();
 
   const changeByDate = useMemo(() => {
     const map = new Map<string, ChangeType>();
@@ -99,7 +100,6 @@ export default function RosterPage() {
     if (!activeUser || !roster || !getAeroDataBoxKey()) return;
     const userId = activeUser.id;
     const stampKey = `crewroster.autoreg.${userId}`;
-    const today = new Date().toISOString().slice(0, 10);
     if (localStorage.getItem(stampKey) === today) return;
     // Guard against duplicate concurrent runs on remount, but only mark "done for today"
     // once it actually resolves — a transient failure should be retried, not skipped.
@@ -109,7 +109,7 @@ export default function RosterPage() {
       .then(() => localStorage.setItem(stampKey, today))
       .catch(() => {})
       .finally(() => autoRegInFlight.delete(userId));
-  }, [activeUser, roster]);
+  }, [activeUser, roster, today]);
 
   const dutiesByDay = useMemo(() => {
     const map = new Map<string, ParsedDuty[]>();
@@ -262,7 +262,7 @@ export default function RosterPage() {
 
       {[...dutiesByDay.entries()].map(([date, duties]) => {
         const change = changeByDate.get(date);
-        const isToday = date === todayISO;
+        const isToday = date === today;
         return (
         <Card
           key={date}

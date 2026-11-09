@@ -11,6 +11,27 @@ const base = process.env.BASE ?? '/CrewRoster/';
 // production PWA's scope.
 const disablePwa = process.env.DISABLE_PWA === '1';
 
+// Content-Security-Policy, injected into index.html at build time (dev keeps Vite's own scripts
+// working). The app keeps the CrewLink login and pay figures on the device, so it only talks to
+// itself, the proxy worker (VITE_API_URL) and Open-Meteo, and frames only the Windy map. Inline
+// styles stay allowed: MUI/Emotion inject them.
+function apiOrigin(): string {
+  try { return process.env.VITE_API_URL ? new URL(process.env.VITE_API_URL).origin : ''; } catch { return ''; }
+}
+const CSP = [
+  "default-src 'self'",
+  "script-src 'self'",
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob:",
+  "font-src 'self' data:",
+  `connect-src 'self' data: blob: https://api.open-meteo.com ${apiOrigin()}`.trim(),
+  'frame-src https://embed.windy.com blob:',
+  "worker-src 'self' blob:",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+].join('; ');
+
 export default defineConfig({
   base,
   build: {
@@ -22,7 +43,8 @@ export default defineConfig({
           if (!id.includes('node_modules')) return;
           if (id.includes('@mui') || id.includes('@emotion')) return 'mui';
           if (id.includes('d3-geo') || id.includes('topojson') || id.includes('world-atlas')) return 'geo';
-          if (id.includes('pdfjs-dist')) return 'pdfjs';
+          // (not the `?url` stub: it's just the worker's address, needed by the shell)
+          if (id.includes('pdfjs-dist') && !id.includes('?url')) return 'pdfjs';
           if (id.includes('date-fns')) return 'datefns';
         },
       },
@@ -30,6 +52,12 @@ export default defineConfig({
   },
   plugins: [
     react(),
+    {
+      name: 'csp',
+      apply: 'build',
+      transformIndexHtml: (html: string) =>
+        html.replace('<meta charset="UTF-8" />', `<meta charset="UTF-8" />\n    <meta http-equiv="Content-Security-Policy" content="${CSP}" />`),
+    },
     // Installable PWA + offline. The roster itself already lives in IndexedDB; this
     // precaches the app shell (JS/CSS/HTML/icons) so it loads with no network.
     // We keep the hand-written public/manifest.json (manifest: false) and just let

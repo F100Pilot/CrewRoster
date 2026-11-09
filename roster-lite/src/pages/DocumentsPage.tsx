@@ -10,6 +10,7 @@ import { useRoster } from '../state/useRoster';
 import { loadDocuments, putDocument, deleteDocument, loadLogbook } from '../storage/rosterStore';
 import { recencyStatus } from '../domain/logbook';
 import type { CrewDocument, LogbookRow } from '../domain/types';
+import { todayISO } from '../domain/rosterWindow';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -27,7 +28,7 @@ export default function DocumentsPage() {
   const { activeUser } = useRoster();
   const userId = activeUser?.id;
   const isPilot = activeUser?.role !== 'cabin';
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayISO();
 
   const [docs, setDocs] = useState<CrewDocument[]>([]);
   const [rows, setRows] = useState<LogbookRow[]>([]);

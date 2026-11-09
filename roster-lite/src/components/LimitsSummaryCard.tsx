@@ -6,6 +6,7 @@ import { limitLevel, limitRows, tightestRow } from '../domain/limitRows';
 import { aeCompliance } from '../domain/aeCompliance';
 import { formatDuration } from '../utils/duration';
 import type { CrewRole, ParsedDuty } from '../domain/types';
+import { todayISO } from '../domain/rosterWindow';
 
 // One line on the roster page standing in for the limits and compliance cards, which live on
 // their own page: the bar closest to its limit, and how many agreement rules need a look. The
@@ -14,7 +15,7 @@ export default function LimitsSummaryCard({ duties, role }: { duties: ParsedDuty
   const navigate = useNavigate();
   const pilot = role !== 'cabin';
   const { tight, warnings } = useMemo(() => {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayISO();
     return {
       tight: tightestRow(limitRows(duties, role, today)),
       warnings: pilot ? aeCompliance(duties, today).filter((c) => c.status === 'warn').length : 0,

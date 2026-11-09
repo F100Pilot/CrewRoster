@@ -82,6 +82,20 @@ describe('restore validation (audit Wave 1)', () => {
     expect(localStorage.getItem('evil_key')).toBeNull();
   });
 
+  it('never exports or restores the saved CrewLink login, nor any Google Calendar key', async () => {
+    localStorage.setItem('crewroster.cred.u1', '{"crewCode":"X","password":"secret"}');
+    localStorage.setItem('crewroster.pay.u1', '{"vb":1}');
+    localStorage.setItem('gcal_calendar_id_u1', 'primary');
+    const out = await buildBackup();
+    expect(out.localStorage['crewroster.cred.u1']).toBeUndefined();
+    expect(out.localStorage['gcal_calendar_id_u1']).toBeUndefined();
+    expect(out.localStorage['crewroster.pay.u1']).toBe('{"vb":1}'); // the pilot's own figures travel with it
+    localStorage.clear();
+    await restoreBackup({ ...base, localStorage: { 'crewroster.cred.u1': 'x', 'gcal_calendar_id_u1': 'primary' } }, true);
+    expect(localStorage.getItem('crewroster.cred.u1')).toBeNull();
+    expect(localStorage.getItem('gcal_calendar_id_u1')).toBeNull();
+  });
+
   it('rejects an invalid AeroDataBox key value', async () => {
     await restoreBackup({ ...base, localStorage: { 'crewroster.aerodataboxKey': 'not a key!!' } }, true);
     expect(localStorage.getItem('crewroster.aerodataboxKey')).toBeNull();

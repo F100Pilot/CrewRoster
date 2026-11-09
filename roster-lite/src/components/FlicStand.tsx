@@ -2,12 +2,8 @@ import { Fragment, useCallback, useEffect, useState } from 'react';
 import { Box, CircularProgress, Link, Typography } from '@mui/material';
 import { LocalParking, FlightLand, FlightTakeoff } from '@mui/icons-material';
 import { fetchFlicStands, flicEnabled, flicLegsFor, type FlicLeg, type FlicStandInfo } from '../domain/flic';
+import { todayISO } from '../domain/rosterWindow';
 
-function todayISO(): string {
-  const d = new Date();
-  const p = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-}
 
 // One compact stand card, sized to line up with the sunrise/sunset cards: a top line stating
 // whether it's the arrival or departure stand (with the hub), and the stand number below.

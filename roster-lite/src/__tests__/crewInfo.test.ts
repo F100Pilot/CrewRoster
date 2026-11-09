@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   parseCrewInfo, parseGroundCrewInfo, attachCrewToDuties, attachGroundCrewToDuties,
-  reattachCrew, sortCrew,
+  sortCrew,
 } from '../parsing/pdf/crewInfo';
 import type { PositionedToken } from '../parsing/pdf/extractText';
 import type { ParsedDuty } from '../domain/types';
@@ -183,16 +183,6 @@ describe('attachCrewToDuties', () => {
     attachCrewToDuties([outbound, ret], parseCrewInfo(legTokens()));
     expect(ret.crew?.map((c) => c.login)).toEqual(['OWN']); // its own crew is kept
   });
-
-  // reattachCrew is used to re-derive crew for a roster imported by an older parser: it must
-  // wipe whatever (possibly stale) crew the duties carry and rebuild it from the legs.
-  it('reattachCrew clears stale crew and re-derives from the legs', () => {
-    const outbound = flight({ flightNumber: 'TP100', departureAirport: 'LIS', arrivalAirport: 'OPO', departureTime: '08:00', arrivalTime: '09:00', crew: [{ login: 'OLD', surname: 'OLD', role: 'CP' }] });
-    const ret = flight({ flightNumber: 'TP101', departureAirport: 'OPO', arrivalAirport: 'LIS', departureTime: '10:00', arrivalTime: '11:00', crew: [{ login: 'STALE', surname: 'STALE', role: 'CP' }] });
-    reattachCrew([outbound, ret], parseCrewInfo(legTokens()));
-    expect(outbound.crew?.map((c) => c.surname)).toEqual(['ALPHA', 'BRAVO', 'CHARLIE', 'DELTA']);
-    expect(ret.crew?.map((c) => c.surname)).toEqual(['ALPHA', 'BRAVO', 'CHARLIE', 'DELTA']); // refreshed via rotation, not the stale crew
-  });
 });
 
 // The "Crew Information on Ground Activity" section is a TRANSPOSED grid (like the flight "on
@@ -203,9 +193,9 @@ function groundTokens(code = 'E90-FRA-1', colX = 465, date = 'Fri03'): Positione
   return [
     tok(date, colX, 802), // date on top of the column
     tok(code, colX, 770), // the activity code
-    tok('event:ATIAGO, ARAUJO, CP ANDRE', colX - 6, 751), // crew just left of / below the code
-    tok('LEIBUSCH, ZDANOWSKI, FO FRANCISCO', colX - 12, 729),
-    tok('PMORAIS, MORAIS, CP PAULO', colX - 18, 729),
+    tok('event:AALPHA, ALPHA, CP ANA', colX - 6, 751), // crew just left of / below the code
+    tok('BBRAVO, BRAVO, FO BRUNO', colX - 12, 729),
+    tok('CCHARLIE, CHARLIE, CP CARLOS', colX - 18, 729),
     tok('FRA', colX, 707), // location, below the crew
     tok('1700', colX, 660), tok('2100', colX, 625), // begin / end
   ];
@@ -217,15 +207,15 @@ describe('parseGroundCrewInfo', () => {
     expect(legs).toHaveLength(1);
     expect(legs[0]).toMatchObject({ dow: 'Fri03', code: 'E90-FRA-1', location: 'FRA', begin: '17:00', end: '21:00' });
     expect(legs[0].crew.map((c) => `${c.login}(${c.role})`).sort()).toEqual(
-      ['ATIAGO(CP)', 'LEIBUSCH(FO)', 'PMORAIS(CP)'],
+      ['AALPHA(CP)', 'BBRAVO(FO)', 'CCHARLIE(CP)'],
     );
-    expect(legs[0].crew.find((c) => c.login === 'ATIAGO')?.firstName).toBe('ANDRE');
+    expect(legs[0].crew.find((c) => c.login === 'AALPHA')?.firstName).toBe('ANA');
   });
 
   it('parses crew even when the "event:" prefix is absent (keys off the code)', () => {
     const noPrefix = groundTokens().map((t) => ({ ...t, text: t.text.replace(/^event:/i, '') }));
     const legs = parseGroundCrewInfo(noPrefix);
-    expect(legs[0].crew.map((c) => c.login).sort()).toEqual(['ATIAGO', 'LEIBUSCH', 'PMORAIS']);
+    expect(legs[0].crew.map((c) => c.login).sort()).toEqual(['AALPHA', 'BBRAVO', 'CCHARLIE']);
   });
 
   it('ignores a bare code with no crew in its column (e.g. the duty-grid copy)', () => {
@@ -248,7 +238,7 @@ describe('parseGroundCrewInfo', () => {
     const legs = parseGroundCrewInfo([...a, ...b]);
     expect(legs.map((l) => l.dow).sort()).toEqual(['Fri03', 'Sat04']);
     expect(legs.find((l) => l.dow === 'Sat04')?.crew.map((c) => c.login)).toEqual(['XSOLO']);
-    expect(legs.find((l) => l.dow === 'Fri03')?.crew.map((c) => c.login).sort()).toEqual(['ATIAGO', 'LEIBUSCH', 'PMORAIS']);
+    expect(legs.find((l) => l.dow === 'Fri03')?.crew.map((c) => c.login).sort()).toEqual(['AALPHA', 'BBRAVO', 'CCHARLIE']);
   });
 });
 
@@ -262,7 +252,7 @@ describe('attachGroundCrewToDuties', () => {
   it('attaches the simulator crew by weekday+day and code', () => {
     const duties = [sim()]; // 2026-07-03 is a Friday → "Fri03"
     attachGroundCrewToDuties(duties, parseGroundCrewInfo(groundTokens()));
-    expect(duties[0].crew?.map((c) => c.login)).toEqual(['ATIAGO', 'PMORAIS', 'LEIBUSCH']); // CP, CP, FO → sorted
+    expect(duties[0].crew?.map((c) => c.login)).toEqual(['AALPHA', 'CCHARLIE', 'BBRAVO']); // CP, CP, FO → sorted
   });
 
   it('fills Início/Fim and airport from the Ground Activity row when the duty lacks them', () => {
@@ -276,12 +266,6 @@ describe('attachGroundCrewToDuties', () => {
     attachGroundCrewToDuties(other, parseGroundCrewInfo(groundTokens()));
     expect(other[0].crew).toBeUndefined();
     expect(other[1].crew).toBeUndefined();
-  });
-
-  it('reattachCrew also re-derives ground crew', () => {
-    const duties = [sim({ crew: [{ login: 'STALE', surname: 'STALE', role: 'CP' }] })];
-    reattachCrew(duties, [], parseGroundCrewInfo(groundTokens()));
-    expect(duties[0].crew?.map((c) => c.login)).toEqual(['ATIAGO', 'PMORAIS', 'LEIBUSCH']);
   });
 });
 

@@ -3,6 +3,7 @@ import { fetchFlightInfo, type FlightInfo } from '../services/crewlinkApi';
 import { operatedFlights } from './flightTime';
 import { utcDateTime } from '../utils/duration';
 import { loadRegs, regKey, saveReg } from '../storage/rosterStore';
+import { todayISO } from './rosterWindow';
 
 // Max ground time between two legs for them to count as the same continuous rotation
 // (and therefore the same airframe). A tight turnaround (e.g. LIS→GVA→LIS) is well under
@@ -187,7 +188,7 @@ export interface BackfillResult {
 // rotation inference, only ONE leg per same-day chain needs a call (the siblings share
 // the airframe), so this counts chains still missing a confirmed tail, not raw legs.
 export async function pendingBackfillCount(userId: string, duties: ParsedDuty[]): Promise<number> {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayISO();
   const confirmed = await regMap(userId);
   const keyOf = (d: RegDuty) => regMapKey(d.date, d.flightNumber!, d.departureAirport, d.arrivalAirport);
   const legs = operatedFlights(duties).filter((d) => d.flightNumber && d.date <= today) as RegDuty[];
@@ -205,7 +206,7 @@ export async function backfillRegs(
   onProgress?: (p: BackfillProgress) => void,
   shouldStop?: () => boolean,
 ): Promise<BackfillResult> {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayISO();
   const confirmed = await regMap(userId);
   const keyOf = (d: RegDuty) => regMapKey(d.date, d.flightNumber!, d.departureAirport, d.arrivalAirport);
   const pending = operatedFlights(duties).filter(

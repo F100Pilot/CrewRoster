@@ -18,7 +18,8 @@ import WhatsNewDialog from './WhatsNewDialog';
 import DisclaimerDialog from './DisclaimerDialog';
 import { getPaySettings, getTourSeen } from '../storage/settings';
 import { OPEN_SETTINGS_EVENT } from './settingsEvents';
-import { startTour } from '../tour';
+// The guided tour (driver.js, ~20 KB) loads only when it runs.
+const startTour = () => { void import('../tour').then((m) => m.startTour()); };
 
 interface NavItem { label: string; icon: ReactNode; path: string }
 

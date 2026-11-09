@@ -76,13 +76,18 @@ export async function saveUser(user: UserProfile): Promise<void> {
 }
 
 // Remove the per-user localStorage keys that live outside IndexedDB (confirmed CrewLink
-// notifications and the auto-capture stamp). Google Calendar keys are cleared separately
-// by the provider's clearUserGCalData.
+// notifications, the auto-capture stamp, the pilot's figures and saved login), plus what the
+// old Google Calendar sync (since removed) may have left on the device.
 export function clearUserLocalData(userId: string): void {
   try {
     clearNotifications(userId);
     localStorage.removeItem(`crewroster.autoreg.${userId}`);
     localStorage.removeItem(`crewroster.logbook.collapsed.${userId}`);
+    // Personal figures and the saved CrewLink login go with the profile.
+    localStorage.removeItem(`crewroster.pay.${userId}`);
+    localStorage.removeItem(`crewroster.logbookFn.${userId}`);
+    localStorage.removeItem(`crewroster.cred.${userId}`);
+    for (const k of ['client_id', 'token', 'expires', 'calendar_id']) localStorage.removeItem(`gcal_${k}_${userId}`);
   } catch {
     // ignore (storage disabled)
   }

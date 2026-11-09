@@ -6,6 +6,7 @@ import { planVsFlown, LATE_MINUTES } from '../domain/planVsFlown';
 import { ExperimentalChip } from './AeDisclaimer';
 import { formatDuration } from '../utils/duration';
 import type { ParsedDuty } from '../domain/types';
+import { todayISO } from '../domain/rosterWindow';
 
 const MONTHS_LONG = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto',
   'setembro', 'outubro', 'novembro', 'dezembro'];
@@ -23,7 +24,7 @@ const signed = (min: number) => `${min < 0 ? '−' : '+'}${formatDuration(Math.a
 // pilot can check them on the payslip of the following month. Pilots only.
 export default function PlanVsFlownCard({ duties, base }: { duties: ParsedDuty[]; base: string }) {
   const navigate = useNavigate();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayISO();
   const [month, setMonth] = useState(today.slice(0, 7));
   const r = useMemo(() => planVsFlown(duties, month, today, base), [duties, month, today, base]);
   const [y, m] = month.split('-').map(Number);

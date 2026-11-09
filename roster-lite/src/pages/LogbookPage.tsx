@@ -17,6 +17,7 @@ import { downloadBlob } from '../utils/download';
 import { format, parseISO } from 'date-fns';
 import { pt } from 'date-fns/locale';
 import LogbookEditDialog, { type LogbookEditResult } from '../components/LogbookEditDialog';
+import { todayISO } from '../domain/rosterWindow';
 
 // Recency requirement: 3 take-offs and landings in the preceding 90 days.
 const RECENCY_REQUIRED = 3;
@@ -35,7 +36,7 @@ export default function LogbookPage() {
   // Memoised so the effects below don't re-run on every render (a fresh [] each time).
   const duties = useMemo(() => roster?.duties ?? [], [roster]);
   const userId = activeUser?.id;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayISO();
 
   // The permanent logbook lives in its own store, so it survives clearing the roster.
   const [rows, setRows] = useState<LogbookRow[]>([]);

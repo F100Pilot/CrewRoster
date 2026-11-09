@@ -4,6 +4,7 @@ import { CheckCircle, FactCheck, WarningAmber } from '@mui/icons-material';
 import { aeCompliance, type ComplianceCheck } from '../domain/aeCompliance';
 import { ExperimentalChip } from './AeDisclaimer';
 import type { ParsedDuty } from '../domain/types';
+import { todayISO } from '../domain/rosterWindow';
 
 const ORDER: Record<ComplianceCheck['status'], number> = { warn: 0, ok: 1, na: 2 };
 
@@ -12,7 +13,7 @@ const ORDER: Record<ComplianceCheck['status'], number> = { warn: 0, ok: 1, na: 2
 // line so the card stays short.
 export default function AeComplianceCard({ duties }: { duties: ParsedDuty[] }) {
   const checks = useMemo(() => {
-    const all = aeCompliance(duties, new Date().toISOString().slice(0, 10));
+    const all = aeCompliance(duties, todayISO());
     return [...all].sort((a, b) => ORDER[a.status] - ORDER[b.status]);
   }, [duties]);
   const judged = checks.filter((c) => c.status !== 'na');

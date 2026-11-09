@@ -331,3 +331,35 @@ Alertas de validade verde/amarelo/vermelho e cores de tipo de duty. Cor isolada 
 
 **Vaga 4 — higiene:**
 9. Remover app legada Firebase + ficheiros soltos (4.6); corrigir README (4.11); pin do Pillow (4.9).
+
+---
+
+## Auditoria de novembro de 2026 (0.8.28)
+
+**Corrigido**
+- A cópia de segurança exportava todo o localStorage, incluindo a password do CrewLink e tokens do
+  Google → agora só as chaves que a app restaura, nunca `crewroster.cred.*`.
+- A restauração aceitava `gcal_calendar_id_*` (um ficheiro preparado podia apontar a sincronização
+  ao calendário principal) → a sincronização Google Calendar (já sem UI) foi removida, e essas chaves
+  deixaram de ser aceites.
+- Apagar um perfil deixava os valores de vencimento e o login → agora apaga-os.
+- Sem CSP → política injetada no build (`vite.config.ts`); pdf.js com `isEvalSupported: false`.
+- Worker: o cookie de sessão podia seguir URLs fora do NetLine vindos de páginas/redirects → só vai
+  para `netline.pga.pt`; `sessionToken` validado (sem CR/LF); exceções devolvem 502 com CORS (e sem
+  segredos); `Vary: Origin`; cache `acpos` limitada; diagnósticos de login redigidos.
+- Workflow do worker com `permissions: contents: read`; CI em Node 22; dependências de produção sem
+  vulnerabilidades conhecidas (`npm audit --omit=dev`).
+- Nomes reais de tripulantes nos testes e no fixture → substituídos por sintéticos.
+
+**Em aberto (precisa de decisão / configuração fora do código)**
+- O controlo por `Origin` não é autenticação: um cliente fora do browser pode usar o worker (gastar a
+  chave AeroDataBox de reserva, tentar logins). Recomendado: binding de *rate limiting* do Cloudflare
+  por IP (e por código de tripulante no login).
+- Produção, `/exp/` e qualquer outro repositório em `f100pilot.github.io` partilham o mesmo
+  armazenamento: código publicado na exp lê os dados da produção. Recomendado: domínio próprio para a
+  produção (ou para a exp).
+- Ações de terceiros nos workflows fixadas por tag, não por SHA; os workflows de Pages dão
+  `contents: write` a todo o job (build incluído).
+- Nomes reais antigos continuam no histórico do git (limpar exige reescrever o histórico).
+- Dependências de desenvolvimento com avisos moderados (typescript-eslint, workbox) cuja correção é
+  uma versão mais antiga — não chegam ao browser.

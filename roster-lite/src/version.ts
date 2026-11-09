@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.27.1';
+export const APP_VERSION = '0.8.28';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,16 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.28',
+    date: '2026-11-10',
+    highlights: [
+      'Vencimento: os subsídios seguem agora o recibo real, ao cêntimo — sobre todos os fixos (com prémio de chefia e complementos); o de férias vale os 42 dias de férias (fixos ÷ 30 × 42); IRS à parte, SS e fundo de pensões de 6,5% / 7,5% sobre o próprio subsídio.',
+      'Segurança: a cópia de segurança já não leva a password do CrewLink (fica só no dispositivo); a app passa a ter uma política de segurança de conteúdos (CSP) e o proxy só envia a sessão do CrewLink para o próprio CrewLink.',
+      'Arranque mais rápido: o leitor de PDF, o tutorial e a documentação só carregam quando são precisos.',
+      '"Hoje" passa a ser sempre o dia local (entre a meia-noite e a 1h de verão algumas vistas ainda mostravam o dia anterior).',
+    ],
+  },
   {
     version: '0.8.27.1',
     date: '2026-11-09',

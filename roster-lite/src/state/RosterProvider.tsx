@@ -11,7 +11,6 @@ import {
 } from '../storage/rosterStore';
 import { mergeLogbook } from '../domain/logbook';
 import { regMap } from '../domain/aircraftRegs';
-import { clearUserGCalData } from '../utils/googleCalendar';
 import { setCredentials } from '../storage/settings';
 import { RosterContext, type RosterState, type RosterImportPreview } from './useRoster';
 
@@ -224,7 +223,6 @@ export function RosterProvider({ children }: { children: ReactNode }) {
 
   const deleteUserFn = useCallback(async (userId: string) => {
     await deleteUserDB(userId);
-    clearUserGCalData(userId);
     setCredentials(userId, null); // drop this profile's saved CrewLink credentials too
     sessionsByUser.current.delete(userId);
     setUsers((prev) => {

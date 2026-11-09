@@ -2,10 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { Alert, Box, CircularProgress, IconButton, Stack } from '@mui/material';
 import { ZoomIn, ZoomOut, ZoomOutMap } from '@mui/icons-material';
-import * as pdfjs from 'pdfjs-dist';
-import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
-
-pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+import type * as pdfjs from 'pdfjs-dist';
+import { loadPdfjs } from '../parsing/pdf/extractText';
 
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 5;
@@ -106,7 +104,7 @@ export default function PdfCanvasViewer({ blob }: { blob: Blob }) {
       try {
         const data = await blob.arrayBuffer();
         if (cancelled) return;
-        const doc = await pdfjs.getDocument({ data }).promise;
+        const doc = await (await loadPdfjs()).getDocument({ data, isEvalSupported: false }).promise;
         if (cancelled) return;
         docRef.current = doc;
         fitWidthRef.current = scrollRef.current?.clientWidth || 320;

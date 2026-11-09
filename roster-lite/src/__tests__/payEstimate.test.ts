@@ -128,6 +128,11 @@ describe('payEstimate', () => {
     expect(n.ss).toBeCloseTo(plain.ss + 583);
   });
 
+  it('takes the subsidies on all the fixed lines, the chief bonus included', () => {
+    const s = { ...S, extras: 700 };
+    expect(payEstimate([duty('2026-10-02', 'Day Off')], '2026-10', s, '2026-10-31').christmasSubsidy).toBe(6000);
+  });
+
   it('applies the pension plan to the subsidies too — 14 times a year (cl. 16.2)', () => {
     const s = { ...S, pensionAuto: true };
     const nov = payEstimate([duty('2026-10-02', 'Day Off')], '2026-10', s, '2026-10-31');
@@ -138,21 +143,22 @@ describe('payEstimate', () => {
   });
 
   it('pays the holiday subsidy the month before the first holidays of 10 working days (cl. 7)', () => {
-    // 6–19 July 2026: 14 calendar days, 10 working days → paid on the June payslip (work of May).
+    // 6–19 July 2026: 14 calendar days, 10 working days → paid on the June payslip (work of May),
+    // for the 42 holiday days: 5300 ÷ 30 × 42.
     const july = Array.from({ length: 14 }, (_, i) => duty(`2026-07-${String(6 + i).padStart(2, '0')}`, 'Vacation'));
     expect(autoHolidayPayMonth(july, 2026)).toBe(6);
     expect(autoHolidayPayMonth(july.slice(0, 10), 2026)).toBe(0); // 8 working days only
     // A weekend left as a day off doesn't break the run.
     const split = july.filter((d) => d.date !== '2026-07-11' && d.date !== '2026-07-12');
     expect(autoHolidayPayMonth(split, 2026)).toBe(6);
-    expect(payEstimate(july, '2026-05', S, '2026-05-31').holidaySubsidy).toBe(5300);
+    expect(payEstimate(july, '2026-05', S, '2026-05-31').holidaySubsidy).toBe(7420);
     expect(payEstimate(july, '2026-06', S, '2026-06-30').holidaySubsidy).toBe(0);
     // Ticked by hand on the card, it wins over the roster — and an untick (month 0) cancels it.
-    expect(payEstimate(july, '2026-07', { ...S, holidayPay: { year: 2026, month: 8 } }, '2026-07-31').holidaySubsidy).toBe(5300);
+    expect(payEstimate(july, '2026-07', { ...S, holidayPay: { year: 2026, month: 8 } }, '2026-07-31').holidaySubsidy).toBe(7420);
     // Only one payslip a year carries it: ticking August takes it off the roster's June.
     expect(payEstimate(july, '2026-05', { ...S, holidayPay: { year: 2026, month: 8 } }, '2026-05-31')).toMatchObject({ holidaySubsidy: 0, holidayPayMonth: 8 });
     expect(payEstimate(july, '2026-05', { ...S, holidayPay: { year: 2026, month: 0 } }, '2026-05-31').holidaySubsidy).toBe(0);
     // A tick from another year doesn't count.
-    expect(payEstimate(july, '2026-05', { ...S, holidayPay: { year: 2025, month: 8 } }, '2026-05-31')).toMatchObject({ holidaySubsidy: 5300, holidayPayAuto: true });
+    expect(payEstimate(july, '2026-05', { ...S, holidayPay: { year: 2025, month: 8 } }, '2026-05-31')).toMatchObject({ holidaySubsidy: 7420, holidayPayAuto: true });
   });
 });
