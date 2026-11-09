@@ -219,7 +219,9 @@ export default function PaySettingsSection({ userId }: { userId: string }) {
                 InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
                 inputProps={{ inputMode: 'decimal', autoComplete: 'off' }}
                 helperText={s.unionPct
-                  ? `Base ${s.unionBase ? 'escrita à mão' : 'automática'}: ${EUR2.format(s.unionBase || unionBaseAuto(s))} — os fixos sem o prémio de chefia e a anuidade de Comando. Não metas o sindicato nos outros descontos.`
+                  ? (s.category === 'CTE' && !s.unionBase && !s.veCommand && !s.chiefBonus
+                    ? 'Separa a "Anuid. Comando" e o "Prémio de chefia" em Valores — senão entram na base da quota. '
+                    : '') + `Base ${s.unionBase ? 'escrita à mão' : 'automática'}: ${EUR2.format(s.unionBase || unionBaseAuto(s))} — os fixos sem o prémio de chefia e a anuidade de Comando. Não metas o sindicato nos outros descontos.`
                   : 'Ex.: 1%. Deixa 0 se preferires meter o valor do sindicato nos outros descontos.'}
               />
               {money('fixedDeductions', 'Outros descontos fixos por mês',

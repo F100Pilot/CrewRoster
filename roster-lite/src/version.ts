@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.26.1';
+export const APP_VERSION = '0.8.26.2';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,15 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.26.2',
+    date: '2026-11-09',
+    highlights: [
+      'Vencimento: toca em "Per diem" para ver os dias A e B, um a um, e comparar com o recibo.',
+      'As sessões de simulador e o line training como instrutor aparecem sempre que estão na escala, com aviso se ainda não tiver o valor nas Definições.',
+      'Comandantes: aviso quando a anuidade de Comando e o prémio de chefia não estão separados, porque nesse caso entram na base da quota sindical.',
+    ],
+  },
   {
     version: '0.8.26.1',
     date: '2026-11-09',

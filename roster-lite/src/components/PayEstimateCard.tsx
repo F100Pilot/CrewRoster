@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Alert, Box, Card, CardContent, IconButton, Stack, Typography } from '@mui/material';
-import { ChevronLeft, ChevronRight, Payments } from '@mui/icons-material';
+import { ChevronLeft, ChevronRight, ExpandLess, ExpandMore, Payments } from '@mui/icons-material';
 import { netEstimate, payEstimate, type Credit } from '../domain/payEstimate';
 import { getPaySettings } from '../storage/settings';
 import { ExperimentalChip } from './AeDisclaimer';
@@ -32,6 +32,7 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
   }, [userId]);
   const today = new Date().toISOString().slice(0, 10);
   const [month, setMonth] = useState(today.slice(0, 7));
+  const [showDays, setShowDays] = useState(false);
   const r = useMemo(() => payEstimate(duties, month, settings, today, base), [duties, month, settings, today, base]);
   const n = useMemo(() => netEstimate(r, settings), [r, settings]);
 
@@ -104,11 +105,38 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                 <Row label="Base (VB + VE + VS + outros fixos)" value={r.rb - r.pensionContribution} />
                 {r.pensionContribution > 0 && <Row label="Fundo pensões contr. PGA (6,5%)" value={r.pensionContribution} />}
                 <Row label={`Horas acima do plafond (${r.overtime === 'block' ? 'block-pay' : 'duty-pay'})`} value={r.overtimeValue} />
-                <Row label={`Per diem: ${r.perDiemA} A + ${r.perDiemB} B`} value={r.perDiemValue} />
+                {/* Tap to list the days, to check them one by one against the payslip's per diem lines. */}
+                <Box onClick={() => setShowDays((v) => !v)} sx={{ cursor: 'pointer' }} role="button" aria-expanded={showDays}>
+                  <Row
+                    label={<>Per diem: {r.perDiemA} A + {r.perDiemB} B {showDays ? <ExpandLess sx={{ fontSize: 16, verticalAlign: 'middle' }} /> : <ExpandMore sx={{ fontSize: 16, verticalAlign: 'middle' }} />}</>}
+                    value={r.perDiemValue}
+                  />
+                </Box>
+                {showDays && (
+                  <Box sx={{ borderRadius: 1.5, bgcolor: 'action.hover', px: 1, py: 0.5, my: 0.25 }}>
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      <strong>A</strong> — dias {r.perDiemDates.a.map(dayNum).join(', ') || '—'}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" display="block">
+                      <strong>B</strong> — dias {r.perDiemDates.b.map(dayNum).join(', ') || '—'}
+                    </Typography>
+                  </Box>
+                )}
                 {r.complementDays > 0 && <Row label={`Prestação complementar: ${r.complementDays} ${r.complementDays === 1 ? 'dia' : 'dias'}`} value={r.complementValue} />}
                 {r.extensions > 0 && <Row label={`Extensões do comandante: ${r.extensions} × 2h`} value={r.extensionValue} />}
-                {r.instructorValue > 0 && <Row label={`Simulador como instrutor: ${r.instructorSessions} sessões`} value={r.instructorValue} />}
-                {r.lineTrainingValue > 0 && <Row label={`Line training como instrutor: ${r.lineTrainingDays} ${r.lineTrainingDays === 1 ? 'dia' : 'dias'}`} value={r.lineTrainingValue} />}
+                {/* Shown even with no fee typed yet, so sessions found in the roster don't go unnoticed. */}
+                {r.instructorSessions > 0 && (
+                  <Row
+                    label={`Simulador como instrutor: ${r.instructorSessions} ${r.instructorSessions === 1 ? 'sessão' : 'sessões'}${settings.instructorSession ? '' : ' · falta o valor nas Definições'}`}
+                    value={r.instructorValue}
+                  />
+                )}
+                {r.lineTrainingDays > 0 && (
+                  <Row
+                    label={`Line training como instrutor: ${r.lineTrainingDays} ${r.lineTrainingDays === 1 ? 'dia' : 'dias'}${settings.lineTrainingDay ? '' : ' · falta o valor nas Definições'}`}
+                    value={r.lineTrainingValue}
+                  />
+                )}
                 {r.reducedMinutes > 0 && <Row label={`Descansos reduzidos: ${formatDuration(r.reducedMinutes)}`} value={r.reductionValue} />}
                 <Box sx={{ borderTop: 1, borderColor: 'divider', my: 0.5 }} />
                 <Row label="Bruto" value={n.gross} strong />
@@ -116,6 +144,12 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                 <Row label="Segurança Social (11%)" value={-n.ss} />
                 {n.pensionDeposit > 0 && <Row label="Depósito f. pensões SIPLA (7,5%)" value={-n.pensionDeposit} />}
                 {n.union > 0 && <Row label={`Sindicato (${String(settings.unionPct).replace('.', ',')}%)`} value={-n.union} />}
+                {/* A commander who hasn't typed the command lines apart gets them in the union base. */}
+                {n.union > 0 && settings.category === 'CTE' && !settings.unionBase && !settings.veCommand && !settings.chiefBonus && (
+                  <Typography variant="caption" color="warning.main" display="block" lineHeight={1.3}>
+                    Para a quota sair certa, separa a "Anuid. Comando" e o "Prémio de chefia" em Definições → Vencimento.
+                  </Typography>
+                )}
                 {n.fixedDeductions > 0 && <Row label="Outros descontos fixos" value={-n.fixedDeductions} />}
                 <Row label="Líquido" value={n.net} strong />
               </Stack>
@@ -163,7 +197,9 @@ function CreditBar({ label, c, chosen, showValue }: { label: string; c: Credit; 
   );
 }
 
-function Row({ label, value, strong }: { label: string; value: number; strong?: boolean }) {
+const dayNum = (iso: string) => String(Number(iso.slice(8, 10)));
+
+function Row({ label, value, strong }: { label: ReactNode; value: number; strong?: boolean }) {
   return (
     <Box display="flex" gap={1} alignItems="baseline">
       <Typography variant="body2" color={strong ? 'text.primary' : 'text.secondary'} fontWeight={strong ? 700 : 400} sx={{ flexGrow: 1, minWidth: 0 }}>{label}</Typography>

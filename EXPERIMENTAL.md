@@ -25,7 +25,11 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(nada — tudo promovido em `0.8.26.1`)_
+Em `0.8.26.2` (na exp):
+
+- **Cartão de vencimento mais verificável** — "Per diem" abre a lista dos dias A / B (`perDiemDates` em
+  `PayEstimate`); linhas de instrutor (simulador / line training) mostradas sempre que a escala as tem,
+  com "falta o valor nas Definições"; aviso a comandantes sem `veCommand`/`chiefBonus` separados.
 
 ---
 

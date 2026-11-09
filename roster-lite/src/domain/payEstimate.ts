@@ -181,6 +181,7 @@ export interface PayEstimate {
   perDiemA: number; // days
   perDiemB: number;
   perDiemValue: number;
+  perDiemDates: { a: string[]; b: string[] }; // which days, so the pilot can check them against the payslip
   perDiemTravelDays: number; // per-diem days spent away (flying or on a layover)
   perDiemTravelValue: number;
   complementDays: number;
@@ -309,6 +310,7 @@ export function payEstimate(
   // real September roster and the payslip that paid it: 9 A + 7 B, day for day.
   let perDiemA = 0;
   let perDiemB = 0;
+  const perDiemDates = { a: [] as string[], b: [] as string[] };
   let available = 0; // days not on holidays or absence, for the complementary payment
   let perDiemTravelDays = 0; // days away — the part of the per diem partly exempt from tax
   let perDiemTravelValue = 0;
@@ -328,9 +330,11 @@ export function payEstimate(
     const travelling = carryOver.has(date) || day.some((x) => x.dutyType === 'Flight Duty' || x.dutyType === 'Positioning');
     if (flying || carryOver.has(date)) {
       perDiemA++;
+      perDiemDates.a.push(date);
       if (travelling) { perDiemTravelDays++; perDiemTravelValue += s.perDiemA; }
     } else if (awayAtStart || day.some((x) => GROUND_B.has(x.dutyType))) {
       perDiemB++;
+      perDiemDates.b.push(date);
       if (awayAtStart) { perDiemTravelDays++; perDiemTravelValue += s.perDiemB; }
     }
     if (!day.every((x) => x.dutyType === 'Vacation' || x.dutyType === 'Absence')) available++;
@@ -372,6 +376,7 @@ export function payEstimate(
     perDiemA,
     perDiemB,
     perDiemValue,
+    perDiemDates,
     perDiemTravelDays,
     perDiemTravelValue,
     complementDays,
