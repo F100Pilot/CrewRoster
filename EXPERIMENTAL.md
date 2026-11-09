@@ -52,6 +52,13 @@ Em `0.8.22.3` (na exp):
   a dia): A = voo, simulador, assistência no aeroporto; B = estadia, FP (formação presencial, também
   como instrutor), gabinete (GAB), S.EXT. e médico.
 
+Em `0.8.22.4` (na exp):
+
+- **Marca das sessões de simulador** — o parser associa `OPC`/`LPC`/`OPC_INS`/`LPC_INS` (sub-coluna
+  própria) à sessão de simulador do dia (`observations`); `PARSE_VERSION` 13. Sessões de instrutor =
+  marcadas `_INS` + 2.º dia do check (`instructorSimDates`). Setembro real: 4 instrutor + 2 próprias,
+  igual ao recibo.
+
 ---
 
 ## TODO / Backlog (decidir mais tarde)

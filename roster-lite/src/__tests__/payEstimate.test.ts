@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { easterSunday, nationalHolidays } from '../domain/holidaysPT';
-import { DEFAULT_PAY_SETTINGS, overtimeValue, payEstimate, MONTH_PLAFONDS, type PaySettings } from '../domain/payEstimate';
+import { DEFAULT_PAY_SETTINGS, instructorSimDates, overtimeValue, payEstimate, MONTH_PLAFONDS, type PaySettings } from '../domain/payEstimate';
 import type { ParsedDuty } from '../domain/types';
 
 const S: PaySettings = { ...DEFAULT_PAY_SETTINGS, enabled: true, vb: 5000, ve: 200, vs: 100, extras: 0 };
@@ -77,7 +77,7 @@ describe('payEstimate', () => {
     expect(payEstimate(duties, '2026-10', S, '2026-11-30').covered).toBe(false);
   });
 
-  it('pays per diem B on FP sessions and office duty, A on the simulator, and counts instructor sessions', () => {
+  it('pays per diem B on FP sessions and office duty, A on the simulator', () => {
     const duties = [
       duty('2026-11-12', 'Training', { dutyCode: 'FP1_INST', departureTime: '08:00', arrivalTime: '11:20', reportingTime: '08:00' }),
       duty('2026-11-12', 'Training', { dutyCode: 'FP2_INST', departureTime: '12:20', arrivalTime: '17:00', reportingTime: '12:20' }),
@@ -86,6 +86,20 @@ describe('payEstimate', () => {
       duty('2026-11-16', 'Simulator', { dutyCode: 'LIS-EBT-1', departureTime: '08:00', arrivalTime: '12:00', reportingTime: '08:00' }),
     ];
     const r = payEstimate(duties, '2026-11', { ...S, instructorSession: 550 }, '2026-11-30');
-    expect(r).toMatchObject({ perDiemA: 1, perDiemB: 3, instructorSessions: 2, instructorValue: 1100 });
+    // FP…_INST is ground training given, not a simulator session: no instructor fee.
+    expect(r).toMatchObject({ perDiemA: 1, perDiemB: 3, instructorSessions: 0, instructorValue: 0 });
+  });
+
+  it('counts simulator sessions as instructor from the check mark and the check\'s second day', () => {
+    const sim = (date: string, observations: string | null) =>
+      duty(date, 'Simulator', { dutyCode: 'LIS-EBT-1', departureTime: '08:00', arrivalTime: '12:00', reportingTime: '08:00', observations });
+    const duties = [
+      sim('2026-09-01', 'OPC, OPC_INS'), sim('2026-09-02', null), // gives an OPC: both days paid
+      sim('2026-09-03', 'OPC_INS'), sim('2026-09-04', null),
+      sim('2026-09-07', 'OPC'), sim('2026-09-08', null), // his own OPC: neither paid
+      sim('2026-09-20', null), // unmarked, nothing before it: not counted
+    ];
+    expect([...instructorSimDates(duties)]).toEqual(['2026-09-01', '2026-09-02', '2026-09-03', '2026-09-04']);
+    expect(payEstimate(duties, '2026-09', { ...S, instructorSession: 550 }, '2026-11-30').instructorValue).toBe(2200);
   });
 });

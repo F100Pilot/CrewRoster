@@ -102,7 +102,7 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                 <Row label={`Per diem: ${r.perDiemA} A + ${r.perDiemB} B`} value={r.perDiemValue} />
                 {r.complementDays > 0 && <Row label={`Prestação complementar: ${r.complementDays} ${r.complementDays === 1 ? 'dia' : 'dias'}`} value={r.complementValue} />}
                 {r.extensions > 0 && <Row label={`Extensões do comandante: ${r.extensions} × 2h`} value={r.extensionValue} />}
-                {r.instructorValue > 0 && <Row label={`Sessões como instrutor: ${r.instructorSessions}`} value={r.instructorValue} />}
+                {r.instructorValue > 0 && <Row label={`Simulador como instrutor: ${r.instructorSessions} sessões`} value={r.instructorValue} />}
                 {r.reducedMinutes > 0 && <Row label={`Descansos reduzidos: ${formatDuration(r.reducedMinutes)}`} value={r.reductionValue} />}
               </Stack>
             )}

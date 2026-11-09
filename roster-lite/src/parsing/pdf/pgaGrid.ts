@@ -568,6 +568,11 @@ const toMinutes = (hhmm: string): number => {
   return h * 60 + m;
 };
 
+// The check a simulator session is for, printed in its own sub-column under the session code:
+// "OPC" / "LPC" when the pilot is the one checked, "OPC_INS" / "LPC_INS" when he gives it as the
+// instructor, or both ("OPC, OPC_INS"). The second day of a two-day check carries no mark.
+const CHECK_MARK = /^(?:OPC|LPC)(?:_INS)?(?:,\s*(?:OPC|LPC)(?:_INS)?)*$/;
+
 export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
   const { calendar, bands } = prepareBands(tokens);
   const hotels = parseHotels(tokens); // "Hn" marker -> { name, phone }
@@ -577,6 +582,7 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
   // The "Hn" hotel marker is drawn in its own narrow sub-column, separate from the
   // flight's, so we record it per DAY and attach it after the day's duties are built.
   const hotelRefByDate = new Map<string, string>();
+  const checkByDate = new Map<string, string>();
   for (const b of bands) {
     if (b.offset === undefined) continue;
     const bandDate = new Map<string, string>();
@@ -594,6 +600,8 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
       if (!date) continue;
       const hn = s.tokens.find((t) => /^H\d$/.test(t.text));
       if (hn && !hotelRefByDate.has(date)) hotelRefByDate.set(date, hn.text);
+      const mark = s.tokens.find((t) => CHECK_MARK.test(t.text.trim()));
+      if (mark && !checkByDate.has(date)) checkByDate.set(date, mark.text.trim());
       const entries = parseSubColumn(s.tokens, date, hotels);
       if (!byDate.has(date)) byDate.set(date, []);
       const arr = byDate.get(date)!;
@@ -607,6 +615,15 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
     if (!info) continue;
     const target = arr.find((d) => d.dutyType === 'Flight Duty' || d.dutyType === 'Positioning') ?? arr[0];
     if (target && !target.hotel) target.hotel = info;
+  }
+
+  // Attach each day's check mark to its simulator session (only there: a stray "LPC" from the
+  // crew or legend boxes must never label another duty).
+  for (const [date, mark] of checkByDate) {
+    const sim = byDate.get(date)?.find((d) => d.dutyType === 'Simulator');
+    if (sim && !(sim.observations ?? '').includes(mark)) {
+      sim.observations = sim.observations ? `${sim.observations}, ${mark}` : mark;
+    }
   }
 
   // Order duties within each day chronologically (by departure/reporting time),

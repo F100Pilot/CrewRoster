@@ -17,8 +17,9 @@ import type { ParsedDuty } from './types';
 //     and the complementary payment when fewer than 5 days earn one (cl. 10);
 //   • commander's extensions (2h of duty-pay, cl. 2.6) and reduced rests (the time cut, cl. 2.8),
 //     from the planned-vs-flown record;
-//   • sessions given as an instructor (codes ending in _INST, e.g. FP1_INST), at a per-session
-//     fee the pilot sets — it is not in the AE, but payslips carry it the month after.
+//   • simulator sessions given as an instructor (OPC_INS / LPC_INS and the check's second day),
+//     at a per-session fee the pilot sets — it is not in the AE, but payslips carry it the
+//     month after.
 // Not modelled: work on a planned day off (cl. 13 — the app can't tell a folga was planned),
 // split duty (cl. 11), the annual plafond reconciliation paid in March (cl. 2.4), the holiday
 // and Christmas subsidies, and anything below the gross line (IRS, Segurança Social).
@@ -58,8 +59,28 @@ export const DEFAULT_PAY_SETTINGS: PaySettings = {
   perDiemA: AE_PER_DIEM.OP.a, perDiemB: AE_PER_DIEM.OP.b, instructorSession: 0,
 };
 
-// A session given as an instructor: the roster suffixes the code (FP1_INST, FP2_INST).
-export const isInstructorSession = (d: ParsedDuty) => /_INST$/i.test(d.dutyCode);
+// Simulator sessions given as an instructor. The roster marks the first day of a check with
+// "OPC" / "LPC" when the pilot is the one checked, or with "OPC_INS" / "LPC_INS" when he gives it;
+// the next session, the check's second day, carries no mark and follows the first. Unmarked
+// sessions with no marked one before them stay unpaid — better to under-count than invent pay.
+// Checked against a real September: 6 simulator days, 4 paid as instructor, 2 his own OPC.
+export function instructorSimDates(duties: ParsedDuty[]): Set<string> {
+  const out = new Set<string>();
+  let prev: { date: string; instructor: boolean } | null = null;
+  const sims = duties.filter((d) => d.dutyType === 'Simulator').sort((a, b) => a.date.localeCompare(b.date));
+  for (const d of sims) {
+    const mark = (d.observations ?? '').match(/\b(?:OPC|LPC)(?:_INS)?\b/g);
+    let instructor: boolean;
+    if (mark) instructor = mark.some((m) => m.endsWith('_INS'));
+    else instructor = !!prev && prev.instructor && daysBetween(prev.date, d.date) <= 3;
+    if (instructor) out.add(d.date);
+    prev = { date: d.date, instructor: mark ? instructor : false };
+  }
+  return out;
+}
+
+const daysBetween = (a: string, b: string) =>
+  Math.round((Date.parse(`${b}T00:00:00Z`) - Date.parse(`${a}T00:00:00Z`)) / 86400000);
 
 const h = (hh: number, mm = 0) => hh * 60 + mm;
 
@@ -254,8 +275,8 @@ export function payEstimate(
   const reducedMinutes = pvf.reductions.reduce((sum, r) => sum + r.cut, 0);
   const reductionValue = (reducedMinutes / 60) * hourly;
 
-  // ── Instructor sessions (not in the AE; the pilot's own fee) ──
-  const instructorSessions = duties.filter((d) => inMonth(d.date) && isInstructorSession(d)).length;
+  // ── Simulator sessions as instructor (not in the AE; the pilot's own fee) ──
+  const instructorSessions = [...instructorSimDates(duties)].filter(inMonth).length;
   const instructorValue = instructorSessions * (s.instructorSession || 0);
 
   const rb = s.vb + s.ve + s.vs + s.extras;

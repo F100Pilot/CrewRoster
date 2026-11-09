@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (391 tests) — keep green
+npm test           # vitest run (392 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -159,8 +159,10 @@ Things learned over this collaboration that should persist across sessions:
   Per diem defaults are the AE's "sujeito a confirmação" values, editable — the CTE pair (229,50 /
   153,00) matched a real payslip; per diem A = flight/positioning/simulator/airport standby days, B =
   layover, Training (FP* = formação presencial, also as instructor), Office Duty (GAB, S.EXT.) and
-  Medical days — verified day-for-day against a real roster + payslip; instructor sessions (`_INST`) are paid
-  at a per-session fee the pilot sets (not in the AE). Variable items are paid the month after.
+  Medical days — verified day-for-day against a real roster + payslip. Simulator instructor sessions
+  (paid at a per-session fee the pilot sets, not in the AE) = sims whose check mark (parsed into
+  `observations`: OPC/LPC, or OPC_INS/LPC_INS as instructor) has `_INS`, plus the check's unmarked
+  2nd day; FP…_INST is ground training given, not a sim session. Variable items paid the month after.
 - **Backlog:** the rest of the AE items (folgas check, ES/LF/ND, per diem, duty-pay/block-pay
   credits, holiday counter), PWA local reminders, crosswind (runway DB). See `EXPERIMENTAL.md`
   (TODO/Backlog) and `roster-lite/TODO.md`.

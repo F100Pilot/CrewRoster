@@ -83,7 +83,7 @@ export default function PaySettingsSection({ userId }: { userId: string }) {
           <Typography variant="caption" color="text.secondary">
             Per diem: valores da tabela A2.2 do AE ("sujeito a confirmação"). Muda-os se os teus forem outros.
           </Typography>
-          {money('instructorSession', 'Sessão de simulador como instrutor', 'Por sessão (códigos …_INST na escala). 0 se não és instrutor')}
+          {money('instructorSession', 'Sessão de simulador como instrutor', 'Por sessão: as marcadas OPC_INS / LPC_INS e o 2.º dia do check. 0 se não és instrutor')}
         </Stack>
       )}
     </Box>
