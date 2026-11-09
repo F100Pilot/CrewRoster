@@ -28,13 +28,12 @@ import { useRoster } from '../state/useRoster';
 import { baseOf } from '../domain/dutyStats';
 import type { CrewBase } from '../domain/types';
 import PaySettingsSection from './PaySettingsSection';
+import { SETTINGS_TAB_KEY as TAB_KEY, type SettingsTab } from './settingsEvents';
 import {
   downloadBackup, readBackupFile, restoreBackup, BackupError, type BackupSummary,
 } from '../storage/backup';
 
 // The dialog is split into tabs by subject; the last one opened is remembered on this device.
-type SettingsTab = 'perfil' | 'vencimento' | 'app' | 'dados' | 'ajuda';
-const TAB_KEY = 'crewroster.settingsTab';
 
 function readTab(): SettingsTab {
   try {
@@ -131,6 +130,8 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
       setCredCode(cred?.crewCode ?? activeUser?.crewCode ?? '');
       setCredPassword(cred?.password ?? '');
       setLogbookFn(activeUser ? getLogbookFunction(activeUser.id) : 'COPILOT');
+      // A page may have asked for a specific tab (openSettings), so re-read it on every open.
+      setTab(readTab());
     }
   }, [open, activeUser]);
 

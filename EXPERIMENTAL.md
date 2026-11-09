@@ -94,6 +94,13 @@ Em `0.8.24` (na exp):
   isenções" fechado. "Guardar" só aparece em Perfil e App (o resto grava ao mudar).
 - `0.8.24.1`: AE (SIPLA) só para pilotos — confirmado em todas as vistas; menu "Limites" sem "AE" para cabina.
 
+Em `0.8.25` (na exp):
+
+- **Abas próprias para AE e Vencimento** (só pilotos), na barra de baixo a seguir a Estatísticas:
+  "AE" → `/limites` (sem o cartão de vencimento) e "Vencimento" → `/vencimento` (`PayPage.tsx`; a aba só
+  aparece com a estimativa ligada). Cabina chega aos limites EASA pelo menu "⋮". `settingsEvents.ts`
+  abre as Definições numa aba (botão "Alterar valores"). A barra desliza até à aba ativa.
+
 ---
 
 ## TODO / Backlog (decidir mais tarde)

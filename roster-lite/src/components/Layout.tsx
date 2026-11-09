@@ -1,11 +1,11 @@
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import {
   AppBar, Box, Container, IconButton, ListItemIcon, ListItemText, Menu, MenuItem, Paper,
   Toolbar, Tooltip, Typography, BottomNavigation, BottomNavigationAction,
 } from '@mui/material';
 import {
   CalendarMonth, FormatListBulleted, CloudDownload, PictureAsPdf, Logout, HelpOutline, Timer,
-  Settings, MenuBook, QueryStats, Public, Badge, Search, MoreVert,
+  Settings, MenuBook, QueryStats, Public, Badge, Search, MoreVert, Gavel, Payments,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
@@ -16,7 +16,8 @@ import NotificationBanner from './NotificationBanner';
 import SettingsDialog from './SettingsDialog';
 import WhatsNewDialog from './WhatsNewDialog';
 import DisclaimerDialog from './DisclaimerDialog';
-import { getTourSeen } from '../storage/settings';
+import { getPaySettings, getTourSeen } from '../storage/settings';
+import { OPEN_SETTINGS_EVENT } from './settingsEvents';
 import { startTour } from '../tour';
 
 interface NavItem { label: string; icon: ReactNode; path: string }
@@ -31,17 +32,50 @@ const BASE_NAV: NavItem[] = [
   { label: 'PDFs', icon: <PictureAsPdf />, path: '/pdfs' },
 ];
 
+const PILOT_AE_NAV: NavItem = { label: 'AE', icon: <Gavel />, path: '/limites' };
+const PILOT_PAY_NAV: NavItem = { label: 'Vencimento', icon: <Payments />, path: '/vencimento' };
+
 export default function Layout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { sessionToken, setSessionToken, activeUser } = useRoster();
-  // Logbook and documents are flight-crew oriented — hide their tabs for cabin crew.
-  const NAV = activeUser?.role === 'cabin'
+  const cabin = activeUser?.role === 'cabin';
+  // The pay tab shows only once the pilot turned the estimate on (off by default).
+  const [payOn, setPayOn] = useState(false);
+  useEffect(() => {
+    const reload = () => setPayOn(!!activeUser && !cabin && getPaySettings(activeUser.id).enabled);
+    reload();
+    window.addEventListener('pay-settings-updated', reload);
+    return () => window.removeEventListener('pay-settings-updated', reload);
+  }, [activeUser, cabin]);
+  // Logbook and documents are flight-crew oriented — hide their tabs for cabin crew. Pilots get
+  // the AE limits and the pay estimate as tabs of their own, next to Stats (all the "numbers"
+  // together); both follow the SIPLA agreement, which covers pilots only.
+  const NAV = cabin
     ? BASE_NAV.filter((n) => n.path !== '/logbook' && n.path !== '/documents')
-    : BASE_NAV;
+    : BASE_NAV.flatMap((n) => n.path === '/stats'
+      ? [n, PILOT_AE_NAV, ...(payOn ? [PILOT_PAY_NAV] : [])]
+      : [n]);
   const current = NAV.findIndex((n) => n.path === location.pathname);
+  // With eight or nine tabs the active one can sit off-screen — slide the bar so it's visible.
+  const navRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const bar = navRef.current;
+    const el = bar?.querySelector<HTMLElement>('.Mui-selected');
+    if (!bar || !el) return;
+    const left = el.offsetLeft - bar.offsetLeft;
+    if (left < bar.scrollLeft || left + el.offsetWidth > bar.scrollLeft + bar.clientWidth) {
+      bar.scrollTo({ left: left - (bar.clientWidth - el.offsetWidth) / 2, behavior: 'smooth' });
+    }
+  }, [current, NAV.length]);
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // Pages can ask for Settings on a given tab (see settingsEvents.ts).
+  useEffect(() => {
+    const open = () => setSettingsOpen(true);
+    window.addEventListener(OPEN_SETTINGS_EVENT, open);
+    return () => window.removeEventListener(OPEN_SETTINGS_EVENT, open);
+  }, []);
   // Overflow menu for the rarely-used actions: on a phone the toolbar had one icon too many
   // and squeezed the app name to "CrewRos…", so only the frequent actions stay on the bar.
   const [moreAnchor, setMoreAnchor] = useState<null | HTMLElement>(null);
@@ -93,11 +127,13 @@ export default function Layout({ children }: { children: ReactNode }) {
             </IconButton>
           </Tooltip>
           <Menu anchorEl={moreAnchor} open={Boolean(moreAnchor)} onClose={() => setMoreAnchor(null)}>
-            <MenuItem onClick={() => { setMoreAnchor(null); navigate('/limites'); }}>
-              <ListItemIcon><Timer fontSize="small" /></ListItemIcon>
-              {/* The AE (SIPLA) is the pilots' agreement — cabin crew only see the EASA limits there. */}
-              <ListItemText>{activeUser?.role === 'cabin' ? 'Limites' : 'Limites e AE'}</ListItemText>
-            </MenuItem>
+            {/* Pilots have the AE limits as a bottom tab; cabin crew reach their EASA limits here. */}
+            {cabin && (
+              <MenuItem onClick={() => { setMoreAnchor(null); navigate('/limites'); }}>
+                <ListItemIcon><Timer fontSize="small" /></ListItemIcon>
+                <ListItemText>Limites</ListItemText>
+              </MenuItem>
+            )}
             <MenuItem onClick={() => { setMoreAnchor(null); navigate('/codes'); }}>
               <ListItemIcon><HelpOutline fontSize="small" /></ListItemIcon>
               <ListItemText>Legenda de códigos</ListItemText>
@@ -119,9 +155,10 @@ export default function Layout({ children }: { children: ReactNode }) {
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       <WhatsNewDialog />
       <DisclaimerDialog />
-      {/* Seven tabs don't fit a phone width, so the bar scrolls horizontally. */}
+      {/* Seven to nine tabs don't fit a phone width, so the bar scrolls horizontally. */}
       <Paper
         data-tour="nav"
+        ref={navRef}
         sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, overflowX: 'auto' }}
         elevation={3}
       >

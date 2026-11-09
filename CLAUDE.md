@@ -181,6 +181,10 @@ Things learned over this collaboration that should persist across sessions:
 - **Settings are tabbed** (since 0.8.24): Perfil · Vencimento (pilots only) · App · Dados · Ajuda in
   `SettingsDialog.tsx`; last tab in localStorage `crewroster.settingsTab`. Guardar only on Perfil/App
   (the rest saves on change). New settings go in the tab for their subject, not at the bottom.
+  `openSettings(tab)` (`settingsEvents.ts`) opens the dialog on a tab from any page.
+- **AE and pay have their own bottom-nav tabs** (since 0.8.25, pilots only, user request): "AE" →
+  `/limites`, "Vencimento" → `/vencimento` (shown only when the estimate is enabled), placed right
+  after Estatísticas. Cabin crew reach EASA limits from the "⋮" menu.
 - **Backlog:** the rest of the AE items (folgas check, ES/LF/ND, per diem, duty-pay/block-pay
   credits, holiday counter), PWA local reminders, crosswind (runway DB). See `EXPERIMENTAL.md`
   (TODO/Backlog) and `roster-lite/TODO.md`.

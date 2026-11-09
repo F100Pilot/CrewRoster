@@ -62,7 +62,7 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
 
         {!hasVb && (
           <Alert severity="info" sx={{ py: 0, my: 0.5 }}>
-            Mete o teu VB, VE e VS em Definições → Estimativa de vencimento para ver os valores.
+            Mete o teu VB, VE e VS em Definições → Vencimento para ver os valores.
           </Alert>
         )}
 
