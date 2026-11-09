@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.25.1';
+export const APP_VERSION = '0.8.26';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -19,119 +19,14 @@ export interface ReleaseNote {
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
-    version: '0.8.25.1',
+    version: '0.8.26',
     date: '2026-11-09',
     highlights: [
-      'Definições → Vencimento: os nomes dos campos ficam sempre visíveis por cima (a "Quota sindical" ficava tapada pelo símbolo %).',
-    ],
-  },
-  {
-    version: '0.8.25',
-    date: '2026-11-09',
-    highlights: [
-      'Pilotos: os limites do AE e o vencimento passam a ter abas próprias na barra de baixo, ao lado das Estatísticas. A aba AE tem limites, conformidade, previsto vs voado e férias; a aba Vencimento aparece quando ligas a estimativa em Definições → Vencimento.',
-      'A barra de baixo desliza sozinha até à aba em que estás.',
-    ],
-  },
-  {
-    version: '0.8.24.1',
-    date: '2026-11-09',
-    highlights: [
-      'Todos os cálculos do AE (SIPLA) — limites, conformidade, descansos, FDP, férias, previsto vs voado e vencimento — são só para pilotos. Para cabina, o menu diz apenas "Limites" (EASA).',
-    ],
-  },
-  {
-    version: '0.8.24',
-    date: '2026-11-09',
-    highlights: [
-      'Definições arrumadas em abas: Perfil (base, função, CrewLink), Vencimento (só pilotos), App (aspeto, lembrete, AeroDataBox), Dados (escala e cópia de segurança) e Ajuda (tutorial, documentação, diagnóstico, sobre). A app lembra-se da última aba que abriste.',
-      'Vencimento dividido em Valores e Descontos; as isenções do per diem ficam num "Avançado" fechado por omissão.',
-      'Lembrete de check-in passa a botões (Sem / 15 / 30 / 60 / 90 min) e a aba Dados mostra o período da escala guardada e quando foi importada.',
-    ],
-  },
-  {
-    version: '0.8.23.3',
-    date: '2026-11-09',
-    highlights: [
-      'Estimativa de vencimento: a quota sindical pode ser uma percentagem (ex.: 1%) de uma base que escolhes — vazia, usa VB + VE + VS. Aparece em linha própria no líquido.',
-    ],
-  },
-  {
-    version: '0.8.23.2',
-    date: '2026-11-09',
-    highlights: [
-      'Estimativa de vencimento: o fundo de pensões pode ser calculado pelo AE (RRRGS cl. 16) — contribuição da PGA de 6,5% e depósito SIPLA de 7,5% da remuneração base (VB + VE + VS) — e acompanha sozinho as atualizações do VB. Ao ligar, os valores que tinhas metido à mão saem dos campos, para não contarem a dobrar.',
-    ],
-  },
-  {
-    version: '0.8.23.1',
-    date: '2026-11-09',
-    highlights: [
-      'Definições → Descontos: a situação para o IRS diz agora claramente "Casado, dois titulares" e "Casado, único titular — só um dos dois tem rendimentos", com a indicação de onde ver no recibo (Nº Titulares).',
-    ],
-  },
-  {
-    version: '0.8.23',
-    date: '2026-11-09',
-    highlights: [
-      'Estimativa de vencimento com o líquido: IRS pelas tabelas de retenção de 2026 (continente, Despacho n.º 233-A/2026), Segurança Social 11% e os teus descontos fixos. O per diem dos dias na base ("… T" no recibo) é tributado por inteiro; o dos dias fora tem uma parte isenta. Preenche em Definições → Estimativa de vencimento → Descontos. Confirmado com dois recibos reais.',
-    ],
-  },
-  {
-    version: '0.8.22.7',
-    date: '2026-11-09',
-    highlights: [
-      'Definições → Estimativa de vencimento: os campos dizem que linhas do recibo somar (VE = todas as anuidades, incluindo as de Comando; VS = senioridade + diuturnidades) e mostram o total da parte fixa, para conferires com o recibo.',
-    ],
-  },
-  {
-    version: '0.8.22.6',
-    date: '2026-11-09',
-    highlights: [
-      'Na lista, os dias de instrução têm etiqueta junto à data, alinhada com as outras: LIFUS · instr., FAM · instr., OPC · instr. / LPC · instr., e OPC / LPC nos teus próprios checks.',
-    ],
-  },
-  {
-    version: '0.8.22.5',
-    date: '2026-11-09',
-    highlights: [
-      'A escala passa a ler os voos feitos como instrutor: line training (LIFUS_INS) e familiarização (FAM_INS) aparecem no detalhe do dia, junto ao número do voo. O mesmo para as sessões de simulador (OPC / LPC, e como instrutor).',
-      'Estimativa de vencimento: novo campo "Line training como instrutor", pago por dia com voos LIFUS_INS ou FAM_INS, no mês seguinte.',
-    ],
-  },
-  {
-    version: '0.8.22.4',
-    date: '2026-11-09',
-    highlights: [
-      'A escala passa a ler a marca das sessões de simulador (OPC / LPC, ou OPC_INS / LPC_INS quando és o instrutor). A estimativa de vencimento conta como sessões de instrutor as marcadas _INS e o 2.º dia desse check; as tuas próprias (OPC / LPC) não contam. As escalas guardadas são relidas uma vez.',
-    ],
-  },
-  {
-    version: '0.8.22.3',
-    date: '2026-11-09',
-    highlights: [
-      'Per diem da estimativa de vencimento confirmado com uma escala e o recibo que a pagou: dá per diem A nos dias de voo, simulador e assistência no aeroporto; B nos dias fora da base, de formação presencial (FP1, FP2, também como instrutor), de gabinete (GAB), de serviço externo (S.EXT.) e de médico.',
-    ],
-  },
-  {
-    version: '0.8.22.2',
-    date: '2026-11-09',
-    highlights: [
-      'Estimativa de vencimento afinada com um recibo real: há um campo para o valor da sessão como instrutor (códigos …_INST, pago no mês seguinte) e as Definições dizem que linhas do recibo somar em VE, VS e "Outros fixos" (prémio de chefia, complemento de comandante, contribuição da PGA para o fundo de pensões).',
-    ],
-  },
-  {
-    version: '0.8.22.1',
-    date: '2026-11-09',
-    highlights: [
-      'Na lista, as etiquetas ao lado da data (Hoje, Novo, Alterado, ⚠ verificar) ficam alinhadas de cima a baixo, seja qual for o dia da semana.',
-    ],
-  },
-  {
-    version: '0.8.22',
-    date: '2026-11-09',
-    highlights: [
-      'Estimativa de vencimento (experimental, pilotos): liga-a em Definições → Estimativa de vencimento e mete o teu VB, VE e VS do recibo. Os valores ficam só no teu telemóvel. Em "Limites e AE" aparece o bruto estimado do recibo do mês seguinte: a base, as horas acima dos plafonds (duty-pay ou block-pay, o que pagar mais, a 3% / 6% do VB por hora), o per diem A/B, a prestação complementar, as extensões do comandante e os descansos reduzidos, pelas regras do RRRGS. Conta o noturno (23h–06h, +25%) e os feriados nacionais (+100%). É uma estimativa: confirma sempre no recibo.',
+      'Pilotos — estimativa de vencimento (experimental, desligada por omissão): liga em Definições → Vencimento e mete os teus valores (VB, VE, VS…), que ficam só neste dispositivo. Mostra o bruto e o líquido do recibo do mês seguinte: base, excedentes de duty/block-pay, per diem, complementar, extensões, descansos reduzidos, sessões de simulador e line training como instrutor, IRS pelas tabelas de 2026, Segurança Social, fundo de pensões e quota sindical. Confirma sempre no recibo oficial.',
+      'Pilotos — os limites do AE e o vencimento têm abas próprias na barra de baixo, a seguir a Estatísticas (a do Vencimento aparece quando ligas a estimativa). Todos os cálculos do AE (SIPLA) são só para pilotos; a cabina vê os limites EASA no menu ⋮.',
+      'Marcas de instrução (LIFUS, FAM, OPC/LPC como instrutor) aparecem na lista e no detalhe do dia.',
+      'Definições arrumadas em abas: Perfil, Vencimento, App, Dados e Ajuda. A app lembra-se da última aba aberta.',
+      'Na lista, as etiquetas (Hoje, Novo, Alterado…) ficam todas alinhadas na mesma coluna.',
     ],
   },
   {

@@ -154,7 +154,7 @@ Things learned over this collaboration that should persist across sessions:
   `ParsedDuty.planned` and marks past-day imports `settled` (so flown times are never taken for a
   plan). The reparse replays saved PDFs in download order with their dates, rebuilding history.
   `domain/planVsFlown.ts` derives delays, extra FDP, commander's extensions and reduced rests.
-- **Pay estimate** (since 0.8.22, exp): `domain/payEstimate.ts` applies the RRRGS (RB, plafonds
+- **Pay estimate** (since 0.8.22; in production since 0.8.26): `domain/payEstimate.ts` applies the RRRGS (RB, plafonds
   table 2.1 cut per holiday day, 3%/6% VB/h, per diem A/B cl. 9, complement cl. 10, cl. 2.6/2.8
   from planVsFlown, night 25% and national holidays 100% via `holidaysPT.ts`). **Personal figures
   (VB, VE, VS…) are typed by each pilot in Settings and kept in localStorage
