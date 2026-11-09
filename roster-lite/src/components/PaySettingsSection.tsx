@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react';
 import { Box, FormControlLabel, InputAdornment, MenuItem, Stack, Switch, TextField, Typography } from '@mui/material';
 import { getPaySettings, setPaySettings } from '../storage/settings';
 import { PAY_CATEGORIES, perDiemDefaults, type PayCategory, type PaySettings } from '../domain/payEstimate';
+import { IRS_TABLES, type IrsTable } from '../domain/irsWithholding';
 
 const EUR2 = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' });
 
-type MoneyField = 'vb' | 've' | 'vs' | 'extras' | 'perDiemA' | 'perDiemB' | 'instructorSession' | 'lineTrainingDay';
+type MoneyField = 'vb' | 've' | 'vs' | 'extras' | 'perDiemA' | 'perDiemB' | 'instructorSession' | 'lineTrainingDay'
+  | 'nonTaxableFixed' | 'fixedDeductions' | 'perDiemExemptIrs' | 'perDiemExemptSs';
 
 // Settings for the experimental pay estimate: off by default; once on, the pilot's own figures
 // from the payslip. Saved as typed, on this device only.
@@ -94,6 +96,32 @@ export default function PaySettingsSection({ userId }: { userId: string }) {
           </Typography>
           {money('instructorSession', 'Sessão de simulador como instrutor', 'Por sessão: as marcadas OPC_INS / LPC_INS e o 2.º dia do check. 0 se não és instrutor')}
           {money('lineTrainingDay', 'Line training como instrutor', 'Por dia de voos marcados LIFUS_INS ou FAM_INS. 0 se não és instrutor')}
+
+          {/* Below the gross line: what the payslip takes off. */}
+          <Typography variant="subtitle2" sx={{ pt: 1 }}>Descontos (para o líquido)</Typography>
+          <TextField
+            select size="small" fullWidth label="Situação para o IRS" value={s.irsTable ?? 'I'}
+            onChange={(e) => save({ ...s, irsTable: e.target.value as IrsTable })}
+            helperText="Como no recibo (titularidade e nº de titulares). Tabelas de retenção 2026, continente"
+          >
+            {IRS_TABLES.map((t) => <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>)}
+          </TextField>
+          <TextField
+            select size="small" fullWidth label="Dependentes" value={s.dependents ?? 0}
+            onChange={(e) => save({ ...s, dependents: Number(e.target.value) })}
+          >
+            {[0, 1, 2, 3, 4, 5].map((n) => <MenuItem key={n} value={n}>{n}</MenuItem>)}
+          </TextField>
+          {money('nonTaxableFixed', 'Dos outros fixos, sem IRS nem SS', 'Ex.: "Fundo pensões contr. PGA"')}
+          {money('fixedDeductions', 'Outros descontos fixos por mês', 'Soma de "Seguro saúde" + "Sindicato" + "Depósito f. pensões-SIPLA"')}
+          <Box display="grid" gridTemplateColumns="1fr 1fr" gap={1.5}>
+            {money('perDiemExemptIrs', 'Per diem isento/dia fora · IRS')}
+            {money('perDiemExemptSs', 'Per diem isento/dia fora · SS')}
+          </Box>
+          <Typography variant="caption" color="text.secondary">
+            O per diem dos dias fora (voo ou estadia) tem uma parte isenta; o dos dias na base ("… T" no recibo)
+            é tributado por inteiro. Os valores por omissão são a média de recibos reais.
+          </Typography>
         </Stack>
       )}
     </Box>
@@ -105,6 +133,7 @@ function toText(s: PaySettings): Record<MoneyField, string> {
   return {
     vb: f(s.vb), ve: f(s.ve), vs: f(s.vs), extras: f(s.extras),
     perDiemA: f(s.perDiemA), perDiemB: f(s.perDiemB), instructorSession: f(s.instructorSession),
-    lineTrainingDay: f(s.lineTrainingDay),
+    lineTrainingDay: f(s.lineTrainingDay), nonTaxableFixed: f(s.nonTaxableFixed), fixedDeductions: f(s.fixedDeductions),
+    perDiemExemptIrs: f(s.perDiemExemptIrs), perDiemExemptSs: f(s.perDiemExemptSs),
   };
 }

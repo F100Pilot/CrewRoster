@@ -4,6 +4,7 @@ import { lisbonMidnightUtc } from './standbyWindows';
 import { nationalHolidays } from './holidaysPT';
 import { planVsFlown } from './planVsFlown';
 import { HOME_BASE } from './dutyStats';
+import { irsRetention, type IrsTable } from './irsWithholding';
 import type { ParsedDuty } from './types';
 
 // A gross monthly pay estimate for a Portugália pilot, from the RRRGS (the pay annex of the
@@ -54,12 +55,27 @@ export interface PaySettings {
   perDiemB: number;
   instructorSession: number; // € per session given as an instructor; 0 if not an instructor
   lineTrainingDay: number; // € per day of flights flown as instructor (LIFUS_INS / FAM_INS)
+  // ── For the net estimate ──
+  irsTable: IrsTable;
+  dependents: number;
+  nonTaxableFixed: number; // the part of `extras` not subject to IRS / SS (the PGA's pension contribution)
+  fixedDeductions: number; // monthly deductions other than IRS and SS (insurance, union, pension fund…)
+  perDiemExemptIrs: number; // € of per diem free of IRS per day away (travel), on average
+  perDiemExemptSs: number; // the same for Segurança Social
 }
 
 export const DEFAULT_PAY_SETTINGS: PaySettings = {
   enabled: false, category: 'OP3', vb: 0, ve: 0, vs: 0, extras: 0,
   perDiemA: AE_PER_DIEM.OP.a, perDiemB: AE_PER_DIEM.OP.b, instructorSession: 0, lineTrainingDay: 0,
+  irsTable: 'I', dependents: 0, nonTaxableFixed: 0, fixedDeductions: 0,
+  // Per diem paid for a day away is partly exempt (as ajudas de custo); per diem for days at base
+  // (simulator, training, office — "Perdiem … T" on payslips) is taxed in full. The exempt share
+  // varies with the trip (national / abroad, overnight or not); these defaults are the per-day
+  // average of two real payslips (Sep and Oct 2026: ~86–90 € for IRS, ~135–145 € for SS). Editable.
+  perDiemExemptIrs: 88, perDiemExemptSs: 140,
 };
+
+export const SS_RATE = 0.11; // Segurança Social, the worker's share
 
 // A flight flown as the instructor, from its roster mark: line training (LIFUS_INS) or
 // familiarisation (FAM_INS). Payslips pay "Line Training" once per such day — a real September
@@ -128,6 +144,8 @@ export interface PayEstimate {
   perDiemA: number; // days
   perDiemB: number;
   perDiemValue: number;
+  perDiemTravelDays: number; // per-diem days spent away (flying or on a layover)
+  perDiemTravelValue: number;
   complementDays: number;
   complementValue: number;
   extensions: number;
@@ -255,6 +273,8 @@ export function payEstimate(
   let perDiemA = 0;
   let perDiemB = 0;
   let available = 0; // days not on holidays or absence, for the complementary payment
+  let perDiemTravelDays = 0; // days away — the part of the per diem partly exempt from tax
+  let perDiemTravelValue = 0;
   let where = base; // the airport the pilot is at, carried through the roster
   const dates = [...days.keys()].sort();
   const carryOver = new Set<string>();
@@ -268,8 +288,14 @@ export function payEstimate(
     }
     if (!inMonth(date)) continue;
     const flying = day.some((x) => FLYING.has(x.dutyType) || x.dutyType === 'Standby Airport');
-    if (flying || carryOver.has(date)) perDiemA++;
-    else if (awayAtStart || day.some((x) => GROUND_B.has(x.dutyType))) perDiemB++;
+    const travelling = carryOver.has(date) || day.some((x) => x.dutyType === 'Flight Duty' || x.dutyType === 'Positioning');
+    if (flying || carryOver.has(date)) {
+      perDiemA++;
+      if (travelling) { perDiemTravelDays++; perDiemTravelValue += s.perDiemA; }
+    } else if (awayAtStart || day.some((x) => GROUND_B.has(x.dutyType))) {
+      perDiemB++;
+      if (awayAtStart) { perDiemTravelDays++; perDiemTravelValue += s.perDiemB; }
+    }
     if (!day.every((x) => x.dutyType === 'Vacation' || x.dutyType === 'Absence')) available++;
   }
   const perDiemValue = perDiemA * s.perDiemA + perDiemB * s.perDiemB;
@@ -307,6 +333,8 @@ export function payEstimate(
     perDiemA,
     perDiemB,
     perDiemValue,
+    perDiemTravelDays,
+    perDiemTravelValue,
     complementDays,
     complementValue,
     extensions: pvf.extensions.length,
@@ -320,5 +348,37 @@ export function payEstimate(
     holidayDays,
     variable,
     includesPlanned: todayISO < lastDay,
+  };
+}
+
+export interface NetEstimate {
+  gross: number;
+  irsBase: number; // pay subject to IRS in the payslip
+  irs: number;
+  irsRate: number; // effective, of irsBase
+  ssBase: number;
+  ss: number;
+  fixedDeductions: number;
+  net: number;
+}
+
+// The payslip below the gross line, for the month the estimate is paid in: base pay plus the
+// previous month's variable part. IRS is withheld by the 2026 tables on the whole month's taxable
+// pay; SS takes 11%. Both leave out the non-taxable fixed part, and the exempt share of the per
+// diem for days away; per diem for days at base is taxed in full. Checked against a real October
+// 2026 payslip: IRS and both SS lines to the cent.
+export function netEstimate(r: PayEstimate, s: PaySettings): NetEstimate {
+  const gross = r.rb + r.variable;
+  const fixedTaxable = r.rb - (s.nonTaxableFixed || 0);
+  const variableTaxed = r.variable - r.perDiemTravelValue; // everything but the per diem for days away
+  const travelTaxable = (exempt: number) => Math.max(0, r.perDiemTravelValue - (exempt || 0) * r.perDiemTravelDays);
+  const irsBase = fixedTaxable + variableTaxed + travelTaxable(s.perDiemExemptIrs);
+  const ssBase = fixedTaxable + variableTaxed + travelTaxable(s.perDiemExemptSs);
+  const irs = irsRetention(irsBase, s.irsTable || 'I', s.dependents || 0);
+  const ss = Math.round(ssBase * SS_RATE * 100) / 100;
+  const fixedDeductions = s.fixedDeductions || 0;
+  return {
+    gross, irsBase, irs, irsRate: irsBase > 0 ? irs / irsBase : 0, ssBase, ss, fixedDeductions,
+    net: gross - irs - ss - fixedDeductions,
   };
 }

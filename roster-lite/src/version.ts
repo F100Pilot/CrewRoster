@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.22.7';
+export const APP_VERSION = '0.8.23';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,13 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.23',
+    date: '2026-11-09',
+    highlights: [
+      'Estimativa de vencimento com o líquido: IRS pelas tabelas de retenção de 2026 (continente, Despacho n.º 233-A/2026), Segurança Social 11% e os teus descontos fixos. O per diem dos dias na base ("… T" no recibo) é tributado por inteiro; o dos dias fora tem uma parte isenta. Preenche em Definições → Estimativa de vencimento → Descontos. Confirmado com dois recibos reais.',
+    ],
+  },
   {
     version: '0.8.22.7',
     date: '2026-11-09',

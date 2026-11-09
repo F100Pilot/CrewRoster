@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, Box, Card, CardContent, IconButton, Stack, Typography } from '@mui/material';
 import { ChevronLeft, ChevronRight, Payments } from '@mui/icons-material';
-import { payEstimate, type Credit } from '../domain/payEstimate';
+import { netEstimate, payEstimate, type Credit } from '../domain/payEstimate';
 import { getPaySettings } from '../storage/settings';
 import { ExperimentalChip } from './AeDisclaimer';
 import { formatDuration } from '../utils/duration';
@@ -33,6 +33,7 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
   const today = new Date().toISOString().slice(0, 10);
   const [month, setMonth] = useState(today.slice(0, 7));
   const r = useMemo(() => payEstimate(duties, month, settings, today, base), [duties, month, settings, today, base]);
+  const n = useMemo(() => netEstimate(r, settings), [r, settings]);
 
   if (!settings.enabled) return null;
   const paidIn = shiftMonth(month, 1);
@@ -79,8 +80,11 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                 <Typography variant="h5" fontWeight={700} sx={{ fontVariantNumeric: 'tabular-nums' }}>
                   ≈ {EUR.format(r.rb + r.variable)}
                 </Typography>
-                <Typography variant="caption" color="text.secondary">
+                <Typography variant="caption" color="text.secondary" display="block">
                   base + variável de {monthName(month)}{r.includesPlanned ? ' (inclui o planeado)' : ''}
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 0.5, fontVariantNumeric: 'tabular-nums' }}>
+                  Líquido ≈ <b>{EUR.format(n.net)}</b>
                 </Typography>
               </Box>
             )}
@@ -105,11 +109,17 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                 {r.instructorValue > 0 && <Row label={`Simulador como instrutor: ${r.instructorSessions} sessões`} value={r.instructorValue} />}
                 {r.lineTrainingValue > 0 && <Row label={`Line training como instrutor: ${r.lineTrainingDays} ${r.lineTrainingDays === 1 ? 'dia' : 'dias'}`} value={r.lineTrainingValue} />}
                 {r.reducedMinutes > 0 && <Row label={`Descansos reduzidos: ${formatDuration(r.reducedMinutes)}`} value={r.reductionValue} />}
+                <Box sx={{ borderTop: 1, borderColor: 'divider', my: 0.5 }} />
+                <Row label="Bruto" value={n.gross} strong />
+                <Row label={`IRS (${(n.irsRate * 100).toFixed(1).replace('.', ',')}% de ${EUR.format(n.irsBase)})`} value={-n.irs} />
+                <Row label="Segurança Social (11%)" value={-n.ss} />
+                {n.fixedDeductions > 0 && <Row label="Outros descontos fixos" value={-n.fixedDeductions} />}
+                <Row label="Líquido" value={n.net} strong />
               </Stack>
             )}
 
             <Typography variant="caption" color="text.disabled" display="block" mt={0.75} lineHeight={1.35}>
-              Bruto, antes de IRS e Segurança Social. O variável (per diem incluído) é pago no mês seguinte. Noturno 23h–06h e feriados nacionais em hora de Lisboa. Não inclui folgas
+              O variável (per diem incluído) é pago no mês seguinte. IRS pelas tabelas de retenção de 2026 (continente); não prevê acertos de meses anteriores. Noturno 23h–06h e feriados nacionais em hora de Lisboa. Não inclui folgas
               trabalhadas, split-duty, subsídio de alimentação, subsídios de férias e Natal, nem o
               acerto anual dos plafonds (março).
               Confirma sempre no recibo.
@@ -150,11 +160,11 @@ function CreditBar({ label, c, chosen, showValue }: { label: string; c: Credit; 
   );
 }
 
-function Row({ label, value }: { label: string; value: number }) {
+function Row({ label, value, strong }: { label: string; value: number; strong?: boolean }) {
   return (
     <Box display="flex" gap={1} alignItems="baseline">
-      <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1, minWidth: 0 }}>{label}</Typography>
-      <Typography variant="body2" fontWeight={600} sx={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{EUR.format(value)}</Typography>
+      <Typography variant="body2" color={strong ? 'text.primary' : 'text.secondary'} fontWeight={strong ? 700 : 400} sx={{ flexGrow: 1, minWidth: 0 }}>{label}</Typography>
+      <Typography variant="body2" fontWeight={strong ? 700 : 600} sx={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{EUR.format(value)}</Typography>
     </Box>
   );
 }
