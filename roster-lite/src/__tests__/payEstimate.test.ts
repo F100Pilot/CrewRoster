@@ -149,6 +149,8 @@ describe('payEstimate', () => {
     expect(payEstimate(july, '2026-06', S, '2026-06-30').holidaySubsidy).toBe(0);
     // Ticked by hand on the card, it wins over the roster — and an untick (month 0) cancels it.
     expect(payEstimate(july, '2026-07', { ...S, holidayPay: { year: 2026, month: 8 } }, '2026-07-31').holidaySubsidy).toBe(5300);
+    // Only one payslip a year carries it: ticking August takes it off the roster's June.
+    expect(payEstimate(july, '2026-05', { ...S, holidayPay: { year: 2026, month: 8 } }, '2026-05-31')).toMatchObject({ holidaySubsidy: 0, holidayPayMonth: 8 });
     expect(payEstimate(july, '2026-05', { ...S, holidayPay: { year: 2026, month: 0 } }, '2026-05-31').holidaySubsidy).toBe(0);
     // A tick from another year doesn't count.
     expect(payEstimate(july, '2026-05', { ...S, holidayPay: { year: 2025, month: 8 } }, '2026-05-31')).toMatchObject({ holidaySubsidy: 5300, holidayPayAuto: true });
