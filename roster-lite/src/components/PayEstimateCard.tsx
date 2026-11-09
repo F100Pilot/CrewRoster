@@ -37,6 +37,8 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
   const n = useMemo(() => netEstimate(r, settings), [r, settings]);
 
   if (!settings.enabled) return null;
+  const subsidyCount = (r.holidaySubsidy > 0 ? 1 : 0) + (r.christmasSubsidy > 0 ? 1 : 0);
+  const subsidyNames = [r.holidaySubsidy > 0 && 'subsídio de férias', r.christmasSubsidy > 0 && 'subsídio de Natal'].filter(Boolean).join(' e ');
   const paidIn = shiftMonth(month, 1);
   const hasVb = settings.vb > 0;
 
@@ -79,10 +81,10 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                   Recibo de {monthName(paidIn)} (bruto)
                 </Typography>
                 <Typography variant="h5" fontWeight={700} sx={{ fontVariantNumeric: 'tabular-nums' }}>
-                  ≈ {EUR.format(r.rb + r.variable)}
+                  ≈ {EUR.format(n.gross)}
                 </Typography>
                 <Typography variant="caption" color="text.secondary" display="block">
-                  base + variável de {monthName(month)}{r.includesPlanned ? ' (inclui o planeado)' : ''}
+                  base + variável de {monthName(month)}{subsidyNames ? ` + ${subsidyNames}` : ''}{r.includesPlanned ? ' (inclui o planeado)' : ''}
                 </Typography>
                 <Typography variant="body2" sx={{ mt: 0.5, fontVariantNumeric: 'tabular-nums' }}>
                   Líquido ≈ <b>{EUR.format(n.net)}</b>
@@ -103,7 +105,9 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
             {hasVb && (
               <Stack spacing={0.25} mt={1}>
                 <Row label="Base (VB + VE + VS + outros fixos)" value={r.rb - r.pensionContribution} />
-                {r.pensionContribution > 0 && <Row label="Fundo pensões contr. PGA (6,5%)" value={r.pensionContribution} />}
+                {r.pensionContribution > 0 && (
+                  <Row label={`Fundo pensões contr. PGA (6,5%${subsidyCount ? `, ${subsidyCount + 1}×` : ''})`} value={r.pensionContribution * (subsidyCount + 1)} />
+                )}
                 <Row label={`Horas acima do plafond (${r.overtime === 'block' ? 'block-pay' : 'duty-pay'})`} value={r.overtimeValue} />
                 {/* Tap to list the days, to check them one by one against the payslip's per diem lines. */}
                 <Box onClick={() => setShowDays((v) => !v)} sx={{ cursor: 'pointer' }} role="button" aria-expanded={showDays}>
@@ -138,9 +142,12 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                   />
                 )}
                 {r.reducedMinutes > 0 && <Row label={`Descansos reduzidos: ${formatDuration(r.reducedMinutes)}`} value={r.reductionValue} />}
+                {r.holidaySubsidy > 0 && <Row label="Subsídio de férias (cl. 7)" value={r.holidaySubsidy} />}
+                {r.christmasSubsidy > 0 && <Row label="Subsídio de Natal (cl. 8)" value={r.christmasSubsidy} />}
                 <Box sx={{ borderTop: 1, borderColor: 'divider', my: 0.5 }} />
                 <Row label="Bruto" value={n.gross} strong />
                 <Row label={`IRS (${(n.irsRate * 100).toFixed(1).replace('.', ',')}% de ${EUR.format(n.irsBase)})`} value={-n.irs} />
+                {n.subsidyIrs > 0 && <Row label="IRS dos subsídios (retenção à parte)" value={-n.subsidyIrs} />}
                 <Row label="Segurança Social (11%)" value={-n.ss} />
                 {n.pensionDeposit > 0 && <Row label="Depósito f. pensões SIPLA (7,5%)" value={-n.pensionDeposit} />}
                 {n.union > 0 && <Row label={`Sindicato (${String(settings.unionPct).replace('.', ',')}%)`} value={-n.union} />}
@@ -156,9 +163,9 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
             )}
 
             <Typography variant="caption" color="text.disabled" display="block" mt={0.75} lineHeight={1.35}>
-              O variável (per diem incluído) é pago no mês seguinte. IRS pelas tabelas de retenção de 2026 (continente); não prevê acertos de meses anteriores. Noturno 23h–06h e feriados nacionais em hora de Lisboa. Não inclui folgas
-              trabalhadas, split-duty, subsídio de alimentação, subsídios de férias e Natal, nem o
-              acerto anual dos plafonds (março).
+              O variável (per diem incluído) é pago no mês seguinte. IRS pelas tabelas de retenção de 2026 (continente); não prevê acertos de meses anteriores. Noturno 23h–06h e feriados nacionais em hora de Lisboa. Subsídios de férias e de Natal = VB + VE + VS
+              (cl. 7 e 8), com o IRS retido à parte. Não inclui folgas trabalhadas, split-duty, subsídio de
+              alimentação, nem o acerto anual dos plafonds (março).
               Confirma sempre no recibo.
             </Typography>
           </>

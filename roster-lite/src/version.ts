@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.26.2';
+export const APP_VERSION = '0.8.27';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,14 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.27',
+    date: '2026-11-09',
+    highlights: [
+      'Vencimento: subsídios de férias e de Natal pelo AE (RRRGS cl. 7 e 8), cada um igual a VB + VE + VS. O de Natal aparece no recibo de dezembro; o de férias no mês antes das primeiras férias de 10 dias úteis ou mais (automático pela escala, ou escolhes o mês em Definições → Vencimento).',
+      'Nos meses de subsídio, o IRS do subsídio é retido à parte, como manda a lei, e o fundo de pensões também incide sobre ele (14 vezes por ano, cl. 16).',
+    ],
+  },
   {
     version: '0.8.26.2',
     date: '2026-11-09',

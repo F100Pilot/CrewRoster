@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (399 tests) — keep green
+npm test           # vitest run (401 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -184,6 +184,11 @@ Things learned over this collaboration that should persist across sessions:
   is automatic: `unionBaseAuto()` = all fixed pay minus the command lines "Anuid. técnica Comando"
   (`veCommand`, part of VE) and "Prémio de chefia" (`chiefBonus`, part of extras) — matched a real
   payslip to the cent (user wants it automatic); a typed `unionBase` still overrides, under Avançado.
+- **Holiday / Christmas subsidies** (since 0.8.27): each = RB (VB+VE+VS) — RRRGS cl. 7/8. Christmas on the
+  December payslip; holiday subsidy on the payslip of the month before the first holidays of ≥ 10 working
+  days (`autoHolidayPayMonth()` from the roster's Vacation runs, or `holidayPayMonth` set by hand). IRS
+  withheld apart per subsidy (CIRS art. 99.º-C), SS 11%, pension 14×/year (cl. 16.2). Union fee on
+  subsidies not applied — to confirm against a June/December payslip.
 - **Settings are tabbed** (since 0.8.24): Perfil · Vencimento (pilots only) · App · Dados · Ajuda in
   `SettingsDialog.tsx`; last tab in localStorage `crewroster.settingsTab`. Guardar only on Perfil/App
   (the rest saves on change). New settings go in the tab for their subject, not at the bottom.
