@@ -25,7 +25,12 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(nada — tudo promovido em `0.8.26`)_
+Em `0.8.26.1` (na exp):
+
+- **Base da quota sindical automática** — `unionBaseAuto()` = VB + VE + VS + outros fixos − "Anuid. técnica
+  Comando" − "Prémio de chefia" (− contribuição PGA se escrita à mão). Bateu ao cêntimo (9 377,74 €) com
+  recibos reais. Novos campos `veCommand` (parte do VE) e `chiefBonus` (parte dos outros fixos); a base
+  escrita à mão passou para "Avançado".
 
 ---
 
