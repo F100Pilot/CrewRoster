@@ -16,7 +16,9 @@ import type { ParsedDuty } from './types';
 //   • per diem A / B per calendar day (cl. 9, table A2.2 — "sujeito a confirmação" in the text)
 //     and the complementary payment when fewer than 5 days earn one (cl. 10);
 //   • commander's extensions (2h of duty-pay, cl. 2.6) and reduced rests (the time cut, cl. 2.8),
-//     from the planned-vs-flown record.
+//     from the planned-vs-flown record;
+//   • sessions given as an instructor (codes ending in _INST, e.g. FP1_INST), at a per-session
+//     fee the pilot sets — it is not in the AE, but payslips carry it the month after.
 // Not modelled: work on a planned day off (cl. 13 — the app can't tell a folga was planned),
 // split duty (cl. 11), the annual plafond reconciliation paid in March (cl. 2.4), the holiday
 // and Christmas subsidies, and anything below the gross line (IRS, Segurança Social).
@@ -31,8 +33,8 @@ export const PAY_CATEGORIES: { value: PayCategory; label: string }[] = [
   { value: 'OPJ', label: 'OP Júnior' },
 ];
 
-// Table A2.2, in euros. Marked "sujeito a confirmação" in the agreement, so they're only the
-// starting values of fields the pilot can change.
+// Table A2.2, in euros. Marked "sujeito a confirmação" in the agreement; the CTE pair matches a
+// real payslip (October 2026), the OP pair is unconfirmed. Starting values of editable fields.
 export const AE_PER_DIEM: Record<'CTE' | 'OP', { a: number; b: number }> = {
   CTE: { a: 229.5, b: 153 },
   OP: { a: 172.13, b: 114.75 },
@@ -48,12 +50,19 @@ export interface PaySettings {
   extras: number; // fixed monthly complements (cl. 3), €
   perDiemA: number;
   perDiemB: number;
+  instructorSession: number; // € per session given as an instructor; 0 if not an instructor
 }
 
 export const DEFAULT_PAY_SETTINGS: PaySettings = {
   enabled: false, category: 'OP3', vb: 0, ve: 0, vs: 0, extras: 0,
-  perDiemA: AE_PER_DIEM.OP.a, perDiemB: AE_PER_DIEM.OP.b,
+  perDiemA: AE_PER_DIEM.OP.a, perDiemB: AE_PER_DIEM.OP.b, instructorSession: 0,
 };
+
+// A session given as an instructor: the roster suffixes the code (FP1_INST, FP2_INST).
+export const isInstructorSession = (d: ParsedDuty) => /_INST$/i.test(d.dutyCode);
+// A simulator session the roster files under training (FP1, FP2, FP1_INST…). Payslips pay per
+// diem A for these days ("Perdiem A … T"), as cl. 9.1.a does for simulator duties.
+export const isSimSession = (d: ParsedDuty) => d.dutyType === 'Simulator' || (d.dutyType === 'Training' && /^FP\d/i.test(d.dutyCode));
 
 const h = (hh: number, mm = 0) => hh * 60 + mm;
 
@@ -99,6 +108,8 @@ export interface PayEstimate {
   extensionValue: number;
   reducedMinutes: number;
   reductionValue: number;
+  instructorSessions: number;
+  instructorValue: number;
   holidayDays: number; // days of holidays taken, which cut the plafonds
   variable: number; // everything above the RB, paid the month after
   includesPlanned: boolean; // the month isn't over yet
@@ -206,7 +217,7 @@ export function payEstimate(
   const overtimeVal = Math.max(duty.value, block.value);
 
   // ── Per diem (cl. 9), per calendar day in Lisbon ──
-  // A: a flight, positioning or simulator duty on the day, a duty still running from the day
+  // A: a flight, positioning or simulator duty on the day (FP sessions included), a duty still running from the day
   // before (an arrival after midnight), or airport standby. B: otherwise a day away from base
   // (layover), a ground training session or a medical. A wins where both apply (cl. 9.2).
   let perDiemA = 0;
@@ -224,7 +235,7 @@ export function payEstimate(
       if ((x.dutyType === 'Flight Duty' || x.dutyType === 'Positioning') && x.arrivalAirport) where = x.arrivalAirport.toUpperCase();
     }
     if (!inMonth(date)) continue;
-    const flying = day.some((x) => FLYING.has(x.dutyType) || x.dutyType === 'Standby Airport');
+    const flying = day.some((x) => FLYING.has(x.dutyType) || isSimSession(x) || x.dutyType === 'Standby Airport');
     if (flying || carryOver.has(date)) perDiemA++;
     else if (awayAtStart || day.some((x) => x.dutyType === 'Training' || x.dutyType === 'Medical')) perDiemB++;
     if (!day.every((x) => x.dutyType === 'Vacation' || x.dutyType === 'Absence')) available++;
@@ -242,8 +253,12 @@ export function payEstimate(
   const reducedMinutes = pvf.reductions.reduce((sum, r) => sum + r.cut, 0);
   const reductionValue = (reducedMinutes / 60) * hourly;
 
+  // ── Instructor sessions (not in the AE; the pilot's own fee) ──
+  const instructorSessions = duties.filter((d) => inMonth(d.date) && isInstructorSession(d)).length;
+  const instructorValue = instructorSessions * (s.instructorSession || 0);
+
   const rb = s.vb + s.ve + s.vs + s.extras;
-  const variable = overtimeVal + perDiemValue + complementValue + extensionValue + reductionValue;
+  const variable = overtimeVal + perDiemValue + complementValue + extensionValue + reductionValue + instructorValue;
   const lastDay = `${month}-${String(daysInMonth(month)).padStart(2, '0')}`;
   return {
     month,
@@ -262,6 +277,8 @@ export function payEstimate(
     extensionValue,
     reducedMinutes,
     reductionValue,
+    instructorSessions,
+    instructorValue,
     holidayDays,
     variable,
     includesPlanned: todayISO < lastDay,

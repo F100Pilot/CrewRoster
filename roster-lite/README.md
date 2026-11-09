@@ -119,7 +119,7 @@ confirmar no portal e descarregar a nova escala.
 |---|---|
 | UI | React 19 + MUI 7 + Emotion |
 | Build | Vite 7 + TypeScript 5 |
-| Testes | Vitest 3 (390 testes) |
+| Testes | Vitest 3 (391 testes) |
 | PDF parsing | pdf.js (pdfjs-dist 4) |
 | Persistência local | IndexedDB via idb 8 |
 | Datas | date-fns 4 |
@@ -187,7 +187,7 @@ antes→depois por dia alterado.
 cd roster-lite
 npm install
 npm run dev        # http://localhost:5173
-npm test           # testes unitários (Vitest) — 390 testes
+npm test           # testes unitários (Vitest) — 391 testes
 npm run typecheck  # verificação de tipos TypeScript (tsc -b)
 npm run lint       # ESLint
 npm run build      # gera dist/ (site estático)

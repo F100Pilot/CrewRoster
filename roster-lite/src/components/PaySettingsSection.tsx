@@ -3,7 +3,7 @@ import { Box, FormControlLabel, InputAdornment, MenuItem, Stack, Switch, TextFie
 import { getPaySettings, setPaySettings } from '../storage/settings';
 import { PAY_CATEGORIES, perDiemDefaults, type PayCategory, type PaySettings } from '../domain/payEstimate';
 
-type MoneyField = 'vb' | 've' | 'vs' | 'extras' | 'perDiemA' | 'perDiemB';
+type MoneyField = 'vb' | 've' | 'vs' | 'extras' | 'perDiemA' | 'perDiemB' | 'instructorSession';
 
 // Settings for the experimental pay estimate: off by default; once on, the pilot's own figures
 // from the payslip. Saved as typed, on this device only.
@@ -72,19 +72,18 @@ export default function PaySettingsSection({ userId }: { userId: string }) {
           >
             {PAY_CATEGORIES.map((c) => <MenuItem key={c.value} value={c.value}>{c.label}</MenuItem>)}
           </TextField>
-          {money('vb', 'Vencimento de categoria (VB)', 'Do teu recibo — é a base das horas a mais (3% / 6% do VB)')}
-          <Box display="grid" gridTemplateColumns="1fr 1fr" gap={1.5}>
-            {money('ve', 'VE (exercício)')}
-            {money('vs', 'VS (senioridade)')}
-          </Box>
-          {money('extras', 'Complementos fixos por mês', 'Ex.: complemento de CTE (cl. 3); 0 se não tens')}
+          {money('vb', 'Vencimento de categoria (VB)', 'No recibo: "Vencimento base". É a base das horas a mais (3% / 6% do VB)')}
+          {money('ve', 'VE (exercício)', 'Soma das anuidades técnicas (incl. as de Comando)')}
+          {money('vs', 'VS (senioridade)', 'Soma do vencimento de senioridade e das diuturnidades')}
+          {money('extras', 'Outros fixos por mês', 'Ex.: prémio de chefia, complemento de comandante, contribuição da PGA para o fundo de pensões')}
           <Box display="grid" gridTemplateColumns="1fr 1fr" gap={1.5}>
             {money('perDiemA', 'Per diem A')}
             {money('perDiemB', 'Per diem B')}
           </Box>
           <Typography variant="caption" color="text.secondary">
-            Per diem: valores da tabela A2.2 do AE, que diz "sujeito a confirmação". Muda-os se os teus forem outros.
+            Per diem: valores da tabela A2.2 do AE ("sujeito a confirmação"). Muda-os se os teus forem outros.
           </Typography>
+          {money('instructorSession', 'Sessão de simulador como instrutor', 'Por sessão (códigos …_INST na escala). 0 se não és instrutor')}
         </Stack>
       )}
     </Box>
@@ -93,5 +92,8 @@ export default function PaySettingsSection({ userId }: { userId: string }) {
 
 function toText(s: PaySettings): Record<MoneyField, string> {
   const f = (v: number) => (v ? String(v).replace('.', ',') : '');
-  return { vb: f(s.vb), ve: f(s.ve), vs: f(s.vs), extras: f(s.extras), perDiemA: f(s.perDiemA), perDiemB: f(s.perDiemB) };
+  return {
+    vb: f(s.vb), ve: f(s.ve), vs: f(s.vs), extras: f(s.extras),
+    perDiemA: f(s.perDiemA), perDiemB: f(s.perDiemB), instructorSession: f(s.instructorSession),
+  };
 }

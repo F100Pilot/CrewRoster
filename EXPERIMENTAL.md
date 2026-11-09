@@ -40,6 +40,12 @@ Em `0.8.22.1` (na exp):
 - **Etiquetas alinhadas na lista** — a data de cada dia tem largura fixa (`DATE_COLUMN` em
   `RosterPage.tsx`), por isso Hoje / Novo / Alterado / ⚠ verificar começam todas na mesma coluna.
 
+Em `0.8.22.2` (na exp):
+
+- **Estimativa de vencimento afinada com o recibo de outubro** — sessões FP* (simulador arquivado
+  como Training) dão per diem A; novo campo "Sessão de simulador como instrutor" (códigos `_INST`);
+  textos das Definições dizem que linhas do recibo somar. Per diem CTE (229,50 / 153,00) confirmado.
+
 ---
 
 ## TODO / Backlog (decidir mais tarde)

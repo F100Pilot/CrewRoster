@@ -76,4 +76,14 @@ describe('payEstimate', () => {
     expect(r.covered).toBe(true);
     expect(payEstimate(duties, '2026-10', S, '2026-11-30').covered).toBe(false);
   });
+
+  it('pays per diem A on simulator sessions filed as training, and counts instructor sessions', () => {
+    const duties = [
+      duty('2026-11-12', 'Training', { dutyCode: 'FP1_INST', departureTime: '08:00', arrivalTime: '11:20', reportingTime: '08:00' }),
+      duty('2026-11-12', 'Training', { dutyCode: 'FP2_INST', departureTime: '12:20', arrivalTime: '17:00', reportingTime: '12:20' }),
+      duty('2026-11-13', 'Training', { dutyCode: 'FP1', departureTime: '09:00', arrivalTime: '12:20', reportingTime: '09:00' }),
+    ];
+    const r = payEstimate(duties, '2026-11', { ...S, instructorSession: 550 }, '2026-11-30');
+    expect(r).toMatchObject({ perDiemA: 2, perDiemB: 0, instructorSessions: 2, instructorValue: 1100 });
+  });
 });

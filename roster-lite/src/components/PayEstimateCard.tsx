@@ -102,14 +102,15 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                 <Row label={`Per diem: ${r.perDiemA} A + ${r.perDiemB} B`} value={r.perDiemValue} />
                 {r.complementDays > 0 && <Row label={`Prestação complementar: ${r.complementDays} ${r.complementDays === 1 ? 'dia' : 'dias'}`} value={r.complementValue} />}
                 {r.extensions > 0 && <Row label={`Extensões do comandante: ${r.extensions} × 2h`} value={r.extensionValue} />}
+                {r.instructorValue > 0 && <Row label={`Sessões como instrutor: ${r.instructorSessions}`} value={r.instructorValue} />}
                 {r.reducedMinutes > 0 && <Row label={`Descansos reduzidos: ${formatDuration(r.reducedMinutes)}`} value={r.reductionValue} />}
               </Stack>
             )}
 
             <Typography variant="caption" color="text.disabled" display="block" mt={0.75} lineHeight={1.35}>
-              Bruto, antes de IRS e Segurança Social. Assume que todo o variável (per diem incluído) é pago
-              no mês seguinte. Noturno 23h–06h e feriados nacionais em hora de Lisboa. Não inclui folgas
-              trabalhadas, split-duty, subsídios de férias e Natal, nem o acerto anual dos plafonds (março).
+              Bruto, antes de IRS e Segurança Social. O variável (per diem incluído) é pago no mês seguinte. Noturno 23h–06h e feriados nacionais em hora de Lisboa. Não inclui folgas
+              trabalhadas, split-duty, line training, subsídio de alimentação, subsídios de férias e Natal, nem o
+              acerto anual dos plafonds (março).
               Confirma sempre no recibo.
             </Typography>
           </>
