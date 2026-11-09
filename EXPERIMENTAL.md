@@ -83,6 +83,8 @@ Em `0.8.23` (na exp):
   (média de dois recibos reais), dos dias na base tributado. Novos campos em Definições → Descontos.
   Recibos de setembro e outubro reproduzidos a poucos euros.
 - `0.8.23.1`: nomes das situações de IRS mais claros (casado dois titulares vs único titular).
+- `0.8.23.2`: fundo de pensões pelo AE (RRRGS cl. 16): contr. PGA 6,5% (abono sem IRS/SS) e depósito
+  SIPLA 7,5% de VB + VE + VS, calculados automaticamente; o interruptor tira/repõe os valores manuais.
 
 ---
 

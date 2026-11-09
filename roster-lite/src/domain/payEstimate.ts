@@ -62,6 +62,7 @@ export interface PaySettings {
   fixedDeductions: number; // monthly deductions other than IRS and SS (insurance, union, pension fund…)
   perDiemExemptIrs: number; // € of per diem free of IRS per day away (travel), on average
   perDiemExemptSs: number; // the same for Segurança Social
+  pensionAuto: boolean; // compute the pension-plan lines from the RB (RRRGS cl. 16)
 }
 
 export const DEFAULT_PAY_SETTINGS: PaySettings = {
@@ -73,7 +74,21 @@ export const DEFAULT_PAY_SETTINGS: PaySettings = {
   // varies with the trip (national / abroad, overnight or not); these defaults are the per-day
   // average of two real payslips (Sep and Oct 2026: ~86–90 € for IRS, ~135–145 € for SS). Editable.
   perDiemExemptIrs: 88, perDiemExemptSs: 140,
+  pensionAuto: false,
 };
+
+// RRRGS cl. 16: a defined-contribution pension plan of 7,5% of the RB (VB + VE + VS); the PGA bears
+// 6,5% — paid on the payslip as "Fundo pensões contr. PGA", free of IRS and SS — and the whole
+// 7,5% is deducted as "Depósito f. pensões-SIPLA", so the pilot's own share is 1%. Both lines
+// matched a real payslip to the cent.
+export const PENSION_TOTAL = 0.075;
+export const PENSION_COMPANY = 0.065;
+const cents = (v: number) => Math.round(v * 100) / 100;
+export function pensionLines(s: PaySettings): { contribution: number; deposit: number } {
+  if (!s.pensionAuto) return { contribution: 0, deposit: 0 };
+  const rb = s.vb + s.ve + s.vs;
+  return { contribution: cents(rb * PENSION_COMPANY), deposit: cents(rb * PENSION_TOTAL) };
+}
 
 export const SS_RATE = 0.11; // Segurança Social, the worker's share
 
@@ -136,7 +151,8 @@ export interface Credit {
 export interface PayEstimate {
   month: string; // the month worked, "YYYY-MM"
   covered: boolean; // the roster has days in this month
-  rb: number;
+  rb: number; // base pay with the fixed complements and, if computed, the PGA pension contribution
+  pensionContribution: number;
   duty: Credit;
   block: Credit;
   overtime: 'duty' | 'block' | null; // the more favourable one, null when neither pays
@@ -319,13 +335,15 @@ export function payEstimate(
   const lineTrainingDays = new Set(duties.filter((d) => inMonth(d.date) && isInstructorFlight(d)).map((d) => d.date)).size;
   const lineTrainingValue = lineTrainingDays * (s.lineTrainingDay || 0);
 
-  const rb = s.vb + s.ve + s.vs + s.extras;
+  const pension = pensionLines(s);
+  const rb = s.vb + s.ve + s.vs + s.extras + pension.contribution;
   const variable = overtimeVal + perDiemValue + complementValue + extensionValue + reductionValue + instructorValue + lineTrainingValue;
   const lastDay = `${month}-${String(daysInMonth(month)).padStart(2, '0')}`;
   return {
     month,
     covered: dates.some(inMonth),
     rb,
+    pensionContribution: pension.contribution,
     duty,
     block,
     overtime,
@@ -358,6 +376,7 @@ export interface NetEstimate {
   irsRate: number; // effective, of irsBase
   ssBase: number;
   ss: number;
+  pensionDeposit: number;
   fixedDeductions: number;
   net: number;
 }
@@ -369,7 +388,8 @@ export interface NetEstimate {
 // 2026 payslip: IRS and both SS lines to the cent.
 export function netEstimate(r: PayEstimate, s: PaySettings): NetEstimate {
   const gross = r.rb + r.variable;
-  const fixedTaxable = r.rb - (s.nonTaxableFixed || 0);
+  const pension = pensionLines(s);
+  const fixedTaxable = r.rb - (s.nonTaxableFixed || 0) - pension.contribution;
   const variableTaxed = r.variable - r.perDiemTravelValue; // everything but the per diem for days away
   const travelTaxable = (exempt: number) => Math.max(0, r.perDiemTravelValue - (exempt || 0) * r.perDiemTravelDays);
   const irsBase = fixedTaxable + variableTaxed + travelTaxable(s.perDiemExemptIrs);
@@ -378,7 +398,7 @@ export function netEstimate(r: PayEstimate, s: PaySettings): NetEstimate {
   const ss = Math.round(ssBase * SS_RATE * 100) / 100;
   const fixedDeductions = s.fixedDeductions || 0;
   return {
-    gross, irsBase, irs, irsRate: irsBase > 0 ? irs / irsBase : 0, ssBase, ss, fixedDeductions,
-    net: gross - irs - ss - fixedDeductions,
+    gross, irsBase, irs, irsRate: irsBase > 0 ? irs / irsBase : 0, ssBase, ss, pensionDeposit: pension.deposit, fixedDeductions,
+    net: gross - irs - ss - pension.deposit - fixedDeductions,
   };
 }

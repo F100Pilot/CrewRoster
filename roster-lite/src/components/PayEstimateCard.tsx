@@ -101,7 +101,8 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
 
             {hasVb && (
               <Stack spacing={0.25} mt={1}>
-                <Row label="Base (VB + VE + VS + compl.)" value={r.rb} />
+                <Row label="Base (VB + VE + VS + outros fixos)" value={r.rb - r.pensionContribution} />
+                {r.pensionContribution > 0 && <Row label="Fundo pensões contr. PGA (6,5%)" value={r.pensionContribution} />}
                 <Row label={`Horas acima do plafond (${r.overtime === 'block' ? 'block-pay' : 'duty-pay'})`} value={r.overtimeValue} />
                 <Row label={`Per diem: ${r.perDiemA} A + ${r.perDiemB} B`} value={r.perDiemValue} />
                 {r.complementDays > 0 && <Row label={`Prestação complementar: ${r.complementDays} ${r.complementDays === 1 ? 'dia' : 'dias'}`} value={r.complementValue} />}
@@ -113,6 +114,7 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                 <Row label="Bruto" value={n.gross} strong />
                 <Row label={`IRS (${(n.irsRate * 100).toFixed(1).replace('.', ',')}% de ${EUR.format(n.irsBase)})`} value={-n.irs} />
                 <Row label="Segurança Social (11%)" value={-n.ss} />
+                {n.pensionDeposit > 0 && <Row label="Depósito f. pensões SIPLA (7,5%)" value={-n.pensionDeposit} />}
                 {n.fixedDeductions > 0 && <Row label="Outros descontos fixos" value={-n.fixedDeductions} />}
                 <Row label="Líquido" value={n.net} strong />
               </Stack>

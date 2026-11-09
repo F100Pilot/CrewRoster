@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { irsRetention } from '../domain/irsWithholding';
-import { DEFAULT_PAY_SETTINGS, netEstimate, type PayEstimate } from '../domain/payEstimate';
+import { DEFAULT_PAY_SETTINGS, netEstimate, payEstimate, pensionLines, type PayEstimate } from '../domain/payEstimate';
 
 describe('irsRetention (Despacho 233-A/2026, continente)', () => {
   it('applies the marginal rate, the parcela and the per-dependent amount', () => {
@@ -36,5 +36,19 @@ describe('netEstimate', () => {
     expect(n.irs).toBe(irsRetention(10700, 'I', 1));
     expect(n.ss).toBeCloseTo(1160.5);
     expect(n.net).toBeCloseTo(11500 - n.irs - 1160.5 - 300);
+  });
+
+  it('computes the pension plan from the RB, same net as typing the lines by hand (cl. 16)', () => {
+    const base = { ...DEFAULT_PAY_SETTINGS, enabled: true, vb: 4000, ve: 500, vs: 500, irsTable: 'I' as const, dependents: 1 };
+    expect(pensionLines({ ...base, pensionAuto: true })).toEqual({ contribution: 325, deposit: 375 });
+    const byHand = { ...base, extras: 1325, nonTaxableFixed: 325, fixedDeductions: 475 };
+    const auto = { ...base, extras: 1000, nonTaxableFixed: 0, fixedDeductions: 100, pensionAuto: true };
+    const duties: never[] = [];
+    const a = netEstimate(payEstimate(duties, '2026-11', byHand, '2026-11-30'), byHand);
+    const b = netEstimate(payEstimate(duties, '2026-11', auto, '2026-11-30'), auto);
+    expect(b.gross).toBeCloseTo(a.gross);
+    expect(b.irs).toBe(a.irs);
+    expect(b.ss).toBeCloseTo(a.ss);
+    expect(b.net).toBeCloseTo(a.net);
   });
 });

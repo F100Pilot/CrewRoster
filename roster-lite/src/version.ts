@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.23.1';
+export const APP_VERSION = '0.8.23.2';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,13 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.23.2',
+    date: '2026-11-09',
+    highlights: [
+      'Estimativa de vencimento: o fundo de pensões pode ser calculado pelo AE (RRRGS cl. 16) — contribuição da PGA de 6,5% e depósito SIPLA de 7,5% da remuneração base (VB + VE + VS) — e acompanha sozinho as atualizações do VB. Ao ligar, os valores que tinhas metido à mão saem dos campos, para não contarem a dobrar.',
+    ],
+  },
   {
     version: '0.8.23.1',
     date: '2026-11-09',
