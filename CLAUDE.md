@@ -129,6 +129,10 @@ Things learned over this collaboration that should persist across sessions:
 - **When a fix "doesn't appear,"** suspect a stale stored roster (crew is baked at
   import time) or a stale PWA build before assuming a parser bug — re-import / hard
   refresh first.
+- **"Works on exp, not in production" with identical code = different stored data**, usually because the
+  installed app and the exp page run in different browsers (separate storage). Seen with the pay
+  estimate: a stale September roster without instructor marks. Fix: re-import the PDF there, or
+  Backup → Exportar on one side and Importar on the other.
 - **Company agreement (AE Portugália/SIPLA 2023) is the source for PILOT limits** (since 0.8.18):
   RUPT cl. 30–31 (flight/duty limits), cl. 19.7/20.4 (standby 25% home / 50% airport / R24 0%),
   cl. 25/34 (rest), cl. 35 (FDP table, Lisbon reference). Cabin crew stay on EASA (SIPLA covers
