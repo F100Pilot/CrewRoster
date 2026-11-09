@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Box, FormControlLabel, InputAdornment, MenuItem, Stack, Switch, TextField, Typography } from '@mui/material';
+import {
+  Accordion, AccordionDetails, AccordionSummary, Box, InputAdornment, MenuItem, Stack, Switch, TextField,
+  ToggleButton, ToggleButtonGroup, Typography,
+} from '@mui/material';
+import { ExpandMore } from '@mui/icons-material';
 import { getPaySettings, setPaySettings } from '../storage/settings';
 import { PAY_CATEGORIES, pensionLines, perDiemDefaults, unionFee, type PayCategory, type PaySettings } from '../domain/payEstimate';
 import { IRS_TABLES, type IrsTable } from '../domain/irsWithholding';
@@ -23,6 +27,8 @@ export default function PaySettingsSection({ userId }: { userId: string }) {
   }, [userId]);
 
   const save = (next: PaySettings) => { setS(next); setPaySettings(userId, next); };
+  // The two halves of the section: what is paid, and what the payslip takes off.
+  const [part, setPart] = useState<'valores' | 'descontos'>('valores');
 
   const onMoney = (field: MoneyField, raw: string) => {
     setText((t) => ({ ...t, [field]: raw }));
@@ -78,104 +84,158 @@ export default function PaySettingsSection({ userId }: { userId: string }) {
     />
   );
 
+  const pension = pensionLines(s);
+  const sectionTitle = (t: string) => (
+    <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700, lineHeight: 1.6 }}>{t}</Typography>
+  );
+
   return (
-    <Box>
-      <Typography variant="subtitle2" gutterBottom>Estimativa de vencimento (experimental)</Typography>
-      <Typography variant="body2" color="text.secondary" gutterBottom>
-        Uma estimativa do bruto do mês pelas regras do RRRGS, em "Limites e AE". Os teus valores ficam
-        <strong> só neste dispositivo</strong> (e na cópia de segurança, se a fizeres); ninguém mais os vê.
-      </Typography>
-      <FormControlLabel
-        control={<Switch checked={s.enabled} onChange={(e) => save({ ...s, enabled: e.target.checked, pensionAuto: s.pensionAuto || (e.target.checked && !s.vb) })} />}
-        label="Mostrar a estimativa"
-      />
+    <Stack spacing={1.5}>
+      <Box display="flex" alignItems="center" gap={1}>
+        <Box flexGrow={1}>
+          <Typography variant="subtitle2">Mostrar a estimativa (experimental)</Typography>
+          <Typography variant="body2" color="text.secondary">
+            Em Limites e AE. Os teus valores ficam só neste dispositivo (e na cópia de segurança).
+          </Typography>
+        </Box>
+        <Switch
+          checked={s.enabled}
+          onChange={(e) => save({ ...s, enabled: e.target.checked, pensionAuto: s.pensionAuto || (e.target.checked && !s.vb) })}
+          inputProps={{ 'aria-label': 'Mostrar a estimativa de vencimento' }}
+        />
+      </Box>
+
       {s.enabled && (
-        <Stack spacing={1.5} sx={{ mt: 1 }}>
-          <TextField
-            select size="small" fullWidth label="Categoria" value={s.category}
-            onChange={(e) => onCategory(e.target.value as PayCategory)}
+        <>
+          <ToggleButtonGroup
+            exclusive fullWidth size="small" color="primary" value={part}
+            onChange={(_, v: 'valores' | 'descontos' | null) => v && setPart(v)}
           >
-            {PAY_CATEGORIES.map((c) => <MenuItem key={c.value} value={c.value}>{c.label}</MenuItem>)}
-          </TextField>
-          {money('vb', 'Vencimento de categoria (VB)', 'No recibo: "Vencimento base". É a base das horas a mais (3% / 6% do VB)')}
-          {money('ve', 'VE (exercício)', 'Soma de TODAS as linhas de anuidades: "Anuid. técnicas" + "Anuid. técnica Comando"')}
-          {money('vs', 'VS (senioridade)', 'Soma de "Venc. seniorid." + "Diuturnidades"')}
-          {money('extras', 'Outros fixos por mês', s.pensionAuto ? 'Ex.: "Prémio de chefia", "Compl. Comandante Sénior"' : 'Ex.: "Prémio de chefia", "Compl. Comandante Sénior", "Fundo pensões contr. PGA"')}
-          {/* The sum to check against the payslip: every fixed line of the month, added up. */}
-          <Box display="flex" justifyContent="space-between" alignItems="baseline" px={0.5}>
-            <Typography variant="body2" color="text.secondary">Parte fixa por mês (confere com o recibo)</Typography>
-            <Typography variant="body2" fontWeight={700} sx={{ fontVariantNumeric: 'tabular-nums' }}>
-              {EUR2.format(s.vb + s.ve + s.vs + s.extras + pensionLines(s).contribution)}
-            </Typography>
-          </Box>
-          <Box display="grid" gridTemplateColumns="1fr 1fr" gap={1.5}>
-            {money('perDiemA', 'Per diem A')}
-            {money('perDiemB', 'Per diem B')}
-          </Box>
-          <Typography variant="caption" color="text.secondary">
-            Per diem: valores da tabela A2.2 do AE ("sujeito a confirmação"). Muda-os se os teus forem outros.
-          </Typography>
-          {money('instructorSession', 'Sessão de simulador como instrutor', 'Por sessão: as marcadas OPC_INS / LPC_INS e o 2.º dia do check. 0 se não és instrutor')}
-          {money('lineTrainingDay', 'Line training como instrutor', 'Por dia de voos marcados LIFUS_INS ou FAM_INS. 0 se não és instrutor')}
+            <ToggleButton value="valores">Valores</ToggleButton>
+            <ToggleButton value="descontos">Descontos</ToggleButton>
+          </ToggleButtonGroup>
 
-          {/* The pension plan (RRRGS cl. 16) from the RB itself, so it follows every VB update. Turning
-              it on takes the hand-typed lines back out of the fields they went into, so nothing is
-              counted twice; turning it off puts them back. */}
-          <FormControlLabel
-            control={<Switch checked={!!s.pensionAuto} onChange={(e) => onPension(e.target.checked)} />}
-            label="Fundo de pensões calculado pelo AE (7,5% / 6,5%)"
-          />
-          {s.pensionAuto && (
-            <Typography variant="caption" color="text.secondary" sx={{ mt: -1 }}>
-              Contr. PGA {EUR2.format(pensionLines(s).contribution)} (6,5% de VB + VE + VS, sem IRS nem SS) · Depósito SIPLA{' '}
-              {EUR2.format(pensionLines(s).deposit)} (7,5%) — não os metas nos campos.
-            </Typography>
+          {part === 'valores' ? (
+            <Stack spacing={1.5}>
+              <Box display="flex" alignItems="baseline">
+                <Box flexGrow={1}>{sectionTitle('Fixo por mês')}</Box>
+                {/* The sum to check against the payslip: every fixed line of the month, added up. */}
+                <Typography variant="body2" fontWeight={700} sx={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {EUR2.format(s.vb + s.ve + s.vs + s.extras + pension.contribution)}
+                </Typography>
+              </Box>
+              <TextField
+                select size="small" fullWidth label="Categoria" value={s.category}
+                onChange={(e) => onCategory(e.target.value as PayCategory)}
+              >
+                {PAY_CATEGORIES.map((c) => <MenuItem key={c.value} value={c.value}>{c.label}</MenuItem>)}
+              </TextField>
+              {money('vb', 'Vencimento de categoria (VB)', 'No recibo: "Vencimento base". Base das horas a mais (3% / 6% do VB)')}
+              {money('ve', 'VE (exercício)', 'Todas as anuidades: "Anuid. técnicas" + "Anuid. técnica Comando"')}
+              {money('vs', 'VS (senioridade)', '"Venc. seniorid." + "Diuturnidades"')}
+              {money('extras', 'Outros fixos por mês', s.pensionAuto ? 'Ex.: "Prémio de chefia", "Compl. Comandante Sénior"' : 'Ex.: "Prémio de chefia", "Compl. Comandante Sénior", "Fundo pensões contr. PGA"')}
+              {/* The pension plan (RRRGS cl. 16) from the RB itself, so it follows every VB update. Turning
+                  it on takes the hand-typed lines back out of the fields they went into, so nothing is
+                  counted twice; turning it off puts them back. */}
+              <Box sx={{ borderRadius: 2, bgcolor: 'action.hover', px: 1.5, py: 1 }} display="flex" alignItems="center" gap={1}>
+                <Box flexGrow={1}>
+                  <Typography variant="body2" fontWeight={600}>Fundo de pensões pelo AE</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {s.pensionAuto
+                      ? `Contr. PGA ${EUR2.format(pension.contribution)} (6,5%) · Depósito SIPLA ${EUR2.format(pension.deposit)} (7,5%)`
+                      : 'PGA 6,5% · SIPLA 7,5% de VB + VE + VS (RRRGS cl. 16)'}
+                  </Typography>
+                </Box>
+                <Switch checked={!!s.pensionAuto} onChange={(e) => onPension(e.target.checked)} inputProps={{ 'aria-label': 'Fundo de pensões pelo AE' }} />
+              </Box>
+
+              {sectionTitle('Variável (pago no mês seguinte)')}
+              <Box display="grid" gridTemplateColumns="1fr 1fr" gap={1.5}>
+                {money('perDiemA', 'Per diem A')}
+                {money('perDiemB', 'Per diem B')}
+                {money('instructorSession', 'Sessão simulador (instr.)')}
+                {money('lineTrainingDay', 'Line training (dia)')}
+              </Box>
+              <Typography variant="caption" color="text.secondary">
+                Per diem pela tabela A2.2 do AE ("sujeito a confirmação"). Instrutor: sessões OPC_INS / LPC_INS e o
+                2.º dia do check; line training por dia com voos LIFUS_INS ou FAM_INS. 0 se não és instrutor.
+              </Typography>
+            </Stack>
+          ) : (
+            <Stack spacing={1.5}>
+              {sectionTitle('IRS')}
+              <TextField
+                select size="small" fullWidth label="Situação" value={s.irsTable ?? 'I'}
+                onChange={(e) => save({ ...s, irsTable: e.target.value as IrsTable })}
+                helperText={'No recibo: "Nº Titulares 2" → casado, dois titulares. Tabelas de retenção 2026, continente'}
+              >
+                {IRS_TABLES.map((t) => <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>)}
+              </TextField>
+              <TextField
+                select size="small" fullWidth label="Dependentes" value={s.dependents ?? 0}
+                onChange={(e) => save({ ...s, dependents: Number(e.target.value) })}
+              >
+                {[0, 1, 2, 3, 4, 5].map((n) => <MenuItem key={n} value={n}>{n}</MenuItem>)}
+              </TextField>
+
+              {sectionTitle('Descontos fixos')}
+              {/* Union fee as a % of a base; with it on, the fixed deductions no longer carry it. */}
+              <Box display="grid" gridTemplateColumns="1fr 1fr" gap={1.5}>
+                <TextField
+                  label="Quota sindical" value={text.unionPct} onChange={(e) => onMoney('unionPct', e.target.value)}
+                  size="small" fullWidth
+                  InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
+                  inputProps={{ inputMode: 'decimal', autoComplete: 'off' }}
+                />
+                {money('unionBase', 'Base')}
+              </Box>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: -0.5 }}>
+                {s.unionPct
+                  ? 'Base vazia = VB + VE + VS. Com a quota em %, não metas o sindicato nos outros descontos.'
+                  : 'Ex.: 1%. Deixa 0 se preferires meter o valor do sindicato nos outros descontos.'}
+              </Typography>
+              {money('fixedDeductions', 'Outros descontos fixos por mês',
+                [`"Seguro saúde"`, s.unionPct ? null : '"Sindicato"', s.pensionAuto ? null : '"Depósito f. pensões-SIPLA"']
+                  .filter(Boolean).join(' + '))}
+              {/* What the estimate takes off by itself. */}
+              <Stack spacing={0.5} sx={{ borderRadius: 2, bgcolor: 'action.hover', px: 1.5, py: 1 }}>
+                {pension.deposit > 0 && <AutoLine label="Depósito f. pensões SIPLA (7,5%)" value={EUR2.format(pension.deposit)} />}
+                {s.unionPct > 0 && <AutoLine label={`Sindicato (${String(s.unionPct).replace('.', ',')}%)`} value={EUR2.format(unionFee(s))} />}
+                <AutoLine label="Segurança Social" value="11%" />
+                <AutoLine label="IRS" value="tabela do mês" />
+              </Stack>
+
+              <Accordion disableGutters elevation={0} sx={{ border: 1, borderColor: 'divider', borderRadius: 2, '&:before': { display: 'none' } }}>
+                <AccordionSummary expandIcon={<ExpandMore />}>
+                  <Typography variant="body2" fontWeight={600}>Avançado · isenções</Typography>
+                </AccordionSummary>
+                <AccordionDetails>
+                  <Stack spacing={1.5}>
+                    <Box display="grid" gridTemplateColumns="1fr 1fr" gap={1.5}>
+                      {money('perDiemExemptIrs', 'Isento IRS / dia fora')}
+                      {money('perDiemExemptSs', 'Isento SS / dia fora')}
+                    </Box>
+                    <Typography variant="caption" color="text.secondary">
+                      O per diem dos dias fora (voo ou estadia) tem uma parte isenta; o dos dias na base ("… T" no recibo)
+                      é tributado por inteiro. Por omissão, a média de recibos reais.
+                    </Typography>
+                    {money('nonTaxableFixed', 'Fixos sem IRS nem SS', s.pensionAuto ? 'O fundo de pensões já está tratado; normalmente 0' : 'Ex.: "Fundo pensões contr. PGA"')}
+                  </Stack>
+                </AccordionDetails>
+              </Accordion>
+            </Stack>
           )}
-
-          {/* Below the gross line: what the payslip takes off. */}
-          <Typography variant="subtitle2" sx={{ pt: 1 }}>Descontos (para o líquido)</Typography>
-          <TextField
-            select size="small" fullWidth label="Situação para o IRS" value={s.irsTable ?? 'I'}
-            onChange={(e) => save({ ...s, irsTable: e.target.value as IrsTable })}
-            helperText={'Vê no recibo: "Nº Titulares 2" → casado, dois titulares. Tabelas de retenção 2026, continente'}
-          >
-            {IRS_TABLES.map((t) => <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>)}
-          </TextField>
-          <TextField
-            select size="small" fullWidth label="Dependentes" value={s.dependents ?? 0}
-            onChange={(e) => save({ ...s, dependents: Number(e.target.value) })}
-          >
-            {[0, 1, 2, 3, 4, 5].map((n) => <MenuItem key={n} value={n}>{n}</MenuItem>)}
-          </TextField>
-          {money('nonTaxableFixed', 'Dos outros fixos, sem IRS nem SS', s.pensionAuto ? 'O fundo de pensões já é tratado acima; normalmente 0' : 'Ex.: "Fundo pensões contr. PGA"')}
-          {/* Union fee as a % of a base; with it on, the fixed deductions no longer carry it. */}
-          <Box display="grid" gridTemplateColumns="1fr 1fr" gap={1.5}>
-            <TextField
-              label="Quota sindical" value={text.unionPct} onChange={(e) => onMoney('unionPct', e.target.value)}
-              size="small" fullWidth
-              InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
-              inputProps={{ inputMode: 'decimal', autoComplete: 'off' }}
-            />
-            {money('unionBase', 'Base da quota')}
-          </Box>
-          <Typography variant="caption" color="text.secondary" sx={{ mt: -0.5 }}>
-            {s.unionPct
-              ? `Sindicato ${EUR2.format(unionFee(s))}. Base vazia = VB + VE + VS. Não o metas nos descontos fixos.`
-              : 'Ex.: 1%. Deixa 0 se preferires meter o valor do sindicato nos descontos fixos.'}
-          </Typography>
-          {money('fixedDeductions', 'Outros descontos fixos por mês',
-            [`Soma de "Seguro saúde"`, s.unionPct ? null : '"Sindicato"', s.pensionAuto ? null : '"Depósito f. pensões-SIPLA"']
-              .filter(Boolean).join(' + '))}
-          <Box display="grid" gridTemplateColumns="1fr 1fr" gap={1.5}>
-            {money('perDiemExemptIrs', 'Per diem isento/dia fora · IRS')}
-            {money('perDiemExemptSs', 'Per diem isento/dia fora · SS')}
-          </Box>
-          <Typography variant="caption" color="text.secondary">
-            O per diem dos dias fora (voo ou estadia) tem uma parte isenta; o dos dias na base ("… T" no recibo)
-            é tributado por inteiro. Os valores por omissão são a média de recibos reais.
-          </Typography>
-        </Stack>
+        </>
       )}
+    </Stack>
+  );
+}
+
+function AutoLine({ label, value }: { label: string; value: string }) {
+  return (
+    <Box display="flex" gap={1}>
+      <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1 }}>{label}</Typography>
+      <Typography variant="body2" fontWeight={600} sx={{ fontVariantNumeric: 'tabular-nums' }}>{value}</Typography>
     </Box>
   );
 }

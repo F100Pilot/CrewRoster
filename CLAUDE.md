@@ -175,6 +175,9 @@ Things learned over this collaboration that should persist across sessions:
   PGA contribution 6,5% of VB+VE+VS paid as a non-taxable abono, SIPLA deposit 7,5% deducted — both
   matched the payslip to the cent. Union fee (`unionPct` of `unionBase`, base empty = VB+VE+VS): 1% matched
   a real payslip only with a typed base of 9 377,74 € — which lines form the SIPLA base is still open.
+- **Settings are tabbed** (since 0.8.24): Perfil · Vencimento (pilots only) · App · Dados · Ajuda in
+  `SettingsDialog.tsx`; last tab in localStorage `crewroster.settingsTab`. Guardar only on Perfil/App
+  (the rest saves on change). New settings go in the tab for their subject, not at the bottom.
 - **Backlog:** the rest of the AE items (folgas check, ES/LF/ND, per diem, duty-pay/block-pay
   credits, holiday counter), PWA local reminders, crosswind (runway DB). See `EXPERIMENTAL.md`
   (TODO/Backlog) and `roster-lite/TODO.md`.

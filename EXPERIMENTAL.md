@@ -87,6 +87,12 @@ Em `0.8.23` (na exp):
   SIPLA 7,5% de VB + VE + VS, calculados automaticamente; o interruptor tira/repõe os valores manuais.
 - `0.8.23.3`: quota sindical em % de uma base (vazia = VB + VE + VS); base exata do SIPLA por confirmar.
 
+Em `0.8.24` (na exp):
+
+- **Definições em abas** — Perfil · Vencimento (só pilotos) · App · Dados · Ajuda (`SettingsDialog.tsx`,
+  última aba em `crewroster.settingsTab`). Vencimento com segmentos Valores / Descontos e um "Avançado ·
+  isenções" fechado. "Guardar" só aparece em Perfil e App (o resto grava ao mudar).
+
 ---
 
 ## TODO / Backlog (decidir mais tarde)
