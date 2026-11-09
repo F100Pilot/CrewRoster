@@ -3,7 +3,7 @@ import { Box, FormControlLabel, InputAdornment, MenuItem, Stack, Switch, TextFie
 import { getPaySettings, setPaySettings } from '../storage/settings';
 import { PAY_CATEGORIES, perDiemDefaults, type PayCategory, type PaySettings } from '../domain/payEstimate';
 
-type MoneyField = 'vb' | 've' | 'vs' | 'extras' | 'perDiemA' | 'perDiemB' | 'instructorSession';
+type MoneyField = 'vb' | 've' | 'vs' | 'extras' | 'perDiemA' | 'perDiemB' | 'instructorSession' | 'lineTrainingDay';
 
 // Settings for the experimental pay estimate: off by default; once on, the pilot's own figures
 // from the payslip. Saved as typed, on this device only.
@@ -84,6 +84,7 @@ export default function PaySettingsSection({ userId }: { userId: string }) {
             Per diem: valores da tabela A2.2 do AE ("sujeito a confirmação"). Muda-os se os teus forem outros.
           </Typography>
           {money('instructorSession', 'Sessão de simulador como instrutor', 'Por sessão: as marcadas OPC_INS / LPC_INS e o 2.º dia do check. 0 se não és instrutor')}
+          {money('lineTrainingDay', 'Line training como instrutor', 'Por dia de voos marcados LIFUS_INS ou FAM_INS. 0 se não és instrutor')}
         </Stack>
       )}
     </Box>
@@ -95,5 +96,6 @@ function toText(s: PaySettings): Record<MoneyField, string> {
   return {
     vb: f(s.vb), ve: f(s.ve), vs: f(s.vs), extras: f(s.extras),
     perDiemA: f(s.perDiemA), perDiemB: f(s.perDiemB), instructorSession: f(s.instructorSession),
+    lineTrainingDay: f(s.lineTrainingDay),
   };
 }

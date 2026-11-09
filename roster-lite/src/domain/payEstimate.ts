@@ -17,6 +17,7 @@ import type { ParsedDuty } from './types';
 //     and the complementary payment when fewer than 5 days earn one (cl. 10);
 //   • commander's extensions (2h of duty-pay, cl. 2.6) and reduced rests (the time cut, cl. 2.8),
 //     from the planned-vs-flown record;
+//   • line training / familiarisation flown as instructor (LIFUS_INS / FAM_INS), per day;
 //   • simulator sessions given as an instructor (OPC_INS / LPC_INS and the check's second day),
 //     at a per-session fee the pilot sets — it is not in the AE, but payslips carry it the
 //     month after.
@@ -52,12 +53,19 @@ export interface PaySettings {
   perDiemA: number;
   perDiemB: number;
   instructorSession: number; // € per session given as an instructor; 0 if not an instructor
+  lineTrainingDay: number; // € per day of flights flown as instructor (LIFUS_INS / FAM_INS)
 }
 
 export const DEFAULT_PAY_SETTINGS: PaySettings = {
   enabled: false, category: 'OP3', vb: 0, ve: 0, vs: 0, extras: 0,
-  perDiemA: AE_PER_DIEM.OP.a, perDiemB: AE_PER_DIEM.OP.b, instructorSession: 0,
+  perDiemA: AE_PER_DIEM.OP.a, perDiemB: AE_PER_DIEM.OP.b, instructorSession: 0, lineTrainingDay: 0,
 };
+
+// A flight flown as the instructor, from its roster mark: line training (LIFUS_INS) or
+// familiarisation (FAM_INS). Payslips pay "Line Training" once per such day — a real September
+// with one FAM_INS day (two legs) paid one.
+export const isInstructorFlight = (d: ParsedDuty) =>
+  (d.dutyType === 'Flight Duty' || d.dutyType === 'Positioning') && /\b(?:LIFUS|FAM)_INS\b/.test(d.observations ?? '');
 
 // Simulator sessions given as an instructor. The roster marks the first day of a check with
 // "OPC" / "LPC" when the pilot is the one checked, or with "OPC_INS" / "LPC_INS" when he gives it;
@@ -128,6 +136,8 @@ export interface PayEstimate {
   reductionValue: number;
   instructorSessions: number;
   instructorValue: number;
+  lineTrainingDays: number;
+  lineTrainingValue: number;
   holidayDays: number; // days of holidays taken, which cut the plafonds
   variable: number; // everything above the RB, paid the month after
   includesPlanned: boolean; // the month isn't over yet
@@ -279,8 +289,12 @@ export function payEstimate(
   const instructorSessions = [...instructorSimDates(duties)].filter(inMonth).length;
   const instructorValue = instructorSessions * (s.instructorSession || 0);
 
+  // ── Line training / familiarisation flown as instructor, per day ──
+  const lineTrainingDays = new Set(duties.filter((d) => inMonth(d.date) && isInstructorFlight(d)).map((d) => d.date)).size;
+  const lineTrainingValue = lineTrainingDays * (s.lineTrainingDay || 0);
+
   const rb = s.vb + s.ve + s.vs + s.extras;
-  const variable = overtimeVal + perDiemValue + complementValue + extensionValue + reductionValue + instructorValue;
+  const variable = overtimeVal + perDiemValue + complementValue + extensionValue + reductionValue + instructorValue + lineTrainingValue;
   const lastDay = `${month}-${String(daysInMonth(month)).padStart(2, '0')}`;
   return {
     month,
@@ -301,6 +315,8 @@ export function payEstimate(
     reductionValue,
     instructorSessions,
     instructorValue,
+    lineTrainingDays,
+    lineTrainingValue,
     holidayDays,
     variable,
     includesPlanned: todayISO < lastDay,

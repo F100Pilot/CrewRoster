@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.22.4';
+export const APP_VERSION = '0.8.22.5';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,14 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.22.5',
+    date: '2026-11-09',
+    highlights: [
+      'A escala passa a ler os voos feitos como instrutor: line training (LIFUS_INS) e familiarização (FAM_INS) aparecem no detalhe do dia, junto ao número do voo. O mesmo para as sessões de simulador (OPC / LPC, e como instrutor).',
+      'Estimativa de vencimento: novo campo "Line training como instrutor", pago por dia com voos LIFUS_INS ou FAM_INS, no mês seguinte.',
+    ],
+  },
   {
     version: '0.8.22.4',
     date: '2026-11-09',

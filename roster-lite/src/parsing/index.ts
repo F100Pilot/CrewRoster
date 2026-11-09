@@ -16,7 +16,7 @@ export { CREW_PARSER_VERSION };
 // re-apply to ALREADY-imported rosters. On app load a stored PDF roster whose parseVersion is
 // behind this is re-parsed from its saved PDF(s) — see RosterProvider — so improvements reach
 // the user without re-downloading. Bump this with any meaningful parser change.
-export const PARSE_VERSION = 13; // 13: simulator sessions carry their OPC/LPC check mark
+export const PARSE_VERSION = 14; // 14: flights carry their LIFUS_INS / FAM_INS instructor mark
 
 function sortByDate(duties: ParseResult['duties']): ParseResult['duties'] {
   return [...duties].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));

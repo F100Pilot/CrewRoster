@@ -193,6 +193,7 @@ export default function DayDetailPage() {
                   <Typography variant="h6" fontWeight={700}>
                     {duty.flightNumber}
                   </Typography>
+                  {duty.observations && <MarkChips text={duty.observations} center />}
                 </Box>
                 <Box display="flex" alignItems="flex-start" justifyContent="center" gap={2}>
                   <TimePoint
@@ -271,14 +272,7 @@ export default function DayDetailPage() {
                 </Box>
               )}
 
-            {duty.observations && (
-              <>
-                <Divider sx={{ my: 1.5 }} />
-                <Typography variant="body2" color="text.secondary">
-                  {duty.observations}
-                </Typography>
-              </>
-            )}
+            {duty.observations && <Observations text={duty.observations} marksShown={!!duty.flightNumber} />}
           </CardContent>
         </Card>
       ))}
@@ -489,6 +483,48 @@ function PlannedLine({ duty, date }: { duty: ParsedDuty; date: string | undefine
         </Box>
       )}
     </Typography>
+  );
+}
+
+// Roster marks the parser attaches to a duty, in words: the check a simulator session is for,
+// and flights or sessions given as the instructor.
+const MARK_LABEL: Record<string, string> = {
+  LIFUS_INS: 'Line training · instrutor',
+  FAM_INS: 'Familiarização · instrutor',
+  OPC_INS: 'OPC · instrutor',
+  LPC_INS: 'LPC · instrutor',
+  OPC: 'OPC',
+  LPC: 'LPC',
+};
+
+const splitMarks = (text: string) => {
+  const parts = text.split(/,\s*/).filter(Boolean);
+  return { marks: [...new Set(parts.filter((p) => MARK_LABEL[p]))], rest: parts.filter((p) => !MARK_LABEL[p]).join(', ') };
+};
+
+function MarkChips({ text, center }: { text: string; center?: boolean }) {
+  const { marks } = splitMarks(text);
+  if (marks.length === 0) return null;
+  return (
+    <Box display="flex" flexWrap="wrap" gap={0.5} justifyContent={center ? 'center' : 'flex-start'} mt={center ? 0.5 : 0}>
+      {marks.map((m) => (
+        <Chip key={m} size="small" variant="outlined" color={m.endsWith('_INS') ? 'primary' : 'default'} label={MARK_LABEL[m]} />
+      ))}
+    </Box>
+  );
+}
+
+// A duty's observations: known marks as chips (unless the flight banner already shows them),
+// anything else as plain text.
+function Observations({ text, marksShown }: { text: string; marksShown?: boolean }) {
+  const { marks, rest } = splitMarks(text);
+  if (!rest && (marksShown || marks.length === 0)) return null;
+  return (
+    <>
+      <Divider sx={{ my: 1.5 }} />
+      {!marksShown && marks.length > 0 && <Box mb={rest ? 0.75 : 0}><MarkChips text={text} /></Box>}
+      {rest && <Typography variant="body2" color="text.secondary">{rest}</Typography>}
+    </>
   );
 }
 

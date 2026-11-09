@@ -59,6 +59,13 @@ Em `0.8.22.4` (na exp):
   marcadas `_INS` + 2.º dia do check (`instructorSimDates`). Setembro real: 4 instrutor + 2 próprias,
   igual ao recibo.
 
+Em `0.8.22.5` (na exp):
+
+- **Voos como instrutor** — o parser liga `LIFUS_INS` / `FAM_INS` (sub-coluna própria, à esquerda
+  da perna) ao voo; `PARSE_VERSION` 14. Detalhe do dia mostra a marca junto ao número do voo (e
+  OPC/LPC nas sessões de simulador). Estimativa: campo "Line training como instrutor" por dia
+  (setembro real: 1 dia FAM_INS = 1 × Line Training no recibo).
+
 ---
 
 ## TODO / Backlog (decidir mais tarde)

@@ -102,4 +102,16 @@ describe('payEstimate', () => {
     expect([...instructorSimDates(duties)]).toEqual(['2026-09-01', '2026-09-02', '2026-09-03', '2026-09-04']);
     expect(payEstimate(duties, '2026-09', { ...S, instructorSession: 550 }, '2026-11-30').instructorValue).toBe(2200);
   });
+
+  it('pays line training once per day of flights flown as instructor', () => {
+    const ins = (date: string, from: string, to: string, off: string, on: string, mark: string | null) =>
+      ({ ...leg(date, from, to, off, on), observations: mark });
+    const duties = [
+      ins('2026-09-16', 'LIS', 'LGW', '12:22', '15:18', 'FAM_INS'), ins('2026-09-16', 'LGW', 'LIS', '16:06', '18:28', 'FAM_INS'),
+      ins('2026-09-26', 'LIS', 'NCE', '07:14', '09:40', null),
+      ins('2026-09-27', 'LIS', 'TFS', '11:22', '14:05', 'LIFUS_INS'),
+    ];
+    const r = payEstimate(duties, '2026-09', { ...S, lineTrainingDay: 130 }, '2026-11-30');
+    expect(r).toMatchObject({ lineTrainingDays: 2, lineTrainingValue: 260 });
+  });
 });

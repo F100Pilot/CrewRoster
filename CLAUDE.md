@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (392 tests) — keep green
+npm test           # vitest run (393 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -162,7 +162,10 @@ Things learned over this collaboration that should persist across sessions:
   Medical days — verified day-for-day against a real roster + payslip. Simulator instructor sessions
   (paid at a per-session fee the pilot sets, not in the AE) = sims whose check mark (parsed into
   `observations`: OPC/LPC, or OPC_INS/LPC_INS as instructor) has `_INS`, plus the check's unmarked
-  2nd day; FP…_INST is ground training given, not a sim session. Variable items paid the month after.
+  2nd day; FP…_INST is ground training given, not a sim session. Line training as instructor = days
+  with a flight marked LIFUS_INS or FAM_INS (mark in its own sub-column just left of its leg; the
+  parser attaches it to the nearest flight sub-column on its right), paid once per day. Variable items
+  paid the month after.
 - **Backlog:** the rest of the AE items (folgas check, ES/LF/ND, per diem, duty-pay/block-pay
   credits, holiday counter), PWA local reminders, crosswind (runway DB). See `EXPERIMENTAL.md`
   (TODO/Backlog) and `roster-lite/TODO.md`.
