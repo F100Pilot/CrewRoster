@@ -21,6 +21,7 @@ import DocumentAlertCard from '../components/DocumentAlertCard';
 import { autoCaptureRecent } from '../domain/aircraftRegs';
 import { getAeroDataBoxKey } from '../storage/settings';
 import { checkInTimeLabel } from '../utils/localTime';
+import { MARK_SHORT, dayMarks, isInstructorMark } from '../domain/dutyMarks';
 import type { ParsedDuty, ChangeType } from '../domain/types';
 
 // Wide enough for the widest "EEE, dd MMM" (e.g. "Wed, 28 Sep") in bold.
@@ -305,6 +306,16 @@ export default function RosterPage() {
                     sx={{ bgcolor: CHANGE_STYLE[change].color, color: '#fff', height: 18, fontSize: '0.65rem' }}
                   />
                 )}
+                {dayMarks(duties).map((m) => (
+                  <Chip
+                    key={m}
+                    size="small"
+                    variant="outlined"
+                    color={isInstructorMark(m) ? 'primary' : 'default'}
+                    label={MARK_SHORT[m]}
+                    sx={{ height: 18, fontSize: '0.65rem', fontWeight: 700 }}
+                  />
+                ))}
                 {duties.some((d) => d.dayWarning) && (
                   <Tooltip title={duties.find((d) => d.dayWarning)!.dayWarning!}>
                     <Chip

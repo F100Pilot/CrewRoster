@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.22.5';
+export const APP_VERSION = '0.8.22.6';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,13 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.22.6',
+    date: '2026-11-09',
+    highlights: [
+      'Na lista, os dias de instrução têm etiqueta junto à data, alinhada com as outras: LIFUS · instr., FAM · instr., OPC · instr. / LPC · instr., e OPC / LPC nos teus próprios checks.',
+    ],
+  },
   {
     version: '0.8.22.5',
     date: '2026-11-09',

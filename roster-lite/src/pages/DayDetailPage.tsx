@@ -14,6 +14,7 @@ import { workWindow, PGA_PILOT_RULES } from '../domain/dutyTime';
 import { fdpForDay, type FdpInfo } from '../domain/fdp';
 import { dutyTags, type DutyTag } from '../domain/aeCompliance';
 import { LATE_MINUTES } from '../domain/planVsFlown';
+import { MARK_LABEL, isInstructorMark, splitMarks } from '../domain/dutyMarks';
 import { AE_DISCLAIMER } from '../components/AeDisclaimer';
 import { sectorSun } from '../domain/sectorSun';
 import { shareDayImage } from '../utils/shareDay';
@@ -486,29 +487,13 @@ function PlannedLine({ duty, date }: { duty: ParsedDuty; date: string | undefine
   );
 }
 
-// Roster marks the parser attaches to a duty, in words: the check a simulator session is for,
-// and flights or sessions given as the instructor.
-const MARK_LABEL: Record<string, string> = {
-  LIFUS_INS: 'Line training · instrutor',
-  FAM_INS: 'Familiarização · instrutor',
-  OPC_INS: 'OPC · instrutor',
-  LPC_INS: 'LPC · instrutor',
-  OPC: 'OPC',
-  LPC: 'LPC',
-};
-
-const splitMarks = (text: string) => {
-  const parts = text.split(/,\s*/).filter(Boolean);
-  return { marks: [...new Set(parts.filter((p) => MARK_LABEL[p]))], rest: parts.filter((p) => !MARK_LABEL[p]).join(', ') };
-};
-
 function MarkChips({ text, center }: { text: string; center?: boolean }) {
   const { marks } = splitMarks(text);
   if (marks.length === 0) return null;
   return (
     <Box display="flex" flexWrap="wrap" gap={0.5} justifyContent={center ? 'center' : 'flex-start'} mt={center ? 0.5 : 0}>
       {marks.map((m) => (
-        <Chip key={m} size="small" variant="outlined" color={m.endsWith('_INS') ? 'primary' : 'default'} label={MARK_LABEL[m]} />
+        <Chip key={m} size="small" variant="outlined" color={isInstructorMark(m) ? 'primary' : 'default'} label={MARK_LABEL[m]} />
       ))}
     </Box>
   );

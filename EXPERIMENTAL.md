@@ -66,6 +66,11 @@ Em `0.8.22.5` (na exp):
   OPC/LPC nas sessões de simulador). Estimativa: campo "Line training como instrutor" por dia
   (setembro real: 1 dia FAM_INS = 1 × Line Training no recibo).
 
+Em `0.8.22.6` (na exp):
+
+- **Etiqueta de instrução na lista** — LIFUS / FAM / OPC / LPC (· instr.) ao lado da data, na coluna
+  das etiquetas. Rótulos partilhados em `domain/dutyMarks.ts`.
+
 ---
 
 ## TODO / Backlog (decidir mais tarde)
