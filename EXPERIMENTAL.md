@@ -71,6 +71,11 @@ Em `0.8.22.6` (na exp):
 - **Etiqueta de instrução na lista** — LIFUS / FAM / OPC / LPC (· instr.) ao lado da data, na coluna
   das etiquetas. Rótulos partilhados em `domain/dutyMarks.ts`.
 
+Em `0.8.22.7` (na exp):
+
+- **Definições do vencimento mais claras** — nomes exatos das linhas do recibo em VE / VS / outros
+  fixos, e o total da parte fixa para conferir (faltava a anuidade de Comando e as diuturnidades).
+
 ---
 
 ## TODO / Backlog (decidir mais tarde)

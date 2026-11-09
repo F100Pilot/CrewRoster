@@ -3,6 +3,8 @@ import { Box, FormControlLabel, InputAdornment, MenuItem, Stack, Switch, TextFie
 import { getPaySettings, setPaySettings } from '../storage/settings';
 import { PAY_CATEGORIES, perDiemDefaults, type PayCategory, type PaySettings } from '../domain/payEstimate';
 
+const EUR2 = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' });
+
 type MoneyField = 'vb' | 've' | 'vs' | 'extras' | 'perDiemA' | 'perDiemB' | 'instructorSession' | 'lineTrainingDay';
 
 // Settings for the experimental pay estimate: off by default; once on, the pilot's own figures
@@ -73,9 +75,16 @@ export default function PaySettingsSection({ userId }: { userId: string }) {
             {PAY_CATEGORIES.map((c) => <MenuItem key={c.value} value={c.value}>{c.label}</MenuItem>)}
           </TextField>
           {money('vb', 'Vencimento de categoria (VB)', 'No recibo: "Vencimento base". É a base das horas a mais (3% / 6% do VB)')}
-          {money('ve', 'VE (exercício)', 'Soma das anuidades técnicas (incl. as de Comando)')}
-          {money('vs', 'VS (senioridade)', 'Soma do vencimento de senioridade e das diuturnidades')}
-          {money('extras', 'Outros fixos por mês', 'Ex.: prémio de chefia, complemento de comandante, contribuição da PGA para o fundo de pensões')}
+          {money('ve', 'VE (exercício)', 'Soma de TODAS as linhas de anuidades: "Anuid. técnicas" + "Anuid. técnica Comando"')}
+          {money('vs', 'VS (senioridade)', 'Soma de "Venc. seniorid." + "Diuturnidades"')}
+          {money('extras', 'Outros fixos por mês', 'Ex.: "Prémio de chefia", "Compl. Comandante Sénior", "Fundo pensões contr. PGA"')}
+          {/* The sum to check against the payslip: every fixed line of the month, added up. */}
+          <Box display="flex" justifyContent="space-between" alignItems="baseline" px={0.5}>
+            <Typography variant="body2" color="text.secondary">Parte fixa por mês (confere com o recibo)</Typography>
+            <Typography variant="body2" fontWeight={700} sx={{ fontVariantNumeric: 'tabular-nums' }}>
+              {EUR2.format(s.vb + s.ve + s.vs + s.extras)}
+            </Typography>
+          </Box>
           <Box display="grid" gridTemplateColumns="1fr 1fr" gap={1.5}>
             {money('perDiemA', 'Per diem A')}
             {money('perDiemB', 'Per diem B')}
