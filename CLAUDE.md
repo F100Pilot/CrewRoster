@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (384 tests) — keep green
+npm test           # vitest run (399 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -124,6 +124,8 @@ Things learned over this collaboration that should persist across sessions:
   minimal (🅿 + number). Verified the parser against real DEP and ARR board captures.
 - **Layout/UX taste:** the user wants things **graphical, modern and vertically
   compact** on mobile; align related cards on one row rather than stacking.
+- **Labels/chips must line up vertically across repeated cards** (user: "alinha sempre"): give the
+  leading text (e.g. the day's date) a fixed-width column so the chips after it start at the same x.
 - **When a fix "doesn't appear,"** suspect a stale stored roster (crew is baked at
   import time) or a stale PWA build before assuming a parser bug — re-import / hard
   refresh first.
@@ -133,6 +135,9 @@ Things learned over this collaboration that should persist across sessions:
   pilots only). The AE text is NOT in the repo — only values, each with its clause in a comment.
   Standby code windows (H509, H7+… pilots; A1…A8 cabin) come from the DOV notice of Feb 2025
   (`src/domain/standbyWindows.ts`). A/H codes are home standby (H = pilots, A = cabin).
+- **Every AE calculation is pilots-only (SIPLA)** — user rule. Limits/compliance/rest minima/FDP/
+  ES-LF-ND/holidays/planned-vs-flown/pay are gated on `role !== 'cabin'`; cabin crew get EASA only and
+  no "AE" wording. Any new AE feature must be gated the same way.
 - **Pilot base is a per-profile setting** (Settings → Base: Lisboa/Porto, `UserProfile.base`,
   default LIS; `baseOf()` in `dutyStats.ts`). Never hardcode LIS for at-base/away logic.
 - **S.EXT. = any external duty** (course, meeting, …) → Office Duty, timed. RUPT cl. 7.1 waives the
@@ -149,6 +154,37 @@ Things learned over this collaboration that should persist across sessions:
   `ParsedDuty.planned` and marks past-day imports `settled` (so flown times are never taken for a
   plan). The reparse replays saved PDFs in download order with their dates, rebuilding history.
   `domain/planVsFlown.ts` derives delays, extra FDP, commander's extensions and reduced rests.
+- **Pay estimate** (since 0.8.22; in production since 0.8.26): `domain/payEstimate.ts` applies the RRRGS (RB, plafonds
+  table 2.1 cut per holiday day, 3%/6% VB/h, per diem A/B cl. 9, complement cl. 10, cl. 2.6/2.8
+  from planVsFlown, night 25% and national holidays 100% via `holidaysPT.ts`). **Personal figures
+  (VB, VE, VS…) are typed by each pilot in Settings and kept in localStorage
+  (`crewroster.pay.<userId>`) — NEVER put anyone's pay values in the code or repo.** Off by default.
+  Per diem defaults are the AE's "sujeito a confirmação" values, editable — the CTE pair (229,50 /
+  153,00) matched a real payslip; per diem A = flight/positioning/simulator/airport standby days, B =
+  layover, Training (FP* = formação presencial, also as instructor), Office Duty (GAB, S.EXT.) and
+  Medical days — verified day-for-day against a real roster + payslip. Simulator instructor sessions
+  (paid at a per-session fee the pilot sets, not in the AE) = sims whose check mark (parsed into
+  `observations`: OPC/LPC, or OPC_INS/LPC_INS as instructor) has `_INS`, plus the check's unmarked
+  2nd day; FP…_INST is ground training given, not a sim session. Line training as instructor = days
+  with a flight marked LIFUS_INS or FAM_INS (mark in its own sub-column just left of its leg; the
+  parser attaches it to the nearest flight sub-column on its right), paid once per day. Variable items
+  paid the month after.
+- **Net pay** (since 0.8.23): `domain/irsWithholding.ts` holds the 2026 mainland withholding tables
+  I–III (Despacho 233-A/2026; replace yearly); `netEstimate()` = gross − IRS (on the month's whole
+  taxable pay, floor to €) − SS 11% − fixed deductions. Non-taxable: the pilot's `nonTaxableFixed`
+  (PGA pension contribution) and the exempt per diem of days away (`perDiemExemptIrs/Ss` per day,
+  default = average of two real payslips); per diem for days at base ("… T") is taxed in full.
+  Verified to within a few euros on two real payslips. Pension plan (RRRGS cl. 16, `pensionAuto`):
+  PGA contribution 6,5% of VB+VE+VS paid as a non-taxable abono, SIPLA deposit 7,5% deducted — both
+  matched the payslip to the cent. Union fee (`unionPct` of `unionBase`, base empty = VB+VE+VS): 1% matched
+  a real payslip only with a typed base of 9 377,74 € — which lines form the SIPLA base is still open.
+- **Settings are tabbed** (since 0.8.24): Perfil · Vencimento (pilots only) · App · Dados · Ajuda in
+  `SettingsDialog.tsx`; last tab in localStorage `crewroster.settingsTab`. Guardar only on Perfil/App
+  (the rest saves on change). New settings go in the tab for their subject, not at the bottom.
+  `openSettings(tab)` (`settingsEvents.ts`) opens the dialog on a tab from any page.
+- **AE and pay have their own bottom-nav tabs** (since 0.8.25, pilots only, user request): "AE" →
+  `/limites`, "Vencimento" → `/vencimento` (shown only when the estimate is enabled), placed right
+  after Estatísticas. Cabin crew reach EASA limits from the "⋮" menu.
 - **Backlog:** the rest of the AE items (folgas check, ES/LF/ND, per diem, duty-pay/block-pay
   credits, holiday counter), PWA local reminders, crosswind (runway DB). See `EXPERIMENTAL.md`
   (TODO/Backlog) and `roster-lite/TODO.md`.

@@ -14,6 +14,7 @@ import { workWindow, PGA_PILOT_RULES } from '../domain/dutyTime';
 import { fdpForDay, type FdpInfo } from '../domain/fdp';
 import { dutyTags, type DutyTag } from '../domain/aeCompliance';
 import { LATE_MINUTES } from '../domain/planVsFlown';
+import { MARK_LABEL, isInstructorMark, splitMarks } from '../domain/dutyMarks';
 import { AE_DISCLAIMER } from '../components/AeDisclaimer';
 import { sectorSun } from '../domain/sectorSun';
 import { shareDayImage } from '../utils/shareDay';
@@ -193,6 +194,7 @@ export default function DayDetailPage() {
                   <Typography variant="h6" fontWeight={700}>
                     {duty.flightNumber}
                   </Typography>
+                  {duty.observations && <MarkChips text={duty.observations} center />}
                 </Box>
                 <Box display="flex" alignItems="flex-start" justifyContent="center" gap={2}>
                   <TimePoint
@@ -271,14 +273,7 @@ export default function DayDetailPage() {
                 </Box>
               )}
 
-            {duty.observations && (
-              <>
-                <Divider sx={{ my: 1.5 }} />
-                <Typography variant="body2" color="text.secondary">
-                  {duty.observations}
-                </Typography>
-              </>
-            )}
+            {duty.observations && <Observations text={duty.observations} marksShown={!!duty.flightNumber} />}
           </CardContent>
         </Card>
       ))}
@@ -489,6 +484,32 @@ function PlannedLine({ duty, date }: { duty: ParsedDuty; date: string | undefine
         </Box>
       )}
     </Typography>
+  );
+}
+
+function MarkChips({ text, center }: { text: string; center?: boolean }) {
+  const { marks } = splitMarks(text);
+  if (marks.length === 0) return null;
+  return (
+    <Box display="flex" flexWrap="wrap" gap={0.5} justifyContent={center ? 'center' : 'flex-start'} mt={center ? 0.5 : 0}>
+      {marks.map((m) => (
+        <Chip key={m} size="small" variant="outlined" color={isInstructorMark(m) ? 'primary' : 'default'} label={MARK_LABEL[m]} />
+      ))}
+    </Box>
+  );
+}
+
+// A duty's observations: known marks as chips (unless the flight banner already shows them),
+// anything else as plain text.
+function Observations({ text, marksShown }: { text: string; marksShown?: boolean }) {
+  const { marks, rest } = splitMarks(text);
+  if (!rest && (marksShown || marks.length === 0)) return null;
+  return (
+    <>
+      <Divider sx={{ my: 1.5 }} />
+      {!marksShown && marks.length > 0 && <Box mb={rest ? 0.75 : 0}><MarkChips text={text} /></Box>}
+      {rest && <Typography variant="body2" color="text.secondary">{rest}</Typography>}
+    </>
   );
 }
 

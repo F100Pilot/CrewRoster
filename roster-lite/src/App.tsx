@@ -28,6 +28,7 @@ const PdfViewerPage = lazy(() => import('./pages/PdfViewerPage'));
 const CrewSearchPage = lazy(() => import('./pages/CrewSearchPage'));
 const SearchPage = lazy(() => import('./pages/SearchPage'));
 const LimitsPage = lazy(() => import('./pages/LimitsPage'));
+const PayPage = lazy(() => import('./pages/PayPage'));
 
 function RouteFallback() {
   return (
@@ -100,6 +101,7 @@ function AppRoutes() {
           <Route path="/debug" element={<DebugPage />} />
           <Route path="/codes" element={<CodesPage />} />
           <Route path="/limites" element={<LimitsPage />} />
+          <Route path="/vencimento" element={<PayPage />} />
           {/* Today's day, as a stable link — the target of the app shortcut "Hoje". */}
           <Route path="/hoje" element={<Navigate to={`/day/${todayISO()}`} replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />

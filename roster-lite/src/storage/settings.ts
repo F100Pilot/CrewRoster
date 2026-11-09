@@ -4,6 +4,8 @@
 // over HTTPS per request (the proxy never stores it). It is NOT per-user — it belongs to
 // the device/account, shared across crew profiles.
 
+import { DEFAULT_PAY_SETTINGS, type PaySettings } from '../domain/payEstimate';
+
 const AERODATABOX_KEY = 'crewroster.aerodataboxKey';
 
 // RapidAPI keys are long alphanumeric tokens; constrain to safe header characters so a
@@ -170,6 +172,30 @@ export function getLogbookFunction(userId: string): LogbookFunction {
 export function setLogbookFunction(userId: string, fn: LogbookFunction): void {
   try {
     localStorage.setItem(LOGBOOK_FN_PREFIX + userId, fn);
+  } catch {
+    // ignore
+  }
+}
+
+// ── Pay estimate, per profile ─────────────────────────────────────────────────────────────
+// The pilot's own pay figures (VB, VE, VS, complements, per diem) for the experimental monthly
+// estimate. Personal, so they're only ever typed in here and kept on this device — never in the
+// app's code. Off until the pilot turns it on.
+const PAY_PREFIX = 'crewroster.pay.';
+
+export function getPaySettings(userId: string): PaySettings {
+  try {
+    const raw = localStorage.getItem(PAY_PREFIX + userId);
+    return raw ? { ...DEFAULT_PAY_SETTINGS, ...JSON.parse(raw) } : { ...DEFAULT_PAY_SETTINGS };
+  } catch {
+    return { ...DEFAULT_PAY_SETTINGS };
+  }
+}
+
+export function setPaySettings(userId: string, s: PaySettings): void {
+  try {
+    localStorage.setItem(PAY_PREFIX + userId, JSON.stringify(s));
+    window.dispatchEvent(new Event('pay-settings-updated'));
   } catch {
     // ignore
   }

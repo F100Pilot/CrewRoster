@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.21';
+export const APP_VERSION = '0.8.26';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,17 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.26',
+    date: '2026-11-09',
+    highlights: [
+      'Pilotos — estimativa de vencimento (experimental, desligada por omissão): liga em Definições → Vencimento e mete os teus valores (VB, VE, VS…), que ficam só neste dispositivo. Mostra o bruto e o líquido do recibo do mês seguinte: base, excedentes de duty/block-pay, per diem, complementar, extensões, descansos reduzidos, sessões de simulador e line training como instrutor, IRS pelas tabelas de 2026, Segurança Social, fundo de pensões e quota sindical. Confirma sempre no recibo oficial.',
+      'Pilotos — os limites do AE e o vencimento têm abas próprias na barra de baixo, a seguir a Estatísticas (a do Vencimento aparece quando ligas a estimativa). Todos os cálculos do AE (SIPLA) são só para pilotos; a cabina vê os limites EASA no menu ⋮.',
+      'Marcas de instrução (LIFUS, FAM, OPC/LPC como instrutor) aparecem na lista e no detalhe do dia.',
+      'Definições arrumadas em abas: Perfil, Vencimento, App, Dados e Ajuda. A app lembra-se da última aba aberta.',
+      'Na lista, as etiquetas (Hoje, Novo, Alterado…) ficam todas alinhadas na mesma coluna.',
+    ],
+  },
   {
     version: '0.8.21',
     date: '2026-10-29',
