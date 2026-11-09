@@ -67,9 +67,10 @@ export interface PaySettings {
   pensionAuto: boolean; // compute the pension-plan lines from the RB (RRRGS cl. 16)
   unionPct: number; // union fee, % of the base below; 0 = typed into fixedDeductions instead
   unionBase: number; // € the fee is a percentage of; 0 = automatic (unionBaseAuto)
-  // Payslip month (1–12) that carries the holiday subsidy; 0 = automatic, from the roster
-  // (the month before the first holidays of 10+ working days, RRRGS cl. 7.3).
-  holidayPayMonth: number;
+  // The pilot's own word on which payslip carries the holiday subsidy, ticked on the pay card:
+  // { year, month } (1–12), or month 0 for "not in any month I've seen". null, or another year,
+  // = automatic from the roster (the month before the first holidays of 10+ working days, cl. 7.3).
+  holidayPay: { year: number; month: number } | null;
 }
 
 export const DEFAULT_PAY_SETTINGS: PaySettings = {
@@ -83,7 +84,7 @@ export const DEFAULT_PAY_SETTINGS: PaySettings = {
   perDiemExemptIrs: 88, perDiemExemptSs: 140,
   pensionAuto: false,
   unionPct: 0, unionBase: 0,
-  holidayPayMonth: 0,
+  holidayPay: null,
 };
 
 // The union fee's base, worked out from a real commander's payslip (the same 1% in two months):
@@ -201,7 +202,8 @@ export interface PayEstimate {
   // Paid in this payslip on top of the month's pay (RRRGS cl. 7 and 8): each one RB.
   holidaySubsidy: number;
   christmasSubsidy: number;
-  holidayPayMonth: number | null; // the payslip month found for the holiday subsidy, if any
+  holidayPayMonth: number | null; // the payslip month that carries the holiday subsidy, if known
+  holidayPayAuto: boolean; // that month comes from the roster, not from the pilot's tick
   holidayDays: number; // days of holidays taken, which cut the plafonds
   variable: number; // everything above the RB, paid the month after
   includesPlanned: boolean; // the month isn't over yet
@@ -222,6 +224,7 @@ const FLYING = new Set(['Flight Duty', 'Positioning', 'Simulator']);
 // Ground duties that earn per diem B (cl. 9.1.b).
 const GROUND_B = new Set(['Training', 'Office Duty', 'Medical']);
 const isHoliday = (d: ParsedDuty) => d.dutyType === 'Vacation';
+export const CHRISTMAS_PAY_MONTH = 11; // paid with the November pay (user, from PGA payslips)
 const nextMonth = (month: string) => {
   const [y, m] = month.split('-').map(Number);
   return m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, '0')}`;
@@ -410,14 +413,18 @@ export function payEstimate(
   const pension = pensionLines(s);
   const rb = s.vb + s.ve + s.vs + s.extras + pension.contribution;
   // ── Subsidies (RRRGS cl. 7 and 8), each one RB (VB + VE + VS), on the payslip this estimate is
-  // paid in (the month after the work): Christmas by 15 December; holidays with the pay of the
-  // month before the first holidays of 10 working days or more.
+  // paid in (the month after the work). Christmas: the AE says "até 15 de dezembro"; the PGA pays
+  // it with the November pay, received at the end of November. Holidays: with the pay of the
+  // month before the first holidays of 10 working days or more — from the roster, unless the
+  // pilot ticked the month on the card.
   const paidIn = nextMonth(month);
+  const paidYear = Number(paidIn.slice(0, 4));
   const paidMonth = Number(paidIn.slice(5, 7));
   const subsidyRb = cents(s.vb + s.ve + s.vs);
-  const holidayPayMonth = s.holidayPayMonth || autoHolidayPayMonth(duties, Number(paidIn.slice(0, 4)));
+  const ticked = s.holidayPay && s.holidayPay.year === paidYear ? s.holidayPay.month : null;
+  const holidayPayMonth = ticked ?? autoHolidayPayMonth(duties, paidYear);
   const holidaySubsidy = holidayPayMonth === paidMonth ? subsidyRb : 0;
-  const christmasSubsidy = paidMonth === 12 ? subsidyRb : 0;
+  const christmasSubsidy = paidMonth === CHRISTMAS_PAY_MONTH ? subsidyRb : 0;
 
   const variable = overtimeVal + perDiemValue + complementValue + extensionValue + reductionValue + instructorValue + lineTrainingValue;
   const lastDay = `${month}-${String(daysInMonth(month)).padStart(2, '0')}`;
@@ -449,6 +456,7 @@ export function payEstimate(
     holidaySubsidy,
     christmasSubsidy,
     holidayPayMonth: holidayPayMonth || null,
+    holidayPayAuto: ticked === null,
     holidayDays,
     variable,
     includesPlanned: todayISO < lastDay,

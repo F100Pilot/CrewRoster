@@ -10,8 +10,6 @@ import { IRS_TABLES, type IrsTable } from '../domain/irsWithholding';
 
 const EUR2 = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' });
 const cents = (v: number) => Math.round(v * 100) / 100;
-const MONTHS = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro',
-  'outubro', 'novembro', 'dezembro'];
 
 // `veTech` and `extrasOther` are what's left of VE / the complements once the command lines are
 // typed apart (the union fee's base leaves those out); the stored totals stay `ve` and `extras`.
@@ -182,18 +180,13 @@ export default function PaySettingsSection({ userId }: { userId: string }) {
                 <Switch checked={!!s.pensionAuto} onChange={(e) => onPension(e.target.checked)} inputProps={{ 'aria-label': 'Fundo de pensões pelo AE' }} />
               </Box>
 
-              {/* RRRGS cl. 7 and 8: each subsidy is one RB. Christmas is always December; the holiday
-                  one follows the first long holidays, which the roster rarely shows months ahead. */}
+              {/* RRRGS cl. 7 and 8: each subsidy is one RB, worked out on the pay card. */}
               {sectionTitle('Subsídios (cl. 7 e 8)')}
-              <TextField
-                select size="small" fullWidth label="Subsídio de férias no recibo de"
-                value={s.holidayPayMonth ?? 0}
-                onChange={(e) => save({ ...s, holidayPayMonth: Number(e.target.value) })}
-                helperText={`Cada subsídio = VB + VE + VS (${EUR2.format(s.vb + s.ve + s.vs)}). O de Natal vem no recibo de dezembro. Automático: o mês antes das primeiras férias de 10 dias úteis ou mais que estiverem na escala.`}
-              >
-                <MenuItem value={0}>Automático (pela escala)</MenuItem>
-                {MONTHS.map((m, i) => <MenuItem key={m} value={i + 1}>{m}</MenuItem>)}
-              </TextField>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: -0.5 }}>
+                Cada um = VB + VE + VS ({EUR2.format(s.vb + s.ve + s.vs)}). Natal no recibo de novembro. Férias no recibo
+                do mês antes das primeiras férias de 10 dias úteis ou mais — automático pela escala, ou marca a caixa
+                "Subsídio de férias neste recibo" no cartão do Vencimento.
+              </Typography>
 
               {sectionTitle('Variável (pago no mês seguinte)')}
               <Box display="grid" gridTemplateColumns="1fr 1fr" gap={1.5}>

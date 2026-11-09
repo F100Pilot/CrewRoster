@@ -116,10 +116,10 @@ describe('payEstimate', () => {
     expect(r).toMatchObject({ lineTrainingDays: 2, lineTrainingValue: 260 });
   });
 
-  it('pays the Christmas subsidy (one RB) on the December payslip, taxed apart (cl. 8)', () => {
-    const nov = payEstimate([duty('2026-11-02', 'Day Off')], '2026-11', S, '2026-11-30');
+  it('pays the Christmas subsidy (one RB) on the November payslip, taxed apart (cl. 8)', () => {
+    const nov = payEstimate([duty('2026-10-02', 'Day Off')], '2026-10', S, '2026-10-31'); // work of Oct → Nov payslip
     expect(nov).toMatchObject({ christmasSubsidy: 5300, holidaySubsidy: 0 });
-    expect(payEstimate([duty('2026-10-02', 'Day Off')], '2026-10', S, '2026-10-31').christmasSubsidy).toBe(0);
+    expect(payEstimate([duty('2026-11-02', 'Day Off')], '2026-11', S, '2026-11-30').christmasSubsidy).toBe(0);
     const n = netEstimate(nov, S);
     const plain = netEstimate({ ...nov, christmasSubsidy: 0 }, S);
     expect(n.gross).toBeCloseTo(plain.gross + 5300);
@@ -130,7 +130,7 @@ describe('payEstimate', () => {
 
   it('applies the pension plan to the subsidies too — 14 times a year (cl. 16.2)', () => {
     const s = { ...S, pensionAuto: true };
-    const nov = payEstimate([duty('2026-11-02', 'Day Off')], '2026-11', s, '2026-11-30');
+    const nov = payEstimate([duty('2026-10-02', 'Day Off')], '2026-10', s, '2026-10-31');
     const n = netEstimate(nov, s);
     const plain = netEstimate({ ...nov, christmasSubsidy: 0 }, s);
     expect(n.pensionDeposit).toBeCloseTo(plain.pensionDeposit * 2);
@@ -147,7 +147,10 @@ describe('payEstimate', () => {
     expect(autoHolidayPayMonth(split, 2026)).toBe(6);
     expect(payEstimate(july, '2026-05', S, '2026-05-31').holidaySubsidy).toBe(5300);
     expect(payEstimate(july, '2026-06', S, '2026-06-30').holidaySubsidy).toBe(0);
-    // Set by hand, it wins over the roster.
-    expect(payEstimate(july, '2026-07', { ...S, holidayPayMonth: 8 }, '2026-07-31').holidaySubsidy).toBe(5300);
+    // Ticked by hand on the card, it wins over the roster — and an untick (month 0) cancels it.
+    expect(payEstimate(july, '2026-07', { ...S, holidayPay: { year: 2026, month: 8 } }, '2026-07-31').holidaySubsidy).toBe(5300);
+    expect(payEstimate(july, '2026-05', { ...S, holidayPay: { year: 2026, month: 0 } }, '2026-05-31').holidaySubsidy).toBe(0);
+    // A tick from another year doesn't count.
+    expect(payEstimate(july, '2026-05', { ...S, holidayPay: { year: 2025, month: 8 } }, '2026-05-31')).toMatchObject({ holidaySubsidy: 5300, holidayPayAuto: true });
   });
 });

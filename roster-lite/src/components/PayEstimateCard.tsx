@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Alert, Box, Card, CardContent, IconButton, Stack, Typography } from '@mui/material';
+import { Alert, Box, Card, CardContent, Checkbox, FormControlLabel, IconButton, Stack, Typography } from '@mui/material';
 import { ChevronLeft, ChevronRight, ExpandLess, ExpandMore, Payments } from '@mui/icons-material';
 import { netEstimate, payEstimate, type Credit } from '../domain/payEstimate';
-import { getPaySettings } from '../storage/settings';
+import { getPaySettings, setPaySettings } from '../storage/settings';
 import { ExperimentalChip } from './AeDisclaimer';
 import { formatDuration } from '../utils/duration';
 import type { ParsedDuty } from '../domain/types';
@@ -36,6 +36,15 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
   const r = useMemo(() => payEstimate(duties, month, settings, today, base), [duties, month, settings, today, base]);
   const n = useMemo(() => netEstimate(r, settings), [r, settings]);
 
+  // Tick: this payslip carries the holiday subsidy. Untick: not this one — back to the roster's
+  // month if that's another one, otherwise "none seen yet" for the year.
+  const onHolidayTick = (on: boolean) => {
+    const year = Number(shiftMonth(month, 1).slice(0, 4));
+    const m = Number(shiftMonth(month, 1).slice(5, 7));
+    const auto = payEstimate(duties, month, { ...settings, holidayPay: null }, today, base).holidayPayMonth;
+    const holidayPay = on ? { year, month: m } : auto && auto !== m ? null : { year, month: 0 };
+    setPaySettings(userId, { ...settings, holidayPay });
+  };
   if (!settings.enabled) return null;
   const subsidyCount = (r.holidaySubsidy > 0 ? 1 : 0) + (r.christmasSubsidy > 0 ? 1 : 0);
   const subsidyNames = [r.holidaySubsidy > 0 && 'subsídio de férias', r.christmasSubsidy > 0 && 'subsídio de Natal'].filter(Boolean).join(' e ');
@@ -144,6 +153,19 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                 {r.reducedMinutes > 0 && <Row label={`Descansos reduzidos: ${formatDuration(r.reducedMinutes)}`} value={r.reductionValue} />}
                 {r.holidaySubsidy > 0 && <Row label="Subsídio de férias (cl. 7)" value={r.holidaySubsidy} />}
                 {r.christmasSubsidy > 0 && <Row label="Subsídio de Natal (cl. 8)" value={r.christmasSubsidy} />}
+                {/* The roster rarely shows the long holidays months ahead, so the pilot can confirm or
+                    correct the month here; it's kept per year. */}
+                <FormControlLabel
+                  sx={{ ml: -0.75, my: -0.25 }}
+                  control={<Checkbox size="small" checked={r.holidaySubsidy > 0} onChange={(e) => onHolidayTick(e.target.checked)} />}
+                  label={
+                    <Typography variant="body2" color="text.secondary">
+                      Subsídio de férias neste recibo
+                      {r.holidaySubsidy > 0 && r.holidayPayAuto ? ' · pela escala' : ''}
+                      {r.holidaySubsidy === 0 && r.holidayPayMonth ? ` · ${r.holidayPayAuto ? 'pela escala' : 'marcado'}: recibo de ${MONTHS_LONG[r.holidayPayMonth - 1]}` : ''}
+                    </Typography>
+                  }
+                />
                 <Box sx={{ borderTop: 1, borderColor: 'divider', my: 0.5 }} />
                 <Row label="Bruto" value={n.gross} strong />
                 <Row label={`IRS (${(n.irsRate * 100).toFixed(1).replace('.', ',')}% de ${EUR.format(n.irsBase)})`} value={-n.irs} />

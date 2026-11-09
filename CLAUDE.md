@@ -185,8 +185,10 @@ Things learned over this collaboration that should persist across sessions:
   (`veCommand`, part of VE) and "Prémio de chefia" (`chiefBonus`, part of extras) — matched a real
   payslip to the cent (user wants it automatic); a typed `unionBase` still overrides, under Avançado.
 - **Holiday / Christmas subsidies** (since 0.8.27): each = RB (VB+VE+VS) — RRRGS cl. 7/8. Christmas on the
-  December payslip; holiday subsidy on the payslip of the month before the first holidays of ≥ 10 working
-  days (`autoHolidayPayMonth()` from the roster's Vacation runs, or `holidayPayMonth` set by hand). IRS
+  **November** payslip (user: PGA pays it with the end-of-November pay, though the AE says "até 15 de
+  dezembro"); holiday subsidy on the payslip of the month before the first holidays of ≥ 10 working days
+  (`autoHolidayPayMonth()` from the roster's Vacation runs), with a tick box on the pay card to confirm /
+  correct it (`holidayPay: {year, month}`, month 0 = not this year). IRS
   withheld apart per subsidy (CIRS art. 99.º-C), SS 11%, pension 14×/year (cl. 16.2). Union fee on
   subsidies not applied — to confirm against a June/December payslip.
 - **Settings are tabbed** (since 0.8.24): Perfil · Vencimento (pilots only) · App · Dados · Ajuda in
