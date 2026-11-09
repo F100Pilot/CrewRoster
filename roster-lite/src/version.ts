@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.22.2';
+export const APP_VERSION = '0.8.22.3';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -19,10 +19,17 @@ export interface ReleaseNote {
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.8.22.3',
+    date: '2026-11-09',
+    highlights: [
+      'Per diem da estimativa de vencimento confirmado com uma escala e o recibo que a pagou: dá per diem A nos dias de voo, simulador e assistência no aeroporto; B nos dias fora da base, de formação presencial (FP1, FP2, também como instrutor), de gabinete (GAB), de serviço externo (S.EXT.) e de médico.',
+    ],
+  },
+  {
     version: '0.8.22.2',
     date: '2026-11-09',
     highlights: [
-      'Estimativa de vencimento afinada com um recibo real: as sessões de simulador da escala (FP1, FP2…) dão per diem A, há um campo para o valor da sessão como instrutor (códigos …_INST, pago no mês seguinte) e as Definições dizem que linhas do recibo somar em VE, VS e "Outros fixos" (prémio de chefia, complemento de comandante, contribuição da PGA para o fundo de pensões).',
+      'Estimativa de vencimento afinada com um recibo real: há um campo para o valor da sessão como instrutor (códigos …_INST, pago no mês seguinte) e as Definições dizem que linhas do recibo somar em VE, VS e "Outros fixos" (prémio de chefia, complemento de comandante, contribuição da PGA para o fundo de pensões).',
     ],
   },
   {

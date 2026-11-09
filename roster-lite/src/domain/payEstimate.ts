@@ -60,9 +60,6 @@ export const DEFAULT_PAY_SETTINGS: PaySettings = {
 
 // A session given as an instructor: the roster suffixes the code (FP1_INST, FP2_INST).
 export const isInstructorSession = (d: ParsedDuty) => /_INST$/i.test(d.dutyCode);
-// A simulator session the roster files under training (FP1, FP2, FP1_INST…). Payslips pay per
-// diem A for these days ("Perdiem A … T"), as cl. 9.1.a does for simulator duties.
-export const isSimSession = (d: ParsedDuty) => d.dutyType === 'Simulator' || (d.dutyType === 'Training' && /^FP\d/i.test(d.dutyCode));
 
 const h = (hh: number, mm = 0) => hh * 60 + mm;
 
@@ -127,6 +124,8 @@ const daysInMonth = (month: string) => {
   return new Date(Date.UTC(y, m, 0)).getUTCDate();
 };
 const FLYING = new Set(['Flight Duty', 'Positioning', 'Simulator']);
+// Ground duties that earn per diem B (cl. 9.1.b).
+const GROUND_B = new Set(['Training', 'Office Duty', 'Medical']);
 const isHoliday = (d: ParsedDuty) => d.dutyType === 'Vacation';
 
 function byDate(duties: ParsedDuty[]): Map<string, ParsedDuty[]> {
@@ -217,9 +216,11 @@ export function payEstimate(
   const overtimeVal = Math.max(duty.value, block.value);
 
   // ── Per diem (cl. 9), per calendar day in Lisbon ──
-  // A: a flight, positioning or simulator duty on the day (FP sessions included), a duty still running from the day
+  // A: a flight, positioning or simulator duty on the day, a duty still running from the day
   // before (an arrival after midnight), or airport standby. B: otherwise a day away from base
-  // (layover), a ground training session or a medical. A wins where both apply (cl. 9.2).
+  // (layover), ground training (the FP sessions — "formação presencial" — given or attended),
+  // office duty (GAB, S.EXT.) or a medical. A wins where both apply (cl. 9.2). Checked against a
+  // real September roster and the payslip that paid it: 9 A + 7 B, day for day.
   let perDiemA = 0;
   let perDiemB = 0;
   let available = 0; // days not on holidays or absence, for the complementary payment
@@ -235,9 +236,9 @@ export function payEstimate(
       if ((x.dutyType === 'Flight Duty' || x.dutyType === 'Positioning') && x.arrivalAirport) where = x.arrivalAirport.toUpperCase();
     }
     if (!inMonth(date)) continue;
-    const flying = day.some((x) => FLYING.has(x.dutyType) || isSimSession(x) || x.dutyType === 'Standby Airport');
+    const flying = day.some((x) => FLYING.has(x.dutyType) || x.dutyType === 'Standby Airport');
     if (flying || carryOver.has(date)) perDiemA++;
-    else if (awayAtStart || day.some((x) => x.dutyType === 'Training' || x.dutyType === 'Medical')) perDiemB++;
+    else if (awayAtStart || day.some((x) => GROUND_B.has(x.dutyType))) perDiemB++;
     if (!day.every((x) => x.dutyType === 'Vacation' || x.dutyType === 'Absence')) available++;
   }
   const perDiemValue = perDiemA * s.perDiemA + perDiemB * s.perDiemB;

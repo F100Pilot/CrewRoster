@@ -43,8 +43,14 @@ Em `0.8.22.1` (na exp):
 Em `0.8.22.2` (na exp):
 
 - **Estimativa de vencimento afinada com o recibo de outubro** — sessões FP* (simulador arquivado
-  como Training) dão per diem A; novo campo "Sessão de simulador como instrutor" (códigos `_INST`);
-  textos das Definições dizem que linhas do recibo somar. Per diem CTE (229,50 / 153,00) confirmado.
+  novo campo "Sessão de simulador como instrutor" (códigos `_INST`); textos das Definições dizem que
+  linhas do recibo somar. Per diem CTE (229,50 / 153,00) confirmado.
+
+Em `0.8.22.3` (na exp):
+
+- **Regra do per diem confirmada** contra a escala de setembro e o recibo de outubro (9 A + 7 B, dia
+  a dia): A = voo, simulador, assistência no aeroporto; B = estadia, FP (formação presencial, também
+  como instrutor), gabinete (GAB), S.EXT. e médico.
 
 ---
 

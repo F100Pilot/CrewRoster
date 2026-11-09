@@ -157,7 +157,9 @@ Things learned over this collaboration that should persist across sessions:
   (VB, VE, VS…) are typed by each pilot in Settings and kept in localStorage
   (`crewroster.pay.<userId>`) — NEVER put anyone's pay values in the code or repo.** Off by default.
   Per diem defaults are the AE's "sujeito a confirmação" values, editable — the CTE pair (229,50 /
-  153,00) matched a real payslip; FP* sessions earn per diem A; instructor sessions (`_INST`) are paid
+  153,00) matched a real payslip; per diem A = flight/positioning/simulator/airport standby days, B =
+  layover, Training (FP* = formação presencial, also as instructor), Office Duty (GAB, S.EXT.) and
+  Medical days — verified day-for-day against a real roster + payslip; instructor sessions (`_INST`) are paid
   at a per-session fee the pilot sets (not in the AE). Variable items are paid the month after.
 - **Backlog:** the rest of the AE items (folgas check, ES/LF/ND, per diem, duty-pay/block-pay
   credits, holiday counter), PWA local reminders, crosswind (runway DB). See `EXPERIMENTAL.md`
