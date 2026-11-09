@@ -100,6 +100,7 @@ Em `0.8.25` (na exp):
   "AE" → `/limites` (sem o cartão de vencimento) e "Vencimento" → `/vencimento` (`PayPage.tsx`; a aba só
   aparece com a estimativa ligada). Cabina chega aos limites EASA pelo menu "⋮". `settingsEvents.ts`
   abre as Definições numa aba (botão "Alterar valores"). A barra desliza até à aba ativa.
+- `0.8.25.1`: rótulos dos campos do vencimento sempre visíveis (a quota sindical ficava tapada pelo %).
 
 ---
 

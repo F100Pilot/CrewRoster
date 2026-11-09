@@ -70,9 +70,13 @@ export default function PaySettingsSection({ userId }: { userId: string }) {
     setText(toText(next));
   };
 
-  const money = (field: MoneyField, label: string, helper?: string) => (
+  // Labels always sit on the border: an empty field otherwise draws its label across the € / %
+  // sign, which on a phone made "Quota sindical" unreadable. The placeholder says what empty means.
+  const money = (field: MoneyField, label: string, helper?: string, placeholder = '0') => (
     <TextField
       label={label}
+      placeholder={placeholder}
+      InputLabelProps={{ shrink: true }}
       value={text[field]}
       onChange={(e) => onMoney(field, e.target.value)}
       size="small"
@@ -95,7 +99,7 @@ export default function PaySettingsSection({ userId }: { userId: string }) {
         <Box flexGrow={1}>
           <Typography variant="subtitle2">Mostrar a estimativa (experimental)</Typography>
           <Typography variant="body2" color="text.secondary">
-            Em Limites e AE. Os teus valores ficam só neste dispositivo (e na cópia de segurança).
+            Aparece na aba Vencimento, em baixo. Os teus valores ficam só neste dispositivo (e na cópia de segurança).
           </Typography>
         </Box>
         <Switch
@@ -183,11 +187,12 @@ export default function PaySettingsSection({ userId }: { userId: string }) {
               <Box display="grid" gridTemplateColumns="1fr 1fr" gap={1.5}>
                 <TextField
                   label="Quota sindical" value={text.unionPct} onChange={(e) => onMoney('unionPct', e.target.value)}
+                  placeholder="0" InputLabelProps={{ shrink: true }}
                   size="small" fullWidth
                   InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
                   inputProps={{ inputMode: 'decimal', autoComplete: 'off' }}
                 />
-                {money('unionBase', 'Base')}
+                {money('unionBase', 'Base da quota', undefined, 'VB+VE+VS')}
               </Box>
               <Typography variant="caption" color="text.secondary" sx={{ mt: -0.5 }}>
                 {s.unionPct
