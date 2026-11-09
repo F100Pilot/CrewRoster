@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Box, FormControlLabel, InputAdornment, MenuItem, Stack, Switch, TextField, Typography } from '@mui/material';
 import { getPaySettings, setPaySettings } from '../storage/settings';
-import { PAY_CATEGORIES, pensionLines, perDiemDefaults, type PayCategory, type PaySettings } from '../domain/payEstimate';
+import { PAY_CATEGORIES, pensionLines, perDiemDefaults, unionFee, type PayCategory, type PaySettings } from '../domain/payEstimate';
 import { IRS_TABLES, type IrsTable } from '../domain/irsWithholding';
 
 const EUR2 = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' });
 const cents = (v: number) => Math.round(v * 100) / 100;
 
 type MoneyField = 'vb' | 've' | 'vs' | 'extras' | 'perDiemA' | 'perDiemB' | 'instructorSession' | 'lineTrainingDay'
-  | 'nonTaxableFixed' | 'fixedDeductions' | 'perDiemExemptIrs' | 'perDiemExemptSs';
+  | 'nonTaxableFixed' | 'fixedDeductions' | 'perDiemExemptIrs' | 'perDiemExemptSs' | 'unionPct' | 'unionBase';
 
 // Settings for the experimental pay estimate: off by default; once on, the pilot's own figures
 // from the payslip. Saved as typed, on this device only.
@@ -148,7 +148,24 @@ export default function PaySettingsSection({ userId }: { userId: string }) {
             {[0, 1, 2, 3, 4, 5].map((n) => <MenuItem key={n} value={n}>{n}</MenuItem>)}
           </TextField>
           {money('nonTaxableFixed', 'Dos outros fixos, sem IRS nem SS', s.pensionAuto ? 'O fundo de pensões já é tratado acima; normalmente 0' : 'Ex.: "Fundo pensões contr. PGA"')}
-          {money('fixedDeductions', 'Outros descontos fixos por mês', s.pensionAuto ? 'Soma de "Seguro saúde" + "Sindicato"' : 'Soma de "Seguro saúde" + "Sindicato" + "Depósito f. pensões-SIPLA"')}
+          {/* Union fee as a % of a base; with it on, the fixed deductions no longer carry it. */}
+          <Box display="grid" gridTemplateColumns="1fr 1fr" gap={1.5}>
+            <TextField
+              label="Quota sindical" value={text.unionPct} onChange={(e) => onMoney('unionPct', e.target.value)}
+              size="small" fullWidth
+              InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
+              inputProps={{ inputMode: 'decimal', autoComplete: 'off' }}
+            />
+            {money('unionBase', 'Base da quota')}
+          </Box>
+          <Typography variant="caption" color="text.secondary" sx={{ mt: -0.5 }}>
+            {s.unionPct
+              ? `Sindicato ${EUR2.format(unionFee(s))}. Base vazia = VB + VE + VS. Não o metas nos descontos fixos.`
+              : 'Ex.: 1%. Deixa 0 se preferires meter o valor do sindicato nos descontos fixos.'}
+          </Typography>
+          {money('fixedDeductions', 'Outros descontos fixos por mês',
+            [`Soma de "Seguro saúde"`, s.unionPct ? null : '"Sindicato"', s.pensionAuto ? null : '"Depósito f. pensões-SIPLA"']
+              .filter(Boolean).join(' + '))}
           <Box display="grid" gridTemplateColumns="1fr 1fr" gap={1.5}>
             {money('perDiemExemptIrs', 'Per diem isento/dia fora · IRS')}
             {money('perDiemExemptSs', 'Per diem isento/dia fora · SS')}
@@ -170,5 +187,6 @@ function toText(s: PaySettings): Record<MoneyField, string> {
     perDiemA: f(s.perDiemA), perDiemB: f(s.perDiemB), instructorSession: f(s.instructorSession),
     lineTrainingDay: f(s.lineTrainingDay), nonTaxableFixed: f(s.nonTaxableFixed), fixedDeductions: f(s.fixedDeductions),
     perDiemExemptIrs: f(s.perDiemExemptIrs), perDiemExemptSs: f(s.perDiemExemptSs),
+    unionPct: f(s.unionPct), unionBase: f(s.unionBase),
   };
 }

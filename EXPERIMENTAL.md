@@ -85,6 +85,7 @@ Em `0.8.23` (na exp):
 - `0.8.23.1`: nomes das situações de IRS mais claros (casado dois titulares vs único titular).
 - `0.8.23.2`: fundo de pensões pelo AE (RRRGS cl. 16): contr. PGA 6,5% (abono sem IRS/SS) e depósito
   SIPLA 7,5% de VB + VE + VS, calculados automaticamente; o interruptor tira/repõe os valores manuais.
+- `0.8.23.3`: quota sindical em % de uma base (vazia = VB + VE + VS); base exata do SIPLA por confirmar.
 
 ---
 

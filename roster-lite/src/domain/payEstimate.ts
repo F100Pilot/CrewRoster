@@ -63,6 +63,8 @@ export interface PaySettings {
   perDiemExemptIrs: number; // € of per diem free of IRS per day away (travel), on average
   perDiemExemptSs: number; // the same for Segurança Social
   pensionAuto: boolean; // compute the pension-plan lines from the RB (RRRGS cl. 16)
+  unionPct: number; // union fee, % of the base below; 0 = typed into fixedDeductions instead
+  unionBase: number; // € the fee is a percentage of; 0 = VB + VE + VS
 }
 
 export const DEFAULT_PAY_SETTINGS: PaySettings = {
@@ -75,7 +77,17 @@ export const DEFAULT_PAY_SETTINGS: PaySettings = {
   // average of two real payslips (Sep and Oct 2026: ~86–90 € for IRS, ~135–145 € for SS). Editable.
   perDiemExemptIrs: 88, perDiemExemptSs: 140,
   pensionAuto: false,
+  unionPct: 0, unionBase: 0,
 };
+
+// The union fee as a percentage of a base. Which payslip lines make up the SIPLA base isn't
+// settled yet (1% of a 9 377,74 € base matched a real payslip, but no clean set of lines adds up
+// to it), so the base can be typed; left empty it falls back to VB + VE + VS.
+export function unionFee(s: PaySettings): number {
+  if (!s.unionPct) return 0;
+  const base = s.unionBase || s.vb + s.ve + s.vs;
+  return Math.round(base * s.unionPct) / 100;
+}
 
 // RRRGS cl. 16: a defined-contribution pension plan of 7,5% of the RB (VB + VE + VS); the PGA bears
 // 6,5% — paid on the payslip as "Fundo pensões contr. PGA", free of IRS and SS — and the whole
@@ -377,6 +389,7 @@ export interface NetEstimate {
   ssBase: number;
   ss: number;
   pensionDeposit: number;
+  union: number;
   fixedDeductions: number;
   net: number;
 }
@@ -397,8 +410,9 @@ export function netEstimate(r: PayEstimate, s: PaySettings): NetEstimate {
   const irs = irsRetention(irsBase, s.irsTable || 'I', s.dependents || 0);
   const ss = Math.round(ssBase * SS_RATE * 100) / 100;
   const fixedDeductions = s.fixedDeductions || 0;
+  const union = unionFee(s);
   return {
-    gross, irsBase, irs, irsRate: irsBase > 0 ? irs / irsBase : 0, ssBase, ss, pensionDeposit: pension.deposit, fixedDeductions,
-    net: gross - irs - ss - pension.deposit - fixedDeductions,
+    gross, irsBase, irs, irsRate: irsBase > 0 ? irs / irsBase : 0, ssBase, ss, pensionDeposit: pension.deposit, union, fixedDeductions,
+    net: gross - irs - ss - pension.deposit - union - fixedDeductions,
   };
 }

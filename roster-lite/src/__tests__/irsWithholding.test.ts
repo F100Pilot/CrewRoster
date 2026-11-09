@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { irsRetention } from '../domain/irsWithholding';
-import { DEFAULT_PAY_SETTINGS, netEstimate, payEstimate, pensionLines, type PayEstimate } from '../domain/payEstimate';
+import { DEFAULT_PAY_SETTINGS, netEstimate, payEstimate, pensionLines, unionFee, type PayEstimate } from '../domain/payEstimate';
 
 describe('irsRetention (Despacho 233-A/2026, continente)', () => {
   it('applies the marginal rate, the parcela and the per-dependent amount', () => {
@@ -50,5 +50,15 @@ describe('netEstimate', () => {
     expect(b.irs).toBe(a.irs);
     expect(b.ss).toBeCloseTo(a.ss);
     expect(b.net).toBeCloseTo(a.net);
+  });
+
+  it('takes the union fee as a percentage of the typed base, or of VB + VE + VS', () => {
+    const base = { ...DEFAULT_PAY_SETTINGS, vb: 4000, ve: 500, vs: 500 };
+    expect(unionFee(base)).toBe(0);
+    expect(unionFee({ ...base, unionPct: 1 })).toBe(50);
+    expect(unionFee({ ...base, unionPct: 1, unionBase: 4567.89 })).toBe(45.68);
+    const r = { rb: 5000, variable: 0, perDiemTravelValue: 0, perDiemTravelDays: 0 } as PayEstimate;
+    const with1 = netEstimate(r, { ...base, unionPct: 1 });
+    expect(with1.net).toBeCloseTo(netEstimate(r, base).net - 50);
   });
 });

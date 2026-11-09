@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (398 tests) — keep green
+npm test           # vitest run (399 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -173,7 +173,8 @@ Things learned over this collaboration that should persist across sessions:
   default = average of two real payslips); per diem for days at base ("… T") is taxed in full.
   Verified to within a few euros on two real payslips. Pension plan (RRRGS cl. 16, `pensionAuto`):
   PGA contribution 6,5% of VB+VE+VS paid as a non-taxable abono, SIPLA deposit 7,5% deducted — both
-  matched the payslip to the cent. Union fee stays a hand-typed fixed deduction (its base is unclear).
+  matched the payslip to the cent. Union fee (`unionPct` of `unionBase`, base empty = VB+VE+VS): 1% matched
+  a real payslip only with a typed base of 9 377,74 € — which lines form the SIPLA base is still open.
 - **Backlog:** the rest of the AE items (folgas check, ES/LF/ND, per diem, duty-pay/block-pay
   credits, holiday counter), PWA local reminders, crosswind (runway DB). See `EXPERIMENTAL.md`
   (TODO/Backlog) and `roster-lite/TODO.md`.

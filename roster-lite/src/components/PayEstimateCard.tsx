@@ -115,6 +115,7 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                 <Row label={`IRS (${(n.irsRate * 100).toFixed(1).replace('.', ',')}% de ${EUR.format(n.irsBase)})`} value={-n.irs} />
                 <Row label="Segurança Social (11%)" value={-n.ss} />
                 {n.pensionDeposit > 0 && <Row label="Depósito f. pensões SIPLA (7,5%)" value={-n.pensionDeposit} />}
+                {n.union > 0 && <Row label={`Sindicato (${String(settings.unionPct).replace('.', ',')}%)`} value={-n.union} />}
                 {n.fixedDeductions > 0 && <Row label="Outros descontos fixos" value={-n.fixedDeductions} />}
                 <Row label="Líquido" value={n.net} strong />
               </Stack>
