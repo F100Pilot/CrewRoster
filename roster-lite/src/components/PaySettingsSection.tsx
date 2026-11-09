@@ -102,7 +102,7 @@ export default function PaySettingsSection({ userId }: { userId: string }) {
           <TextField
             select size="small" fullWidth label="Situação para o IRS" value={s.irsTable ?? 'I'}
             onChange={(e) => save({ ...s, irsTable: e.target.value as IrsTable })}
-            helperText="Como no recibo (titularidade e nº de titulares). Tabelas de retenção 2026, continente"
+            helperText={'Vê no recibo: "Nº Titulares 2" → casado, dois titulares. Tabelas de retenção 2026, continente'}
           >
             {IRS_TABLES.map((t) => <MenuItem key={t.value} value={t.value}>{t.label}</MenuItem>)}
           </TextField>

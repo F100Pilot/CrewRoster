@@ -82,6 +82,7 @@ Em `0.8.23` (na exp):
   I–III, `domain/irsWithholding.ts`), SS 11%, descontos fixos; per diem dos dias fora com parte isenta
   (média de dois recibos reais), dos dias na base tributado. Novos campos em Definições → Descontos.
   Recibos de setembro e outubro reproduzidos a poucos euros.
+- `0.8.23.1`: nomes das situações de IRS mais claros (casado dois titulares vs único titular).
 
 ---
 

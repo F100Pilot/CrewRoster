@@ -8,9 +8,9 @@
 export type IrsTable = 'I' | 'II' | 'III';
 
 export const IRS_TABLES: { value: IrsTable; label: string }[] = [
-  { value: 'I', label: 'Não casado sem dependentes, ou casado dois titulares' },
-  { value: 'II', label: 'Não casado com dependentes' },
-  { value: 'III', label: 'Casado, único titular' },
+  { value: 'I', label: 'Casado, dois titulares — ou não casado sem dependentes' },
+  { value: 'II', label: 'Não casado, com dependentes' },
+  { value: 'III', label: 'Casado, único titular — só um dos dois tem rendimentos' },
 ];
 
 interface Row {
