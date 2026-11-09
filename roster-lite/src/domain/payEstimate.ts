@@ -48,9 +48,11 @@ export interface PaySettings {
   enabled: boolean;
   category: PayCategory;
   vb: number; // vencimento de categoria, €/month
-  ve: number; // vencimento de exercício
+  ve: number; // vencimento de exercício (all the anuidades)
+  veCommand: number; // the part of `ve` that is the "Anuid. técnica Comando" (commanders; 0 otherwise)
   vs: number; // vencimento de senioridade
   extras: number; // fixed monthly complements (cl. 3), €
+  chiefBonus: number; // the part of `extras` that is the "Prémio de chefia" (commanders; 0 otherwise)
   perDiemA: number;
   perDiemB: number;
   instructorSession: number; // € per session given as an instructor; 0 if not an instructor
@@ -64,11 +66,11 @@ export interface PaySettings {
   perDiemExemptSs: number; // the same for Segurança Social
   pensionAuto: boolean; // compute the pension-plan lines from the RB (RRRGS cl. 16)
   unionPct: number; // union fee, % of the base below; 0 = typed into fixedDeductions instead
-  unionBase: number; // € the fee is a percentage of; 0 = VB + VE + VS
+  unionBase: number; // € the fee is a percentage of; 0 = automatic (unionBaseAuto)
 }
 
 export const DEFAULT_PAY_SETTINGS: PaySettings = {
-  enabled: false, category: 'OP3', vb: 0, ve: 0, vs: 0, extras: 0,
+  enabled: false, category: 'OP3', vb: 0, ve: 0, veCommand: 0, vs: 0, extras: 0, chiefBonus: 0,
   perDiemA: AE_PER_DIEM.OP.a, perDiemB: AE_PER_DIEM.OP.b, instructorSession: 0, lineTrainingDay: 0,
   irsTable: 'I', dependents: 0, nonTaxableFixed: 0, fixedDeductions: 0,
   // Per diem paid for a day away is partly exempt (as ajudas de custo); per diem for days at base
@@ -80,12 +82,19 @@ export const DEFAULT_PAY_SETTINGS: PaySettings = {
   unionPct: 0, unionBase: 0,
 };
 
-// The union fee as a percentage of a base. Which payslip lines make up the SIPLA base isn't
-// settled yet (1% of a 9 377,74 € base matched a real payslip, but no clean set of lines adds up
-// to it), so the base can be typed; left empty it falls back to VB + VE + VS.
+// The union fee's base, worked out from a real commander's payslip (the same 1% in two months):
+// every fixed line except the two that come with the command function — "Prémio de chefia" and
+// "Anuid. técnica Comando" — and the PGA's pension contribution. For a first officer, who has
+// neither, that is simply all the fixed pay. Not written in the AE (cl. 12 only says the company
+// deducts the fee), so a typed base still overrides it.
+export function unionBaseAuto(s: PaySettings): number {
+  const pensionByHand = s.pensionAuto ? 0 : s.nonTaxableFixed; // a hand-typed PGA contribution sits in `extras`
+  return Math.max(0, Math.round((s.vb + s.ve + s.vs + s.extras - pensionByHand - (s.veCommand ?? 0) - (s.chiefBonus ?? 0)) * 100) / 100);
+}
+
 export function unionFee(s: PaySettings): number {
   if (!s.unionPct) return 0;
-  const base = s.unionBase || s.vb + s.ve + s.vs;
+  const base = s.unionBase || unionBaseAuto(s);
   return Math.round(base * s.unionPct) / 100;
 }
 

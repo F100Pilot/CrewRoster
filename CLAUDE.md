@@ -176,8 +176,10 @@ Things learned over this collaboration that should persist across sessions:
   default = average of two real payslips); per diem for days at base ("… T") is taxed in full.
   Verified to within a few euros on two real payslips. Pension plan (RRRGS cl. 16, `pensionAuto`):
   PGA contribution 6,5% of VB+VE+VS paid as a non-taxable abono, SIPLA deposit 7,5% deducted — both
-  matched the payslip to the cent. Union fee (`unionPct` of `unionBase`, base empty = VB+VE+VS): 1% matched
-  a real payslip only with a typed base of 9 377,74 € — which lines form the SIPLA base is still open.
+  matched the payslip to the cent. Union fee = `unionPct` (1%) of a base that (since 0.8.26.1)
+  is automatic: `unionBaseAuto()` = all fixed pay minus the command lines "Anuid. técnica Comando"
+  (`veCommand`, part of VE) and "Prémio de chefia" (`chiefBonus`, part of extras) — matched a real
+  payslip to the cent (user wants it automatic); a typed `unionBase` still overrides, under Avançado.
 - **Settings are tabbed** (since 0.8.24): Perfil · Vencimento (pilots only) · App · Dados · Ajuda in
   `SettingsDialog.tsx`; last tab in localStorage `crewroster.settingsTab`. Guardar only on Perfil/App
   (the rest saves on change). New settings go in the tab for their subject, not at the bottom.

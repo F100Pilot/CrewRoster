@@ -5,13 +5,15 @@ import {
 } from '@mui/material';
 import { ExpandMore } from '@mui/icons-material';
 import { getPaySettings, setPaySettings } from '../storage/settings';
-import { PAY_CATEGORIES, pensionLines, perDiemDefaults, unionFee, type PayCategory, type PaySettings } from '../domain/payEstimate';
+import { PAY_CATEGORIES, pensionLines, perDiemDefaults, unionBaseAuto, unionFee, type PayCategory, type PaySettings } from '../domain/payEstimate';
 import { IRS_TABLES, type IrsTable } from '../domain/irsWithholding';
 
 const EUR2 = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' });
 const cents = (v: number) => Math.round(v * 100) / 100;
 
-type MoneyField = 'vb' | 've' | 'vs' | 'extras' | 'perDiemA' | 'perDiemB' | 'instructorSession' | 'lineTrainingDay'
+// `veTech` and `extrasOther` are what's left of VE / the complements once the command lines are
+// typed apart (the union fee's base leaves those out); the stored totals stay `ve` and `extras`.
+type MoneyField = 'vb' | 'veTech' | 'veCommand' | 'vs' | 'extrasOther' | 'chiefBonus' | 'perDiemA' | 'perDiemB' | 'instructorSession' | 'lineTrainingDay'
   | 'nonTaxableFixed' | 'fixedDeductions' | 'perDiemExemptIrs' | 'perDiemExemptSs' | 'unionPct' | 'unionBase';
 
 // Settings for the experimental pay estimate: off by default; once on, the pilot's own figures
@@ -33,7 +35,17 @@ export default function PaySettingsSection({ userId }: { userId: string }) {
   const onMoney = (field: MoneyField, raw: string) => {
     setText((t) => ({ ...t, [field]: raw }));
     const v = Number(raw.replace(/\s/g, '').replace(',', '.'));
-    if (raw.trim() === '' || Number.isFinite(v)) save({ ...s, [field]: raw.trim() === '' ? 0 : Math.max(0, v) });
+    if (raw.trim() !== '' && !Number.isFinite(v)) return;
+    const n = raw.trim() === '' ? 0 : Math.max(0, v);
+    const cmd = s.veCommand ?? 0;
+    const chief = s.chiefBonus ?? 0;
+    switch (field) {
+      case 'veTech': return save({ ...s, ve: cents(n + cmd) });
+      case 'veCommand': return save({ ...s, veCommand: n, ve: cents(s.ve - cmd + n) });
+      case 'extrasOther': return save({ ...s, extras: cents(n + chief) });
+      case 'chiefBonus': return save({ ...s, chiefBonus: n, extras: cents(s.extras - chief + n) });
+      default: return save({ ...s, [field]: n });
+    }
   };
 
   // Changing the category moves the per diem to that category's AE value, unless the pilot had
@@ -135,9 +147,24 @@ export default function PaySettingsSection({ userId }: { userId: string }) {
                 {PAY_CATEGORIES.map((c) => <MenuItem key={c.value} value={c.value}>{c.label}</MenuItem>)}
               </TextField>
               {money('vb', 'Vencimento de categoria (VB)', 'No recibo: "Vencimento base". Base das horas a mais (3% / 6% do VB)')}
-              {money('ve', 'VE (exercício)', 'Todas as anuidades: "Anuid. técnicas" + "Anuid. técnica Comando"')}
+              {/* VE and the complements are split so the command lines can be left out of the union fee's base. */}
+              <Box display="grid" gridTemplateColumns="1fr 1fr" gap={1.5}>
+                {money('veTech', 'Anuid. técnicas')}
+                {money('veCommand', 'Anuid. Comando')}
+              </Box>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: -0.5 }}>
+                VE (exercício) = as duas: {EUR2.format(s.ve)}. Sem comando, deixa a 2.ª a 0.
+              </Typography>
               {money('vs', 'VS (senioridade)', '"Venc. seniorid." + "Diuturnidades"')}
-              {money('extras', 'Outros fixos por mês', s.pensionAuto ? 'Ex.: "Prémio de chefia", "Compl. Comandante Sénior"' : 'Ex.: "Prémio de chefia", "Compl. Comandante Sénior", "Fundo pensões contr. PGA"')}
+              <Box display="grid" gridTemplateColumns="1fr 1fr" gap={1.5}>
+                {money('chiefBonus', 'Prémio de chefia')}
+                {money('extrasOther', 'Outros fixos')}
+              </Box>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: -0.5 }}>
+                {s.pensionAuto
+                  ? 'Outros fixos: ex. "Compl. Comandante Sénior".'
+                  : 'Outros fixos: ex. "Compl. Comandante Sénior", "Fundo pensões contr. PGA".'}
+              </Typography>
               {/* The pension plan (RRRGS cl. 16) from the RB itself, so it follows every VB update. Turning
                   it on takes the hand-typed lines back out of the fields they went into, so nothing is
                   counted twice; turning it off puts them back. */}
@@ -183,22 +210,18 @@ export default function PaySettingsSection({ userId }: { userId: string }) {
               </TextField>
 
               {sectionTitle('Descontos fixos')}
-              {/* Union fee as a % of a base; with it on, the fixed deductions no longer carry it. */}
-              <Box display="grid" gridTemplateColumns="1fr 1fr" gap={1.5}>
-                <TextField
-                  label="Quota sindical" value={text.unionPct} onChange={(e) => onMoney('unionPct', e.target.value)}
-                  placeholder="0" InputLabelProps={{ shrink: true }}
-                  size="small" fullWidth
-                  InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
-                  inputProps={{ inputMode: 'decimal', autoComplete: 'off' }}
-                />
-                {money('unionBase', 'Base da quota', undefined, 'VB+VE+VS')}
-              </Box>
-              <Typography variant="caption" color="text.secondary" sx={{ mt: -0.5 }}>
-                {s.unionPct
-                  ? 'Base vazia = VB + VE + VS. Com a quota em %, não metas o sindicato nos outros descontos.'
+              {/* Union fee as a % of a base worked out from the fixed pay; with it on, the fixed
+                  deductions no longer carry it. */}
+              <TextField
+                label="Quota sindical" value={text.unionPct} onChange={(e) => onMoney('unionPct', e.target.value)}
+                placeholder="0" InputLabelProps={{ shrink: true }}
+                size="small" fullWidth
+                InputProps={{ endAdornment: <InputAdornment position="end">%</InputAdornment> }}
+                inputProps={{ inputMode: 'decimal', autoComplete: 'off' }}
+                helperText={s.unionPct
+                  ? `Base ${s.unionBase ? 'escrita à mão' : 'automática'}: ${EUR2.format(s.unionBase || unionBaseAuto(s))} — os fixos sem o prémio de chefia e a anuidade de Comando. Não metas o sindicato nos outros descontos.`
                   : 'Ex.: 1%. Deixa 0 se preferires meter o valor do sindicato nos outros descontos.'}
-              </Typography>
+              />
               {money('fixedDeductions', 'Outros descontos fixos por mês',
                 [`"Seguro saúde"`, s.unionPct ? null : '"Sindicato"', s.pensionAuto ? null : '"Depósito f. pensões-SIPLA"']
                   .filter(Boolean).join(' + '))}
@@ -212,7 +235,7 @@ export default function PaySettingsSection({ userId }: { userId: string }) {
 
               <Accordion disableGutters elevation={0} sx={{ border: 1, borderColor: 'divider', borderRadius: 2, '&:before': { display: 'none' } }}>
                 <AccordionSummary expandIcon={<ExpandMore />}>
-                  <Typography variant="body2" fontWeight={600}>Avançado · isenções</Typography>
+                  <Typography variant="body2" fontWeight={600}>Avançado · isenções e base da quota</Typography>
                 </AccordionSummary>
                 <AccordionDetails>
                   <Stack spacing={1.5}>
@@ -224,6 +247,7 @@ export default function PaySettingsSection({ userId }: { userId: string }) {
                       O per diem dos dias fora (voo ou estadia) tem uma parte isenta; o dos dias na base ("… T" no recibo)
                       é tributado por inteiro. Por omissão, a média de recibos reais.
                     </Typography>
+                    {money('unionBase', 'Base da quota sindical', 'Só se a automática não bater com o recibo; vazio = automática', 'automática')}
                     {money('nonTaxableFixed', 'Fixos sem IRS nem SS', s.pensionAuto ? 'O fundo de pensões já está tratado; normalmente 0' : 'Ex.: "Fundo pensões contr. PGA"')}
                   </Stack>
                 </AccordionDetails>
@@ -248,7 +272,8 @@ function AutoLine({ label, value }: { label: string; value: string }) {
 function toText(s: PaySettings): Record<MoneyField, string> {
   const f = (v: number) => (v ? String(v).replace('.', ',') : '');
   return {
-    vb: f(s.vb), ve: f(s.ve), vs: f(s.vs), extras: f(s.extras),
+    vb: f(s.vb), veTech: f(cents(s.ve - (s.veCommand ?? 0))), veCommand: f(s.veCommand ?? 0), vs: f(s.vs),
+    extrasOther: f(cents(s.extras - (s.chiefBonus ?? 0))), chiefBonus: f(s.chiefBonus ?? 0),
     perDiemA: f(s.perDiemA), perDiemB: f(s.perDiemB), instructorSession: f(s.instructorSession),
     lineTrainingDay: f(s.lineTrainingDay), nonTaxableFixed: f(s.nonTaxableFixed), fixedDeductions: f(s.fixedDeductions),
     perDiemExemptIrs: f(s.perDiemExemptIrs), perDiemExemptSs: f(s.perDiemExemptSs),
