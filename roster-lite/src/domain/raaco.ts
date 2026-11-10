@@ -283,12 +283,14 @@ function stayLines(where: string, from: Date, to: Date, base: string, taken: Set
       date: a.day, key: a.key, meal: a.meal, how: 'stay', value: rate?.main ?? null, where,
       why: `Na estadia em ${where} (4.5.5.3 / 4.5.8, Tabela 34)`,
     }));
-  // A night stop per local midnight inside the stay.
+  // A night stop per night the stay spends in — any part of 00:00–05:00 local — dated the evening
+  // before. Counting midnights instead missed a stay that starts after one: a late arrival in Praia
+  // (00:15 local) and away again in the morning is a night in Cabo Verde, 14 € (user's colleague).
   const nights: NightLine[] = [];
   const s = localMin(from, tz);
   const e = localMin(to, tz);
-  for (let k = Math.floor(s / 1440) + 1; k * 1440 <= e; k++) {
-    nights.push({ date: dayISO(k - 1), where, value: rate?.night ?? null });
+  for (let k = Math.floor(s / 1440); k * 1440 < e; k++) {
+    if (s < k * 1440 + 5 * 60) nights.push({ date: dayISO(k - 1), where, value: rate?.night ?? null });
   }
   return { meals, nights };
 }

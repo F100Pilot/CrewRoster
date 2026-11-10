@@ -25,7 +25,12 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(nada — tudo promovido em `0.8.34` + correção dos workflows do Pages)_
+Em `0.8.34.1` (na exp):
+
+- **Abonos — pernoita depois da meia-noite:** contava uma pernoita por meia-noite dentro da estadia; uma chegada
+  após a meia-noite local (ex.: RAI às 00:15, regresso de manhã) ficava sem pernoita. Agora conta cada noite em
+  que a estadia está a decorrer entre as 00:00 e as 05:00 locais (datada da véspera). Reportado por um colega:
+  Praia = 14 € (Tabela 34, Cabo Verde). FRA/AGP de maio inalterados.
 
 ---
 

@@ -38,6 +38,17 @@ describe('raacoDays', () => {
     expect(cols(days.get('2026-05-05'))).toEqual([0, 39, 0, 0]);
   });
 
+  it('counts the night of a stay that starts after midnight (a late arrival in Praia, 14 €)', () => {
+    // LIS 22:00 → RAI 00:15 local (UTC−1), back the next morning: the stay holds no midnight.
+    const days = raacoDays([
+      leg('2026-11-20', 'TP9031', 'LIS', 'RAI', '21:00', '01:15', '20:00'),
+      leg('2026-11-21', 'TP9032', 'RAI', 'LIS', '11:00', '15:00', '10:00'),
+    ], 'LIS');
+    const d = days.get('2026-11-20')!;
+    expect(d.nights).toEqual([{ date: '2026-11-20', where: 'RAI', value: 14 }]);
+    expect(d.stay).toBe('RAI');
+  });
+
   it('pays a short-sector breakfast at 5 € and a Málaga night at the Spanish rate', () => {
     const days = raacoDays([
       leg('2026-05-26', 'TP1134', 'LIS', 'AGP', '06:15', '07:30', '05:30'),
