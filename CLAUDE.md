@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (434 tests) — keep green
+npm test           # vitest run (438 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -250,12 +250,18 @@ Things learned over this collaboration that should persist across sessions:
   paid, a SIM away doesn't break the stay, sectors ≤ 1h30 pay
   Tabela 33. Checked (0.8.32.1) against the real May roster + statement, 9 of 11 lines to the cent: DHC meals
   ARE paid (Tabela 34 local rate when the DHC ends the duty away, Tabela 33 when it comes home); a meal is
-  loaded only on a sector flying through its window (or the first sector, when the PSV starts in it); planned
+  loaded only on a sector flying through its window (never the supper — since 0.8.34.3 it is always paid, per colleagues' statements) (or the first sector, when the PSV starts in it); planned
   times win over flown ones. Open: a lunch paid on a DH whose report was 8 min after the window (local time),
   and one on a 1h37 sector. Always labelled **experimental** with a big banner + "Enviar feedback" (mailto,
   prefilled) on `/abonos` and "EM TESTES" on the day card (user request) — keep it. **Windows are read in LOCAL time** (4.5.5.4; user decision): a UTC reading was
   tested on the same month and rejected — it fixes that DH lunch but invents a supper on an early report and
   loses the stay lunches on the days back, 9/11 vs 7–9/11. The ROV PDF, the roster and the statement are not in the repo.
+- **RAACO casebook — every real case is kept forever** (user: "estes exemplos têm de servir para corrigir futuros
+  problemas"): each crew feedback / checked statement line becomes an entry in
+  `src/domain/__tests__/raacoCases.test.ts` (synthetic TP9xxx flight numbers, real airports/times, the columns
+  paid) AND a row in `roster-lite/docs/ABONOS-CASOS.md` (same id: what was reported, cause, rule adopted, version).
+  Write the case first and see it fail; a fix may not break any older case — if two cases contradict, record it
+  under "Em aberto" and ask instead of forcing. Unresolved reports also go to "Em aberto" there.
 - **Settings are tabbed** (since 0.8.24): Perfil · Vencimento (pilots only) · App · Dados · Ajuda in
   `SettingsDialog.tsx`; last tab in localStorage `crewroster.settingsTab`. Guardar only on Perfil/App
   (the rest saves on change). New settings go in the tab for their subject, not at the bottom.
@@ -270,6 +276,7 @@ Things learned over this collaboration that should persist across sessions:
 ## Useful docs in this repo
 
 - `roster-lite/README.md` — full feature/stack/architecture reference.
+- `roster-lite/docs/ABONOS-CASOS.md` — RAACO casebook: real cases, the rule each fixed, open cases, procedure.
 - `EXPERIMENTAL.md` — exp-vs-production tracking + backlog.
 - `AUDIT.md` — security/privacy audit notes.
 - `roster-lite/TODO.md` — parser limitations and pending work.
