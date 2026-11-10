@@ -68,6 +68,28 @@ describe('raacoDays', () => {
     expect(early.get('2026-11-21')!.stay).toBe('FNC');
   });
 
+  it('pays the first night when the last sector lands just before local midnight (Dublin, Valencia)', () => {
+    // Landing 23:43 in Dublin, released 00:13; a day X; home at 04:33 local two days later.
+    const dub = raacoDays([
+      leg('2026-09-26', 'TP9051', 'LIS', 'TLS', '13:57', '15:42', '12:57'),
+      leg('2026-09-26', 'TP9052', 'TLS', 'LIS', '16:33', '18:28'),
+      leg('2026-09-26', 'TP9053', 'LIS', 'DUB', '20:17', '22:43'),
+      base('2026-09-27', { dutyType: 'Day Off', dutyCode: 'X' }),
+      leg('2026-09-28', 'TP9054', 'DUB', 'LIS', '04:33', '07:26', '03:33'),
+    ], 'LIS');
+    expect(cols(dub.get('2026-09-26'))).toEqual([0, 0, 0, 45]); // supper 35 + night 10
+    expect(cols(dub.get('2026-09-27'))).toEqual([0, 35, 35, 45]);
+    const vlc = raacoDays([
+      leg('2026-10-14', 'TP9061', 'LIS', 'OPO', '15:47', '16:32', '14:47'),
+      leg('2026-10-14', 'TP9062', 'OPO', 'LIS', '17:29', '18:22'),
+      leg('2026-10-14', 'TP9063', 'LIS', 'VLC', '20:25', '21:42'),
+      base('2026-10-15', { dutyType: 'Day Off', dutyCode: 'X' }),
+      leg('2026-10-16', 'TP9064', 'VLC', 'LIS', '03:54', '05:25', '02:54'),
+    ], 'LIS');
+    expect(cols(vlc.get('2026-10-14'))).toEqual([0, 0, 33, 43]);
+    expect(cols(vlc.get('2026-10-15'))).toEqual([0, 33, 33, 43]);
+  });
+
   it('pays a short-sector breakfast at 5 € and a Málaga night at the Spanish rate', () => {
     const days = raacoDays([
       leg('2026-05-26', 'TP1134', 'LIS', 'AGP', '06:15', '07:30', '05:30'),
