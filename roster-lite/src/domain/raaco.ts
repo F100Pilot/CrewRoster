@@ -227,7 +227,9 @@ function psvMeals(p: Psv, base: string, nextIsStay: boolean, paidInStay: Set<str
   };
   const out: MealLine[] = [];
   for (const a of due) {
-    const leg = p.legs
+    // The supper is never loaded (colleagues' statements: LYS 18/06, BCN 12/07, DUB, MRS, VLC — it is
+    // always paid, even on a sector flying through its window), so it goes straight to the allowance.
+    const leg = a.meal === 'supper' ? undefined : p.legs
       .filter((l) => (room.get(l) ?? 0) > 0 && (flies(l, a) || (a.basis === 'a' && l === p.legs[0])))
       .sort((x, y) => gapDistance(x, a) - gapDistance(y, a))[0];
     const why = `${BASIS[a.basis]} (4.5.5.1 ${a.basis})`;
@@ -260,6 +262,7 @@ function psvMeals(p: Psv, base: string, nextIsStay: boolean, paidInStay: Set<str
     const value = a.meal === 'breakfast' ? T33_BREAKFAST : nextIsStay ? local?.main ?? null : T33_MAIN;
     const reason = p.legs.length === 0
       ? 'assistência no aeroporto (4.5.5.5)'
+      : a.meal === 'supper' ? 'a ceia não é embarcada'
       : p.legs.every((l) => blockMin(l) <= 90) ? 'setores até 1h30 não levam refeição principal (4.5.11.4)'
       : 'sem setor para a embarcar (4.5.11.2 / 4.5.11.6)';
     out.push({

@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (434 tests) — keep green
+npm test           # vitest run (435 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -250,7 +250,7 @@ Things learned over this collaboration that should persist across sessions:
   paid, a SIM away doesn't break the stay, sectors ≤ 1h30 pay
   Tabela 33. Checked (0.8.32.1) against the real May roster + statement, 9 of 11 lines to the cent: DHC meals
   ARE paid (Tabela 34 local rate when the DHC ends the duty away, Tabela 33 when it comes home); a meal is
-  loaded only on a sector flying through its window (or the first sector, when the PSV starts in it); planned
+  loaded only on a sector flying through its window (never the supper — since 0.8.34.3 it is always paid, per colleagues' statements) (or the first sector, when the PSV starts in it); planned
   times win over flown ones. Open: a lunch paid on a DH whose report was 8 min after the window (local time),
   and one on a 1h37 sector. Always labelled **experimental** with a big banner + "Enviar feedback" (mailto,
   prefilled) on `/abonos` and "EM TESTES" on the day card (user request) — keep it. **Windows are read in LOCAL time** (4.5.5.4; user decision): a UTC reading was

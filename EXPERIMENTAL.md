@@ -25,7 +25,8 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(nada — tudo promovido em `0.8.34.2`)_
+- **0.8.34.3 — Abonos:** a ceia nunca é embarcada; é paga sempre que devida (Tabela 34 local se o serviço acaba
+  fora da base, 18 € na base). Feedback de um colega: LYS 18/06 e BCN 12/07 só tinham a pernoita.
 
 ---
 

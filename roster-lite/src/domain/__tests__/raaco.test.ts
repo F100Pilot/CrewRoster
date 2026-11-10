@@ -90,6 +90,21 @@ describe('raacoDays', () => {
     expect(cols(vlc.get('2026-10-15'))).toEqual([0, 33, 33, 43]);
   });
 
+  it('pays the supper: it is not loaded on board (late sector into Barcelona after midnight)', () => {
+    // Home standby in the morning, then LIS–BCN–LIS–BCN landing 01:45 local; a day X; home at 05:02.
+    const days = raacoDays([
+      base('2026-07-12', { dutyType: 'Standby Home', dutyCode: 'H9+', departureAirport: 'LIS', departureTime: '08:55', arrivalTime: '14:35' }),
+      leg('2026-07-12', 'TP9071', 'LIS', 'BCN', '15:49', '17:37'),
+      leg('2026-07-12', 'TP9072', 'BCN', 'LIS', '18:35', '20:34'),
+      leg('2026-07-12', 'TP9073', 'LIS', 'BCN', '21:59', '23:45'),
+      base('2026-07-13', { dutyType: 'Day Off', dutyCode: 'X' }),
+      leg('2026-07-14', 'TP9074', 'BCN', 'LIS', '04:02', '06:02', '03:02'),
+    ], 'LIS');
+    // Dinner on board; supper at the Spanish rate (the duty ends away) + the night.
+    expect(cols(days.get('2026-07-12'))).toEqual([0, 0, 0, 43]);
+    expect(cols(days.get('2026-07-13'))).toEqual([0, 33, 33, 43]);
+  });
+
   it('pays a short-sector breakfast at 5 € and a Málaga night at the Spanish rate', () => {
     const days = raacoDays([
       leg('2026-05-26', 'TP1134', 'LIS', 'AGP', '06:15', '07:30', '05:30'),
