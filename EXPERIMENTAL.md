@@ -25,11 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **Workflows do Pages (sem mudança na app):** os dois publicavam com `keep_files: true`, e cada build antigo
-  ficava no gh-pages (3 022 ficheiros, 168 MB → artefacto de 61 MB por deploy, 90% do armazenamento de Actions).
-  Agora cada workflow monta o site inteiro (o seu build + a cópia publicada do outro ambiente) e publica sem
-  guardar ficheiros velhos; `concurrency: gh-pages` impede os dois de publicarem ao mesmo tempo. O de produção só
-  conta quando for para o `master` (é ele que limpa a raiz).
+_(nada — tudo promovido em `0.8.34` + correção dos workflows do Pages)_
 
 ---
 
