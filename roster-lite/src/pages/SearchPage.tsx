@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import { Box, Card, CardActionArea, CardContent, Chip, IconButton, InputAdornment, Stack, TextField, Typography } from '@mui/material';
 import { ArrowBack, FlightTakeoff, Search } from '@mui/icons-material';
-import { format, parseISO } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import { searchRoster } from '../domain/rosterSearch';
+import { dayLabel } from '../utils/dates';
 
 // Global search across the roster: flights (number, airport, route, crew), duty types and dates.
 // A hit jumps to its day, focusing the specific flight.
@@ -49,7 +49,7 @@ export default function SearchPage() {
                 <Box flexGrow={1}>
                   <Typography variant="body2" sx={{ fontWeight: 600 }}>{h.title}</Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {format(parseISO(h.date), 'EEE, dd MMM yyyy')}
+                    {dayLabel(h.date, true)}
                   </Typography>
                 </Box>
                 {!h.isFlight && <Chip size="small" variant="outlined" label={h.title} />}

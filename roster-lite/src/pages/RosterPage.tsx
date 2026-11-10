@@ -14,7 +14,6 @@ import { useRoster } from '../state/useRoster';
 import { useViewedMonth } from '../state/viewedMonth';
 import UploadDropzone from '../components/UploadDropzone';
 import DutyChip from '../components/DutyChip';
-import NextDutyCard from '../components/NextDutyCard';
 import DepartureBoard from '../components/DepartureBoard';
 import MonthStatsCard from '../components/MonthStatsCard';
 import LimitsSummaryCard from '../components/LimitsSummaryCard';
@@ -25,6 +24,7 @@ import { checkInTimeLabel } from '../utils/localTime';
 import { MARK_SHORT, dayMarks, isInstructorMark } from '../domain/dutyMarks';
 import type { ParsedDuty, ChangeType } from '../domain/types';
 import { todayISO } from '../domain/rosterWindow';
+import { dayLabel, monthLabel } from '../utils/dates';
 
 // Wide enough for the widest "EEE, dd MMM" (e.g. "Wed, 28 Sep") in bold.
 const DATE_COLUMN = '6.6em';
@@ -186,14 +186,12 @@ export default function RosterPage() {
         </Alert>
       )}
 
-      <NextDutyCard duties={roster.duties} />
-
       <Box display="flex" alignItems="center" justifyContent="space-between">
         <Box display="flex" alignItems="center" gap={1}>
           <IconButton size="small" onClick={() => setMonth((m) => subMonths(m, 1))}>
             <ChevronLeft />
           </IconButton>
-          <Typography variant="h6">{format(month, 'MMMM yyyy')}</Typography>
+          <Typography variant="h6">{monthLabel(month)}</Typography>
           <IconButton size="small" onClick={() => setMonth((m) => addMonths(m, 1))}>
             <ChevronRight />
           </IconButton>
@@ -311,7 +309,7 @@ export default function RosterPage() {
                   variant="subtitle2" fontWeight={isToday ? 700 : 600} color={isToday ? 'primary.main' : 'text.primary'}
                   sx={{ minWidth: DATE_COLUMN, flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}
                 >
-                  {format(parseISO(date), 'EEE, dd MMM')}
+                  {dayLabel(date)}
                 </Typography>
                 {isToday && (
                   <Chip

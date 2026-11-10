@@ -208,6 +208,10 @@ Things learned over this collaboration that should persist across sessions:
   (dawn/day/dusk/night from `sun.ts` at that airport) and a destination accent. AE figures on it (FDP,
   rest minima) are pilots-only, like everywhere. The list can also render as a departures board
   (`DepartureBoard.tsx`, view in localStorage `crewroster.listView`).
+- **One design language** (since 0.8.29.2): `theme.ts` carries the "Hoje" look for every page (navy
+  AppBar, flat bordered cards, soft tinted Alerts). Display dates go through `utils/dates.ts`
+  (`dayLabel`, `monthLabel`, pt locale) — NEVER set date-fns' default locale: `pgaGrid.ts` matches the
+  PDF's English day headers with `format(d, 'EEEdd')`. Duty-type words: `domain/dutyLabels.ts`.
 - **Settings are tabbed** (since 0.8.24): Perfil · Vencimento (pilots only) · App · Dados · Ajuda in
   `SettingsDialog.tsx`; last tab in localStorage `crewroster.settingsTab`. Guardar only on Perfil/App
   (the rest saves on change). New settings go in the tab for their subject, not at the bottom.

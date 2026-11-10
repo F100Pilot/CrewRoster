@@ -166,7 +166,8 @@ export default function Layout({ children }: { children: ReactNode }) {
       >
         <BottomNavigation
           showLabels
-          value={current === -1 ? 0 : current}
+          // A page that isn't a tab (a day, a PDF…) highlights none rather than the first.
+          value={current === -1 ? false : current}
           onChange={(_, idx) => navigate(NAV[idx].path)}
           sx={{ width: 'max-content', minWidth: '100%' }}
         >

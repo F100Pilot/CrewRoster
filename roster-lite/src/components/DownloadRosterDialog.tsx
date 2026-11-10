@@ -4,7 +4,7 @@ import {
   IconButton, Link, Stack, TextField, Typography,
 } from '@mui/material';
 import { CloudDownload, Close, Login, CheckCircle, NotificationsActive } from '@mui/icons-material';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { login, fetchRoster, SessionExpiredError } from '../services/crewlinkApi';
 import { defaultBeginDate, SYNC_LOOKBACK_DAYS } from '../domain/rosterWindow';
 import { useRoster, type RosterImportPreview } from '../state/useRoster';
@@ -13,6 +13,7 @@ import { getCredentials } from '../storage/settings';
 import { addNotification } from '../storage/notifications';
 import { parseNotificationPdf, type NotificationReport } from '../parsing/pdf/notificationReport';
 import type { ChangeType, DayChange, ParsedDuty } from '../domain/types';
+import { dayLabel } from '../utils/dates';
 
 const CHANGE_META: Record<ChangeType, { label: string; color: 'success' | 'warning' | 'error' }> = {
   added: { label: 'Novo', color: 'success' },
@@ -73,7 +74,7 @@ function DiffView({ changes, prevDuties, nextDuties }: {
                   <Chip size="small" color={CHANGE_META[c.type].color} sx={{ color: '#fff', minWidth: 82 }}
                     label={CHANGE_META[c.type].label} />
                   <Typography variant="body2" fontWeight={600}>
-                    {format(parseISO(c.date), 'EEE, dd MMM yyyy')}
+                    {dayLabel(c.date, true)}
                   </Typography>
                 </Box>
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', pl: 0.5, mt: 0.25, wordBreak: 'break-word' }}>
@@ -367,7 +368,7 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
                 {notifReport.changes.map((c) => (
                   <Box key={c.date} sx={{ p: 1, borderRadius: 1, bgcolor: 'action.hover' }}>
                     <Typography variant="subtitle2">
-                      {/^\d{4}-/.test(c.date) ? format(parseISO(c.date), 'EEE, dd MMM yyyy') : c.rawDate}
+                      {/^\d{4}-/.test(c.date) ? dayLabel(c.date, true) : c.rawDate}
                     </Typography>
                     <Box display="flex" gap={1} alignItems="flex-start" mt={0.5}>
                       <Chip size="small" color="warning" label="Antes" sx={{ color: '#fff', minWidth: 64 }} />

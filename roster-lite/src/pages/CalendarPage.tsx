@@ -13,6 +13,7 @@ import MonthStatsCard from '../components/MonthStatsCard';
 import { shareMonthImage } from '../utils/shareDay';
 import { dutyColor } from '../theme';
 import type { ParsedDuty } from '../domain/types';
+import { monthLabel } from '../utils/dates';
 
 const WEEKDAYS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 
@@ -98,7 +99,7 @@ export default function CalendarPage() {
           <ChevronLeft />
         </IconButton>
         <Typography variant="h6" sx={{ minWidth: 150, textAlign: 'center' }}>
-          {format(month, 'MMMM yyyy')}
+          {monthLabel(month)}
         </Typography>
         <IconButton size="small" onClick={() => setMonth((m) => addMonths(m, 1))} aria-label="Mês seguinte">
           <ChevronRight />

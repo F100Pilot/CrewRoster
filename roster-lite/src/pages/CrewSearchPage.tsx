@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
 import { Autocomplete, Box, Card, CardActionArea, CardContent, Chip, IconButton, Stack, TextField, Typography } from '@mui/material';
 import { ArrowBack, Groups } from '@mui/icons-material';
-import { format, parseISO } from 'date-fns';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import { allColleagues, flightsWithColleague, type Colleague } from '../domain/crewSearch';
+import { dayLabel } from '../utils/dates';
 
 const ROLE_LABEL: Record<string, string> = { CP: 'Comandante', FO: 'Oficial Piloto', PU: 'Chefe de Cabine', ST: 'Tripulante' };
 
@@ -69,7 +69,7 @@ export default function CrewSearchPage() {
             <CardContent sx={{ py: 1.5 }}>
               <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
                 <Typography variant="subtitle2" sx={{ minWidth: 92 }}>
-                  {format(parseISO(f.date), 'EEE, dd MMM')}
+                  {dayLabel(f.date)}
                 </Typography>
                 <Typography variant="body2" sx={{ fontWeight: 700 }}>{f.flightNumber ?? '—'}</Typography>
                 <Typography variant="body2" color="text.secondary">{f.dep ?? '—'} → {f.arr ?? '—'}</Typography>

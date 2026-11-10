@@ -48,6 +48,10 @@ Em `0.8.29` (na exp) — layout dinâmico:
 - Navegação: "Hoje" é a primeira aba; o atalho Android "Hoje" abre este ecrã.
 - `0.8.29.1`: o dia inteiro (também dias sem voos: cartão de atividade + linha do tempo + números do dia)
   e a página com a paleta da fase, mais perto do esboço.
+- `0.8.29.2`: tema global com o estilo do "Hoje" (`theme.ts`: AppBar azul-noite, cartões sem sombra com
+  contorno, `Alert` em tom suave, raios maiores); datas em PT (`utils/dates.ts`, sem mudar o locale por
+  omissão — o parser usa "Mon01"); tipos de serviço em PT (`domain/dutyLabels.ts`); heatmap abre no mês
+  atual; cartão "Próximo serviço" saiu da Lista (o "Hoje" já o mostra).
 
 ---
 

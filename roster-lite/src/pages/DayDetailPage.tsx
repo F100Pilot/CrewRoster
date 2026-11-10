@@ -22,6 +22,8 @@ import type { ParsedDuty } from '../domain/types';
 import FlightWeather from '../components/FlightWeather';
 import FlightInfo from '../components/FlightInfo';
 import FlicStand from '../components/FlicStand';
+import { dayLabel } from '../utils/dates';
+import { dutyTypeLabel } from '../domain/dutyLabels';
 
 export default function DayDetailPage() {
   const { date } = useParams<{ date: string }>();
@@ -99,7 +101,7 @@ export default function DayDetailPage() {
           <ChevronLeft />
         </IconButton>
         <Typography variant="h6" sx={{ flexGrow: 1, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {date ? format(parseISO(date), 'EEE, dd MMM yyyy') : ''}
+          {date ? dayLabel(date, true) : ''}
         </Typography>
         <IconButton size="small" onClick={() => goTo(nextDate)} disabled={!nextDate} title="Dia seguinte">
           <ChevronRight />
@@ -174,7 +176,7 @@ export default function DayDetailPage() {
                   fontWeight: 700,
                 }}
               />
-              <Chip label={duty.dutyType} variant="outlined" size="small" />
+              <Chip label={dutyTypeLabel(duty.dutyType)} variant="outlined" size="small" />
               {duty.reportingTime && (
                 <Chip
                   label={`Check-in ${checkInTimeLabel(date, duty.reportingTime, duty.departureAirport)}`}
@@ -305,7 +307,7 @@ function SunNightLine({ duty, date, trailing }: { duty: ParsedDuty; date: string
       {/* the day/night bar */}
       <Box sx={{ display: 'flex', height: 12, borderRadius: 6, overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}>
         {s.profile.map((day, i) => (
-          <Box key={i} sx={{ flex: 1, bgcolor: day ? '#ffb300' : '#1a237e' }} />
+          <Box key={i} sx={{ flex: 1, bgcolor: day ? '#ffb300' : '#1E2A55' }} />
         ))}
       </Box>
       <Box display="flex" justifyContent="center" mt={0.75}>

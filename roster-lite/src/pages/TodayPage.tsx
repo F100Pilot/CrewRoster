@@ -20,6 +20,7 @@ import { todayISO } from '../domain/rosterWindow';
 import UploadDropzone from '../components/UploadDropzone';
 import MetarTaf from '../components/MetarTaf';
 import type { ParsedDuty } from '../domain/types';
+import { DUTY_TYPE_LABEL } from '../domain/dutyLabels';
 
 // The home screen that changes with the crew member's day (from the approved "layout dinâmico"
 // sketch). The header is the sky over the airport they're at — dawn, day, dusk or night from the
@@ -60,11 +61,7 @@ const SKY: Record<Sky, { bg: string; soft: string }> = {
 };
 const DEST_ACCENT: Record<Exclude<Accent, 'base'>, string> = { islands: '#5EEAD4', south: '#FCD34D', north: '#93C5FD' };
 const MONO = 'ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace';
-const TYPE_LABEL: Record<string, string> = {
-  'Flight Duty': 'Voo', Positioning: 'Posicionamento', 'Standby Airport': 'Assistência no aeroporto',
-  'Standby Home': 'Assistência em casa', Reserve: 'Reserva', 'Office Duty': 'Gabinete', Training: 'Formação',
-  Simulator: 'Simulador', Medical: 'Médico', Absence: 'Ausência', Vacation: 'Férias', 'Day Off': 'Folga', Other: 'Serviço',
-};
+const TYPE_LABEL = DUTY_TYPE_LABEL;
 const PHASE_LABEL: Record<Phase, string> = {
   preflight: 'Antes do serviço', duty: 'Em serviço', standby: 'Assistência', layover: 'Estadia', off: 'Folga',
 };
