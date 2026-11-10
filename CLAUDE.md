@@ -118,6 +118,11 @@ Things learned over this collaboration that should persist across sessions:
   user, only then "passa para o main". The user says when.
 - **Production has real PGA crew using it.** Be conservative; prefer batching exp
   changes and one clean production deploy.
+- **Pages deploys publish the WHOLE site without `keep_files`** (since Nov 2026): each workflow assembles its build +
+  the other environment's published copy (`git -C .. archive origin/gh-pages …` — from the repo root: run in
+  `roster-lite/` git archive only takes that subfolder and would publish an empty root) and a shared
+  `concurrency: gh-pages` serialises them. `keep_files: true` had piled up every old build (168 MB, a 61 MB Pages
+  artifact per deploy) and filled the Actions storage quota.
 - **Worker deploy gotcha:** it triggers on `master` only. To test a worker change on
   exp, dispatch `deploy-worker.yml` manually on the exp ref. Recover the deployed
   worker URL (if needed) from the wrangler step logs of a deploy run, not from the repo.
