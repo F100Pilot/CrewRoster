@@ -289,7 +289,8 @@ function stayLines(where: string, from: Date, to: Date, base: string, taken: Set
   const nights: NightLine[] = [];
   const s = localMin(from, tz);
   const e = localMin(to, tz);
-  for (let k = Math.floor(s / 1440); k * 1440 < e; k++) {
+  // Midnight itself counts: a report for the flight home at 00:00 local still closes a night.
+  for (let k = Math.floor(s / 1440); k * 1440 <= e; k++) {
     if (s < k * 1440 + 5 * 60) nights.push({ date: dayISO(k - 1), where, value: rate?.night ?? null });
   }
   return { meals, nights };

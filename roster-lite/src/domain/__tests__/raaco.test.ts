@@ -49,6 +49,25 @@ describe('raacoDays', () => {
     expect(d.stay).toBe('RAI');
   });
 
+  it('pays both nights of a stay with a day X (no duty away), late arrival or not', () => {
+    // LIS 22:00 → RAI 00:15 local, a day X in Praia, back on the following night.
+    const late = raacoDays([
+      leg('2026-11-20', 'TP9041', 'LIS', 'RAI', '21:00', '01:15', '20:00'),
+      base('2026-11-21', { dutyType: 'Day Off', dutyCode: 'X' }),
+      leg('2026-11-22', 'TP9042', 'RAI', 'LIS', '02:00', '06:00', '01:00'),
+    ], 'LIS');
+    expect([...late.values()].flatMap((d) => d.nights.map((n) => `${n.date} ${n.where} ${n.value}`)))
+      .toEqual(['2026-11-20 RAI 14', '2026-11-21 RAI 14']);
+    // An evening arrival in Funchal, a day X, back two days later in the morning.
+    const early = raacoDays([
+      leg('2026-11-20', 'TP9043', 'LIS', 'FNC', '19:00', '20:45', '18:00'),
+      base('2026-11-21', { dutyType: 'Day Off', dutyCode: 'X' }),
+      leg('2026-11-22', 'TP9044', 'FNC', 'LIS', '08:00', '09:30', '07:00'),
+    ], 'LIS');
+    expect([...early.values()].flatMap((d) => d.nights.map((n) => n.date))).toEqual(['2026-11-20', '2026-11-21']);
+    expect(early.get('2026-11-21')!.stay).toBe('FNC');
+  });
+
   it('pays a short-sector breakfast at 5 € and a Málaga night at the Spanish rate', () => {
     const days = raacoDays([
       leg('2026-05-26', 'TP1134', 'LIS', 'AGP', '06:15', '07:30', '05:30'),

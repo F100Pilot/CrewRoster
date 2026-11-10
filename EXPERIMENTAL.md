@@ -31,6 +31,9 @@ Em `0.8.34.1` (na exp):
   após a meia-noite local (ex.: RAI às 00:15, regresso de manhã) ficava sem pernoita. Agora conta cada noite em
   que a estadia está a decorrer entre as 00:00 e as 05:00 locais (datada da véspera). Reportado por um colega:
   Praia = 14 € (Tabela 34, Cabo Verde). FRA/AGP de maio inalterados.
+- `0.8.34.2`: feedback de um colega — "na primeira noite de dia X não tem a pernoita". Com chegada à RAI depois da
+  meia-noite e apresentação do regresso à meia-noite local, a versão antiga só pagava a 2.ª noite e a 0.8.34.1
+  só a 1.ª; agora a meia-noite exata também conta → 2 pernoitas. Teste com dia X (RAI tardio e FNC à noite).
 
 ---
 
