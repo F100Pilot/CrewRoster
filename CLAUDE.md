@@ -235,7 +235,9 @@ Things learned over this collaboration that should persist across sessions:
   ARE paid (Tabela 34 local rate when the DHC ends the duty away, Tabela 33 when it comes home); a meal is
   loaded only on a sector flying through its window (or the first sector, when the PSV starts in it); planned
   times win over flown ones. Open: a lunch paid on a DH whose report was 8 min after the window (local time),
-  and one on a 1h37 sector. The ROV PDF, the roster and the statement are not in the repo.
+  and one on a 1h37 sector. **Windows are read in LOCAL time** (4.5.5.4; user decision): a UTC reading was
+  tested on the same month and rejected — it fixes that DH lunch but invents a supper on an early report and
+  loses the stay lunches on the days back, 9/11 vs 7–9/11. The ROV PDF, the roster and the statement are not in the repo.
 - **Settings are tabbed** (since 0.8.24): Perfil · Vencimento (pilots only) · App · Dados · Ajuda in
   `SettingsDialog.tsx`; last tab in localStorage `crewroster.settingsTab`. Guardar only on Perfil/App
   (the rest saves on change). New settings go in the tab for their subject, not at the bottom.

@@ -39,7 +39,8 @@ Em `0.8.32` (na exp):
   embarque só num setor que voe no horário da refeição (ou o 1.º setor, se o PSV começa no horário); horas
   planeadas (`ParsedDuty.planned`) quando conhecidas. **Diferenças por explicar:** almoço de 39 € num DH LIS→FRA
   com apresentação às 14:08 LT (fora do horário em hora local — horário planeado anterior? ou leitura em UTC?) e
-  almoço de 18 € num RAK→LIS de 1h37 de bloco (bloco planeado ≤ 1h30?).
+  almoço de 18 € num RAK→LIS de 1h37 de bloco (bloco planeado ≤ 1h30?). Leitura em UTC testada e posta de
+  parte (resolve o DH mas cria uma ceia num início às 04:38z e perde os almoços de regresso): fica hora local.
 
 ---
 
