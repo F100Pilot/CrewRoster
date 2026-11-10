@@ -14,6 +14,11 @@ on:
 permissions:
   contents: write
 
+# Production and this preview publish to the same gh-pages branch: one at a time.
+concurrency:
+  group: gh-pages
+  cancel-in-progress: false
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
@@ -42,9 +47,21 @@ jobs:
           BASE: /CrewRoster/exp/
           DISABLE_PWA: '1'
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
+      # The whole site — production as it is published, this build under exp/ — published without
+      # keeping old files: keep_files left every past build's hashed assets on the branch (3 000
+      # files, 168 MB, a 61 MB Pages artifact per deploy, eating the Actions storage quota).
+      - name: Assemble the site (published production + this preview)
+        run: |
+          # From the repository root: run in roster-lite/, git archive would only take that subfolder.
+          git -C .. fetch --depth=1 origin +refs/heads/gh-pages:refs/remotes/origin/gh-pages
+          mkdir -p ../site
+          git -C .. archive origin/gh-pages | tar -x -C ../site
+          # Never publish a site without production: stop if the root came out empty.
+          test -f ../site/index.html
+          rm -rf ../site/exp
+          cp -r dist ../site/exp
       - uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: roster-lite/dist
-          destination_dir: exp
-          keep_files: true
+          publish_dir: site
+          keep_files: false
