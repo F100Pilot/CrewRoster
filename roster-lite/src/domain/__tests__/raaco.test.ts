@@ -38,6 +38,58 @@ describe('raacoDays', () => {
     expect(cols(days.get('2026-05-05'))).toEqual([0, 39, 0, 0]);
   });
 
+  it('counts the night of a stay that starts after midnight (a late arrival in Praia, 14 €)', () => {
+    // LIS 22:00 → RAI 00:15 local (UTC−1), back the next morning: the stay holds no midnight.
+    const days = raacoDays([
+      leg('2026-11-20', 'TP9031', 'LIS', 'RAI', '21:00', '01:15', '20:00'),
+      leg('2026-11-21', 'TP9032', 'RAI', 'LIS', '11:00', '15:00', '10:00'),
+    ], 'LIS');
+    const d = days.get('2026-11-20')!;
+    expect(d.nights).toEqual([{ date: '2026-11-20', where: 'RAI', value: 14 }]);
+    expect(d.stay).toBe('RAI');
+  });
+
+  it('pays both nights of a stay with a day X (no duty away), late arrival or not', () => {
+    // LIS 22:00 → RAI 00:15 local, a day X in Praia, back on the following night.
+    const late = raacoDays([
+      leg('2026-11-20', 'TP9041', 'LIS', 'RAI', '21:00', '01:15', '20:00'),
+      base('2026-11-21', { dutyType: 'Day Off', dutyCode: 'X' }),
+      leg('2026-11-22', 'TP9042', 'RAI', 'LIS', '02:00', '06:00', '01:00'),
+    ], 'LIS');
+    expect([...late.values()].flatMap((d) => d.nights.map((n) => `${n.date} ${n.where} ${n.value}`)))
+      .toEqual(['2026-11-20 RAI 14', '2026-11-21 RAI 14']);
+    // An evening arrival in Funchal, a day X, back two days later in the morning.
+    const early = raacoDays([
+      leg('2026-11-20', 'TP9043', 'LIS', 'FNC', '19:00', '20:45', '18:00'),
+      base('2026-11-21', { dutyType: 'Day Off', dutyCode: 'X' }),
+      leg('2026-11-22', 'TP9044', 'FNC', 'LIS', '08:00', '09:30', '07:00'),
+    ], 'LIS');
+    expect([...early.values()].flatMap((d) => d.nights.map((n) => n.date))).toEqual(['2026-11-20', '2026-11-21']);
+    expect(early.get('2026-11-21')!.stay).toBe('FNC');
+  });
+
+  it('pays the first night when the last sector lands just before local midnight (Dublin, Valencia)', () => {
+    // Landing 23:43 in Dublin, released 00:13; a day X; home at 04:33 local two days later.
+    const dub = raacoDays([
+      leg('2026-09-26', 'TP9051', 'LIS', 'TLS', '13:57', '15:42', '12:57'),
+      leg('2026-09-26', 'TP9052', 'TLS', 'LIS', '16:33', '18:28'),
+      leg('2026-09-26', 'TP9053', 'LIS', 'DUB', '20:17', '22:43'),
+      base('2026-09-27', { dutyType: 'Day Off', dutyCode: 'X' }),
+      leg('2026-09-28', 'TP9054', 'DUB', 'LIS', '04:33', '07:26', '03:33'),
+    ], 'LIS');
+    expect(cols(dub.get('2026-09-26'))).toEqual([0, 0, 0, 45]); // supper 35 + night 10
+    expect(cols(dub.get('2026-09-27'))).toEqual([0, 35, 35, 45]);
+    const vlc = raacoDays([
+      leg('2026-10-14', 'TP9061', 'LIS', 'OPO', '15:47', '16:32', '14:47'),
+      leg('2026-10-14', 'TP9062', 'OPO', 'LIS', '17:29', '18:22'),
+      leg('2026-10-14', 'TP9063', 'LIS', 'VLC', '20:25', '21:42'),
+      base('2026-10-15', { dutyType: 'Day Off', dutyCode: 'X' }),
+      leg('2026-10-16', 'TP9064', 'VLC', 'LIS', '03:54', '05:25', '02:54'),
+    ], 'LIS');
+    expect(cols(vlc.get('2026-10-14'))).toEqual([0, 0, 33, 43]);
+    expect(cols(vlc.get('2026-10-15'))).toEqual([0, 33, 33, 43]);
+  });
+
   it('pays a short-sector breakfast at 5 € and a Málaga night at the Spanish rate', () => {
     const days = raacoDays([
       leg('2026-05-26', 'TP1134', 'LIS', 'AGP', '06:15', '07:30', '05:30'),

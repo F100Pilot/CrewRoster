@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (431 tests) — keep green
+npm test           # vitest run (434 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -245,7 +245,9 @@ Things learned over this collaboration that should persist across sessions:
   `RaacoDayCard`. Applies to ALL crew (ROV, not the SIPLA AE) — do not gate on role. **Paid apart from the
   salary, the month after** (an "Abonos Operacionais" statement) — never add it to the pay estimate. Calibrated
   on the pattern of a real statement: stays pay lunch, dinner and supper at Tabela 34 plus the night (column
-  "Ceia/+Pernoita"), the hotel breakfast is NOT paid, a SIM away doesn't break the stay, sectors ≤ 1h30 pay
+  "Ceia/+Pernoita"; a night = any part of 00:00–05:00 local spent in the stay, dated the evening before — since
+  0.8.34.1, so a late arrival after midnight, e.g. Praia, still gets its night), the hotel breakfast is NOT
+  paid, a SIM away doesn't break the stay, sectors ≤ 1h30 pay
   Tabela 33. Checked (0.8.32.1) against the real May roster + statement, 9 of 11 lines to the cent: DHC meals
   ARE paid (Tabela 34 local rate when the DHC ends the duty away, Tabela 33 when it comes home); a meal is
   loaded only on a sector flying through its window (or the first sector, when the PSV starts in it); planned

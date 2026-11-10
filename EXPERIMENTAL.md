@@ -25,11 +25,15 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **Workflows do Pages (sem mudança na app):** os dois publicavam com `keep_files: true`, e cada build antigo
-  ficava no gh-pages (3 022 ficheiros, 168 MB → artefacto de 61 MB por deploy, 90% do armazenamento de Actions).
-  Agora cada workflow monta o site inteiro (o seu build + a cópia publicada do outro ambiente) e publica sem
-  guardar ficheiros velhos; `concurrency: gh-pages` impede os dois de publicarem ao mesmo tempo. O de produção só
-  conta quando for para o `master` (é ele que limpa a raiz).
+Em `0.8.34.1` (na exp):
+
+- **Abonos — pernoita depois da meia-noite:** contava uma pernoita por meia-noite dentro da estadia; uma chegada
+  após a meia-noite local (ex.: RAI às 00:15, regresso de manhã) ficava sem pernoita. Agora conta cada noite em
+  que a estadia está a decorrer entre as 00:00 e as 05:00 locais (datada da véspera). Reportado por um colega:
+  Praia = 14 € (Tabela 34, Cabo Verde). FRA/AGP de maio inalterados.
+- `0.8.34.2`: feedback de um colega — "na primeira noite de dia X não tem a pernoita". Com chegada à RAI depois da
+  meia-noite e apresentação do regresso à meia-noite local, a versão antiga só pagava a 2.ª noite e a 0.8.34.1
+  só a 1.ª; agora a meia-noite exata também conta → 2 pernoitas. Teste com dia X (RAI tardio e FNC à noite).
 
 ---
 

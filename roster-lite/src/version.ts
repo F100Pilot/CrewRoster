@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.34';
+export const APP_VERSION = '0.8.34.2';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,20 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.34.2',
+    date: '2026-11-10',
+    highlights: [
+      'Abonos: com um dia X fora de casa, as duas pernoitas são pagas — também quando se chega depois da meia-noite e a apresentação do regresso é à meia-noite (ex.: Praia, 2 × 14 €).',
+    ],
+  },
+  {
+    version: '0.8.34.1',
+    date: '2026-11-10',
+    highlights: [
+      'Abonos: a pernoita passa a contar também quando a chegada é depois da meia-noite — por exemplo na Praia (RAI), 14 €. Antes faltava a pernoita nessas estadias.',
+    ],
+  },
   {
     version: '0.8.34',
     date: '2026-11-10',
