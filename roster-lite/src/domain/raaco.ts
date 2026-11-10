@@ -213,19 +213,40 @@ function psvMeals(p: Psv, base: string, nextIsStay: boolean, paidInStay: Set<str
   // A duty of 3h00 or less gives at most one meal (4.5.5.2): the one it overlaps most.
   if (p.minutes <= 180 && due.length > 1) due = [due.reduce((m, x) => (x.overlap > m.overlap ? x : m))];
 
-  // Load each meal on the nearest sector that can carry it: none on sectors up to 1h30 (4.5.11.4),
-  // one main meal on sectors under 5 h (4.5.11.2), two on longer ones.
+  // Load each meal on a sector that can carry it: none on sectors up to 1h30 (4.5.11.4), one main
+  // meal on sectors under 5 h (4.5.11.2), two on longer ones. The sector must fly through the meal's
+  // window on its departure clock (4.5.10.5) — or be the duty's first sector, for a meal due because
+  // the duty starts inside the window. As paid in May 2026: a breakfast due at a 07:56 report on a
+  // 59-min first sector is not carried by a later sector at noon; it's paid.
   const room = new Map<Leg, number>(p.legs.map((l) => [l, blockMin(l) <= 90 ? 0 : blockMin(l) < 300 ? 1 : 2]));
+  const flies = (l: Leg, a: Acquired) => {
+    const tz = tzOf(l.duty.departureAirport, base);
+    const day = Math.round(Date.parse(`${a.day}T00:00:00Z`) / 86_400_000);
+    const [ws, we] = a.meal === 'supper' && (l.duty.departureAirport ?? base).toUpperCase() !== base ? SUPPER_AWAY : WINDOW[a.meal];
+    return localMin(l.off, tz) <= day * 1440 + we && localMin(l.on, tz) >= day * 1440 + ws;
+  };
   const out: MealLine[] = [];
   for (const a of due) {
     const leg = p.legs
-      .filter((l) => (room.get(l) ?? 0) > 0)
+      .filter((l) => (room.get(l) ?? 0) > 0 && (flies(l, a) || (a.basis === 'a' && l === p.legs[0])))
       .sort((x, y) => gapDistance(x, a) - gapDistance(y, a))[0];
     const why = `${BASIS[a.basis]} (4.5.5.1 ${a.basis})`;
+    if (leg && leg.duty.dutyType === 'Positioning') {
+      // DHC: paid, not counted as a passenger meal (May 2026: the breakfast on a DH to Frankfurt at
+      // the German rate, a dinner on a DH home at 18 €) — the local Tabela 34 rate when the DHC ends
+      // the duty away, Tabela 33 otherwise (4.5.7.2).
+      room.set(leg, room.get(leg)! - 1);
+      const local = nextIsStay ? rateAt(p.to) : null;
+      const value = nextIsStay ? (local ? (a.meal === 'breakfast' ? local.breakfast : local.main) : null) : a.meal === 'breakfast' ? T33_BREAKFAST : T33_MAIN;
+      out.push({
+        date: p.date, key: a.key, meal: a.meal, how: 'dhc', value, where: flightLabel(leg),
+        why: `${why}; em DHC (4.5.7.2) — ${nextIsStay ? `valor local da Tabela 34 (${p.to})` : 'Tabela 33'}`,
+      });
+      continue;
+    }
     if (leg) {
       room.set(leg, room.get(leg)! - 1);
-      const dhc = leg.duty.dutyType === 'Positioning';
-      out.push({ date: p.date, key: a.key, meal: a.meal, how: dhc ? 'dhc' : 'onboard', value: 0, where: flightLabel(leg), why: dhc ? `${why}; servida como passageiro (DHC, 4.5.7)` : why });
+      out.push({ date: p.date, key: a.key, meal: a.meal, how: 'onboard', value: 0, where: flightLabel(leg), why });
       continue;
     }
     // Not loadable: on ground if a stop of more than 1h30 covers the window (4.5.6), else the
@@ -275,8 +296,16 @@ function stayLines(where: string, from: Date, to: Date, base: string, taken: Set
 // Longest stay counted after a duty that ends away, if the roster has nothing after it.
 const MAX_STAY_MS = 4 * 86_400_000;
 
-export function raacoDays(duties: ParsedDuty[], base: string): Map<string, RaacoDay> {
+export function raacoDays(roster: ParsedDuty[], base: string): Map<string, RaacoDay> {
   const b = base.toUpperCase();
+  // The Meal Plan is built on the schedule (4.5.10), so a sector's planned times — kept when a later
+  // sync replaced them with the flown ones — decide which meals are due and where they're loaded.
+  const duties = roster.map((d) => (d.planned ? {
+    ...d,
+    reportingTime: d.planned.reportingTime ?? d.reportingTime,
+    departureTime: d.planned.departureTime ?? d.departureTime,
+    arrivalTime: d.planned.arrivalTime ?? d.arrivalTime,
+  } : d));
   const psvs = psvsOf(duties, b);
   const lines: MealLine[] = [];
   const nights: NightLine[] = [];

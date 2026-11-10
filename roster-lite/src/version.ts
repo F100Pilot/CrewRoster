@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.32';
+export const APP_VERSION = '0.8.32.1';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,15 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.32.1',
+    date: '2026-11-10',
+    highlights: [
+      'Abonos: refeições em DHC passam a ser pagas (valor local da Tabela 34 se o DHC acaba fora da base, Tabela 33 se regressa).',
+      'Abonos: uma refeição só é embarcada num setor que voe dentro do horário dela (ou no primeiro, se o serviço começa no horário); contam as horas planeadas quando a app as conhece.',
+      'Conferido com uma escala e o extrato de maio: 11 linhas, 9 iguais ao cêntimo.',
+    ],
+  },
   {
     version: '0.8.32',
     date: '2026-11-10',

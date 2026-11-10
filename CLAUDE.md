@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (424 tests) — keep green
+npm test           # vitest run (427 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -231,7 +231,11 @@ Things learned over this collaboration that should persist across sessions:
   salary, the month after** (an "Abonos Operacionais" statement) — never add it to the pay estimate. Calibrated
   on the pattern of a real statement: stays pay lunch, dinner and supper at Tabela 34 plus the night (column
   "Ceia/+Pernoita"), the hotel breakfast is NOT paid, a SIM away doesn't break the stay, sectors ≤ 1h30 pay
-  Tabela 33. The ROV PDF and the statement are not in the repo.
+  Tabela 33. Checked (0.8.32.1) against the real May roster + statement, 9 of 11 lines to the cent: DHC meals
+  ARE paid (Tabela 34 local rate when the DHC ends the duty away, Tabela 33 when it comes home); a meal is
+  loaded only on a sector flying through its window (or the first sector, when the PSV starts in it); planned
+  times win over flown ones. Open: a lunch paid on a DH whose report was 8 min after the window (local time),
+  and one on a 1h37 sector. The ROV PDF, the roster and the statement are not in the repo.
 - **Settings are tabbed** (since 0.8.24): Perfil · Vencimento (pilots only) · App · Dados · Ajuda in
   `SettingsDialog.tsx`; last tab in localStorage `crewroster.settingsTab`. Guardar only on Perfil/App
   (the rest saves on change). New settings go in the tab for their subject, not at the bottom.

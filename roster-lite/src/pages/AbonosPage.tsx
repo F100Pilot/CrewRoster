@@ -34,7 +34,7 @@ export default function AbonosPage() {
   const total = paid.reduce((s, d) => s + d.total, 0);
   const sum = (k: 'breakfast' | 'lunch' | 'dinner' | 'supperNight') => paid.reduce((s, d) => s + d[k], 0);
   const nights = days.reduce((s, d) => s + d.nights.length, 0);
-  const onboard = days.reduce((s, d) => s + d.meals.filter((m) => m.how === 'onboard' || m.how === 'dhc').length, 0);
+  const onboard = days.reduce((s, d) => s + d.meals.filter((m) => m.how === 'onboard').length, 0);
   const unknown = days.some((d) => d.unknownRate);
 
   if (!roster) return <Typography color="text.secondary">Importa uma escala primeiro.</Typography>;
@@ -101,8 +101,9 @@ export default function AbonosPage() {
         <CardContent>
           <Typography sx={passOverline}>COMO A APP CALCULA</Typography>
           <Typography component="ul" variant="body2" color="text.secondary" sx={{ pl: 2, mt: 0.5, mb: 0, '& li': { mb: 0.5 } }}>
-            <li>Refeição devida (Tabela 32, hora local): o serviço começa no horário, abrange-o ou acaba depois de ele começar; serviço até 3h00 dá uma refeição.</li>
-            <li>Embarcada no setor mais próximo com mais de 1h30 (uma por setor abaixo de 5h). Se não houver, Tabela 33: 5 € o pequeno-almoço, 18 € as principais — ao valor local quando o serviço acaba fora da base.</li>
+            <li>Refeição devida (Tabela 32, hora local): o serviço começa no horário, abrange-o ou acaba depois de ele começar; serviço até 3h00 dá uma refeição. Contam as horas planeadas, quando a app as viu antes do dia.</li>
+            <li>Embarcada num setor com mais de 1h30 que voe dentro do horário dela (ou no primeiro setor, se o serviço começa no horário); uma por setor abaixo de 5h. Se não houver, Tabela 33: 5 € o pequeno-almoço, 18 € as principais — ao valor local quando o serviço acaba fora da base.</li>
+            <li>Refeição em DHC: paga — ao valor local da Tabela 34 se o DHC acaba fora da base, Tabela 33 se regressa à base.</li>
             <li>Estadia fora da base: almoço, jantar e ceia ao valor da Tabela 34, mais a pernoita; o pequeno-almoço do hotel não é pago (como no extrato).</li>
             <li>Assistência em casa e serviço em terra na base não entram nestes abonos. Toca num dia para ver o porquê de cada refeição.</li>
           </Typography>

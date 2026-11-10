@@ -67,6 +67,38 @@ describe('raacoDays', () => {
     expect(d.meals.map((m) => [m.meal, m.how, m.where])).toEqual([['lunch', 'onboard', 'TP1689']]);
   });
 
+  it('pays a DHC meal: the local rate when it ends the duty away, Tabela 33 when it comes home', () => {
+    const dh = (date: string, fn: string, a: string, z: string, off: string, on: string, rep: string | null = null) =>
+      base(date, { dutyType: 'Positioning', dutyCode: 'DH', flightNumber: fn, departureAirport: a, arrivalAirport: z, departureTime: off, arrivalTime: on, reportingTime: rep });
+    const away = raacoDays([dh('2026-05-03', 'TP9001', 'LIS', 'FRA', '07:25', '10:21', '06:25')], 'LIS');
+    // Report 07:25 LIS: breakfast, on a DHC that ends in Frankfurt → the German breakfast rate.
+    expect(away.get('2026-05-03')!.breakfast).toBe(22);
+    const home = raacoDays([
+      leg('2026-05-28', 'TP9002', 'LIS', 'FNC', '13:19', '15:00', '12:19'),
+      dh('2026-05-28', 'TP9003', 'FNC', 'LIS', '19:09', '20:55'),
+    ], 'LIS');
+    // Lunch loaded on the first sector (the duty starts in the window), dinner on the DHC home: 18 €.
+    expect(cols(home.get('2026-05-28'))).toEqual([0, 0, 18, 0]);
+  });
+
+  it('does not carry a breakfast on a sector far from its window', () => {
+    // Report 06:56 LIS (breakfast), first sectors of 59 and 67 min, then two longer ones around noon.
+    const days = raacoDays([
+      leg('2026-05-23', 'TP9011', 'LIS', 'SVQ', '06:56', '07:55', '05:56'),
+      leg('2026-05-23', 'TP9012', 'SVQ', 'LIS', '08:48', '09:55'),
+      leg('2026-05-23', 'TP9013', 'LIS', 'IBZ', '10:51', '12:33'),
+      leg('2026-05-23', 'TP9014', 'IBZ', 'LIS', '13:38', '15:42'),
+    ], 'LIS');
+    expect(cols(days.get('2026-05-23'))).toEqual([5, 0, 0, 0]);
+    expect(days.get('2026-05-23')!.meals.find((m) => m.meal === 'lunch')!.where).toBe('TP9013');
+  });
+
+  it('decides on the planned times when a later sync replaced them with the flown ones', () => {
+    const flown = { ...leg('2026-05-16', 'TP9021', 'LIS', 'OPO', '11:45', '12:40', '11:00'), planned: { reportingTime: '10:30', departureTime: '11:15', arrivalTime: '12:10' } };
+    const days = raacoDays([flown, leg('2026-05-16', 'TP9022', 'OPO', 'LIS', '13:00', '13:55')], 'LIS');
+    expect(days.get('2026-05-16')!.lunch).toBe(18);
+  });
+
   it('gives at most one meal for a duty of 3 h or less', () => {
     // 04:00–07:00 LIS: starts inside the supper window and ends after breakfast opens — one meal.
     const days = raacoDays([

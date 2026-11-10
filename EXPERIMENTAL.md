@@ -34,6 +34,12 @@ Em `0.8.32` (na exp):
   embarcáveis (setores ≤ 1h30, 2.ª refeição em voo < 5h); refeição devida na estadia e no PSV de regresso é paga
   na estadia. **Por confirmar com a escala do mesmo mês:** um pequeno-almoço de 22 € no dia de ida para FRA.
   Marrocos não está na Tabela 34. Não entra no Vencimento (é pago à parte).
+- `0.8.32.1`: conferido com a escala real de maio contra o extrato (711 € vs 768 €; 9 de 11 linhas ao cêntimo).
+  DHC pago (Tabela 34 local se acaba fora da base, Tabela 33 se regressa — 22 € PA DH→FRA, 18 € jantar DH→LIS);
+  embarque só num setor que voe no horário da refeição (ou o 1.º setor, se o PSV começa no horário); horas
+  planeadas (`ParsedDuty.planned`) quando conhecidas. **Diferenças por explicar:** almoço de 39 € num DH LIS→FRA
+  com apresentação às 14:08 LT (fora do horário em hora local — horário planeado anterior? ou leitura em UTC?) e
+  almoço de 18 € num RAK→LIS de 1h37 de bloco (bloco planeado ≤ 1h30?).
 
 ---
 

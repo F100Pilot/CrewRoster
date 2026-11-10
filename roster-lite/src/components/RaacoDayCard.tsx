@@ -12,7 +12,7 @@ import { TimelineRow, passOverline } from './PassCard';
 
 const HOW: Record<MealHow, { label: string; color: string }> = {
   onboard: { label: 'a bordo', color: '#1F63B5' },
-  dhc: { label: 'a bordo (DHC)', color: '#546e7a' },
+  dhc: { label: 'DHC', color: '#546e7a' },
   ground: { label: 'em terra (O/G)', color: '#B45309' },
   allowance: { label: 'ajuda de custo', color: '#B45309' },
   stay: { label: 'estadia', color: '#0F766E' },
