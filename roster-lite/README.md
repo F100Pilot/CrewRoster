@@ -42,6 +42,7 @@ confirmar no portal e descarregar a nova escala.
 - O topo é o céu à hora local do aeroporto onde estás (madrugada, dia, fim de tarde, noite, pelo
   nascer e pôr do sol reais); a cor de destaque segue o destino do dia (ilhas, sul, norte).
 - FDP e descanso mínimo do AE só para pilotos. `domain/dayPhase.ts`, `pages/TodayPage.tsx`.
+- O atalho **Hoje** da app instalada (Android) abre este ecrã; a contagem e o céu atualizam-se a cada minuto.
 
 ### Vistas da escala
 - **Lista** (`/lista`) — duties agrupados por dia, com navegação por mês e indicador "Hoje", em cartões
