@@ -27,6 +27,8 @@ produção, em vez de promover uma a uma.
 
 - **0.8.34.3 — Abonos:** a ceia nunca é embarcada; é paga sempre que devida (Tabela 34 local se o serviço acaba
   fora da base, 18 € na base). Feedback de um colega: LYS 18/06 e BCN 12/07 só tinham a pernoita.
+- **Livro de casos dos abonos** (`roster-lite/docs/ABONOS-CASOS.md` + `raacoCases.test.ts`): cada caso real
+  reportado fica como teste, para nenhuma correção futura o estragar. Sem alteração visível na app.
 
 ---
 
@@ -38,8 +40,8 @@ produção, em vez de promover uma a uma.
 
 - **Abonos RAACO (em produção, experimental):** conferido com maio 2026 (711 € vs 768 €). Por explicar: almoço
   de 39 € num DH LIS→FRA com apresentação 8 min depois do horário (atraso? hora planeada?) e almoço de 18 € num
-  RAK→LIS de 1h37 (bloco planeado ≤ 1h30?). Marrocos não está na Tabela 34; falta a nota "Pernoita*". Validar
-  com mais extratos (junho/julho) e o feedback dos tripulantes.
+  RAK→LIS de 1h37 (bloco planeado ≤ 1h30?). Marrocos não está na Tabela 34; falta a nota "Pernoita*". Casos
+  em aberto e resolvidos: `roster-lite/docs/ABONOS-CASOS.md`.
 
 - **Do AE SIPLA, ainda por fazer**: estimador de per diem (RRRGS cl. 9, tabela A2.2 —
   aguarda valores confirmados / AE atualizado), créditos de duty-pay/block-pay vs plafonds
