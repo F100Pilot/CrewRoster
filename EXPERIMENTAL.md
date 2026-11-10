@@ -25,7 +25,13 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(nada — tudo promovido em `0.8.30`)_
+Em `0.8.31` (na exp):
+
+- **Cartões do "Hoje" em toda a app** (`components/PassCard.tsx`: `PassCard`, `PassCells`, `TimelineRow`, `StatTile`,
+  `PassBadge`): a Lista usa `DayPass.tsx` (faixa da cor do serviço, data em coluna fixa, rota/código em mono,
+  figuras do dia); `MonthStatsCard` em mosaicos; Dia com faixa + cabeçalho e linha de horários para serviços em
+  terra (`GroundTimes`, hora local); Pesquisa e Colegas com `TimelineRow`. `dayItems` passou para
+  `domain/dayItems.ts` e `localClock` para `utils/localTime.ts`.
 
 ---
 

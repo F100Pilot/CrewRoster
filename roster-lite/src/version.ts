@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.30';
+export const APP_VERSION = '0.8.31';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,16 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.31',
+    date: '2026-11-10',
+    highlights: [
+      'Os cartões do "Hoje" passam para toda a app: na Lista, cada dia é um cartão com a faixa da cor do serviço, a data, a rota (ou o código) em grande e os números do dia (apresentação, bloco, setores, chegada — ou início, fim, duração e local).',
+      'Totais do mês (Lista e Calendário) em mosaicos como os do "Hoje".',
+      'Dia: cada serviço com a mesma faixa e cabeçalho; formação, simulador e escritório com início, fim, duração e local em hora local.',
+      'Pesquisa e pesquisa de colegas com as linhas do "Hoje".',
+    ],
+  },
   {
     version: '0.8.30',
     date: '2026-11-10',

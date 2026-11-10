@@ -10,6 +10,7 @@ export interface SearchHit {
   arr: string | null;
   title: string; // main line
   isFlight: boolean;
+  dutyType: string; // for the colour of its row
 }
 
 export function searchRoster(duties: ParsedDuty[], query: string, limit = 80): SearchHit[] {
@@ -34,6 +35,7 @@ export function searchRoster(duties: ParsedDuty[], query: string, limit = 80): S
         ? `${d.flightNumber} · ${d.departureAirport ?? '—'}–${d.arrivalAirport ?? '—'}`
         : (d.dutyType || d.dutyCode),
       isFlight,
+      dutyType: d.dutyType,
     });
     if (hits.length >= limit) break;
   }

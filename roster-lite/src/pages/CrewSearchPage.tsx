@@ -1,9 +1,11 @@
 import { useMemo } from 'react';
-import { Autocomplete, Box, Card, CardActionArea, CardContent, Chip, IconButton, Stack, TextField, Typography } from '@mui/material';
+import { Autocomplete, Box, Chip, IconButton, Stack, TextField, Typography } from '@mui/material';
 import { ArrowBack, Groups } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import { allColleagues, flightsWithColleague, type Colleague } from '../domain/crewSearch';
+import { TimelineRow } from '../components/PassCard';
+import { dutyColor } from '../theme';
 import { dayLabel } from '../utils/dates';
 
 const ROLE_LABEL: Record<string, string> = { CP: 'Comandante', FO: 'Oficial Piloto', PU: 'Chefe de Cabine', ST: 'Tripulante' };
@@ -62,23 +64,14 @@ export default function CrewSearchPage() {
       )}
 
       {flights.map((f, i) => (
-        <Card key={`${f.date}-${f.flightNumber}-${i}`} variant="outlined">
-          <CardActionArea
-            onClick={() => navigate(`/day/${f.date}`, { state: { flightNumber: f.flightNumber, dep: f.dep, arr: f.arr } })}
-          >
-            <CardContent sx={{ py: 1.5 }}>
-              <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
-                <Typography variant="subtitle2" sx={{ minWidth: 92 }}>
-                  {dayLabel(f.date)}
-                </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>{f.flightNumber ?? '—'}</Typography>
-                <Typography variant="body2" color="text.secondary">{f.dep ?? '—'} → {f.arr ?? '—'}</Typography>
-                <Box flexGrow={1} />
-                <Chip size="small" variant="outlined" label={ROLE_LABEL[f.role] ?? f.role} />
-              </Box>
-            </CardContent>
-          </CardActionArea>
-        </Card>
+        <TimelineRow
+          key={`${f.date}-${f.flightNumber}-${i}`}
+          color={dutyColor('Flight Duty')}
+          title={`${f.dep ?? '—'} → ${f.arr ?? '—'}`}
+          sub={`${dayLabel(f.date)} · ${f.flightNumber ?? '—'}`}
+          right={ROLE_LABEL[f.role] ?? f.role}
+          onClick={() => navigate(`/day/${f.date}`, { state: { flightNumber: f.flightNumber, dep: f.dep, arr: f.arr } })}
+        />
       ))}
     </Stack>
   );

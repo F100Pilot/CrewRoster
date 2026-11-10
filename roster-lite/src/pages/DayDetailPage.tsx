@@ -25,6 +25,9 @@ import FlicStand from '../components/FlicStand';
 import { dayLabel } from '../utils/dates';
 import { dutyTypeLabel } from '../domain/dutyLabels';
 import PageHero from '../components/PageHero';
+import { PASS_MONO, PassCells, passOverline } from '../components/PassCard';
+import { localClock } from '../utils/localTime';
+import { utcDateTime } from '../utils/duration';
 
 export default function DayDetailPage() {
   const { date } = useParams<{ date: string }>();
@@ -152,28 +155,26 @@ export default function DayDetailPage() {
           key={i}
           variant="outlined"
           ref={(el: HTMLDivElement | null) => { cardRefs.current[i] = el; }}
-          sx={i === focusIdx ? { borderColor: 'primary.main', borderWidth: 2 } : undefined}
+          sx={{ overflow: 'hidden', ...(i === focusIdx ? { borderColor: 'primary.main', borderWidth: 2 } : {}) }}
         >
+          {/* The "Hoje" pass header: the duty's colour on a strip, what it is on the small line. */}
+          <Box sx={{ height: 6, bgcolor: dutyColor(duty.dutyType) }} />
           <CardContent>
-            <Box display="flex" alignItems="center" gap={1} mb={2} flexWrap="wrap">
-              <Chip
-                label={duty.dutyCode}
-                sx={{
-                  bgcolor: dutyColor(duty.dutyType),
-                  color: duty.dutyType === 'Day Off' ? 'text.primary' : '#fff',
-                  fontWeight: 700,
-                }}
-              />
-              <Chip label={dutyTypeLabel(duty.dutyType)} variant="outlined" size="small" />
-              {duty.reportingTime && (
-                <Chip
-                  label={`Check-in ${checkInTimeLabel(date, duty.reportingTime, duty.departureAirport)}`}
-                  size="small"
-                  color="primary"
-                  variant="outlined"
-                />
+            <Box display="flex" alignItems="baseline" gap={1} mb={duty.flightNumber ? 1.5 : 0.5} flexWrap="wrap">
+              <Typography component="div" sx={{ ...passOverline, flexGrow: 1 }}>
+                {dutyTypeLabel(duty.dutyType).toUpperCase()}{duty.flightNumber ? ` · ${duty.dutyCode}` : ''}
+              </Typography>
+              {duty.reportingTime && duty.flightNumber && (
+                <Typography sx={{ ...passOverline, color: 'primary.main' }}>
+                  APRES. {checkInTimeLabel(date, duty.reportingTime, duty.departureAirport)}
+                </Typography>
               )}
             </Box>
+            {!duty.flightNumber && (
+              <Typography sx={{ fontFamily: PASS_MONO, fontSize: '1.7rem', fontWeight: 800, lineHeight: 1.2, mb: 1.5, wordBreak: 'break-word' }}>
+                {duty.dutyCode}
+              </Typography>
+            )}
 
             {duty.flightNumber && (
               <Box sx={{ bgcolor: 'rgba(128,128,128,0.14)', borderRadius: 2, p: 2, mb: 2 }}>
@@ -242,21 +243,11 @@ export default function DayDetailPage() {
 
             {duty.flightNumber && date && <FlightWeather duty={duty} date={date} />}
 
-            {/* Ground slots with a scheduled block: training, simulator, office/external, medical. */}
-            {['Training', 'Simulator', 'Office Duty', 'Medical'].includes(duty.dutyType) &&
-              (duty.departureTime || duty.arrivalTime || (duty.crew && duty.crew.length > 0)) && (
+            {/* Ground duties with times (training, simulator, office, standby…): the "Hoje" pass row. */}
+            {!duty.flightNumber && date && <GroundTimes duty={duty} date={date} place={duty.departureAirport ?? baseOf(activeUser)} />}
+
+            {['Training', 'Simulator', 'Office Duty', 'Medical'].includes(duty.dutyType) && duty.crew && duty.crew.length > 0 && (
                 <Box sx={{ bgcolor: 'rgba(128,128,128,0.14)', borderRadius: 2, p: 2, mb: 2 }}>
-                  {(duty.departureTime || duty.arrivalTime) && (
-                    <Box display="flex" justifyContent="space-around">
-                      <SlotTime label="Início" utc={duty.departureTime} lt={toLocalTime(date, duty.departureTime, duty.departureAirport)} />
-                      <SlotTime label="Fim" utc={duty.arrivalTime} lt={toLocalTime(date, duty.arrivalTime, duty.departureAirport)} />
-                    </Box>
-                  )}
-                  {duty.departureAirport && (
-                    <Typography variant="caption" color="text.secondary" display="block" textAlign="center" mt={1}>
-                      {duty.departureAirport}
-                    </Typography>
-                  )}
                   {duty.crew && duty.crew.length > 0 && (
                     <GroundCrew crew={duty.crew} myCode={activeUser?.crewCode} />
                   )}
@@ -415,29 +406,6 @@ function FdpChip({ fdp }: { fdp: FdpInfo }) {
   );
 }
 
-// Start or end of a ground slot (training, simulator, office, medical), read the same way as a
-// flight's times: local time of the airport first, UTC in brackets underneath — or UTC alone
-// when the airport's timezone isn't known.
-function SlotTime({ label, utc, lt }: { label: string; utc: string | null; lt: string | null }) {
-  return (
-    <Box textAlign="center">
-      <Typography variant="body2" fontWeight={600} color="primary.main">
-        {lt || utc || '—'}
-        <Typography component="span" variant="body2" fontWeight={700} color="text.secondary">
-          {lt ? ' LT' : utc ? ' z' : ''}
-        </Typography>
-      </Typography>
-      {lt && utc && (
-        <Typography variant="caption" color="text.secondary" display="block">
-          ({utc} z)
-        </Typography>
-      )}
-      <Typography variant="caption" color="text.secondary" display="block">
-        {label}
-      </Typography>
-    </Box>
-  );
-}
 
 // Early Start / Late Finish / Night Duty (RUPT def. 14, 19, 22; cl. 22.7), in base time.
 const TAG_INFO: Record<DutyTag, { label: string; why: string }> = {
@@ -545,4 +513,24 @@ function daySummary(duties: ParsedDuty[]): string | undefined {
   const legs = duties.filter((d) => (d.dutyType === 'Flight Duty' || d.dutyType === 'Positioning') && d.departureAirport);
   if (legs.length) return `${[legs[0].departureAirport, ...legs.map((l) => l.arrivalAirport)].join(' → ')} · ${legs.length} ${legs.length === 1 ? 'setor' : 'setores'}`;
   return duties[0] ? `${dutyTypeLabel(duties[0].dutyType)} · ${duties[0].dutyCode}` : undefined;
+}
+
+// Start, end, span and place of a ground duty, as the dashed row of a "Hoje" pass.
+function GroundTimes({ duty, date, place }: { duty: ParsedDuty; date: string; place: string }) {
+  const s = duty.reportingTime ?? duty.departureTime;
+  if (!s && !duty.arrivalTime) return null;
+  const start = s ? utcDateTime(date, s) : null;
+  let end = duty.arrivalTime ? utcDateTime(date, duty.arrivalTime) : null;
+  if (start && end && end < start) end = new Date(end.getTime() + 86_400_000);
+  const span = start && end ? Math.round((end.getTime() - start.getTime()) / 60000) : null;
+  return (
+    <Box sx={{ mx: -2, mb: 0.5 }}>
+      <PassCells cells={[
+        { label: 'INÍCIO', value: start ? localClock(start, place) : '—' },
+        { label: 'FIM', value: end ? localClock(end, place) : '—' },
+        { label: 'DURAÇÃO', value: span !== null ? formatDuration(span) : '—' },
+        { label: 'LOCAL', value: place },
+      ]} />
+    </Box>
+  );
 }

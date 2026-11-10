@@ -221,6 +221,9 @@ Things learned over this collaboration that should persist across sessions:
   (real phase, `domain/skyWeather.ts`) / clouds / rain / snow / fog / lightning over the airport the crew
   member is at by the roster (`useHere()` → `dayContext().location`, not GPS), from Open-Meteo `current`
   (`state/useCurrentWeather.ts`, 15-min cache; ambience only — the briefing is METAR/TAF).
+  Cards follow the "Hoje" ones everywhere (since 0.8.31, user request): use `components/PassCard.tsx`
+  (`PassCard` strip + overline + mono title + dashed `PassCells`; `TimelineRow`; `StatTile`; `PassBadge`)
+  instead of a plain `Card` with chips. The Lista day card is `DayPass.tsx`.
 - **Settings are tabbed** (since 0.8.24): Perfil · Vencimento (pilots only) · App · Dados · Ajuda in
   `SettingsDialog.tsx`; last tab in localStorage `crewroster.settingsTab`. Guardar only on Perfil/App
   (the rest saves on change). New settings go in the tab for their subject, not at the bottom.

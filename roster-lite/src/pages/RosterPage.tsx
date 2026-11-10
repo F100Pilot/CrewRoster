@@ -1,40 +1,31 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Alert, Box, Button, Card, CardContent, Chip, Divider, IconButton, InputAdornment,
-  Popover, Stack, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography,
+  Alert, Box, Button, Chip, Divider, IconButton, InputAdornment,
+  Popover, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography,
 } from '@mui/material';
 import {
   ChevronLeft, ChevronRight, Login, Today, InfoOutlined,
   EditCalendar, Search, Clear, ViewAgenda, DepartureBoard as BoardIcon,
 } from '@mui/icons-material';
-import { alpha } from '@mui/material/styles';
 import { addMonths, format, isSameMonth, parseISO, subMonths } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import { useViewedMonth } from '../state/viewedMonth';
 import UploadDropzone from '../components/UploadDropzone';
-import DutyChip from '../components/DutyChip';
 import DepartureBoard from '../components/DepartureBoard';
 import MonthStatsCard from '../components/MonthStatsCard';
 import LimitsSummaryCard from '../components/LimitsSummaryCard';
 import DocumentAlertCard from '../components/DocumentAlertCard';
 import { autoCaptureRecent } from '../domain/aircraftRegs';
 import { getAeroDataBoxKey } from '../storage/settings';
-import { checkInTimeLabel } from '../utils/localTime';
-import { MARK_SHORT, dayMarks, isInstructorMark } from '../domain/dutyMarks';
 import type { ParsedDuty, ChangeType } from '../domain/types';
 import { todayISO } from '../domain/rosterWindow';
-import { dayLabel, monthLabel } from '../utils/dates';
+import { monthLabel } from '../utils/dates';
 import PageHero from '../components/PageHero';
+import DayPass, { CHANGE_STYLE } from '../components/DayPass';
+import { baseOf } from '../domain/dutyStats';
 
-// Wide enough for the widest "EEE, dd MMM" (e.g. "Wed, 28 Sep") in bold.
-const DATE_COLUMN = '6.6em';
 
-const CHANGE_STYLE: Record<ChangeType, { color: string; label: string }> = {
-  added: { color: '#2e7d32', label: 'Novo' },
-  modified: { color: '#ed6c02', label: 'Alterado' },
-  removed: { color: '#c62828', label: 'Removido' },
-};
 
 // Tier 2 — coarse buckets the list can be filtered by.
 type Filter = 'all' | 'flights' | 'standby' | 'off';
@@ -284,90 +275,10 @@ export default function RosterPage() {
         <DepartureBoard days={[...dutiesByDay.entries()]} changes={changeByDate} today={today} onOpen={(d) => navigate(`/day/${d}`)} />
       )}
 
-      {view === 'cards' && [...dutiesByDay.entries()].map(([date, duties]) => {
-        const change = changeByDate.get(date);
-        const isToday = date === today;
-        return (
-        <Card
-          key={date}
-          variant="outlined"
-          sx={{
-            cursor: 'pointer',
-            ...(change && {
-              borderLeft: `4px solid ${CHANGE_STYLE[change].color}`,
-            }),
-            ...(isToday && {
-              borderColor: 'primary.main',
-              borderWidth: 2,
-              bgcolor: (t) => alpha(t.palette.primary.main, 0.06),
-            }),
-          }}
-          onClick={() => navigate(`/day/${date}`)}
-        >
-          <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
-            <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
-              <Box display="flex" alignItems="center" gap={1}>
-                {/* A fixed-width date column, so the labels after it (Hoje, Novo, …) line up from
-                    one card to the next whatever the weekday and month names measure. */}
-                <Typography
-                  variant="subtitle2" fontWeight={isToday ? 700 : 600} color={isToday ? 'primary.main' : 'text.primary'}
-                  sx={{ minWidth: DATE_COLUMN, flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}
-                >
-                  {dayLabel(date)}
-                </Typography>
-                {isToday && (
-                  <Chip
-                    size="small"
-                    color="primary"
-                    label="Hoje"
-                    sx={{ height: 18, fontSize: '0.65rem', fontWeight: 700 }}
-                  />
-                )}
-                {change && (
-                  <Chip
-                    size="small"
-                    label={CHANGE_STYLE[change].label}
-                    sx={{ bgcolor: CHANGE_STYLE[change].color, color: '#fff', height: 18, fontSize: '0.65rem' }}
-                  />
-                )}
-                {dayMarks(duties).map((m) => (
-                  <Chip
-                    key={m}
-                    size="small"
-                    variant="outlined"
-                    color={isInstructorMark(m) ? 'primary' : 'default'}
-                    label={MARK_SHORT[m]}
-                    sx={{ height: 18, fontSize: '0.65rem', fontWeight: 700 }}
-                  />
-                ))}
-                {duties.some((d) => d.dayWarning) && (
-                  <Tooltip title={duties.find((d) => d.dayWarning)!.dayWarning!}>
-                    <Chip
-                      size="small"
-                      color="warning"
-                      label="⚠ verificar"
-                      sx={{ height: 18, fontSize: '0.65rem', fontWeight: 700, color: '#fff' }}
-                    />
-                  </Tooltip>
-                )}
-              </Box>
-              {duties[0]?.reportingTime && (
-                <Chip
-                  size="small"
-                  variant="outlined"
-                  label={`Apres. ${checkInTimeLabel(date, duties[0].reportingTime, duties[0].departureAirport)}`}
-                />
-              )}
-            </Box>
-            <Box display="flex" flexWrap="wrap" gap={0.5}>
-              {duties.map((d, i) => (
-                <DutyChip key={i} duty={d} />
-              ))}
-            </Box>
-          </CardContent>
-        </Card>
-        );
-      })}
+      {view === 'cards' && [...dutiesByDay.entries()].map(([date, duties]) => (
+        <DayPass key={date} date={date} duties={duties} change={changeByDate.get(date)} isToday={date === today}
+          base={baseOf(activeUser)} onOpen={() => navigate(`/day/${date}`)} />
+      ))}
     </Stack>
   );
 }

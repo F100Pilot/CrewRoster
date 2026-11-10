@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import { Box, Card, CardContent, Stack, Typography } from '@mui/material';
-import { Flight, AccessTime, EventBusy, WorkHistory, Today as TodayIcon, Hotel } from '@mui/icons-material';
+import { Box } from '@mui/material';
+import { StatTile } from './PassCard';
 import { baseOf, timedFlights, nightsAwayFromBase } from '../domain/dutyStats';
 import { useRoster } from '../state/useRoster';
 import { diffMinutes, formatDuration } from '../utils/duration';
@@ -11,7 +11,6 @@ interface Props {
 }
 
 interface Stat {
-  icon: React.ReactNode;
   value: string;
   label: string;
 }
@@ -34,38 +33,19 @@ export default function MonthStatsCard({ duties }: Props) {
     const nightsAway = nightsAwayFromBase(duties, base);
 
     return [
-      { icon: <AccessTime fontSize="small" />, value: formatDuration(blockMinutes), label: 'Bloco' },
-      { icon: <Flight fontSize="small" />, value: String(flights.length), label: 'Voos' },
-      { icon: <TodayIcon fontSize="small" />, value: String(dutyDays), label: 'Serviço' },
-      { icon: <WorkHistory fontSize="small" />, value: String(standby), label: 'Standby' },
-      { icon: <EventBusy fontSize="small" />, value: String(offDays), label: 'Folgas' },
-      { icon: <Hotel fontSize="small" />, value: String(nightsAway), label: 'Fora' },
+      { value: formatDuration(blockMinutes), label: 'Bloco' },
+      { value: String(flights.length), label: 'Voos' },
+      { value: String(dutyDays), label: 'Serviço' },
+      { value: String(standby), label: 'Standby' },
+      { value: String(offDays), label: 'Folgas' },
+      { value: String(nightsAway), label: 'Fora' },
     ];
   }, [duties, base]);
 
+  // Tiles in the "Hoje" style (small label, big number), three to a row on a phone.
   return (
-    <Card variant="outlined" sx={{ bgcolor: 'background.paper' }}>
-      <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: { xs: 'repeat(3, 1fr)', sm: 'repeat(6, 1fr)' },
-            gap: 1.5,
-          }}
-        >
-          {stats.map((s) => (
-            <Stack key={s.label} alignItems="center" spacing={0.25} sx={{ minWidth: 0 }}>
-              <Box sx={{ color: 'primary.main', display: 'flex' }}>{s.icon}</Box>
-              <Typography variant="subtitle2" fontWeight={700} noWrap>
-                {s.value}
-              </Typography>
-              <Typography variant="caption" color="text.secondary" noWrap>
-                {s.label}
-              </Typography>
-            </Stack>
-          ))}
-        </Box>
-      </CardContent>
-    </Card>
+    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(3, minmax(0, 1fr))', sm: 'repeat(6, minmax(0, 1fr))' }, gap: 1 }}>
+      {stats.map((s) => <StatTile key={s.label} label={s.label.toUpperCase()} value={s.value} />)}
+    </Box>
   );
 }
