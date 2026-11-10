@@ -46,6 +46,8 @@ Em `0.8.29` (na exp) — layout dinâmico:
   assistência, folga); céu à hora local do aeroporto; cor pelo destino. `dayPhase.ts` + testes.
 - **Lista** passa para `/lista`, com vista **painel de partidas** opcional.
 - Navegação: "Hoje" é a primeira aba; o atalho Android "Hoje" abre este ecrã.
+- `0.8.29.1`: o dia inteiro (também dias sem voos: cartão de atividade + linha do tempo + números do dia)
+  e a página com a paleta da fase, mais perto do esboço.
 
 ---
 

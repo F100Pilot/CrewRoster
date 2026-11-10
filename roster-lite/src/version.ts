@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.29';
+export const APP_VERSION = '0.8.29.1';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,14 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.29.1',
+    date: '2026-11-10',
+    highlights: [
+      '"Hoje" mostra sempre o dia inteiro: simulador, formação, gabinete e assistência também (não só voos), numa linha do tempo com horas locais, mais o serviço, o bloco e o FDP do dia.',
+      'O ecrã ganha as cores da fase, como no esboço: azul-noite antes do serviço, claro em serviço, verde-noite na estadia e areia na folga (com versão escura).',
+    ],
+  },
   {
     version: '0.8.29',
     date: '2026-11-10',
