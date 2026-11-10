@@ -7,7 +7,7 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.8.34.2`
+- **Produção (`master`) está em:** `0.8.34.3`
 - **Próxima versão ao promover:** `0.8.35` (ou superior, conforme o âmbito)
 
 ## Como promover tudo para produção (quando estiver pronto)
@@ -25,10 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **0.8.34.3 — Abonos:** a ceia nunca é embarcada; é paga sempre que devida (Tabela 34 local se o serviço acaba
-  fora da base, 18 € na base). Feedback de um colega: LYS 18/06 e BCN 12/07 só tinham a pernoita.
-- **Livro de casos dos abonos** (`roster-lite/docs/ABONOS-CASOS.md` + `raacoCases.test.ts`): cada caso real
-  reportado fica como teste, para nenhuma correção futura o estragar. Sem alteração visível na app.
+_(nada — tudo promovido em `0.8.34.3`)_
 
 ---
 
@@ -53,4 +50,4 @@ produção, em vez de promover uma a uma.
 
 ---
 
-_Última atualização: 2026-10-29._
+_Última atualização: 2026-11-10._
