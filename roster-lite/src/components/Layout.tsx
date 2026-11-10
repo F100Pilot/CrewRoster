@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import {
   CalendarMonth, FormatListBulleted, CloudDownload, PictureAsPdf, Logout, HelpOutline, Timer,
-  Settings, MenuBook, QueryStats, Public, Badge, Search, MoreVert, Gavel, Payments, FlightTakeoff,
+  Settings, MenuBook, QueryStats, Public, Badge, Search, MoreVert, Gavel, Payments, FlightTakeoff, Restaurant,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
@@ -118,6 +118,13 @@ export default function Layout({ children }: { children: ReactNode }) {
           <Tooltip title="Descarregar / atualizar escala">
             <IconButton size="small" color="inherit" onClick={() => setDownloadOpen(true)} data-tour="download">
               <CloudDownload />
+            </IconButton>
+          </Tooltip>
+          {/* RAACO meal allowances, for every crew member (pilots and cabin): an icon of its own here
+              rather than a line in the "⋮" menu, where it went unnoticed (user). */}
+          <Tooltip title="Abonos (refeições)">
+            <IconButton size="small" color="inherit" onClick={() => navigate('/abonos')} aria-label="Abonos (refeições)">
+              <Restaurant />
             </IconButton>
           </Tooltip>
           <Tooltip title="Mais">

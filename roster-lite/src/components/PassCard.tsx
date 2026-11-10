@@ -95,9 +95,9 @@ export function PassBadge({ children, color, filled = false }: { children: React
 }
 
 // One line of a day: a colour bar, a monospaced title and what it is, times on the right.
-export function TimelineRow({ color, title, sub, right, rightSub, live, done, onClick }: {
+export function TimelineRow({ color, title, sub, right, rightSub, live, done, onClick, wrapSub = false }: {
   color: string; title: ReactNode; sub?: ReactNode; right?: ReactNode; rightSub?: ReactNode;
-  live?: boolean; done?: boolean; onClick?: () => void;
+  live?: boolean; done?: boolean; onClick?: () => void; wrapSub?: boolean;
 }) {
   return (
     <Surface onClick={onClick} highlight={live} sx={{ borderRadius: 2.5, opacity: done ? 0.55 : 1 }}>
@@ -105,7 +105,7 @@ export function TimelineRow({ color, title, sub, right, rightSub, live, done, on
         <Box sx={{ width: 5, alignSelf: 'stretch', borderRadius: 1, bgcolor: live ? 'primary.main' : color }} />
         <Box minWidth={0} sx={{ flexGrow: 1 }}>
           <Typography noWrap sx={{ fontFamily: PASS_MONO, fontWeight: 700, fontSize: '0.92rem' }}>{title}</Typography>
-          {sub && <Typography noWrap sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>{sub}</Typography>}
+          {sub && <Typography noWrap={!wrapSub} sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>{sub}</Typography>}
         </Box>
         {(right || rightSub) && (
           <Box textAlign="right" flexShrink={0}>

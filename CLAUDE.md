@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (417 tests) — keep green
+npm test           # vitest run (428 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -161,6 +161,9 @@ Things learned over this collaboration that should persist across sessions:
   `mergeDuties(prev, incoming, asOfISO)` keeps the last pre-day version of each sector in
   `ParsedDuty.planned` and marks past-day imports `settled` (so flown times are never taken for a
   plan). The reparse replays saved PDFs in download order with their dates, rebuilding history.
+  The PDF has NO report time — the parser derives it (first departure − 1 h), so on a flown day it would
+  follow the actual departure. Since 0.8.32.2 a settled sector with a plan keeps the PLANNED report as its
+  `reportingTime` (user rule: the report is always the one before the post-flight update).
   `domain/planVsFlown.ts` derives delays, extra FDP, commander's extensions and reduced rests.
 - **Pay estimate** (since 0.8.22; in production since 0.8.26): `domain/payEstimate.ts` applies the RRRGS (RB, plafonds
   table 2.1 cut per holiday day, 3%/6% VB/h, per diem A/B cl. 9, complement cl. 10, cl. 2.6/2.8
@@ -224,6 +227,21 @@ Things learned over this collaboration that should persist across sessions:
   Cards follow the "Hoje" ones everywhere (since 0.8.31, user request): use `components/PassCard.tsx`
   (`PassCard` strip + overline + mono title + dashed `PassCells`; `TimelineRow`; `StatTile`; `PassBadge`)
   instead of a plain `Card` with chips. The Lista day card is `DayPass.tsx`.
+- **RAACO meal allowances** (since 0.8.32, user request): ROV-PGA cap. 4.5 (Rev. 01), values in Anexo 7.6 —
+  Tabela 32 (meal windows, local time), 33 (5 € breakfast / 18 € main; local rate when the PSV ends away),
+  34 (per country: on-ground meals + night stop). `domain/raaco.ts`, page `/abonos` (its own AppBar icon left of "⋮", since 0.8.32.3 — user: hidden in the menu), day card
+  `RaacoDayCard`. Applies to ALL crew (ROV, not the SIPLA AE) — do not gate on role. **Paid apart from the
+  salary, the month after** (an "Abonos Operacionais" statement) — never add it to the pay estimate. Calibrated
+  on the pattern of a real statement: stays pay lunch, dinner and supper at Tabela 34 plus the night (column
+  "Ceia/+Pernoita"), the hotel breakfast is NOT paid, a SIM away doesn't break the stay, sectors ≤ 1h30 pay
+  Tabela 33. Checked (0.8.32.1) against the real May roster + statement, 9 of 11 lines to the cent: DHC meals
+  ARE paid (Tabela 34 local rate when the DHC ends the duty away, Tabela 33 when it comes home); a meal is
+  loaded only on a sector flying through its window (or the first sector, when the PSV starts in it); planned
+  times win over flown ones. Open: a lunch paid on a DH whose report was 8 min after the window (local time),
+  and one on a 1h37 sector. Always labelled **experimental** with a big banner + "Enviar feedback" (mailto,
+  prefilled) on `/abonos` and "EM TESTES" on the day card (user request) — keep it. **Windows are read in LOCAL time** (4.5.5.4; user decision): a UTC reading was
+  tested on the same month and rejected — it fixes that DH lunch but invents a supper on an early report and
+  loses the stay lunches on the days back, 9/11 vs 7–9/11. The ROV PDF, the roster and the statement are not in the repo.
 - **Settings are tabbed** (since 0.8.24): Perfil · Vencimento (pilots only) · App · Dados · Ajuda in
   `SettingsDialog.tsx`; last tab in localStorage `crewroster.settingsTab`. Guardar only on Perfil/App
   (the rest saves on change). New settings go in the tab for their subject, not at the bottom.

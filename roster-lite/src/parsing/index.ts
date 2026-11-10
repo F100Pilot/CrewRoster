@@ -11,7 +11,7 @@ import { parseCrewInfo, parseGroundCrewInfo, attachCrewToDuties, attachGroundCre
 // re-apply to ALREADY-imported rosters. On app load a stored PDF roster whose parseVersion is
 // behind this is re-parsed from its saved PDF(s) — see RosterProvider — so improvements reach
 // the user without re-downloading. Bump this with any meaningful parser change.
-export const PARSE_VERSION = 14; // 14: flights carry their LIFUS_INS / FAM_INS instructor mark
+export const PARSE_VERSION = 15; // 15: a delayed day keeps the planned report (rosterMerge); 14: LIFUS_INS / FAM_INS marks
 
 function sortByDate(duties: ParseResult['duties']): ParseResult['duties'] {
   return [...duties].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));

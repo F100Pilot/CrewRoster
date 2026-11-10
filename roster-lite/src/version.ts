@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.31.1';
+export const APP_VERSION = '0.8.32.4';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,47 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.32.4',
+    date: '2026-11-10',
+    highlights: [
+      'Abonos em FASE EXPERIMENTAL: aviso em destaque na página e "Em testes" no Dia. Confirma sempre no extrato de Abonos Operacionais.',
+      'Novo botão "Enviar feedback" nos Abonos: abre um email já preparado para indicares as diferenças entre a app e o extrato.',
+    ],
+  },
+  {
+    version: '0.8.32.3',
+    date: '2026-11-10',
+    highlights: ['Abonos têm agora um ícone próprio na barra de cima (🍴), ao lado do "⋮", em vez de estarem dentro do menu.'],
+  },
+  {
+    version: '0.8.32.2',
+    date: '2026-11-10',
+    highlights: [
+      'Apresentação: num dia já voado com atraso, passa a contar a apresentação planeada (a de antes da atualização pós-voo), e não a partida real − 1h.',
+      'Com isso, o FDP e o descanso desses dias contam o atraso desde a apresentação real, e os abonos usam a apresentação original.',
+      'Só funciona quando a app viu a escala antes do dia (o PDF de um dia passado não traz o plano).',
+    ],
+  },
+  {
+    version: '0.8.32.1',
+    date: '2026-11-10',
+    highlights: [
+      'Abonos: refeições em DHC passam a ser pagas (valor local da Tabela 34 se o DHC acaba fora da base, Tabela 33 se regressa).',
+      'Abonos: uma refeição só é embarcada num setor que voe dentro do horário dela (ou no primeiro, se o serviço começa no horário); contam as horas planeadas quando a app as conhece.',
+      'Conferido com uma escala e o extrato de maio: 11 linhas, 9 iguais ao cêntimo.',
+    ],
+  },
+  {
+    version: '0.8.32',
+    date: '2026-11-10',
+    highlights: [
+      'Novo: Abonos (refeições) — o RAACO do ROV (cap. 4.5, Tabelas 32 a 34) calculado pela escala, para pilotos e cabine. Menu "⋮" → Abonos.',
+      'A página mostra o mês como o extrato de Abonos Operacionais: data, início, escala de pernoita, pequeno-almoço, almoço, jantar e ceia + pernoita.',
+      'No Dia, cada refeição devida com o porquê: a bordo, em terra, ajuda de custo (Tabela 33) ou estadia (Tabela 34).',
+      'Em testes: o Meal Plan e as irregularidades não estão na escala — confirma sempre no extrato.',
+    ],
+  },
   {
     version: '0.8.31.1',
     date: '2026-11-10',

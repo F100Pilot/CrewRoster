@@ -25,6 +25,7 @@ import FlicStand from '../components/FlicStand';
 import { dayLabel } from '../utils/dates';
 import { dutyTypeLabel } from '../domain/dutyLabels';
 import PageHero from '../components/PageHero';
+import RaacoDayCard from '../components/RaacoDayCard';
 import { PASS_MONO, PassCells, passOverline } from '../components/PassCard';
 import { localClock } from '../utils/localTime';
 import { utcDateTime } from '../utils/duration';
@@ -258,6 +259,8 @@ export default function DayDetailPage() {
           </CardContent>
         </Card>
       ))}
+
+      {date && <RaacoDayCard date={date} />}
     </Stack>
   );
 }

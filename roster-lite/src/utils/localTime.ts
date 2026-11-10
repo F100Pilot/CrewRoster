@@ -28,7 +28,32 @@ const AIRPORT_TZ: Record<string, string> = {
   LHR: 'Europe/London', LGW: 'Europe/London', MAN: 'Europe/London', DUB: 'Europe/Dublin',
   AMS: 'Europe/Amsterdam', BRU: 'Europe/Brussels', LUX: 'Europe/Luxembourg',
   GVA: 'Europe/Zurich', ZRH: 'Europe/Zurich', VIE: 'Europe/Vienna',
+  // Other countries in the RAACO per-diem table (ROV-PGA, Anexo 7.6, Tabela 34)
+  CPH: 'Europe/Copenhagen', BLL: 'Europe/Copenhagen', HEL: 'Europe/Helsinki', OSL: 'Europe/Oslo',
+  BGO: 'Europe/Oslo', PRG: 'Europe/Prague', ZAG: 'Europe/Zagreb', SPU: 'Europe/Zagreb', DBV: 'Europe/Zagreb',
+  RAI: 'Atlantic/Cape_Verde', SID: 'Atlantic/Cape_Verde', BVC: 'Atlantic/Cape_Verde',
 };
+
+// The IANA timezone of an airport, or undefined when it isn't in the table.
+export function airportTz(airport: string | null | undefined): string | undefined {
+  return airport ? AIRPORT_TZ[airport.toUpperCase()] : undefined;
+}
+
+// Minutes the timezone's clock is ahead of UTC at an instant (DST-aware).
+const offsetFmt = new Map<string, Intl.DateTimeFormat>();
+export function tzOffsetMinutes(d: Date, tz: string): number {
+  let f = offsetFmt.get(tz);
+  if (!f) {
+    f = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+    });
+    offsetFmt.set(tz, f);
+  }
+  const parts = f.formatToParts(d);
+  const g = (t: string) => Number(parts.find((x) => x.type === t)?.value ?? 0);
+  const wall = Date.UTC(g('year'), g('month') - 1, g('day'), g('hour') % 24, g('minute'));
+  return Math.round((wall - Math.floor(d.getTime() / 60000) * 60000) / 60000);
+}
 
 // Format a UTC instant as "HH:mm" in an arbitrary IANA timezone.
 function formatInTz(dt: Date, tz: string): string {
