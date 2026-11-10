@@ -119,9 +119,11 @@ export function TimelineRow({ color, title, sub, right, rightSub, live, done, on
 }
 
 // A headline number: small label, big value, a note under it.
-export function StatTile({ label, value, note, children }: { label: string; value: string; note?: string; children?: ReactNode }) {
+export function StatTile({ label, value, note, children, center = false }: {
+  label: string; value: string; note?: string; children?: ReactNode; center?: boolean;
+}) {
   return (
-    <Box sx={{ bgcolor: 'background.paper', borderRadius: 3, border: 1, borderColor: 'divider', px: 1.5, py: 1.25, minWidth: 0 }}>
+    <Box sx={{ bgcolor: 'background.paper', borderRadius: 3, border: 1, borderColor: 'divider', px: 1.5, py: 1.25, minWidth: 0, textAlign: center ? 'center' : 'left' }}>
       <Typography noWrap sx={passOverline}>{label}</Typography>
       <Typography noWrap sx={{ fontSize: '1.35rem', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{value}</Typography>
       {children}

@@ -32,6 +32,7 @@ Em `0.8.31` (na exp):
   figuras do dia); `MonthStatsCard` em mosaicos; Dia com faixa + cabeçalho e linha de horários para serviços em
   terra (`GroundTimes`, hora local); Pesquisa e Colegas com `TimelineRow`. `dayItems` passou para
   `domain/dayItems.ts` e `localClock` para `utils/localTime.ts`.
+- `0.8.31.1`: mosaicos dos totais do mês com o texto centrado (`StatTile center`).
 
 ---
 

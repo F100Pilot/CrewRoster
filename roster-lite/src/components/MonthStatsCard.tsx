@@ -42,10 +42,11 @@ export default function MonthStatsCard({ duties }: Props) {
     ];
   }, [duties, base]);
 
-  // Tiles in the "Hoje" style (small label, big number), three to a row on a phone.
+  // Tiles in the "Hoje" style (small label, big number), three to a row on a phone, centred
+  // (user: the month's tiles read better with the text in the middle).
   return (
     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(3, minmax(0, 1fr))', sm: 'repeat(6, minmax(0, 1fr))' }, gap: 1 }}>
-      {stats.map((s) => <StatTile key={s.label} label={s.label.toUpperCase()} value={s.value} />)}
+      {stats.map((s) => <StatTile key={s.label} center label={s.label.toUpperCase()} value={s.value} />)}
     </Box>
   );
 }
