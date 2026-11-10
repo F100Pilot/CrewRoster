@@ -7,7 +7,7 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.8.34`
+- **Produção (`master`) está em:** `0.8.34.2`
 - **Próxima versão ao promover:** `0.8.35` (ou superior, conforme o âmbito)
 
 ## Como promover tudo para produção (quando estiver pronto)
@@ -25,15 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-Em `0.8.34.1` (na exp):
-
-- **Abonos — pernoita depois da meia-noite:** contava uma pernoita por meia-noite dentro da estadia; uma chegada
-  após a meia-noite local (ex.: RAI às 00:15, regresso de manhã) ficava sem pernoita. Agora conta cada noite em
-  que a estadia está a decorrer entre as 00:00 e as 05:00 locais (datada da véspera). Reportado por um colega:
-  Praia = 14 € (Tabela 34, Cabo Verde). FRA/AGP de maio inalterados.
-- `0.8.34.2`: feedback de um colega — "na primeira noite de dia X não tem a pernoita". Com chegada à RAI depois da
-  meia-noite e apresentação do regresso à meia-noite local, a versão antiga só pagava a 2.ª noite e a 0.8.34.1
-  só a 1.ª; agora a meia-noite exata também conta → 2 pernoitas. Teste com dia X (RAI tardio e FNC à noite).
+_(nada — tudo promovido em `0.8.34.2`)_
 
 ---
 
