@@ -66,6 +66,16 @@ describe('mergeDuties — planned vs flown', () => {
     expect(flown[0].planned).toEqual({ reportingTime: '06:15', departureTime: '07:00', arrivalTime: '08:00' });
   });
 
+  it('keeps the planned report on a delayed day (the derived report would follow the late departure)', () => {
+    const planned = mergeDuties([], [leg('2026-05-02', '08:00', '10:20', { reportingTime: '07:00' })], '2026-04-28');
+    const flown = mergeDuties(planned, [leg('2026-05-02', '08:12', '10:31', { reportingTime: '07:12' })], '2026-05-05');
+    expect(flown[0]).toMatchObject({ reportingTime: '07:00', departureTime: '08:12', settled: true });
+    expect(flown[0].planned?.reportingTime).toBe('07:00');
+    // And it stays so across later syncs.
+    const again = mergeDuties(flown, [leg('2026-05-02', '08:12', '10:31', { reportingTime: '07:12' })], '2026-05-20');
+    expect(again[0].reportingTime).toBe('07:00');
+  });
+
   it('keeps the first plan across later syncs, and never takes flown times for a plan', () => {
     const a = mergeDuties([], [leg('2026-10-10', '07:00', '08:00')], '2026-10-01');
     const b = mergeDuties(a, [leg('2026-10-10', '07:25', '08:30')], '2026-10-12');

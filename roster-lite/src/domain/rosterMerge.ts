@@ -50,7 +50,15 @@ function carryPlans(previous: ParsedDuty[], incoming: ParsedDuty[], asOfISO: str
     // sync can show legs already flown, so the plan comes from the version before it.
     const plan = prev?.planned ?? (prev && !prev.settled && !sameTimes(timesOf(prev), timesOf(d)) ? timesOf(prev) : undefined);
     const out: ParsedDuty = { ...d };
-    if (plan && !sameTimes(plan, timesOf(d))) out.planned = plan;
+    if (plan && !sameTimes(plan, timesOf(d))) {
+      out.planned = plan;
+      // The report is not a flown time: the PDF has none, the parser derives it as the first
+      // departure − 1 h, so after the day it would follow the actual departure and a delay would
+      // move the report too. The crew reported at the planned time — keep it (user rule: the report
+      // is always the one before the post-flight update). FDP, rest and the meal allowances then
+      // run from the real report.
+      if (plan.reportingTime) out.reportingTime = plan.reportingTime;
+    }
     if (d.date < asOfISO) out.settled = true;
     return out;
   });

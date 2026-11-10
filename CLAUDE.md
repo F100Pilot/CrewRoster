@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (427 tests) — keep green
+npm test           # vitest run (428 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -161,6 +161,9 @@ Things learned over this collaboration that should persist across sessions:
   `mergeDuties(prev, incoming, asOfISO)` keeps the last pre-day version of each sector in
   `ParsedDuty.planned` and marks past-day imports `settled` (so flown times are never taken for a
   plan). The reparse replays saved PDFs in download order with their dates, rebuilding history.
+  The PDF has NO report time — the parser derives it (first departure − 1 h), so on a flown day it would
+  follow the actual departure. Since 0.8.32.2 a settled sector with a plan keeps the PLANNED report as its
+  `reportingTime` (user rule: the report is always the one before the post-flight update).
   `domain/planVsFlown.ts` derives delays, extra FDP, commander's extensions and reduced rests.
 - **Pay estimate** (since 0.8.22; in production since 0.8.26): `domain/payEstimate.ts` applies the RRRGS (RB, plafonds
   table 2.1 cut per holiday day, 3%/6% VB/h, per diem A/B cl. 9, complement cl. 10, cl. 2.6/2.8
