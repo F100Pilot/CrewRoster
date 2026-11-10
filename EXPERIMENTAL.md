@@ -44,6 +44,7 @@ Em `0.8.32` (na exp):
 - `0.8.32.2`: num dia voado com plano conhecido, `reportingTime` = apresentação planeada (`rosterMerge`) — o PDF não
   traz apresentação, o parser deriva-a (1.ª partida − 1h) e depois do voo seguia a partida real. Afeta FDP, descanso,
   planeado vs realizado (FDP extra passa a contar o atraso à partida) e abonos. `PARSE_VERSION` 15 (re-parse).
+- `0.8.32.3`: Abonos com ícone próprio na AppBar (Restaurant), à esquerda do "⋮"; saiu do menu.
 
 ---
 

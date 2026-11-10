@@ -120,6 +120,13 @@ export default function Layout({ children }: { children: ReactNode }) {
               <CloudDownload />
             </IconButton>
           </Tooltip>
+          {/* RAACO meal allowances, for every crew member (pilots and cabin): an icon of its own here
+              rather than a line in the "⋮" menu, where it went unnoticed (user). */}
+          <Tooltip title="Abonos (refeições)">
+            <IconButton size="small" color="inherit" onClick={() => navigate('/abonos')} aria-label="Abonos (refeições)">
+              <Restaurant />
+            </IconButton>
+          </Tooltip>
           <Tooltip title="Mais">
             <IconButton
               size="small" color="inherit" aria-label="Mais opções"
@@ -136,11 +143,6 @@ export default function Layout({ children }: { children: ReactNode }) {
                 <ListItemText>Limites</ListItemText>
               </MenuItem>
             )}
-            {/* RAACO meal allowances apply to every crew member (pilots and cabin). */}
-            <MenuItem onClick={() => { setMoreAnchor(null); navigate('/abonos'); }}>
-              <ListItemIcon><Restaurant fontSize="small" /></ListItemIcon>
-              <ListItemText>Abonos (refeições)</ListItemText>
-            </MenuItem>
             <MenuItem onClick={() => { setMoreAnchor(null); navigate('/codes'); }}>
               <ListItemIcon><HelpOutline fontSize="small" /></ListItemIcon>
               <ListItemText>Legenda de códigos</ListItemText>

@@ -229,7 +229,7 @@ Things learned over this collaboration that should persist across sessions:
   instead of a plain `Card` with chips. The Lista day card is `DayPass.tsx`.
 - **RAACO meal allowances** (since 0.8.32, user request): ROV-PGA cap. 4.5 (Rev. 01), values in Anexo 7.6 —
   Tabela 32 (meal windows, local time), 33 (5 € breakfast / 18 € main; local rate when the PSV ends away),
-  34 (per country: on-ground meals + night stop). `domain/raaco.ts`, page `/abonos` (menu "⋮"), day card
+  34 (per country: on-ground meals + night stop). `domain/raaco.ts`, page `/abonos` (its own AppBar icon left of "⋮", since 0.8.32.3 — user: hidden in the menu), day card
   `RaacoDayCard`. Applies to ALL crew (ROV, not the SIPLA AE) — do not gate on role. **Paid apart from the
   salary, the month after** (an "Abonos Operacionais" statement) — never add it to the pay estimate. Calibrated
   on the pattern of a real statement: stays pay lunch, dinner and supper at Tabela 34 plus the night (column
