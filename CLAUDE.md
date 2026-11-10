@@ -206,7 +206,9 @@ Things learned over this collaboration that should persist across sessions:
   (`pages/TodayPage.tsx`), the roster list moved to `/lista`. `domain/dayPhase.ts` derives the phase
   (preflight / duty / standby / layover / off) from the roster only, where the crew member is, the sky
   (dawn/day/dusk/night from `sun.ts` at that airport) and a destination accent. AE figures on it (FDP,
-  rest minima) are pilots-only, like everywhere. The list can also render as a departures board
+  rest minima) are pilots-only, like everywhere. The page follows the app's light/dark theme like every
+  other page (user: a dark first page in light mode "não faz sentido"); the phase only tints the
+  background and accent, and the sky header stays time-of-day. The list can also render as a departures board
   (`DepartureBoard.tsx`, view in localStorage `crewroster.listView`).
 - **One design language** (since 0.8.29.2): `theme.ts` carries the "Hoje" look for every page (navy
   AppBar, flat bordered cards, soft tinted Alerts). Display dates go through `utils/dates.ts`

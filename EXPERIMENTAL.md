@@ -52,6 +52,7 @@ Em `0.8.29` (na exp) — layout dinâmico:
   contorno, `Alert` em tom suave, raios maiores); datas em PT (`utils/dates.ts`, sem mudar o locale por
   omissão — o parser usa "Mon01"); tipos de serviço em PT (`domain/dutyLabels.ts`); heatmap abre no mês
   atual; cartão "Próximo serviço" saiu da Lista (o "Hoje" já o mostra).
+- `0.8.29.3`: "Hoje" segue o tema claro/escuro; a fase só tinge o fundo e os destaques; o céu fica.
 
 ---
 

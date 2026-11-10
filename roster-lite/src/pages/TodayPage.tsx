@@ -24,33 +24,38 @@ import { DUTY_TYPE_LABEL } from '../domain/dutyLabels';
 
 // The home screen that changes with the crew member's day (from the approved "layout dinâmico"
 // sketch). The header is the sky over the airport they're at — dawn, day, dusk or night from the
-// real sunrise and sunset — and the whole page takes the phase's colours: night blue before a
-// report, bright while on duty, deep teal on a layover, warm sand on a day off. Below it, always
+// real sunrise and sunset, a window onto outside whatever the app's theme. The page itself follows
+// the app's light / dark theme like every other page, each phase only tinting it: cool before a
+// report, blue on duty, teal on a layover, sand on a day off (deep versions of those in dark
+// mode). The phase pill and highlights carry the phase / destination colour. Below it, always
 // the whole day: the main item (a boarding pass for a flight, an activity pass for a simulator,
 // course, office or standby), every duty of the day on a timeline, and the day's numbers. AE
 // figures (FDP, rest minima) only for pilots.
 
-interface Palette { dark: boolean; bg: string; card: string; fg: string; soft: string; line: string; accent: string }
+// `pill` is the phase / destination colour on the sky (always bright); `accent` the same colour for
+// the page below, deep enough to read on a light background.
+interface Palette { dark: boolean; bg: string; card: string; fg: string; soft: string; line: string; accent: string; pill: string }
+const LIGHT_INK = { dark: false, card: '#FFFFFF', fg: '#101828', soft: '#475467' } as const;
 const PALETTE: Record<Phase, { light: Palette; dark: Palette }> = {
   preflight: {
-    light: { dark: true, bg: '#0A1222', card: '#131D33', fg: '#EAF0FA', soft: '#A6B5CE', line: '#24314D', accent: '#FFC56B' },
-    dark: { dark: true, bg: '#0A1222', card: '#131D33', fg: '#EAF0FA', soft: '#A6B5CE', line: '#24314D', accent: '#FFC56B' },
+    light: { ...LIGHT_INK, bg: '#EEF1F8', line: '#DFE4EF', accent: '#B45309', pill: '#FFC56B' },
+    dark: { dark: true, bg: '#0A1222', card: '#131D33', fg: '#EAF0FA', soft: '#A6B5CE', line: '#24314D', accent: '#FFC56B', pill: '#FFC56B' },
   },
   duty: {
-    light: { dark: false, bg: '#EEF3FA', card: '#FFFFFF', fg: '#101828', soft: '#475467', line: '#E1E7F0', accent: '#1F63B5' },
-    dark: { dark: true, bg: '#0D1726', card: '#152238', fg: '#EAF0FA', soft: '#A6B5CE', line: '#24314D', accent: '#63A7EE' },
+    light: { ...LIGHT_INK, bg: '#EEF3FA', line: '#E1E7F0', accent: '#1F63B5', pill: '#93C5FD' },
+    dark: { dark: true, bg: '#0D1726', card: '#152238', fg: '#EAF0FA', soft: '#A6B5CE', line: '#24314D', accent: '#63A7EE', pill: '#93C5FD' },
   },
   layover: {
-    light: { dark: true, bg: '#071722', card: '#0E2A36', fg: '#E6F1F5', soft: '#A4C8D2', line: '#183E4C', accent: '#7EE0D2' },
-    dark: { dark: true, bg: '#071722', card: '#0E2A36', fg: '#E6F1F5', soft: '#A4C8D2', line: '#183E4C', accent: '#7EE0D2' },
+    light: { ...LIGHT_INK, bg: '#ECF5F4', line: '#D9E9E7', accent: '#0F766E', pill: '#7EE0D2' },
+    dark: { dark: true, bg: '#071722', card: '#0E2A36', fg: '#E6F1F5', soft: '#A4C8D2', line: '#183E4C', accent: '#7EE0D2', pill: '#7EE0D2' },
   },
   standby: {
-    light: { dark: false, bg: '#FBF7F1', card: '#FFFFFF', fg: '#1F1A14', soft: '#65543F', line: '#EFE5D7', accent: '#B45309' },
-    dark: { dark: true, bg: '#17130F', card: '#221C16', fg: '#F3ECE3', soft: '#BBAB96', line: '#342B22', accent: '#F59E0B' },
+    light: { ...LIGHT_INK, bg: '#FBF7F1', fg: '#1F1A14', soft: '#65543F', line: '#EFE5D7', accent: '#B45309', pill: '#FCD34D' },
+    dark: { dark: true, bg: '#17130F', card: '#221C16', fg: '#F3ECE3', soft: '#BBAB96', line: '#342B22', accent: '#F59E0B', pill: '#FCD34D' },
   },
   off: {
-    light: { dark: false, bg: '#FBF7F1', card: '#FFFFFF', fg: '#1F1A14', soft: '#65543F', line: '#EFE5D7', accent: '#B45309' },
-    dark: { dark: true, bg: '#17130F', card: '#221C16', fg: '#F3ECE3', soft: '#BBAB96', line: '#342B22', accent: '#F59E0B' },
+    light: { ...LIGHT_INK, bg: '#FBF7F1', fg: '#1F1A14', soft: '#65543F', line: '#EFE5D7', accent: '#B45309', pill: '#FCD34D' },
+    dark: { dark: true, bg: '#17130F', card: '#221C16', fg: '#F3ECE3', soft: '#BBAB96', line: '#342B22', accent: '#F59E0B', pill: '#FCD34D' },
   },
 };
 const SKY: Record<Sky, { bg: string; soft: string }> = {
@@ -59,7 +64,10 @@ const SKY: Record<Sky, { bg: string; soft: string }> = {
   day: { bg: 'linear-gradient(180deg, #164E96 0%, #1F63B5 55%, #2D74C4 100%)', soft: '#D6E6F8' },
   dusk: { bg: 'linear-gradient(180deg, #221C46 0%, #5A3560 60%, #8E4E4A 100%)', soft: '#EBD7D3' },
 };
-const DEST_ACCENT: Record<Exclude<Accent, 'base'>, string> = { islands: '#5EEAD4', south: '#FCD34D', north: '#93C5FD' };
+// The day's destination colour: bright on the sky and on dark pages, deep on light pages.
+const DEST_ACCENT: Record<Exclude<Accent, 'base'>, { bright: string; deep: string }> = {
+  islands: { bright: '#5EEAD4', deep: '#0F766E' }, south: { bright: '#FCD34D', deep: '#B45309' }, north: { bright: '#93C5FD', deep: '#1D4ED8' },
+};
 const MONO = 'ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace';
 const TYPE_LABEL = DUTY_TYPE_LABEL;
 const PHASE_LABEL: Record<Phase, string> = {
@@ -122,7 +130,10 @@ export default function TodayPage() {
   const ctx = useMemo(() => (roster ? dayContext(roster.duties, now, base) : null), [roster, now, base]);
   const phase: Phase = ctx?.phase ?? 'off';
   const dest = ctx ? accentFor(dayDestination(ctx.legs, base) ?? (ctx.location !== base ? ctx.location : null), base) : 'base';
-  const p: Palette = { ...PALETTE[phase][mode], ...(dest !== 'base' && PALETTE[phase][mode].dark ? { accent: DEST_ACCENT[dest] } : {}) };
+  const basePal = PALETTE[phase][mode];
+  const p: Palette = dest === 'base' ? basePal : {
+    ...basePal, pill: DEST_ACCENT[dest].bright, accent: basePal.dark ? DEST_ACCENT[dest].bright : DEST_ACCENT[dest].deep,
+  };
   // The page carries its own palette; MUI pieces inside (METAR, buttons) follow it.
   const theme = useMemo(() => {
     const t = createAppTheme(p.dark ? 'dark' : 'light');
@@ -148,7 +159,7 @@ export default function TodayPage() {
     <ThemeProvider theme={theme}>
       {/* Bleed to the screen edges and fill the height, so the phase colours are the page. */}
       <Box sx={{ mx: { xs: -2, sm: -3 }, mt: -2, mb: -2, bgcolor: p.bg, color: p.fg, minHeight: 'calc(100vh - 104px)', pb: 3 }}>
-        <SkyHeader ctx={ctx} sky={sky.sky} sunrise={sky.sunrise} sunset={sky.sunset} accent={p.accent} base={base} />
+        <SkyHeader ctx={ctx} sky={sky.sky} sunrise={sky.sunrise} sunset={sky.sunset} accent={p.pill} base={base} />
         <Stack spacing={1.5} sx={{ px: 2, pt: 2 }}>
           <Body ctx={ctx} p={p} pilot={pilot} base={base} duties={roster.duties} />
         </Stack>
