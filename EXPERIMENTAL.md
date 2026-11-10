@@ -7,8 +7,8 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.8.30`
-- **Próxima versão ao promover:** `0.8.31` (ou superior) (ou superior, conforme o âmbito)
+- **Produção (`master`) está em:** `0.8.31.1`
+- **Próxima versão ao promover:** `0.8.32` (ou superior) (ou superior, conforme o âmbito)
 
 ## Como promover tudo para produção (quando estiver pronto)
 
@@ -25,14 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-Em `0.8.31` (na exp):
-
-- **Cartões do "Hoje" em toda a app** (`components/PassCard.tsx`: `PassCard`, `PassCells`, `TimelineRow`, `StatTile`,
-  `PassBadge`): a Lista usa `DayPass.tsx` (faixa da cor do serviço, data em coluna fixa, rota/código em mono,
-  figuras do dia); `MonthStatsCard` em mosaicos; Dia com faixa + cabeçalho e linha de horários para serviços em
-  terra (`GroundTimes`, hora local); Pesquisa e Colegas com `TimelineRow`. `dayItems` passou para
-  `domain/dayItems.ts` e `localClock` para `utils/localTime.ts`.
-- `0.8.31.1`: mosaicos dos totais do mês com o texto centrado (`StatTile center`).
+_(nada — tudo promovido em `0.8.31.1`)_
 
 ---
 
