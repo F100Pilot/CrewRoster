@@ -42,6 +42,10 @@ Em `0.8.33` (na exp):
   Abonos estimados vs implícitos no recibo: mai 711/768, jun 697/873, jul 1001/1000, ago 130/62 (a melhorar).
   Linhas do recibo ainda não modeladas: "Subs. gabinete" (160 €/dia?), "LCC_Line Check Com" (200 €),
   "Sub. alimentação tickets" (isento, por dia em terra na base).
+- `0.8.34`: "Subs. gabinete" por dia GAB (`officeDay`, valor do piloto — no recibo de maio 5 pagos para 7 dias GAB:
+  regra por confirmar) e "Sub. alimentação tickets" por dia B na base (`mealTicket` 10,46 €; maio 7 e agosto 3 =
+  os dias "B … T"), isento de IRS/SS e descontado como "Cartão-refeição". LCC fica de fora: a escala não marca o
+  line check.
 
 ---
 

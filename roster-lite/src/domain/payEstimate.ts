@@ -59,6 +59,8 @@ export interface PaySettings {
   perDiemB: number;
   instructorSession: number; // € per session given as an instructor; 0 if not an instructor
   lineTrainingDay: number; // € per day of flights flown as instructor (LIFUS_INS / FAM_INS)
+  officeDay: number; // € per office day ("Subs. gabinete" on the payslip — GAB days), the pilot's own figure
+  mealTicket: number; // € per day of ground duty at base ("Sub. alimentação tickets", paid to the meal card)
   // ── For the net estimate ──
   irsTable: IrsTable;
   dependents: number;
@@ -82,6 +84,9 @@ export interface PaySettings {
 export const DEFAULT_PAY_SETTINGS: PaySettings = {
   enabled: false, category: 'OP3', vb: 0, ve: 0, veCommand: 0, vs: 0, extras: 0, chiefBonus: 0,
   perDiemA: AE_PER_DIEM.OP.a, perDiemB: AE_PER_DIEM.OP.b, instructorSession: 0, lineTrainingDay: 0,
+  // The meal-card value of a real 2026 payslip (10,46 € a day, = the card's tax-free limit); office
+  // days are paid at a rate the pilot types.
+  officeDay: 0, mealTicket: 10.46,
   irsTable: 'I', dependents: 0, nonTaxableFixed: 0, fixedDeductions: 0,
   // Per diem paid for a day away is partly exempt (as ajudas de custo); per diem for days at base
   // (simulator, training, office — "Perdiem … T" on payslips) is taxed in full. The limit is per
@@ -214,6 +219,10 @@ export interface PayEstimate {
   instructorValue: number;
   lineTrainingDays: number;
   lineTrainingValue: number;
+  officeDays: number; // GAB days
+  officeValue: number;
+  mealTicketDays: number; // per diem B days at base (ground duty): one meal ticket each
+  mealTicketValue: number; // tax-free, loaded onto the meal card (and taken off the transfer)
   // Paid in this payslip on top of the month's pay (RRRGS cl. 7 and 8): each one RB.
   holidaySubsidy: number;
   christmasSubsidy: number;
@@ -377,6 +386,7 @@ export function payEstimate(
   let perDiemB = 0;
   const perDiemDates = { a: [] as string[], b: [] as string[] };
   let available = 0; // days not on holidays or absence, for the complementary payment
+  let mealTicketDays = 0; // ground duty at base: a meal ticket each (payslips: as many as the "B … T" days)
   let perDiemTravelDays = 0; // days away — the part of the per diem partly exempt from tax
   let perDiemTravelValue = 0;
   const perDiemTravel: { date: string; value: number; abroad: boolean }[] = [];
@@ -410,6 +420,7 @@ export function payEstimate(
     } else if (awayAtStart || day.some((x) => GROUND_B.has(x.dutyType))) {
       perDiemB++;
       perDiemDates.b.push(date);
+      if (!awayAtStart) mealTicketDays++;
       if (awayAtStart) {
         perDiemTravelDays++; perDiemTravelValue += s.perDiemB;
         perDiemTravel.push({ date, value: s.perDiemB, abroad: abroadOn(day, whereAtStart) });
@@ -438,6 +449,11 @@ export function payEstimate(
   const lineTrainingDays = new Set(duties.filter((d) => inMonth(d.date) && isInstructorFlight(d)).map((d) => d.date)).size;
   const lineTrainingValue = lineTrainingDays * (s.lineTrainingDay || 0);
 
+  // ── Office days ("Subs. gabinete"): the GAB days of the month, at the pilot's rate ──
+  const officeDays = new Set(duties.filter((d) => inMonth(d.date) && d.dutyType === 'Office Duty' && /^GAB/i.test(d.dutyCode)).map((d) => d.date)).size;
+  const officeValue = officeDays * (s.officeDay || 0);
+  const mealTicketValue = cents(mealTicketDays * (s.mealTicket || 0));
+
   // ── RAACO meal allowances (paid apart; only their tax is on the payslip) ──
   const abonosByDate: Record<string, number> = {};
   for (const d of raacoDays(duties, base).values()) if (inMonth(d.date) && d.total > 0) abonosByDate[d.date] = d.total;
@@ -461,7 +477,8 @@ export function payEstimate(
   const holidaySubsidy = holidayPayMonth === paidMonth ? cents((fixedPay / 30) * HOLIDAY_ENTITLEMENT_DAYS) : 0;
   const christmasSubsidy = paidMonth === CHRISTMAS_PAY_MONTH ? cents(fixedPay) : 0;
 
-  const variable = overtimeVal + perDiemValue + complementValue + extensionValue + reductionValue + instructorValue + lineTrainingValue;
+  const variable = overtimeVal + perDiemValue + complementValue + extensionValue + reductionValue + instructorValue + lineTrainingValue
+    + officeValue + mealTicketValue;
   const lastDay = `${month}-${String(daysInMonth(month)).padStart(2, '0')}`;
   return {
     month,
@@ -491,6 +508,10 @@ export function payEstimate(
     instructorValue,
     lineTrainingDays,
     lineTrainingValue,
+    officeDays,
+    officeValue,
+    mealTicketDays,
+    mealTicketValue,
     holidaySubsidy,
     christmasSubsidy,
     holidayPayMonth: holidayPayMonth || null,
@@ -515,6 +536,7 @@ export interface NetEstimate {
   // month's pay, each one on its own through the same table.
   subsidyIrs: number;
   subsidyPensionContribution: number; // the PGA's 6,5% on the subsidies (abono, no tax)
+  mealCard: number; // the meal tickets, taken off the transfer: they go onto the meal card ("Cartão-refeição")
   net: number;
 }
 
@@ -527,7 +549,8 @@ export function netEstimate(r: PayEstimate, s: PaySettings): NetEstimate {
   const gross = r.rb + r.variable;
   const pension = pensionLines(s);
   const fixedTaxable = r.rb - (s.nonTaxableFixed || 0) - pension.contribution;
-  const variableTaxed = r.variable - r.perDiemTravelValue; // everything but the per diem for days away
+  // Everything but the per diem for days away and the meal tickets (tax-free, on the meal card).
+  const variableTaxed = r.variable - r.perDiemTravelValue - (r.mealTicketValue || 0);
   // Per day away: per diem + that day's abonos, less the day's limit (national or abroad); abonos
   // on any other day are taxed in full. The taxable rest goes with the salary (PGA payroll).
   const travelTaxable = (kind: 'irs' | 'ss') => {
@@ -566,6 +589,7 @@ export function netEstimate(r: PayEstimate, s: PaySettings): NetEstimate {
     gross: grossAll, irsBase, irs, irsRate: irsBase > 0 ? irs / irsBase : 0, ssBase, ss, pensionDeposit, union, fixedDeductions,
     subsidyIrs,
     subsidyPensionContribution: subsidyPension.contribution,
-    net: grossAll - irs - subsidyIrs - ss - pensionDeposit - union - fixedDeductions,
+    mealCard: r.mealTicketValue || 0,
+    net: grossAll - irs - subsidyIrs - ss - pensionDeposit - union - fixedDeductions - (r.mealTicketValue || 0),
   };
 }

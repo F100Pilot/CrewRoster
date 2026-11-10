@@ -151,6 +151,15 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                     value={r.lineTrainingValue}
                   />
                 )}
+                {r.officeDays > 0 && (
+                  <Row
+                    label={`Subsídio de gabinete: ${r.officeDays} ${r.officeDays === 1 ? 'dia' : 'dias'} GAB${settings.officeDay ? '' : ' · falta o valor nas Definições'}`}
+                    value={r.officeValue}
+                  />
+                )}
+                {r.mealTicketDays > 0 && (
+                  <Row label={`Subsídio de alimentação: ${r.mealTicketDays} ${r.mealTicketDays === 1 ? 'dia' : 'dias'} em terra na base (cartão)`} value={r.mealTicketValue} />
+                )}
                 {r.reducedMinutes > 0 && <Row label={`Descansos reduzidos: ${formatDuration(r.reducedMinutes)}`} value={r.reductionValue} />}
                 {r.holidaySubsidy > 0 && <Row label="Subsídio de férias (42 dias, cl. 7)" value={r.holidaySubsidy} />}
                 {r.christmasSubsidy > 0 && <Row label="Subsídio de Natal (cl. 8)" value={r.christmasSubsidy} />}
@@ -180,6 +189,7 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                     Para a quota sair certa, separa a "Anuid. Comando" e o "Prémio de chefia" em Definições → Vencimento.
                   </Typography>
                 )}
+                {n.mealCard > 0 && <Row label="Cartão-refeição (o subsídio vai para o cartão)" value={-n.mealCard} />}
                 {n.fixedDeductions > 0 && <Row label="Outros descontos fixos" value={-n.fixedDeductions} />}
                 <Row label="Líquido" value={n.net} strong />
               </Stack>
@@ -187,8 +197,8 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
 
             <Typography variant="caption" color="text.disabled" display="block" mt={0.75} lineHeight={1.35}>
               O variável (per diem incluído) é pago no mês seguinte. IRS pelas tabelas de retenção de 2026 (continente); não prevê acertos de meses anteriores. Noturno 23h–06h e feriados nacionais em hora de Lisboa. Subsídios sobre todos os fixos: férias = 42 dias (fixos ÷ 30 × 42), Natal = um mês
-              (cl. 7 e 8), com IRS retido à parte, SS e fundo de pensões. Não inclui folgas trabalhadas, split-duty, subsídio de
-              alimentação, nem o acerto anual dos plafonds (março).
+              (cl. 7 e 8), com IRS retido à parte, SS e fundo de pensões. Não inclui folgas trabalhadas, split-duty,
+              line checks (LCC), nem o acerto anual dos plafonds (março).
               Confirma sempre no recibo.
             </Typography>
           </>

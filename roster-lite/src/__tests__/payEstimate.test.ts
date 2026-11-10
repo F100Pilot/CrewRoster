@@ -49,6 +49,34 @@ describe('payEstimate', () => {
     expect(r.rb).toBe(5300);
   });
 
+  it('pays office days and a tax-free meal ticket per ground day at base', () => {
+    const gab = (date: string) => [
+      duty(date, 'Office Duty', { dutyCode: 'GAB1', departureAirport: 'LIS', departureTime: '07:30', arrivalTime: '11:00' }),
+      duty(date, 'Office Duty', { dutyCode: 'GAB2', departureAirport: 'LIS', departureTime: '12:00', arrivalTime: '15:30' }),
+    ];
+    const s = { ...S, officeDay: 160 };
+    const r = payEstimate([...gab('2026-05-11'), ...gab('2026-05-12'), ...gab('2026-05-15')], '2026-05', s, '2026-05-31');
+    expect(r).toMatchObject({ officeDays: 3, officeValue: 480, mealTicketDays: 3, mealTicketValue: 31.38 });
+    // The tickets go onto the meal card: no IRS, no SS, and they leave the transfer.
+    const withTickets = netEstimate(r, s);
+    const without = netEstimate({ ...r, variable: r.variable - r.mealTicketValue, mealTicketValue: 0 }, s);
+    expect(withTickets.irsBase).toBeCloseTo(without.irsBase);
+    expect(withTickets.ssBase).toBeCloseTo(without.ssBase);
+    expect(withTickets.mealCard).toBeCloseTo(31.38);
+    expect(withTickets.net).toBeCloseTo(without.net);
+  });
+
+  it('counts a simulator away from base as per diem A away (partly tax-free)', () => {
+    const duties = [
+      { ...leg('2026-05-03', 'LIS', 'FRA', '07:25', '10:21', '06:25'), dutyType: 'Positioning' },
+      duty('2026-05-04', 'Simulator', { dutyCode: 'SIM', departureAirport: 'FRA', departureTime: '04:35', arrivalTime: '08:35' }),
+      { ...leg('2026-05-05', 'FRA', 'LIS', '11:43', '15:06', '10:43'), dutyType: 'Positioning' },
+    ];
+    const r = payEstimate(duties, '2026-05', S, '2026-05-31');
+    expect(r.perDiemA).toBe(3);
+    expect(r.perDiemTravel.map((d) => [d.date, d.abroad])).toEqual([['2026-05-03', true], ['2026-05-04', true], ['2026-05-05', true]]);
+  });
+
   it('gives per diem A to the day a night duty runs into', () => {
     const duties = [leg('2026-11-10', 'LIS', 'FNC', '22:30', '00:30', '21:30'), duty('2026-11-11', 'Day Off')];
     const r = payEstimate(duties, '2026-11', S, '2026-11-30');
