@@ -14,7 +14,8 @@ const cents = (v: number) => Math.round(v * 100) / 100;
 // `veTech` and `extrasOther` are what's left of VE / the complements once the command lines are
 // typed apart (the union fee's base leaves those out); the stored totals stay `ve` and `extras`.
 type MoneyField = 'vb' | 'veTech' | 'veCommand' | 'vs' | 'extrasOther' | 'chiefBonus' | 'perDiemA' | 'perDiemB' | 'instructorSession' | 'lineTrainingDay'
-  | 'nonTaxableFixed' | 'fixedDeductions' | 'perDiemExemptIrs' | 'perDiemExemptSs' | 'unionPct' | 'unionBase';
+  | 'nonTaxableFixed' | 'fixedDeductions' | 'exemptNationalIrs' | 'exemptNationalSs' | 'exemptAbroadIrs' | 'exemptAbroadSs'
+  | 'unionPct' | 'unionBase';
 
 // Settings for the experimental pay estimate: off by default; once on, the pilot's own figures
 // from the payslip. Saved as typed, on this device only.
@@ -250,13 +251,18 @@ export default function PaySettingsSection({ userId }: { userId: string }) {
                 </AccordionSummary>
                 <AccordionDetails>
                   <Stack spacing={1.5}>
+                    <Typography variant="body2" fontWeight={600}>Limite isento por dia fora</Typography>
                     <Box display="grid" gridTemplateColumns="1fr 1fr" gap={1.5}>
-                      {money('perDiemExemptIrs', 'Isento IRS / dia fora')}
-                      {money('perDiemExemptSs', 'Isento SS / dia fora')}
+                      {money('exemptNationalIrs', 'IRS · nacional')}
+                      {money('exemptNationalSs', 'SS · nacional')}
+                      {money('exemptAbroadIrs', 'IRS · estrangeiro')}
+                      {money('exemptAbroadSs', 'SS · estrangeiro')}
                     </Box>
                     <Typography variant="caption" color="text.secondary">
-                      O per diem dos dias fora (voo ou estadia) tem uma parte isenta; o dos dias na base ("… T" no recibo)
-                      é tributado por inteiro. Por omissão, a média de recibos reais.
+                      Por dia fora (voo ou estadia), o per diem mais os abonos de refeição desse dia ficam isentos até
+                      ao limite — "estrangeiro" se o dia toca um aeroporto fora de Portugal — e o resto é tributado com o
+                      ordenado. O per diem dos dias na base ("… T" no recibo) é tributado por inteiro. Valores do payroll
+                      da PGA (já com a redução por a empresa pagar o hotel); atualiza-os quando sair o Orçamento do Estado.
                     </Typography>
                     {money('unionBase', 'Base da quota sindical', 'Só se a automática não bater com o recibo; vazio = automática', 'automática')}
                     {money('nonTaxableFixed', 'Fixos sem IRS nem SS', s.pensionAuto ? 'O fundo de pensões já está tratado; normalmente 0' : 'Ex.: "Fundo pensões contr. PGA"')}
@@ -287,7 +293,8 @@ function toText(s: PaySettings): Record<MoneyField, string> {
     extrasOther: f(cents(s.extras - (s.chiefBonus ?? 0))), chiefBonus: f(s.chiefBonus ?? 0),
     perDiemA: f(s.perDiemA), perDiemB: f(s.perDiemB), instructorSession: f(s.instructorSession),
     lineTrainingDay: f(s.lineTrainingDay), nonTaxableFixed: f(s.nonTaxableFixed), fixedDeductions: f(s.fixedDeductions),
-    perDiemExemptIrs: f(s.perDiemExemptIrs), perDiemExemptSs: f(s.perDiemExemptSs),
+    exemptNationalIrs: f(s.exemptNationalIrs), exemptNationalSs: f(s.exemptNationalSs),
+    exemptAbroadIrs: f(s.exemptAbroadIrs), exemptAbroadSs: f(s.exemptAbroadSs),
     unionPct: f(s.unionPct), unionBase: f(s.unionBase),
   };
 }

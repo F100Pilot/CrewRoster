@@ -7,6 +7,7 @@ import { HOME_BASE } from './dutyStats';
 import { irsRetention, type IrsTable } from './irsWithholding';
 import { HOLIDAY_ENTITLEMENT_DAYS } from './aeCompliance';
 import type { ParsedDuty } from './types';
+import { countryOf, raacoDays } from './raaco';
 
 // A gross monthly pay estimate for a Portugália pilot, from the RRRGS (the pay annex of the
 // AE Portugália/SIPLA 2023). Everything personal — the VB, VE and VS in euros — comes from the
@@ -63,8 +64,12 @@ export interface PaySettings {
   dependents: number;
   nonTaxableFixed: number; // the part of `extras` not subject to IRS / SS (the PGA's pension contribution)
   fixedDeductions: number; // monthly deductions other than IRS and SS (insurance, union, pension fund…)
-  perDiemExemptIrs: number; // € of per diem free of IRS per day away (travel), on average
-  perDiemExemptSs: number; // the same for Segurança Social
+  // Daily limits of the per diem free of IRS / SS (the legal limits for ajudas de custo, already
+  // reduced because the company pays the hotel: −50% national, −30% abroad), by the kind of day.
+  exemptNationalIrs: number;
+  exemptNationalSs: number;
+  exemptAbroadIrs: number;
+  exemptAbroadSs: number;
   pensionAuto: boolean; // compute the pension-plan lines from the RB (RRRGS cl. 16)
   unionPct: number; // union fee, % of the base below; 0 = typed into fixedDeductions instead
   unionBase: number; // € the fee is a percentage of; 0 = automatic (unionBaseAuto)
@@ -79,10 +84,13 @@ export const DEFAULT_PAY_SETTINGS: PaySettings = {
   perDiemA: AE_PER_DIEM.OP.a, perDiemB: AE_PER_DIEM.OP.b, instructorSession: 0, lineTrainingDay: 0,
   irsTable: 'I', dependents: 0, nonTaxableFixed: 0, fixedDeductions: 0,
   // Per diem paid for a day away is partly exempt (as ajudas de custo); per diem for days at base
-  // (simulator, training, office — "Perdiem … T" on payslips) is taxed in full. The exempt share
-  // varies with the trip (national / abroad, overnight or not); these defaults are the per-day
-  // average of two real payslips (Sep and Oct 2026: ~86–90 € for IRS, ~135–145 € for SS). Editable.
-  perDiemExemptIrs: 88, perDiemExemptSs: 140,
+  // (simulator, training, office — "Perdiem … T" on payslips) is taxed in full. The limit is per
+  // day: national, or abroad when the day touches an airport outside Portugal. Values as the PGA
+  // payroll gave them (e-mail, 2024 — "o que a empresa pratica"; SS = 1,5 × IRS) — they matched a
+  // real October 2026 payslip (2 days abroad + 1 national → 89,50 € / 134,25 € a day vs ~90 / ~135).
+  // Editable, to follow the State Budget; a later table had 36,33 / 34,59 € national, 116,95 /
+  // 167,07 € abroad.
+  exemptNationalIrs: 34.6, exemptNationalSs: 51.9, exemptAbroadIrs: 116.95, exemptAbroadSs: 175.42,
   pensionAuto: false,
   unionPct: 0, unionBase: 0,
   holidayPay: null,
@@ -189,6 +197,13 @@ export interface PayEstimate {
   perDiemValue: number;
   perDiemDates: { a: string[]; b: string[] }; // which days, so the pilot can check them against the payslip
   perDiemTravelDays: number; // per-diem days spent away (flying or on a layover)
+  // Each of those days, with what it pays and whether it touched an airport abroad — the exempt
+  // limit is per day and depends on that.
+  perDiemTravel: { date: string; value: number; abroad: boolean }[];
+  // RAACO meal allowances of the month (paid apart, on the Abonos statement), per day: they add to
+  // that day's per diem before the exempt limit, and what's over it is taxed with the salary.
+  abonos: number;
+  abonosByDate: Record<string, number>;
   perDiemTravelValue: number;
   complementDays: number;
   complementValue: number;
@@ -365,6 +380,11 @@ export function payEstimate(
   let available = 0; // days not on holidays or absence, for the complementary payment
   let perDiemTravelDays = 0; // days away — the part of the per diem partly exempt from tax
   let perDiemTravelValue = 0;
+  const perDiemTravel: { date: string; value: number; abroad: boolean }[] = [];
+  // A day abroad: it touches an airport outside Portugal (an unknown airport counts as abroad).
+  const abroadOn = (day: ParsedDuty[], at: string) => [at, ...day.flatMap((x) => [x.departureAirport, x.arrivalAirport])]
+    .filter((a): a is string => !!a)
+    .some((a) => a.toUpperCase() !== base.toUpperCase() && countryOf(a) !== 'Portugal (fora da base)');
   let where = base; // the airport the pilot is at, carried through the roster
   const dates = [...days.keys()].sort();
   const carryOver = new Set<string>();
@@ -373,6 +393,7 @@ export function payEstimate(
     const w = workWindow(date, day, PGA_PILOT_RULES);
     if (w && w.end.getTime() > lisbonMidnightUtc(nextDate(date))) carryOver.add(nextDate(date));
     const awayAtStart = where !== base;
+    const whereAtStart = where;
     for (const x of [...day].sort((a, b) => (a.departureTime ?? '').localeCompare(b.departureTime ?? ''))) {
       if ((x.dutyType === 'Flight Duty' || x.dutyType === 'Positioning') && x.arrivalAirport) where = x.arrivalAirport.toUpperCase();
     }
@@ -382,11 +403,17 @@ export function payEstimate(
     if (flying || carryOver.has(date)) {
       perDiemA++;
       perDiemDates.a.push(date);
-      if (travelling) { perDiemTravelDays++; perDiemTravelValue += s.perDiemA; }
+      if (travelling) {
+        perDiemTravelDays++; perDiemTravelValue += s.perDiemA;
+        perDiemTravel.push({ date, value: s.perDiemA, abroad: abroadOn(day, awayAtStart ? whereAtStart : base) });
+      }
     } else if (awayAtStart || day.some((x) => GROUND_B.has(x.dutyType))) {
       perDiemB++;
       perDiemDates.b.push(date);
-      if (awayAtStart) { perDiemTravelDays++; perDiemTravelValue += s.perDiemB; }
+      if (awayAtStart) {
+        perDiemTravelDays++; perDiemTravelValue += s.perDiemB;
+        perDiemTravel.push({ date, value: s.perDiemB, abroad: abroadOn(day, whereAtStart) });
+      }
     }
     if (!day.every((x) => x.dutyType === 'Vacation' || x.dutyType === 'Absence')) available++;
   }
@@ -410,6 +437,11 @@ export function payEstimate(
   // ── Line training / familiarisation flown as instructor, per day ──
   const lineTrainingDays = new Set(duties.filter((d) => inMonth(d.date) && isInstructorFlight(d)).map((d) => d.date)).size;
   const lineTrainingValue = lineTrainingDays * (s.lineTrainingDay || 0);
+
+  // ── RAACO meal allowances (paid apart; only their tax is on the payslip) ──
+  const abonosByDate: Record<string, number> = {};
+  for (const d of raacoDays(duties, base).values()) if (inMonth(d.date) && d.total > 0) abonosByDate[d.date] = d.total;
+  const abonos = Object.values(abonosByDate).reduce((a, v) => a + v, 0);
 
   const pension = pensionLines(s);
   const rb = s.vb + s.ve + s.vs + s.extras + pension.contribution;
@@ -445,6 +477,9 @@ export function payEstimate(
     perDiemValue,
     perDiemDates,
     perDiemTravelDays,
+    perDiemTravel,
+    abonos,
+    abonosByDate,
     perDiemTravelValue,
     complementDays,
     complementValue,
@@ -493,9 +528,24 @@ export function netEstimate(r: PayEstimate, s: PaySettings): NetEstimate {
   const pension = pensionLines(s);
   const fixedTaxable = r.rb - (s.nonTaxableFixed || 0) - pension.contribution;
   const variableTaxed = r.variable - r.perDiemTravelValue; // everything but the per diem for days away
-  const travelTaxable = (exempt: number) => Math.max(0, r.perDiemTravelValue - (exempt || 0) * r.perDiemTravelDays);
-  const irsBase = fixedTaxable + variableTaxed + travelTaxable(s.perDiemExemptIrs);
-  const ssBase = fixedTaxable + variableTaxed + travelTaxable(s.perDiemExemptSs);
+  // Per day away: per diem + that day's abonos, less the day's limit (national or abroad); abonos
+  // on any other day are taxed in full. The taxable rest goes with the salary (PGA payroll).
+  const travelTaxable = (kind: 'irs' | 'ss') => {
+    const limit = (abroad: boolean) => (kind === 'irs'
+      ? (abroad ? s.exemptAbroadIrs : s.exemptNationalIrs)
+      : (abroad ? s.exemptAbroadSs : s.exemptNationalSs)) || 0;
+    const abonos = r.abonosByDate ?? {};
+    let taxable = 0;
+    const counted = new Set<string>();
+    for (const d of r.perDiemTravel ?? []) {
+      counted.add(d.date);
+      taxable += Math.max(0, d.value + (abonos[d.date] ?? 0) - limit(d.abroad));
+    }
+    for (const [date, v] of Object.entries(abonos)) if (!counted.has(date)) taxable += v;
+    return taxable;
+  };
+  const irsBase = fixedTaxable + variableTaxed + travelTaxable('irs');
+  const ssBase = fixedTaxable + variableTaxed + travelTaxable('ss');
   const irs = irsRetention(irsBase, s.irsTable || 'I', s.dependents || 0);
   // Subsidies: SS like any pay, IRS withheld apart for each one, and the pension plan applies to
   // them too (it "incide 14 vezes por ano", RRRGS cl. 16.2): 6,5% / 7,5% of the subsidy itself —

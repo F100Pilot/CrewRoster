@@ -25,7 +25,16 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(nada — tudo promovido em `0.8.32.4`)_
+Em `0.8.33` (na exp):
+
+- **Isenção do per diem por dia** (`payEstimate.ts`): substitui a média fixa (88 € IRS / 140 € SS por dia fora). Cada
+  dia fora tem o limite nacional ou estrangeiro (toca um aeroporto fora de Portugal), já reduzido por a empresa pagar
+  o hotel; o per diem + os abonos RAACO desse dia ficam isentos até ao limite, o resto é tributado com o ordenado
+  (fonte: payroll PGA via um colega). Valores por omissão do e-mail do payroll de 2024 (34,60 / 51,90 nacional,
+  116,95 / 175,42 estrangeiro; SS = 1,5 × IRS) — outra tabela dava 36,33 / 34,59 e 116,95 / 167,07. Conferido:
+  setembro (recibo de outubro) dá 89,50 / 134,25 € por dia vs ~90 / ~135 no recibo. **Por explicar:** agosto (recibo
+  de setembro) dá 116,95 / 175,42 (5 dias no estrangeiro, 3 deles ida-e-volta) vs ~86–90 no recibo — regra para dias
+  no estrangeiro sem pernoita? Falta o recibo de setembro para conferir.
 
 ---
 

@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (428 tests) — keep green
+npm test           # vitest run (429 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -183,8 +183,11 @@ Things learned over this collaboration that should persist across sessions:
 - **Net pay** (since 0.8.23): `domain/irsWithholding.ts` holds the 2026 mainland withholding tables
   I–III (Despacho 233-A/2026; replace yearly); `netEstimate()` = gross − IRS (on the month's whole
   taxable pay, floor to €) − SS 11% − fixed deductions. Non-taxable: the pilot's `nonTaxableFixed`
-  (PGA pension contribution) and the exempt per diem of days away (`perDiemExemptIrs/Ss` per day,
-  default = average of two real payslips); per diem for days at base ("… T") is taxed in full.
+  (PGA pension contribution) and the exempt per diem of days away — since 0.8.33 PER DAY: national or
+  abroad limit (`exemptNational/AbroadIrs/Ss`, defaults from the PGA payroll's 2024 e-mail: 34,60/51,90 and
+  116,95/175,42, already reduced −50%/−30% for the hotel the company pays; update with the State Budget), applied
+  to that day's per diem + its RAACO abonos; the rest is taxed with the salary; per diem for days at base ("… T")
+  is taxed in full. Matched the October payslip's per-day average; August (3 day trips abroad) still doesn't.
   Verified to within a few euros on two real payslips. Pension plan (RRRGS cl. 16, `pensionAuto`):
   PGA contribution 6,5% of VB+VE+VS paid as a non-taxable abono, SIPLA deposit 7,5% deducted — both
   matched the payslip to the cent. Union fee = `unionPct` (1%) of a base that (since 0.8.26.1)

@@ -26,9 +26,12 @@ describe('irsRetention (Despacho 233-A/2026, continente)', () => {
 
 describe('netEstimate', () => {
   it('taxes per diem at base in full and only the non-exempt part of per diem away', () => {
-    const r = { rb: 10000, variable: 1500, perDiemTravelValue: 600, perDiemTravelDays: 3 } as PayEstimate;
+    const r = {
+      rb: 10000, variable: 1500, perDiemTravelValue: 600, perDiemTravelDays: 3,
+      perDiemTravel: [1, 2, 3].map((i) => ({ date: `2026-10-0${i}`, value: 200, abroad: false })), abonosByDate: {},
+    } as unknown as PayEstimate;
     const s = { ...DEFAULT_PAY_SETTINGS, irsTable: 'I' as const, dependents: 1, nonTaxableFixed: 500, fixedDeductions: 300,
-      perDiemExemptIrs: 100, perDiemExemptSs: 150 };
+      exemptNationalIrs: 100, exemptNationalSs: 150 };
     const n = netEstimate(r, s);
     // 9 500 fixed taxable + 900 variable at base + (600 − 300) away = 10 700 for IRS.
     expect(n.irsBase).toBe(10700);
@@ -36,6 +39,23 @@ describe('netEstimate', () => {
     expect(n.irs).toBe(irsRetention(10700, 'I', 1));
     expect(n.ss).toBeCloseTo(1160.5);
     expect(n.net).toBeCloseTo(11500 - n.irs - 1160.5 - 300);
+  });
+
+  it('applies the limit per day — national or abroad — to the per diem plus that day\'s abonos', () => {
+    const r = {
+      rb: 5000, variable: 500, perDiemTravelValue: 500, perDiemTravelDays: 2,
+      perDiemTravel: [
+        { date: '2026-05-03', value: 250, abroad: true },
+        { date: '2026-05-17', value: 250, abroad: false },
+      ],
+      // A stay abroad on the 3rd and a short-sector breakfast on a day not away (taxed in full).
+      abonosByDate: { '2026-05-03': 149, '2026-05-23': 5 },
+    } as unknown as PayEstimate;
+    const s = DEFAULT_PAY_SETTINGS;
+    const n = netEstimate(r, s);
+    // Abroad: 250 + 149 − 116,95; national: 250 − 34,60; plus the 5 € breakfast.
+    expect(n.irsBase).toBeCloseTo(5000 + (250 + 149 - 116.95) + (250 - 34.6) + 5);
+    expect(n.ssBase).toBeCloseTo(5000 + (250 + 149 - 175.42) + (250 - 51.9) + 5);
   });
 
   it('computes the pension plan from the RB, same net as typing the lines by hand (cl. 16)', () => {
@@ -63,7 +83,7 @@ describe('netEstimate', () => {
     expect(unionFee(cte)).toBe(51);
     // A hand-typed PGA pension contribution (in extras and nonTaxableFixed) is not part of it either.
     expect(unionBaseAuto({ ...cte, extras: 1425, nonTaxableFixed: 325 })).toBe(5100);
-    const r = { rb: 5000, variable: 0, perDiemTravelValue: 0, perDiemTravelDays: 0 } as PayEstimate;
+    const r = { rb: 5000, variable: 0, perDiemTravelValue: 0, perDiemTravelDays: 0, perDiemTravel: [], abonosByDate: {} } as unknown as PayEstimate;
     const with1 = netEstimate(r, { ...base, unionPct: 1 });
     expect(with1.net).toBeCloseTo(netEstimate(r, base).net - 50);
   });

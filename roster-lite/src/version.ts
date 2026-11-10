@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.32.4';
+export const APP_VERSION = '0.8.33';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,15 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.33',
+    date: '2026-11-10',
+    highlights: [
+      'Vencimento: a parte isenta do per diem passa a ser calculada dia a dia — limite nacional ou estrangeiro (dia que toca um aeroporto fora de Portugal), já com a redução por a empresa pagar o hotel.',
+      'Os abonos de refeição de cada dia somam ao per diem desse dia antes do limite; o que passa é tributado com o ordenado.',
+      'Limites por omissão do payroll da PGA (IRS 34,60 € / SS 51,90 € nacional; IRS 116,95 € / SS 175,42 € estrangeiro), editáveis em Definições → Vencimento → Avançado.',
+    ],
+  },
   {
     version: '0.8.32.4',
     date: '2026-11-10',
