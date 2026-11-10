@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Alert, Box, Button, Card, CardContent, Chip, Divider, IconButton, InputAdornment,
-  Popover, Stack, TextField, Tooltip, Typography,
+  Popover, Stack, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography,
 } from '@mui/material';
 import {
   ChevronLeft, ChevronRight, Login, Today, InfoOutlined,
-  EditCalendar, Search, Clear,
+  EditCalendar, Search, Clear, ViewAgenda, DepartureBoard as BoardIcon,
 } from '@mui/icons-material';
 import { alpha } from '@mui/material/styles';
 import { addMonths, format, isSameMonth, parseISO, subMonths } from 'date-fns';
@@ -15,6 +15,7 @@ import { useViewedMonth } from '../state/viewedMonth';
 import UploadDropzone from '../components/UploadDropzone';
 import DutyChip from '../components/DutyChip';
 import NextDutyCard from '../components/NextDutyCard';
+import DepartureBoard from '../components/DepartureBoard';
 import MonthStatsCard from '../components/MonthStatsCard';
 import LimitsSummaryCard from '../components/LimitsSummaryCard';
 import DocumentAlertCard from '../components/DocumentAlertCard';
@@ -43,6 +44,13 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: 'standby', label: 'Standby' },
   { key: 'off', label: 'Folgas' },
 ];
+
+// The list as cards (default) or as a departures board; remembered on this device.
+type ListView = 'cards' | 'board';
+const VIEW_KEY = 'crewroster.listView';
+function readView(): ListView {
+  try { return localStorage.getItem(VIEW_KEY) === 'board' ? 'board' : 'cards'; } catch { return 'cards'; }
+}
 
 // Tracks which users have an auto-capture run in flight, so a quick remount can't fire a
 // second one before the first resolves (module-level: survives component remounts).
@@ -81,6 +89,11 @@ export default function RosterPage() {
   const [infoAnchor, setInfoAnchor] = useState<null | HTMLElement>(null);
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
+  const [view, setView] = useState<ListView>(readView);
+  const chooseView = (v: ListView) => {
+    setView(v);
+    try { localStorage.setItem(VIEW_KEY, v); } catch { /* not remembered — harmless */ }
+  };
   const today = todayISO();
 
   const changeByDate = useMemo(() => {
@@ -240,7 +253,7 @@ export default function RosterPage() {
         }}
       />
 
-      <Box display="flex" gap={1} flexWrap="wrap">
+      <Box display="flex" gap={1} flexWrap="wrap" alignItems="center">
         {FILTERS.map((f) => (
           <Chip
             key={f.key}
@@ -251,6 +264,11 @@ export default function RosterPage() {
             onClick={() => setFilter(f.key)}
           />
         ))}
+        <Box flexGrow={1} />
+        <ToggleButtonGroup size="small" exclusive value={view} onChange={(_, v: ListView | null) => v && chooseView(v)} aria-label="Vista da lista">
+          <ToggleButton value="cards" aria-label="Cartões" sx={{ py: 0.25 }}><ViewAgenda fontSize="small" /></ToggleButton>
+          <ToggleButton value="board" aria-label="Painel de partidas" sx={{ py: 0.25 }}><BoardIcon fontSize="small" /></ToggleButton>
+        </ToggleButtonGroup>
       </Box>
 
       {monthDuties.length === 0 && (
@@ -260,7 +278,11 @@ export default function RosterPage() {
         <Alert severity="info">Nenhum registo corresponde ao filtro ou pesquisa.</Alert>
       )}
 
-      {[...dutiesByDay.entries()].map(([date, duties]) => {
+      {view === 'board' && dutiesByDay.size > 0 && (
+        <DepartureBoard days={[...dutiesByDay.entries()]} changes={changeByDate} today={today} onOpen={(d) => navigate(`/day/${d}`)} />
+      )}
+
+      {view === 'cards' && [...dutiesByDay.entries()].map(([date, duties]) => {
         const change = changeByDate.get(date);
         const isToday = date === today;
         return (

@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import {
   CalendarMonth, FormatListBulleted, CloudDownload, PictureAsPdf, Logout, HelpOutline, Timer,
-  Settings, MenuBook, QueryStats, Public, Badge, Search, MoreVert, Gavel, Payments,
+  Settings, MenuBook, QueryStats, Public, Badge, Search, MoreVert, Gavel, Payments, FlightTakeoff,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
@@ -24,7 +24,8 @@ const startTour = () => { void import('../tour').then((m) => m.startTour()); };
 interface NavItem { label: string; icon: ReactNode; path: string }
 
 const BASE_NAV: NavItem[] = [
-  { label: 'Lista', icon: <FormatListBulleted />, path: '/' },
+  { label: 'Hoje', icon: <FlightTakeoff />, path: '/' },
+  { label: 'Lista', icon: <FormatListBulleted />, path: '/lista' },
   { label: 'Calendário', icon: <CalendarMonth />, path: '/calendar' },
   { label: 'Diário', icon: <MenuBook />, path: '/logbook' },
   { label: 'Estatísticas', icon: <QueryStats />, path: '/stats' },

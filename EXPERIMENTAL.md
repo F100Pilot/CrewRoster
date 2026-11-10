@@ -40,6 +40,13 @@ Em `0.8.28` (na exp) — auditoria de código:
 - **Privacidade:** nomes reais de tripulantes nos testes substituídos por sintéticos.
 - **Worker:** as alterações só ficam ativas quando o `worker.js` for para o `master` (deploy automático).
 
+Em `0.8.29` (na exp) — layout dinâmico:
+
+- **Ecrã "Hoje"** como entrada (`/`), que muda com a fase do dia (pré-voo, em serviço, estadia,
+  assistência, folga); céu à hora local do aeroporto; cor pelo destino. `dayPhase.ts` + testes.
+- **Lista** passa para `/lista`, com vista **painel de partidas** opcional.
+- Navegação: "Hoje" é a primeira aba; o atalho Android "Hoje" abre este ecrã.
+
 ---
 
 ## TODO / Backlog (decidir mais tarde)

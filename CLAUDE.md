@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (402 tests) — keep green
+npm test           # vitest run (410 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -202,6 +202,12 @@ Things learned over this collaboration that should persist across sessions:
   they do carry the pilot's pay figures (by design — the user restores them from it). Test data and
   fixtures must use synthetic crew names (real ones were scrubbed from tests in 0.8.28).
 - **CI runs Node 22** (vitest 5 requires ≥ 22.12).
+- **Home screen = "Hoje"** (since 0.8.29, from the user-approved "layout dinâmico" sketch): route `/`
+  (`pages/TodayPage.tsx`), the roster list moved to `/lista`. `domain/dayPhase.ts` derives the phase
+  (preflight / duty / standby / layover / off) from the roster only, where the crew member is, the sky
+  (dawn/day/dusk/night from `sun.ts` at that airport) and a destination accent. AE figures on it (FDP,
+  rest minima) are pilots-only, like everywhere. The list can also render as a departures board
+  (`DepartureBoard.tsx`, view in localStorage `crewroster.listView`).
 - **Settings are tabbed** (since 0.8.24): Perfil · Vencimento (pilots only) · App · Dados · Ajuda in
   `SettingsDialog.tsx`; last tab in localStorage `crewroster.settingsTab`. Guardar only on Perfil/App
   (the rest saves on change). New settings go in the tab for their subject, not at the bottom.

@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.28';
+export const APP_VERSION = '0.8.29';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,15 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.29',
+    date: '2026-11-10',
+    highlights: [
+      'Novo ecrã "Hoje", que muda com o teu dia: antes do voo, a contagem até à apresentação e o primeiro voo em cartão de embarque; em serviço, o avião na linha da rota, a chegada e o FDP que resta; na estadia, a cidade, o descanso mínimo a contar e o voo de regresso; na folga, os limites em anéis e os próximos 7 dias.',
+      'O topo é o céu à hora local do aeroporto onde estás — madrugada, dia, fim de tarde ou noite, pelo nascer e pôr do sol — e a cor acompanha o destino do dia.',
+      'A Lista pode ser vista como um painel de partidas (botão ao lado dos filtros), com HOJE, NOVO, ALTERADO e FOLGA como no aeroporto.',
+    ],
+  },
   {
     version: '0.8.28',
     date: '2026-11-10',

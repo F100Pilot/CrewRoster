@@ -1,11 +1,11 @@
 import { lazy, Suspense } from 'react';
 import { HashRouter, Navigate, Route, Routes } from 'react-router-dom';
-import { todayISO } from './domain/rosterWindow';
 import { Box, Button, CircularProgress, Stack, Typography } from '@mui/material';
 import { ErrorOutline, Refresh } from '@mui/icons-material';
 import ErrorBoundary from './components/ErrorBoundary';
 import Layout from './components/Layout';
 import RosterPage from './pages/RosterPage';
+import TodayPage from './pages/TodayPage';
 import CalendarPage from './pages/CalendarPage';
 import DayDetailPage from './pages/DayDetailPage';
 import WelcomePage from './pages/WelcomePage';
@@ -64,7 +64,7 @@ function AppRoutes() {
     return (
       <Layout>
         <Routes>
-          <Route path="*" element={<RosterPage />} />
+          <Route path="*" element={<TodayPage />} />
         </Routes>
       </Layout>
     );
@@ -84,7 +84,8 @@ function AppRoutes() {
     <Layout>
       <Suspense fallback={<RouteFallback />}>
         <Routes>
-          <Route path="/" element={<RosterPage />} />
+          <Route path="/" element={<TodayPage />} />
+          <Route path="/lista" element={<RosterPage />} />
           <Route path="/import" element={<ImportPage />} />
           <Route path="/pdfs" element={<SavedPdfsPage />} />
           <Route path="/pdf/:id" element={<PdfViewerPage />} />
@@ -102,8 +103,8 @@ function AppRoutes() {
           <Route path="/codes" element={<CodesPage />} />
           <Route path="/limites" element={<LimitsPage />} />
           <Route path="/vencimento" element={<PayPage />} />
-          {/* Today's day, as a stable link — the target of the app shortcut "Hoje". */}
-          <Route path="/hoje" element={<Navigate to={`/day/${todayISO()}`} replace />} />
+          {/* The app shortcut "Hoje" — the home screen that follows the day. */}
+          <Route path="/hoje" element={<Navigate to="/" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
