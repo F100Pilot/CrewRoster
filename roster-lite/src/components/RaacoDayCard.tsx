@@ -31,6 +31,9 @@ export default function RaacoDayCard({ date }: { date: string }) {
       <CardContent>
         <Box display="flex" alignItems="baseline" mb={1}>
           <Typography sx={{ ...passOverline, flexGrow: 1 }}>REFEIÇÕES · RAACO</Typography>
+          <Box component="span" sx={{ mr: 1, px: 0.9, height: 20, display: 'inline-flex', alignItems: 'center', borderRadius: 10, bgcolor: '#F59E0B', color: '#1A1206', fontSize: '0.62rem', fontWeight: 900, letterSpacing: '0.05em' }}>
+            EM TESTES
+          </Box>
           <ButtonBase onClick={() => navigate('/abonos')} sx={{ ...passOverline, color: 'primary.main', borderRadius: 1, px: 0.5, minHeight: 28 }}>
             {day.total > 0 ? euro(day.total) : 'Abonos'} <ChevronRight sx={{ fontSize: 16 }} />
           </ButtonBase>
@@ -47,7 +50,7 @@ export default function RaacoDayCard({ date }: { date: string }) {
           ))}
         </Stack>
         <Typography variant="caption" color="text.secondary" display="block" mt={1}>
-          Estimativa experimental pela escala (o Meal Plan e as irregularidades não estão nela).
+          Em fase experimental: estimativa pela escala (o Meal Plan e as irregularidades não estão nela). Confirma no extrato e envia feedback na página Abonos.
         </Typography>
       </CardContent>
     </Card>

@@ -45,6 +45,8 @@ Em `0.8.32` (na exp):
   traz apresentação, o parser deriva-a (1.ª partida − 1h) e depois do voo seguia a partida real. Afeta FDP, descanso,
   planeado vs realizado (FDP extra passa a contar o atraso à partida) e abonos. `PARSE_VERSION` 15 (re-parse).
 - `0.8.32.3`: Abonos com ícone próprio na AppBar (Restaurant), à esquerda do "⋮"; saiu do menu.
+- `0.8.32.4`: aviso grande "FASE EXPERIMENTAL" nos Abonos com botão "Enviar feedback" (mailto pré-preenchido para o
+  contacto já mostrado em Definições → Ajuda); "EM TESTES" no cartão do Dia.
 
 ---
 

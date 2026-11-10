@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.32.3';
+export const APP_VERSION = '0.8.32.4';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,14 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.32.4',
+    date: '2026-11-10',
+    highlights: [
+      'Abonos em FASE EXPERIMENTAL: aviso em destaque na página e "Em testes" no Dia. Confirma sempre no extrato de Abonos Operacionais.',
+      'Novo botão "Enviar feedback" nos Abonos: abre um email já preparado para indicares as diferenças entre a app e o extrato.',
+    ],
+  },
   {
     version: '0.8.32.3',
     date: '2026-11-10',

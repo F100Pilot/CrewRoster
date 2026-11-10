@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import { Alert, Box, ButtonBase, Card, CardContent, IconButton, Stack, Typography } from '@mui/material';
-import { ChevronLeft, ChevronRight, Science } from '@mui/icons-material';
+import { Alert, Box, Button, ButtonBase, Card, CardContent, IconButton, Stack, Typography } from '@mui/material';
+import { ChevronLeft, ChevronRight, MailOutline, Science } from '@mui/icons-material';
 import { addMonths, format, isSameMonth, parseISO, subMonths } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
@@ -10,6 +10,10 @@ import { raacoDays, type RaacoDay } from '../domain/raaco';
 import PageHero from '../components/PageHero';
 import { passOverline } from '../components/PassCard';
 import { monthLabel } from '../utils/dates';
+import { APP_VERSION } from '../version';
+
+// The same contact the app shows under Definições → Ajuda.
+const FEEDBACK_TO = 'pflm.bet@gmail.com';
 
 // The month's operational allowances (RAACO, ROV-PGA 4.5) as the company's "Abonos Operacionais"
 // statement lays them out — one line per day, the same columns — so the two can be compared line
@@ -57,10 +61,7 @@ export default function AbonosPage() {
         </Box>
       </PageHero>
 
-      <Alert severity="warning" icon={<Science fontSize="small" />}>
-        Leitura experimental do RAACO (ROV-PGA 4.5, Rev. 01, Anexo 7.6) a partir da escala: o Meal Plan, o que foi
-        embarcado e as irregularidades não estão na escala. Confirma sempre no extrato de Abonos Operacionais.
-      </Alert>
+      <ExperimentalBanner month={monthLabel(month)} total={euro(total)} />
 
       {days.length === 0 ? (
         <Alert severity="info">Sem abonos previstos para este mês.</Alert>
@@ -110,5 +111,37 @@ export default function AbonosPage() {
         </CardContent>
       </Card>
     </Stack>
+  );
+}
+
+// A loud "in testing" notice (user request): the RAACO reading is new and has known gaps, so ask
+// for feedback — an email already laid out for the comparison that helps most, app vs statement.
+function ExperimentalBanner({ month, total }: { month: string; total: string }) {
+  const subject = `Abonos RAACO — feedback (${month})`;
+  const body = [
+    `Mês: ${month}`, `Total na app: ${total}`, 'Total no extrato de Abonos Operacionais: ',
+    '', 'Dias diferentes (data — app — extrato):', '', '', `Versão da app: ${APP_VERSION}`,
+  ].join('\n');
+  const href = `mailto:${FEEDBACK_TO}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  return (
+    <Box sx={{ borderRadius: 3, overflow: 'hidden', border: 2, borderColor: '#F59E0B', bgcolor: (t) => (t.palette.mode === 'dark' ? '#2A1F0B' : '#FFF7E6') }}>
+      <Box sx={{ bgcolor: '#F59E0B', color: '#1A1206', px: 2, py: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Science />
+        <Typography sx={{ fontWeight: 900, letterSpacing: '0.06em', fontSize: '0.95rem' }}>FASE EXPERIMENTAL</Typography>
+      </Box>
+      <Box sx={{ px: 2, py: 1.5 }}>
+        <Typography sx={{ fontWeight: 800, fontSize: '1.05rem', lineHeight: 1.3 }}>
+          Os abonos estão em testes e precisam do teu feedback.
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75 }}>
+          São calculados pela escala, segundo o RAACO (ROV-PGA 4.5, Rev. 01): o Meal Plan, o que foi embarcado e as
+          irregularidades não estão na escala, e há regras com mais de uma leitura. Não substituem o extrato de Abonos
+          Operacionais — confirma sempre nele. Se um mês não bater certo, envia a diferença: é assim que o cálculo melhora.
+        </Typography>
+        <Button component="a" href={href} variant="contained" startIcon={<MailOutline />} sx={{ mt: 1.5, bgcolor: '#F59E0B', color: '#1A1206', '&:hover': { bgcolor: '#D98A06' } }}>
+          Enviar feedback
+        </Button>
+      </Box>
+    </Box>
   );
 }
