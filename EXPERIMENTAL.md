@@ -7,8 +7,8 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.8.32.4`
-- **Próxima versão ao promover:** `0.8.33` (ou superior, conforme o âmbito)
+- **Produção (`master`) está em:** `0.8.34`
+- **Próxima versão ao promover:** `0.8.35` (ou superior, conforme o âmbito)
 
 ## Como promover tudo para produção (quando estiver pronto)
 
@@ -25,31 +25,15 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-Em `0.8.33` (na exp):
-
-- **Isenção do per diem por dia** (`payEstimate.ts`): substitui a média fixa (88 € IRS / 140 € SS por dia fora). Cada
-  dia fora tem o limite nacional ou estrangeiro (toca um aeroporto fora de Portugal), já reduzido por a empresa pagar
-  o hotel; o per diem + os abonos RAACO desse dia ficam isentos até ao limite, o resto é tributado com o ordenado
-  (fonte: payroll PGA via um colega). Valores por omissão do e-mail do payroll de 2024 (34,60 / 51,90 nacional,
-  116,95 / 175,42 estrangeiro; SS = 1,5 × IRS) — outra tabela dava 36,33 / 34,59 e 116,95 / 167,07. Conferido:
-  setembro (recibo de outubro) dá 89,50 / 134,25 € por dia vs ~90 / ~135 no recibo. **Por explicar:** agosto (recibo
-  de setembro) dá 116,95 / 175,42 (5 dias no estrangeiro, 3 deles ida-e-volta) vs ~86–90 no recibo — regra para dias
-  no estrangeiro sem pernoita? Falta o recibo de setembro para conferir.
-- `0.8.33.1`: com quatro recibos reais (jun–set 2026): "Outros valores p/ impostos" = per diem fora + abonos do mês −
-  limites, e está incluído no "Sujeito a IRS" (retenção certa com 1 dependente) e na SS do mês seguinte. Limites
-  certos: **IRS 36,33 / 116,95, SS 54,49 / 175,42** (nacional / estrangeiro) — com os abonos reais, IRS e SS dos 4
-  meses ao cêntimo. SIM fora da base (FRA) = per diem A fora (o recibo paga "Perdiem A PGA CTE", não "… T").
-  Abonos estimados vs implícitos no recibo: mai 711/768, jun 697/873, jul 1001/1000, ago 130/62 (a melhorar).
-  Linhas do recibo ainda não modeladas: "Subs. gabinete" (160 €/dia?), "LCC_Line Check Com" (200 €),
-  "Sub. alimentação tickets" (isento, por dia em terra na base).
-- `0.8.34`: "Subs. gabinete" por dia GAB (`officeDay`, valor do piloto — no recibo de maio 5 pagos para 7 dias GAB:
-  regra por confirmar) e "Sub. alimentação tickets" por dia B na base (`mealTicket` 10,46 €; maio 7 e agosto 3 =
-  os dias "B … T"), isento de IRS/SS e descontado como "Cartão-refeição". LCC fica de fora: a escala não marca o
-  line check.
+_(nada — tudo promovido em `0.8.34`)_
 
 ---
 
 ## TODO / Backlog (decidir mais tarde)
+
+- **Vencimento (em produção desde 0.8.34):** isenção por dia acertada ao cêntimo com 4 recibos (IRS 36,33 / 116,95,
+  SS 54,49 / 175,42). Por confirmar: regra do "Subs. gabinete" (maio: 5 pagos para 7 dias GAB); como se sabe que
+  houve line check (LCC, 200 €) — a escala não o marca; abonos estimados vs recibo (jun 697/873, ago 130/62).
 
 - **Abonos RAACO (em produção, experimental):** conferido com maio 2026 (711 € vs 768 €). Por explicar: almoço
   de 39 € num DH LIS→FRA com apresentação 8 min depois do horário (atraso? hora planeada?) e almoço de 18 € num
