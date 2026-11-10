@@ -7,8 +7,8 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.8.29.4`
-- **Próxima versão ao promover:** `0.8.30` (ou superior) (ou superior, conforme o âmbito)
+- **Produção (`master`) está em:** `0.8.30`
+- **Próxima versão ao promover:** `0.8.31` (ou superior) (ou superior, conforme o âmbito)
 
 ## Como promover tudo para produção (quando estiver pronto)
 
@@ -25,12 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-Em `0.8.30` (na exp):
-
-- **Tempo no céu do banner** (`SkyWeather.tsx`, `domain/skyWeather.ts`, `state/useCurrentWeather.ts`): o tempo
-  atual (Open-Meteo `current`, cache 15 min) no aeroporto onde o tripulante está pela escala — sol, lua na fase
-  real, nuvens, chuva, neve, nevoeiro, trovoada (animação desligada com `prefers-reduced-motion`). Temperatura e
-  estado no topo do "Hoje" e ao lado da etiqueta do `PageHero`. Sem rede, o céu fica só com a hora do dia.
+_(nada — tudo promovido em `0.8.30`)_
 
 ---
 
