@@ -214,6 +214,9 @@ Things learned over this collaboration that should persist across sessions:
   AppBar, flat bordered cards, soft tinted Alerts). Display dates go through `utils/dates.ts`
   (`dayLabel`, `monthLabel`, pt locale) — NEVER set date-fns' default locale: `pgaGrid.ts` matches the
   PDF's English day headers with `format(d, 'EEEdd')`. Duty-type words: `domain/dutyLabels.ts`.
+  Every page opens with `components/PageHero.tsx` (since 0.8.29.4, user: the other pages were "bland"):
+  the sky at the base (shared `SKY`/`Stars` with "Hoje"), a section pill, a big title, optional stat
+  tiles; page controls go in `actions`/`children`. New pages use it instead of a plain title row.
 - **Settings are tabbed** (since 0.8.24): Perfil · Vencimento (pilots only) · App · Dados · Ajuda in
   `SettingsDialog.tsx`; last tab in localStorage `crewroster.settingsTab`. Guardar only on Perfil/App
   (the rest saves on change). New settings go in the tab for their subject, not at the bottom.

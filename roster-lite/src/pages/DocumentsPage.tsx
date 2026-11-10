@@ -3,14 +3,14 @@ import {
   Alert, Box, Button, Card, CardContent, Chip, Dialog, DialogActions, DialogContent,
   DialogTitle, IconButton, List, ListItem, ListItemText, Stack, TextField, Typography,
 } from '@mui/material';
-import { Add, ArrowBack, Close, DeleteOutline, Edit, FlightLand } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { Add, Close, DeleteOutline, Edit, FlightLand } from '@mui/icons-material';
 import { differenceInCalendarDays, format, parseISO } from 'date-fns';
 import { useRoster } from '../state/useRoster';
 import { loadDocuments, putDocument, deleteDocument, loadLogbook } from '../storage/rosterStore';
 import { recencyStatus } from '../domain/logbook';
 import type { CrewDocument, LogbookRow } from '../domain/types';
 import { todayISO } from '../domain/rosterWindow';
+import PageHero from '../components/PageHero';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -24,7 +24,6 @@ function expiryChip(expiry: string): { color: 'default' | 'warning' | 'error' | 
 }
 
 export default function DocumentsPage() {
-  const navigate = useNavigate();
   const { activeUser } = useRoster();
   const userId = activeUser?.id;
   const isPilot = activeUser?.role !== 'cabin';
@@ -76,11 +75,10 @@ export default function DocumentsPage() {
 
   return (
     <Stack spacing={2}>
-      <Box display="flex" alignItems="center" gap={1}>
-        <IconButton onClick={() => navigate(-1)}><ArrowBack /></IconButton>
-        <Typography variant="h6" sx={{ flexGrow: 1 }}>Documentos</Typography>
-        <Button size="small" variant="outlined" startIcon={<Add />} onClick={openAdd}>Adicionar</Button>
-      </Box>
+      <PageHero
+        back label="Documentos" title="Documentos" subtitle={isPilot ? 'Licença, médico, cheques e recência' : 'Validades dos teus documentos'}
+        actions={<Button size="small" variant="outlined" startIcon={<Add />} onClick={openAdd}>Adicionar</Button>}
+      />
 
       {/* Take-off/landing recency — pilots only. */}
       {isPilot && (

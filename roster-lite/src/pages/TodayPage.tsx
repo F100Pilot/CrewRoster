@@ -19,6 +19,7 @@ import { toLocalTime } from '../utils/localTime';
 import { todayISO } from '../domain/rosterWindow';
 import UploadDropzone from '../components/UploadDropzone';
 import MetarTaf from '../components/MetarTaf';
+import { SKY, Stars } from '../components/PageHero';
 import type { ParsedDuty } from '../domain/types';
 import { DUTY_TYPE_LABEL } from '../domain/dutyLabels';
 
@@ -57,12 +58,6 @@ const PALETTE: Record<Phase, { light: Palette; dark: Palette }> = {
     light: { ...LIGHT_INK, bg: '#FBF7F1', fg: '#1F1A14', soft: '#65543F', line: '#EFE5D7', accent: '#B45309', pill: '#FCD34D' },
     dark: { dark: true, bg: '#17130F', card: '#221C16', fg: '#F3ECE3', soft: '#BBAB96', line: '#342B22', accent: '#F59E0B', pill: '#FCD34D' },
   },
-};
-const SKY: Record<Sky, { bg: string; soft: string }> = {
-  night: { bg: 'linear-gradient(180deg, #050D1C 0%, #0B2236 70%, #123247 100%)', soft: '#A9C3D3' },
-  dawn: { bg: 'linear-gradient(180deg, #121A3A 0%, #2A2A5C 55%, #6B4258 85%, #A4614E 100%)', soft: '#E3D3DC' },
-  day: { bg: 'linear-gradient(180deg, #164E96 0%, #1F63B5 55%, #2D74C4 100%)', soft: '#D6E6F8' },
-  dusk: { bg: 'linear-gradient(180deg, #221C46 0%, #5A3560 60%, #8E4E4A 100%)', soft: '#EBD7D3' },
 };
 // The day's destination colour: bright on the sky and on dark pages, deep on light pages.
 const DEST_ACCENT: Record<Exclude<Accent, 'base'>, { bright: string; deep: string }> = {
@@ -201,16 +196,6 @@ function SkyHeader({ ctx, sky, sunrise, sunset, accent, base }: {
   );
 }
 
-function Stars() {
-  const pts = [[6, 14], [18, 40], [31, 9], [46, 30], [58, 12], [72, 44], [84, 18], [93, 36], [64, 70], [24, 76]];
-  return (
-    <Box aria-hidden="true" sx={{ position: 'absolute', inset: 0, opacity: 0.5, pointerEvents: 'none' }}>
-      {pts.map(([x, y], i) => (
-        <Box key={i} sx={{ position: 'absolute', left: `${x}%`, top: `${y}%`, width: i % 3 ? 2 : 3, height: i % 3 ? 2 : 3, borderRadius: '50%', bgcolor: '#fff' }} />
-      ))}
-    </Box>
-  );
-}
 
 // What the day looks like in one line, for the header.
 function summary(ctx: DayContext): string | undefined {

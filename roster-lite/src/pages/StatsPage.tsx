@@ -1,9 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  Alert, Box, Card, CardContent, Chip, Divider, IconButton, LinearProgress, Stack, Typography,
-} from '@mui/material';
-import { ArrowBack } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { Alert, Box, Card, CardContent, Chip, Divider, LinearProgress, Stack, Typography } from '@mui/material';
+
 import { useRoster } from '../state/useRoster';
 import { loadLogbook } from '../storage/rosterStore';
 import { logbookStats } from '../domain/logbook';
@@ -15,9 +12,9 @@ import { dutyRulesFor } from '../domain/dutyTime';
 import { todayISO } from '../domain/rosterWindow';
 import { formatDuration } from '../utils/duration';
 import type { LogbookRow } from '../domain/types';
+import PageHero from '../components/PageHero';
 
 export default function StatsPage() {
-  const navigate = useNavigate();
   const { activeUser, roster } = useRoster();
   const userId = activeUser?.id;
 
@@ -45,10 +42,16 @@ export default function StatsPage() {
 
   return (
     <Stack spacing={2}>
-      <Box display="flex" alignItems="center" gap={1}>
-        <IconButton onClick={() => navigate(-1)}><ArrowBack /></IconButton>
-        <Typography variant="h6" sx={{ flexGrow: 1 }}>Estatísticas</Typography>
-      </Box>
+      <PageHero
+        back label="Estatísticas"
+        title={rows.length ? formatDuration(stats.blockMinutes) : 'Estatísticas'}
+        subtitle={rows.length ? 'de bloco no diário' : undefined}
+        stats={rows.length ? [
+          { label: 'Setores', value: String(stats.sectors) },
+          { label: 'Aeroportos', value: String(stats.airports) },
+          { label: 'Aeronaves', value: String(stats.tails) },
+        ] : undefined}
+      />
 
 
       {rows.length === 0 ? (
@@ -57,17 +60,6 @@ export default function StatsPage() {
         </Alert>
       ) : (
         <>
-          {/* Headline totals */}
-          <Card variant="outlined">
-            <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
-              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 1.5 }}>
-                <Tile value={formatDuration(stats.blockMinutes)} label="Bloco" />
-                <Tile value={String(stats.sectors)} label="Setores" />
-                <Tile value={String(stats.airports)} label="Aeroportos" />
-                <Tile value={String(stats.tails)} label="Aeronaves" />
-              </Box>
-            </CardContent>
-          </Card>
 
           <MonthlyChart months={months} />
 
@@ -143,11 +135,3 @@ export default function StatsPage() {
   );
 }
 
-function Tile({ value, label }: { value: string; label: string }) {
-  return (
-    <Stack alignItems="center" spacing={0.25} sx={{ minWidth: 0 }}>
-      <Typography variant="subtitle1" fontWeight={700} noWrap>{value}</Typography>
-      <Typography variant="caption" color="text.secondary" noWrap>{label}</Typography>
-    </Stack>
-  );
-}

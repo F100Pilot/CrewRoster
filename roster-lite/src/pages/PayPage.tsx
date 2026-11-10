@@ -1,17 +1,16 @@
 import { useEffect, useState } from 'react';
-import { Alert, Box, Button, IconButton, Stack, Typography } from '@mui/material';
-import { ArrowBack, Science, Settings } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { Alert, Box, Button, Stack } from '@mui/material';
+import { Science, Settings } from '@mui/icons-material';
 import { useRoster } from '../state/useRoster';
 import PayEstimateCard from '../components/PayEstimateCard';
 import { baseOf } from '../domain/dutyStats';
 import { getPaySettings } from '../storage/settings';
 import { openSettings } from '../components/settingsEvents';
+import PageHero from '../components/PageHero';
 
 // The pay estimate on its own tab, apart from the AE limits. Pilots only — it applies the SIPLA
 // agreement (RRRGS) — and only once the pilot turned it on and typed their own figures in Settings.
 export default function PayPage() {
-  const navigate = useNavigate();
   const { roster, activeUser } = useRoster();
   const pilot = activeUser?.role !== 'cabin';
   const [enabled, setEnabled] = useState(() => (activeUser ? getPaySettings(activeUser.id).enabled : false));
@@ -25,10 +24,7 @@ export default function PayPage() {
 
   return (
     <Stack spacing={2}>
-      <Box display="flex" alignItems="center" gap={1}>
-        <IconButton onClick={() => navigate(-1)}><ArrowBack /></IconButton>
-        <Typography variant="h6" sx={{ flexGrow: 1 }}>Vencimento</Typography>
-      </Box>
+      <PageHero back label="Vencimento" pill="#FCD34D" title="Vencimento" subtitle="Estimativa pelo RRRGS do AE · experimental" />
 
       {!pilot || !activeUser ? (
         <Alert severity="info">A estimativa de vencimento segue o AE do SIPLA e é só para pilotos.</Alert>

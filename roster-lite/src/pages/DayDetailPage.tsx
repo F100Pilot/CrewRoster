@@ -1,5 +1,5 @@
 import { Alert, Box, Card, CardContent, Chip, Divider, IconButton, Stack, Tooltip, Typography } from '@mui/material';
-import { ArrowBack, ChevronLeft, ChevronRight, FlightLand, FlightTakeoff, Groups, Hotel, IosShare, Phone, WbSunny, Bedtime, Brightness4 } from '@mui/icons-material';
+import { ChevronLeft, ChevronRight, FlightLand, FlightTakeoff, Groups, Hotel, IosShare, Phone, WbSunny, Bedtime, Brightness4 } from '@mui/icons-material';
 import { Link } from '@mui/material';
 import { addDays, format, parseISO } from 'date-fns';
 import { useEffect, useMemo, useRef } from 'react';
@@ -24,6 +24,7 @@ import FlightInfo from '../components/FlightInfo';
 import FlicStand from '../components/FlicStand';
 import { dayLabel } from '../utils/dates';
 import { dutyTypeLabel } from '../domain/dutyLabels';
+import PageHero from '../components/PageHero';
 
 export default function DayDetailPage() {
   const { date } = useParams<{ date: string }>();
@@ -93,40 +94,27 @@ export default function DayDetailPage() {
 
   return (
     <Stack spacing={2} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-      <Box display="flex" alignItems="center" gap={0.5}>
-        <IconButton onClick={() => navigate(-1)}>
-          <ArrowBack />
-        </IconButton>
-        <IconButton size="small" onClick={() => goTo(prevDate)} disabled={!prevDate} title="Dia anterior">
-          <ChevronLeft />
-        </IconButton>
-        <Typography variant="h6" sx={{ flexGrow: 1, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {date ? dayLabel(date, true) : ''}
-        </Typography>
-        <IconButton size="small" onClick={() => goTo(nextDate)} disabled={!nextDate} title="Dia seguinte">
-          <ChevronRight />
-        </IconButton>
-        {date && duties.length > 0 && (
-          <IconButton
-            color="primary"
-            title="Partilhar este dia"
-            onClick={() => shareDayImage(date, duties, activeUser?.name)}
-          >
-            <IosShare />
-          </IconButton>
-        )}
-      </Box>
+      <PageHero
+        back label={duties.length ? dutyTypeLabel(duties[0].dutyType) : 'Dia'}
+        title={date ? dayLabel(date, true) : ''}
+        subtitle={daySummary(duties)}
+        stats={stats ? [
+          { label: 'Bloco', value: formatDuration(stats.blockMinutes) },
+          { label: 'Serviço', value: formatDuration(dutyMinutes ?? stats.dutyMinutes) },
+        ] : undefined}
+        actions={
+          <>
+            <IconButton size="small" onClick={() => goTo(prevDate)} disabled={!prevDate} aria-label="Dia anterior"><ChevronLeft /></IconButton>
+            <IconButton size="small" onClick={() => goTo(nextDate)} disabled={!nextDate} aria-label="Dia seguinte"><ChevronRight /></IconButton>
+            {date && duties.length > 0 && (
+              <IconButton size="small" aria-label="Partilhar este dia" onClick={() => shareDayImage(date, duties, activeUser?.name)}><IosShare /></IconButton>
+            )}
+          </>
+        }
+      />
 
-      {(stats || fdp || tags.length > 0 || (rest && rest.restMinutes !== null)) && (
+      {(fdp || tags.length > 0 || (rest && rest.restMinutes !== null)) && (
         <Box display="flex" gap={1} flexWrap="wrap">
-          {stats && (
-            <>
-              <Chip size="small" color="primary" variant="outlined" label={`Bloco ${formatDuration(stats.blockMinutes)}`} />
-              <Tooltip title={pilot ? 'Da apresentação até 30 min depois dos calços do último setor (RUPT).' : ''}>
-                <Chip size="small" variant="outlined" label={`Serviço ${formatDuration(dutyMinutes ?? stats.dutyMinutes)}`} />
-              </Tooltip>
-            </>
-          )}
           {fdp && <FdpChip fdp={fdp} />}
           {tags.map((t) => <TagChip key={t} tag={t} />)}
           {rest && rest.restMinutes !== null && (
@@ -550,4 +538,11 @@ function TimePoint({
       </Typography>
     </Box>
   );
+}
+
+// The day in one line for the banner: its route, or what it is.
+function daySummary(duties: ParsedDuty[]): string | undefined {
+  const legs = duties.filter((d) => (d.dutyType === 'Flight Duty' || d.dutyType === 'Positioning') && d.departureAirport);
+  if (legs.length) return `${[legs[0].departureAirport, ...legs.map((l) => l.arrivalAirport)].join(' → ')} · ${legs.length} ${legs.length === 1 ? 'setor' : 'setores'}`;
+  return duties[0] ? `${dutyTypeLabel(duties[0].dutyType)} · ${duties[0].dutyCode}` : undefined;
 }

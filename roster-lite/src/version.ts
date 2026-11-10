@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.29.3';
+export const APP_VERSION = '0.8.29.4';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,17 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.29.4',
+    date: '2026-11-10',
+    highlights: [
+      'Todas as páginas têm agora o mesmo banner do "Hoje": o céu da tua base (madrugada, dia, fim de tarde ou noite), a etiqueta da secção, um título grande e os números principais.',
+      'Lista e Calendário: o mês em destaque, com as setas e o "Hoje" no banner.',
+      'Dia: a data, a rota do dia e o bloco / serviço no topo.',
+      'AE: o limite mais apertado em percentagem logo à cabeça.',
+      'Diário de bordo, Estatísticas, Vencimento, Mapa, Pesquisa, Documentos, PDFs e Códigos com o mesmo cabeçalho.',
+    ],
+  },
   {
     version: '0.8.29.3',
     date: '2026-11-10',

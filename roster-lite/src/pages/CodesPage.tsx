@@ -1,5 +1,6 @@
 import { Box, Card, CardContent, Divider, Stack, Typography } from '@mui/material';
 import { dutyColor } from '../theme';
+import PageHero from '../components/PageHero';
 
 // Reference sheet for the duty codes the parser recognises. Helps confirm a parse and
 // documents what each chip means. Extend as new codes are clarified.
@@ -36,7 +37,7 @@ const CODES: { code: string; dutyType: string; label: string }[] = [
 export default function CodesPage() {
   return (
     <Stack spacing={2}>
-      <Typography variant="h6">Legenda de códigos</Typography>
+      <PageHero back label="Códigos" title="Legenda de códigos" subtitle="O que quer dizer cada código da escala" />
       <Card variant="outlined">
         <CardContent sx={{ py: 1 }}>
           {CODES.map((c, i) => (

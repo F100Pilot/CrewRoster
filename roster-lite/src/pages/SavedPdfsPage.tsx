@@ -15,6 +15,7 @@ import type { SavedPdf } from '../domain/types';
 import { listPdfs, deletePdf } from '../storage/rosterStore';
 import { downloadBlob } from '../utils/download';
 import { useRoster } from '../state/useRoster';
+import PageHero from '../components/PageHero';
 
 function formatRange(pdf: SavedPdf): string {
   const fmt = (iso: string | null) => (iso ? format(parseISO(iso), 'dd/MM/yyyy') : null);
@@ -47,7 +48,7 @@ export default function SavedPdfsPage() {
 
   return (
     <Stack spacing={2}>
-      <Typography variant="h6">Histórico de PDFs</Typography>
+      <PageHero label="PDFs" title="Histórico de PDFs" subtitle={pdfs.length ? `${pdfs.length} ${pdfs.length === 1 ? 'escala guardada' : 'escalas guardadas'} neste dispositivo` : 'As escalas descarregadas ficam guardadas aqui'} />
 
       {loading && <Typography color="text.secondary">A carregar…</Typography>}
 

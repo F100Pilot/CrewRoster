@@ -25,6 +25,7 @@ import { MARK_SHORT, dayMarks, isInstructorMark } from '../domain/dutyMarks';
 import type { ParsedDuty, ChangeType } from '../domain/types';
 import { todayISO } from '../domain/rosterWindow';
 import { dayLabel, monthLabel } from '../utils/dates';
+import PageHero from '../components/PageHero';
 
 // Wide enough for the widest "EEE, dd MMM" (e.g. "Wed, 28 Sep") in bold.
 const DATE_COLUMN = '6.6em';
@@ -160,6 +161,43 @@ export default function RosterPage() {
 
   return (
     <Stack spacing={2}>
+      <PageHero
+        label="Escala"
+        title={monthLabel(month)}
+        subtitle={`${monthDuties.length ? new Set(monthDuties.map((d) => d.date)).size : 0} dias na escala`}
+        actions={
+          <>
+          <IconButton size="small" onClick={(e) => setInfoAnchor(e.currentTarget)} title="Detalhes da escala">
+            <InfoOutlined fontSize="small" />
+          </IconButton>
+          <Popover
+            open={Boolean(infoAnchor)}
+            anchorEl={infoAnchor}
+            onClose={() => setInfoAnchor(null)}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+          >
+            <Box sx={{ p: 1.5, maxWidth: 280 }}>
+              <Typography variant="caption" color="text.secondary" sx={{ wordBreak: 'break-word' }}>
+                {roster.fileName} · {roster.duties.length} dias · importado{' '}
+                {format(parseISO(roster.importedAt), 'dd/MM/yyyy HH:mm')}
+              </Typography>
+            </Box>
+          </Popover>
+            <Button size="small" variant="outlined" startIcon={<Today />} onClick={() => setMonth(new Date())}>Hoje</Button>
+          </>
+        }
+      >
+        <Box display="flex" gap={1} mt={1}>
+          <IconButton size="small" onClick={() => setMonth((m) => subMonths(m, 1))} aria-label="Mês anterior" sx={{ bgcolor: 'rgba(255,255,255,0.12)' }}>
+            <ChevronLeft />
+          </IconButton>
+          <IconButton size="small" onClick={() => setMonth((m) => addMonths(m, 1))} aria-label="Mês seguinte" sx={{ bgcolor: 'rgba(255,255,255,0.12)' }}>
+            <ChevronRight />
+          </IconButton>
+        </Box>
+      </PageHero>
+
       {error && <Alert severity="error">{error}</Alert>}
       {warnings.map((w, i) => (
         <Alert key={i} severity="warning">
@@ -185,40 +223,6 @@ export default function RosterPage() {
           </Typography>
         </Alert>
       )}
-
-      <Box display="flex" alignItems="center" justifyContent="space-between">
-        <Box display="flex" alignItems="center" gap={1}>
-          <IconButton size="small" onClick={() => setMonth((m) => subMonths(m, 1))}>
-            <ChevronLeft />
-          </IconButton>
-          <Typography variant="h6">{monthLabel(month)}</Typography>
-          <IconButton size="small" onClick={() => setMonth((m) => addMonths(m, 1))}>
-            <ChevronRight />
-          </IconButton>
-        </Box>
-        <Box display="flex" alignItems="center" gap={0.5}>
-          <IconButton size="small" onClick={(e) => setInfoAnchor(e.currentTarget)} title="Detalhes da escala">
-            <InfoOutlined fontSize="small" />
-          </IconButton>
-          <Popover
-            open={Boolean(infoAnchor)}
-            anchorEl={infoAnchor}
-            onClose={() => setInfoAnchor(null)}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-          >
-            <Box sx={{ p: 1.5, maxWidth: 280 }}>
-              <Typography variant="caption" color="text.secondary" sx={{ wordBreak: 'break-word' }}>
-                {roster.fileName} · {roster.duties.length} dias · importado{' '}
-                {format(parseISO(roster.importedAt), 'dd/MM/yyyy HH:mm')}
-              </Typography>
-            </Box>
-          </Popover>
-          <Button size="small" startIcon={<Today />} onClick={() => setMonth(new Date())}>
-            Hoje
-          </Button>
-        </Box>
-      </Box>
 
       <MonthStatsCard duties={monthDuties} />
 
