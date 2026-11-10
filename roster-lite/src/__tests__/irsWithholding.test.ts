@@ -53,9 +53,9 @@ describe('netEstimate', () => {
     } as unknown as PayEstimate;
     const s = DEFAULT_PAY_SETTINGS;
     const n = netEstimate(r, s);
-    // Abroad: 250 + 149 − 116,95; national: 250 − 34,60; plus the 5 € breakfast.
-    expect(n.irsBase).toBeCloseTo(5000 + (250 + 149 - 116.95) + (250 - 34.6) + 5);
-    expect(n.ssBase).toBeCloseTo(5000 + (250 + 149 - 175.42) + (250 - 51.9) + 5);
+    // Abroad: 250 + 149 − 116,95; national: 250 − 36,33; plus the 5 € breakfast.
+    expect(n.irsBase).toBeCloseTo(5000 + (250 + 149 - 116.95) + (250 - 36.33) + 5);
+    expect(n.ssBase).toBeCloseTo(5000 + (250 + 149 - 175.42) + (250 - 54.49) + 5);
   });
 
   it('computes the pension plan from the RB, same net as typing the lines by hand (cl. 16)', () => {

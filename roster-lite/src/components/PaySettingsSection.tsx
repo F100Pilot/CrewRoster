@@ -261,8 +261,8 @@ export default function PaySettingsSection({ userId }: { userId: string }) {
                     <Typography variant="caption" color="text.secondary">
                       Por dia fora (voo ou estadia), o per diem mais os abonos de refeição desse dia ficam isentos até
                       ao limite — "estrangeiro" se o dia toca um aeroporto fora de Portugal — e o resto é tributado com o
-                      ordenado. O per diem dos dias na base ("… T" no recibo) é tributado por inteiro. Valores do payroll
-                      da PGA (já com a redução por a empresa pagar o hotel); atualiza-os quando sair o Orçamento do Estado.
+                      ordenado. O per diem dos dias na base ("… T" no recibo) é tributado por inteiro. Valores tirados de
+                      recibos reais (já com a redução por a empresa pagar o hotel); atualiza-os quando sair o Orçamento do Estado.
                     </Typography>
                     {money('unionBase', 'Base da quota sindical', 'Só se a automática não bater com o recibo; vazio = automática', 'automática')}
                     {money('nonTaxableFixed', 'Fixos sem IRS nem SS', s.pensionAuto ? 'O fundo de pensões já está tratado; normalmente 0' : 'Ex.: "Fundo pensões contr. PGA"')}

@@ -35,6 +35,13 @@ Em `0.8.33` (na exp):
   setembro (recibo de outubro) dá 89,50 / 134,25 € por dia vs ~90 / ~135 no recibo. **Por explicar:** agosto (recibo
   de setembro) dá 116,95 / 175,42 (5 dias no estrangeiro, 3 deles ida-e-volta) vs ~86–90 no recibo — regra para dias
   no estrangeiro sem pernoita? Falta o recibo de setembro para conferir.
+- `0.8.33.1`: com quatro recibos reais (jun–set 2026): "Outros valores p/ impostos" = per diem fora + abonos do mês −
+  limites, e está incluído no "Sujeito a IRS" (retenção certa com 1 dependente) e na SS do mês seguinte. Limites
+  certos: **IRS 36,33 / 116,95, SS 54,49 / 175,42** (nacional / estrangeiro) — com os abonos reais, IRS e SS dos 4
+  meses ao cêntimo. SIM fora da base (FRA) = per diem A fora (o recibo paga "Perdiem A PGA CTE", não "… T").
+  Abonos estimados vs implícitos no recibo: mai 711/768, jun 697/873, jul 1001/1000, ago 130/62 (a melhorar).
+  Linhas do recibo ainda não modeladas: "Subs. gabinete" (160 €/dia?), "LCC_Line Check Com" (200 €),
+  "Sub. alimentação tickets" (isento, por dia em terra na base).
 
 ---
 

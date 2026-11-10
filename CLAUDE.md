@@ -184,10 +184,12 @@ Things learned over this collaboration that should persist across sessions:
   I–III (Despacho 233-A/2026; replace yearly); `netEstimate()` = gross − IRS (on the month's whole
   taxable pay, floor to €) − SS 11% − fixed deductions. Non-taxable: the pilot's `nonTaxableFixed`
   (PGA pension contribution) and the exempt per diem of days away — since 0.8.33 PER DAY: national or
-  abroad limit (`exemptNational/AbroadIrs/Ss`, defaults from the PGA payroll's 2024 e-mail: 34,60/51,90 and
-  116,95/175,42, already reduced −50%/−30% for the hotel the company pays; update with the State Budget), applied
-  to that day's per diem + its RAACO abonos; the rest is taxed with the salary; per diem for days at base ("… T")
-  is taxed in full. Matched the October payslip's per-day average; August (3 day trips abroad) still doesn't.
+  abroad limit (`exemptNational/AbroadIrs/Ss`: IRS 36,33 / 116,95, SS 54,49 / 175,42 — read off four real 2026
+  payslips, already reduced for the hotel the company pays; update with the State Budget), applied to that day's
+  per diem + its RAACO abonos; the rest is taxed with the salary (the payslip's "Outros valores p/ impostos",
+  which is INCLUDED in its "Sujeito a IRS" and in the next month's SS line); per diem for days at base ("… T") is
+  taxed in full. A SIM away (e.g. FRA during a stay) is per diem A away, not "… T". With the real abonos, IRS and SS
+  of Jun–Sep 2026 match to the cent; the remaining error is the RAACO abonos estimate.
   Verified to within a few euros on two real payslips. Pension plan (RRRGS cl. 16, `pensionAuto`):
   PGA contribution 6,5% of VB+VE+VS paid as a non-taxable abono, SIPLA deposit 7,5% deducted — both
   matched the payslip to the cent. Union fee = `unionPct` (1%) of a base that (since 0.8.26.1)

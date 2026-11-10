@@ -85,12 +85,11 @@ export const DEFAULT_PAY_SETTINGS: PaySettings = {
   irsTable: 'I', dependents: 0, nonTaxableFixed: 0, fixedDeductions: 0,
   // Per diem paid for a day away is partly exempt (as ajudas de custo); per diem for days at base
   // (simulator, training, office — "Perdiem … T" on payslips) is taxed in full. The limit is per
-  // day: national, or abroad when the day touches an airport outside Portugal. Values as the PGA
-  // payroll gave them (e-mail, 2024 — "o que a empresa pratica"; SS = 1,5 × IRS) — they matched a
-  // real October 2026 payslip (2 days abroad + 1 national → 89,50 € / 134,25 € a day vs ~90 / ~135).
-  // Editable, to follow the State Budget; a later table had 36,33 / 34,59 € national, 116,95 /
-  // 167,07 € abroad.
-  exemptNationalIrs: 34.6, exemptNationalSs: 51.9, exemptAbroadIrs: 116.95, exemptAbroadSs: 175.42,
+  // day: national, or abroad when the day touches an airport outside Portugal, already reduced for
+  // the hotel the company pays. Read off four real 2026 payslips, where "Outros valores p/ impostos"
+  // = per diem away + that month's abonos − the limits, to the cent: IRS 36,33 / 116,95 €, SS 54,49 /
+  // 175,42 € (national / abroad). Editable, to follow the State Budget.
+  exemptNationalIrs: 36.33, exemptNationalSs: 54.49, exemptAbroadIrs: 116.95, exemptAbroadSs: 175.42,
   pensionAuto: false,
   unionPct: 0, unionBase: 0,
   holidayPay: null,
@@ -403,7 +402,8 @@ export function payEstimate(
     if (flying || carryOver.has(date)) {
       perDiemA++;
       perDiemDates.a.push(date);
-      if (travelling) {
+      // Away counts too: a simulator in Frankfurt during a stay is per diem A away, not "… T".
+      if (travelling || awayAtStart) {
         perDiemTravelDays++; perDiemTravelValue += s.perDiemA;
         perDiemTravel.push({ date, value: s.perDiemA, abroad: abroadOn(day, awayAtStart ? whereAtStart : base) });
       }
