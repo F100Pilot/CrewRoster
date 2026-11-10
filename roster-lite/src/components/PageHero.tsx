@@ -1,45 +1,14 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Box, IconButton, Typography } from '@mui/material';
 import { ArrowBack } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { useRoster } from '../state/useRoster';
-import { baseOf } from '../domain/dutyStats';
-import { skyAt, type Sky } from '../domain/dayPhase';
-
-// The sky over the crew member's base right now, shared by the "Hoje" header and every page's hero,
-// so the whole app carries the same window onto outside: dawn, day, dusk or night.
-export const SKY: Record<Sky, { bg: string; soft: string }> = {
-  night: { bg: 'linear-gradient(180deg, #050D1C 0%, #0B2236 70%, #123247 100%)', soft: '#A9C3D3' },
-  dawn: { bg: 'linear-gradient(180deg, #121A3A 0%, #2A2A5C 55%, #6B4258 85%, #A4614E 100%)', soft: '#E3D3DC' },
-  day: { bg: 'linear-gradient(180deg, #164E96 0%, #1F63B5 55%, #2D74C4 100%)', soft: '#D6E6F8' },
-  dusk: { bg: 'linear-gradient(180deg, #221C46 0%, #5A3560 60%, #8E4E4A 100%)', soft: '#EBD7D3' },
-};
-
-export function Stars() {
-  const pts = [[6, 14], [18, 40], [31, 9], [46, 30], [58, 12], [72, 44], [84, 18], [93, 36], [64, 70], [24, 76]];
-  return (
-    <Box aria-hidden="true" sx={{ position: 'absolute', inset: 0, opacity: 0.5, pointerEvents: 'none' }}>
-      {pts.map(([x, y], i) => (
-        <Box key={i} sx={{ position: 'absolute', left: `${x}%`, top: `${y}%`, width: i % 3 ? 2 : 3, height: i % 3 ? 2 : 3, borderRadius: '50%', bgcolor: '#fff' }} />
-      ))}
-    </Box>
-  );
-}
-
-// The sky over the base, re-read every few minutes.
-export function useBaseSky(): Sky {
-  const { activeUser } = useRoster();
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 5 * 60_000);
-    return () => clearInterval(t);
-  }, []);
-  return skyAt(baseOf(activeUser), now).sky;
-}
+import SkyWeather, { SKY, useHere } from './SkyWeather';
+import { useCurrentWeather } from '../state/useCurrentWeather';
 
 export interface HeroStat { label: string; value: string }
 
-// A page's banner, in the language of the "Hoje" header: the sky, a coloured pill naming the
+// A page's banner, in the language of the "Hoje" header: the sky (time of day and weather where
+// the crew member is), a coloured pill naming the
 // section, a big title, a line under it, and the page's headline numbers as tiles. Pages put their
 // own controls in `actions` (top right) or `children` (under the title, e.g. month arrows).
 export default function PageHero({
@@ -55,7 +24,9 @@ export default function PageHero({
   pill?: string;
 }) {
   const navigate = useNavigate();
-  const sky = useBaseSky();
+  const here = useHere();
+  const wx = useCurrentWeather(here.airport);
+  const sky = here.sky;
   const c = SKY[sky];
   return (
     <Box
@@ -70,9 +41,11 @@ export default function PageHero({
         '& .MuiIconButton-root': { color: '#fff' },
         '& .MuiButton-outlined': { color: '#fff', borderColor: 'rgba(255,255,255,0.45)' },
         '& .MuiButton-text': { color: '#fff' },
+        // Weather can draw light clouds behind the text: a soft shadow keeps it legible.
+        '& .MuiTypography-root': { textShadow: '0 1px 3px rgba(0, 0, 0, 0.28)' },
       }}
     >
-      {sky === 'night' && <Stars />}
+      <SkyWeather sky={sky} wx={wx} now={here.now} top={52} />
       <Box display="flex" alignItems="center" gap={1} position="relative" minHeight={36}>
         {back && (
           <IconButton size="small" edge="start" onClick={() => navigate(-1)} aria-label="Voltar">
@@ -82,6 +55,11 @@ export default function PageHero({
         <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', height: 24, px: 1.1, borderRadius: 12, bgcolor: pill, color: '#0B1222', fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.06em' }}>
           {label.toUpperCase()}
         </Box>
+        {wx && (
+          <Typography component="span" title={`${wx.label} em ${here.airport}`} sx={{ fontSize: '0.75rem', fontWeight: 700, color: c.soft, whiteSpace: 'nowrap' }}>
+            {wx.tempC}° {here.airport}
+          </Typography>
+        )}
         <Box flexGrow={1} />
         {actions}
       </Box>

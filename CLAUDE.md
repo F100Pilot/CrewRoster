@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (410 tests) — keep green
+npm test           # vitest run (417 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -217,6 +217,10 @@ Things learned over this collaboration that should persist across sessions:
   Every page opens with `components/PageHero.tsx` (since 0.8.29.4, user: the other pages were "bland"):
   the sky at the base (shared `SKY`/`Stars` with "Hoje"), a section pill, a big title, optional stat
   tiles; page controls go in `actions`/`children`. New pages use it instead of a plain title row.
+  The sky carries the weather (since 0.8.30, user request): `components/SkyWeather.tsx` draws sun / moon
+  (real phase, `domain/skyWeather.ts`) / clouds / rain / snow / fog / lightning over the airport the crew
+  member is at by the roster (`useHere()` → `dayContext().location`, not GPS), from Open-Meteo `current`
+  (`state/useCurrentWeather.ts`, 15-min cache; ambience only — the briefing is METAR/TAF).
 - **Settings are tabbed** (since 0.8.24): Perfil · Vencimento (pilots only) · App · Dados · Ajuda in
   `SettingsDialog.tsx`; last tab in localStorage `crewroster.settingsTab`. Guardar only on Perfil/App
   (the rest saves on change). New settings go in the tab for their subject, not at the bottom.
