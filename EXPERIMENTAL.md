@@ -7,8 +7,8 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.8.27.1`
-- **Próxima versão ao promover:** `0.8.28` (ou superior, conforme o âmbito)
+- **Produção (`master`) está em:** `0.8.29.4`
+- **Próxima versão ao promover:** `0.8.30` (ou superior) (ou superior, conforme o âmbito)
 
 ## Como promover tudo para produção (quando estiver pronto)
 
@@ -25,35 +25,12 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-Em `0.8.28` (na exp) — auditoria de código:
+Em `0.8.30` (na exp):
 
-- **Vencimento:** subsídios sobre todos os fixos; férias = fixos ÷ 30 × 42; pensões 6,5%/7,5% do subsídio
-  (bate ao cêntimo com o recibo de julho).
-- **Segurança:** backup sem credenciais CrewLink nem chaves do Google; perfil apagado leva os dados de
-  vencimento; CSP no `index.html`; pdf.js sem `eval`; worker — cookie de sessão só para netline.pga.pt,
-  `sessionToken` validado, erros com CORS (502), `Vary: Origin`, cache limitado, `hops` redigidos;
-  workflow do worker com `contents: read`; dependências: react-router e afins atualizados, vitest 5.
-- **Código morto removido:** sincronização Google Calendar (sem UI), re-parse só de tripulação
-  (`refreshCrewFromPdfs`/`reattachCrew`/`crewParserVersion`), exports sem uso.
-- **Desempenho:** pdf.js, tutorial e README carregados a pedido (−135 KB gzip no arranque).
-- **Bug:** "hoje" em hora local em todo o lado (antes UTC em 14 sítios).
-- **Privacidade:** nomes reais de tripulantes nos testes substituídos por sintéticos.
-- **Worker:** as alterações só ficam ativas quando o `worker.js` for para o `master` (deploy automático).
-
-Em `0.8.29` (na exp) — layout dinâmico:
-
-- **Ecrã "Hoje"** como entrada (`/`), que muda com a fase do dia (pré-voo, em serviço, estadia,
-  assistência, folga); céu à hora local do aeroporto; cor pelo destino. `dayPhase.ts` + testes.
-- **Lista** passa para `/lista`, com vista **painel de partidas** opcional.
-- Navegação: "Hoje" é a primeira aba; o atalho Android "Hoje" abre este ecrã.
-- `0.8.29.1`: o dia inteiro (também dias sem voos: cartão de atividade + linha do tempo + números do dia)
-  e a página com a paleta da fase, mais perto do esboço.
-- `0.8.29.2`: tema global com o estilo do "Hoje" (`theme.ts`: AppBar azul-noite, cartões sem sombra com
-  contorno, `Alert` em tom suave, raios maiores); datas em PT (`utils/dates.ts`, sem mudar o locale por
-  omissão — o parser usa "Mon01"); tipos de serviço em PT (`domain/dutyLabels.ts`); heatmap abre no mês
-  atual; cartão "Próximo serviço" saiu da Lista (o "Hoje" já o mostra).
-- `0.8.29.3`: "Hoje" segue o tema claro/escuro; a fase só tinge o fundo e os destaques; o céu fica.
-- `0.8.29.4`: banner do "Hoje" (`PageHero`) em todas as páginas: céu da base, etiqueta, título grande, números.
+- **Tempo no céu do banner** (`SkyWeather.tsx`, `domain/skyWeather.ts`, `state/useCurrentWeather.ts`): o tempo
+  atual (Open-Meteo `current`, cache 15 min) no aeroporto onde o tripulante está pela escala — sol, lua na fase
+  real, nuvens, chuva, neve, nevoeiro, trovoada (animação desligada com `prefers-reduced-motion`). Temperatura e
+  estado no topo do "Hoje" e ao lado da etiqueta do `PageHero`. Sem rede, o céu fica só com a hora do dia.
 
 ---
 

@@ -19,7 +19,8 @@ import { toLocalTime } from '../utils/localTime';
 import { todayISO } from '../domain/rosterWindow';
 import UploadDropzone from '../components/UploadDropzone';
 import MetarTaf from '../components/MetarTaf';
-import { SKY, Stars } from '../components/PageHero';
+import SkyWeather, { SKY } from '../components/SkyWeather';
+import { useCurrentWeather } from '../state/useCurrentWeather';
 import type { ParsedDuty } from '../domain/types';
 import { DUTY_TYPE_LABEL } from '../domain/dutyLabels';
 
@@ -169,16 +170,17 @@ function SkyHeader({ ctx, sky, sunrise, sunset, accent, base }: {
   ctx: DayContext; sky: Sky; sunrise: Date | null; sunset: Date | null; accent: string; base: string;
 }) {
   const c = SKY[sky];
+  const wx = useCurrentWeather(ctx.location);
   const sun = sky === 'night' || sky === 'dawn'
     ? sunrise && `Nascer do sol ${localAt(sunrise, ctx.location)}`
     : sunset && `Pôr do sol ${localAt(sunset, ctx.location)}`;
   const { over, big, under } = headline(ctx, base);
   return (
-    <Box sx={{ background: c.bg, color: '#fff', px: 2.5, pt: 2, pb: 2.5, position: 'relative', overflow: 'hidden' }}>
-      {sky === 'night' && <Stars />}
+    <Box sx={{ background: c.bg, color: '#fff', px: 2.5, pt: 2, pb: 2.5, position: 'relative', overflow: 'hidden', '& .MuiTypography-root': { textShadow: '0 1px 3px rgba(0, 0, 0, 0.28)' } }}>
+      <SkyWeather sky={sky} wx={wx} now={ctx.now} top={48} />
       <Box display="flex" alignItems="center" gap={1} position="relative">
         <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.08em', color: c.soft }}>
-          {ctx.location} · {localAt(ctx.now, ctx.location)} LT
+          {ctx.location} · {localAt(ctx.now, ctx.location)} LT{wx && ` · ${wx.tempC}° ${wx.label}`}
         </Typography>
         <Box flexGrow={1} />
         {sun && <Typography sx={{ fontSize: '0.75rem', color: c.soft }}>{sun}</Typography>}
