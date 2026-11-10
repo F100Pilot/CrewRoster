@@ -83,10 +83,6 @@ export interface Roster {
   duties: ParsedDuty[];
   rawText: string; // extracted text — powers the debug view and the raw fallback
   changes?: DayChange[]; // what changed vs the previous import (Tier 2 diff)
-  // Version of the crew parser that produced this roster's crew. When it's behind the current
-  // CREW_PARSER_VERSION, the app re-derives crew from the stored PDF on load (see
-  // refreshCrewFromPdfs) so older imports pick up parser improvements without re-importing.
-  crewParserVersion?: number;
   // Version of the overall PDF parser that produced this roster. When behind PARSE_VERSION the
   // app re-parses the stored PDF(s) on load so all parsing improvements apply without re-import.
   parseVersion?: number;

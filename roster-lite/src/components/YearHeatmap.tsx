@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { Box, Tooltip, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { addDays, endOfWeek, format, parseISO, startOfWeek } from 'date-fns';
@@ -55,6 +56,23 @@ export default function YearHeatmap({
     return '';
   });
 
+  // On a phone only a few months fit, and January comes first — so a year whose flying is in the
+  // autumn looked empty. Open the grid scrolled to the latest day with activity (or today).
+  const scroller = useRef<HTMLDivElement>(null);
+  const today = format(new Date(), 'yyyy-MM-dd');
+  let target = '';
+  for (const k of [...minutesByDate.keys(), ...(groundByDate?.keys() ?? [])]) {
+    if (k.startsWith(String(year)) && k > target && k <= `${year}-12-31`) target = k;
+  }
+  if (today.startsWith(String(year)) && today > target) target = today;
+  const targetWeek = target ? weeks.findIndex((col) => col.includes(target)) : -1;
+  useEffect(() => {
+    const el = scroller.current;
+    if (!el || targetWeek < 0) return;
+    const x = GUTTER + (targetWeek + 1) * (CELL + GAP) + 24; // the target week plus a little room
+    el.scrollLeft = Math.max(0, x - el.clientWidth);
+  }, [targetWeek, year]);
+
   // A day's cell colour: flown block shades the flight gradient; otherwise a non-flying work day
   // (sim/training/office) gets the flat ground hue; empty days are the faint background.
   type Pal = { palette: { primary: { main: string }; action: { hover: string } } };
@@ -70,7 +88,7 @@ export default function YearHeatmap({
 
   return (
     <Box>
-      <Box sx={{ overflowX: 'auto', pb: 0.5 }}>
+      <Box ref={scroller} sx={{ overflowX: 'auto', pb: 0.5 }}>
         {/* month labels, aligned with the week columns (offset by the weekday gutter) */}
         <Box sx={{ display: 'flex', gap: `${GAP}px`, ml: `${GUTTER}px`, mb: '3px', width: 'max-content' }}>
           {monthLabels.map((m, wi) => (

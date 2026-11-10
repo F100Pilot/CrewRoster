@@ -3,7 +3,7 @@ import {
   Alert, Box, Button, Card, CardContent, Chip, Divider, IconButton, LinearProgress, Stack,
   Table, TableBody, TableCell, TableHead, TableRow, Typography,
 } from '@mui/material';
-import { Add, ArrowBack, Download, Edit, ExpandLess, ExpandMore, FlightTakeoff, Print, Sync } from '@mui/icons-material';
+import { Add, Download, Edit, ExpandLess, ExpandMore, FlightTakeoff, Print, Sync } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import { logbookCsvRows, landingsInRows, mergeLogbook, rowBlock, rowNight, sortLogbook, takeoffLandingCounts, didTakeoff, didLanding } from '../domain/logbook';
@@ -17,6 +17,8 @@ import { downloadBlob } from '../utils/download';
 import { format, parseISO } from 'date-fns';
 import { pt } from 'date-fns/locale';
 import LogbookEditDialog, { type LogbookEditResult } from '../components/LogbookEditDialog';
+import { todayISO } from '../domain/rosterWindow';
+import PageHero from '../components/PageHero';
 
 // Recency requirement: 3 take-offs and landings in the preceding 90 days.
 const RECENCY_REQUIRED = 3;
@@ -35,7 +37,7 @@ export default function LogbookPage() {
   // Memoised so the effects below don't re-run on every render (a fresh [] each time).
   const duties = useMemo(() => roster?.duties ?? [], [roster]);
   const userId = activeUser?.id;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayISO();
 
   // The permanent logbook lives in its own store, so it survives clearing the roster.
   const [rows, setRows] = useState<LogbookRow[]>([]);
@@ -191,16 +193,8 @@ export default function LogbookPage() {
 
   return (
     <Stack spacing={2}>
-      {/* Title on its own line so it never wraps, with the actions as a tidy row beneath:
-          a primary "Adicionar" and the two exports as secondary buttons, right-aligned. */}
-      <Box>
-        <Box display="flex" alignItems="center" gap={0.5}>
-          <IconButton edge="start" onClick={() => navigate(-1)}>
-            <ArrowBack />
-          </IconButton>
-          <Typography variant="h6" noWrap sx={{ flexGrow: 1 }}>Diário de bordo</Typography>
-        </Box>
-        <Stack direction="row" spacing={1} justifyContent="flex-end" flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>
+      <PageHero back label="Diário" title="Diário de bordo" subtitle={entries.length ? `${entries.length} ${entries.length === 1 ? 'setor' : 'setores'}` : undefined}>
+        <Stack direction="row" spacing={1} justifyContent="flex-start" flexWrap="wrap" useFlexGap sx={{ mt: 1.5 }}>
           <Button size="small" variant="contained" disableElevation startIcon={<Add />} onClick={openAdd}>
             Adicionar
           </Button>
@@ -223,7 +217,7 @@ export default function LogbookPage() {
             EASA
           </Button>
         </Stack>
-      </Box>
+      </PageHero>
 
       <Card variant="outlined">
         <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>

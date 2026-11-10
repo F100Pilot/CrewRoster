@@ -69,29 +69,3 @@ export function checkInTimeLabel(
   const lt = toLocalTime(dateISO, utcHHMM, airport);
   return lt ? `${lt} LT` : `${utcHHMM}z`;
 }
-
-// The device's IANA timezone, e.g. "Europe/Lisbon".
-export function userTimeZone(): string {
-  try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-  } catch {
-    return 'UTC';
-  }
-}
-
-// A short city label for the device timezone, e.g. "Europe/Lisbon" → "Lisbon".
-export function userTimeZoneLabel(): string {
-  const tz = userTimeZone();
-  return (tz.split('/').pop() ?? tz).replace(/_/g, ' ');
-}
-
-// The given UTC time shown in the user's own (device) timezone, or null.
-export function toUserTime(
-  dateISO: string | null | undefined,
-  utcHHMM: string | null | undefined
-): string | null {
-  if (!dateISO || !utcHHMM) return null;
-  const dt = new Date(`${dateISO}T${utcHHMM}:00Z`);
-  if (Number.isNaN(dt.getTime())) return null;
-  return formatInTz(dt, userTimeZone());
-}

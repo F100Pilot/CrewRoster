@@ -91,11 +91,20 @@ function preflight(request) {
 function jsonResponse(body, status, request) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { 'Content-Type': 'application/json', ...corsHeaders(request) },
+    headers: { 'Content-Type': 'application/json', Vary: 'Origin', ...corsHeaders(request) },
   });
 }
 
 // --- Helpers upstream ------------------------------------------------------
+// The NetLine session cookie only ever goes back to NetLine. A URL taken from an upstream page,
+// form or redirect that points anywhere else is fetched without it — as a browser would.
+function isCrewlinkUrl(u) {
+  try { return new URL(u).origin === CREWLINK_BASE; } catch { return false; }
+}
+const sessionFor = (url, cookie) => (cookie && isCrewlinkUrl(url) ? { Cookie: cookie } : {});
+
+// A session token from the client goes into a Cookie header: printable, no separators.
+const SESSION_TOKEN_RE = /^[A-Za-z0-9._!:~+/=-]{8,512}$/;
 function formEncode(params) {
   return Object.entries(params)
     .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
@@ -154,7 +163,7 @@ async function handleLogin(request) {
         headers: {
           'User-Agent': userAgent,
           Referer: `${CREWLINK_BASE}/crewlink/`,
-          ...(sessionId ? { Cookie: `JSESSIONID=${sessionId}` } : {}),
+          ...sessionFor(current, sessionId && `JSESSIONID=${sessionId}`),
         },
         redirect: 'manual',
       });
@@ -200,7 +209,7 @@ async function handleLogin(request) {
           method: 'GET',
           headers: {
             'User-Agent': userAgent,
-            ...(sessionId ? { Cookie: `JSESSIONID=${sessionId}` } : {}),
+            ...sessionFor(finalUrl, sessionId && `JSESSIONID=${sessionId}`),
             Referer: loginPageUrl,
           },
           redirect: 'manual',
@@ -235,7 +244,7 @@ async function handleLogin(request) {
             onLoginByUrl,
             onLoginByForm,
             finalSnippet: extractBody(finalHtml).substring(0, 1200),
-            hops: trailHops,
+            hops: redactDeep(trailHops),
           },
         ],
       },
@@ -446,6 +455,9 @@ async function handleRoster(request) {
   if (!body.sessionToken) {
     return jsonResponse({ error: 'sessionToken is required' }, 400, request);
   }
+  if (typeof body.sessionToken !== 'string' || !SESSION_TOKEN_RE.test(body.sessionToken)) {
+    return jsonResponse({ error: 'Invalid sessionToken' }, 400, request);
+  }
 
   // Track the session cookie and update it if the upstream rotates JSESSIONID
   // between requests (NetLine sometimes upgrades the session after navigation).
@@ -511,7 +523,7 @@ async function handleRoster(request) {
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
         'User-Agent': userAgent,
-        Cookie: sessionCookie,
+        ...sessionFor(ackUrl, sessionCookie),
         Referer: `${CREWLINK_BASE}${CREWLINK_APP_PATH}`,
         Origin: CREWLINK_BASE,
       },
@@ -555,6 +567,7 @@ async function handleRoster(request) {
     let pdfUrl = rawUrl;
     if (pdfUrl.startsWith('/')) pdfUrl = `${CREWLINK_BASE}${pdfUrl}`;
     else if (!pdfUrl.startsWith('http')) pdfUrl = `${CREWLINK_BASE}/crewlink/${pdfUrl}`;
+    if (!isCrewlinkUrl(pdfUrl)) return null; // the roster PDF only ever comes from NetLine
     const pdfResponse = await fetch(pdfUrl, {
       headers: { 'User-Agent': userAgent, Cookie: sessionCookie, Referer: `${CREWLINK_BASE}/crewlink/` },
     });
@@ -595,7 +608,7 @@ async function handleRoster(request) {
         ? reportLocation
         : `${CREWLINK_BASE}${reportLocation.startsWith('/') ? '' : '/crewlink/'}${reportLocation}`;
       const redirectResponse = await fetch(fullRedirectUrl, {
-        headers: { 'User-Agent': userAgent, Cookie: sessionCookie, Referer: `${CREWLINK_BASE}/crewlink/` },
+        headers: { 'User-Agent': userAgent, ...sessionFor(fullRedirectUrl, sessionCookie), Referer: `${CREWLINK_BASE}/crewlink/` },
       });
       updateCookie(redirectResponse);
       if ((redirectResponse.headers.get('Content-Type') ?? '').includes('application/pdf')) {
@@ -658,7 +671,7 @@ async function handleRoster(request) {
   if (needsNotification(result.html)) {
     const getHtml = async (url, referer = `${CREWLINK_BASE}/crewlink/`) => {
       const res = await fetch(url, {
-        headers: { 'User-Agent': userAgent, Cookie: sessionCookie, Referer: referer },
+        headers: { 'User-Agent': userAgent, ...sessionFor(url, sessionCookie), Referer: referer },
         redirect: 'follow',
       });
       updateCookie(res);
@@ -673,7 +686,7 @@ async function handleRoster(request) {
         method: isGet ? 'GET' : 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'User-Agent': userAgent, Cookie: sessionCookie,
+          'User-Agent': userAgent, ...sessionFor(fUrl, sessionCookie),
           Referer: `${CREWLINK_BASE}${CREWLINK_APP_PATH}`, Origin: CREWLINK_BASE,
         },
         ...(isGet ? {} : { body: fbody }),
@@ -1059,6 +1072,7 @@ async function handleAcPos(request) {
       source,
     };
   }
+  if (acposCache.size >= 500) acposCache.delete(acposCache.keys().next().value); // bounded: oldest out
   acposCache.set(reg, { ts: Date.now(), data });
   return jsonResponse(data, 200, request);
 }
@@ -1066,6 +1080,17 @@ async function handleAcPos(request) {
 // --- Router ----------------------------------------------------------------
 export default {
   async fetch(request, env) {
+    // An upstream outage or a malformed request must still answer with CORS headers, so the
+    // app can tell "CrewLink is down" apart from "no network".
+    try {
+      return await route(request, env);
+    } catch (e) {
+      return jsonResponse({ error: 'upstream_error', detail: redact(e instanceof Error ? e.message : String(e)).slice(0, 200) }, 502, request);
+    }
+  },
+};
+
+async function route(request, env) {
     const url = new URL(request.url);
 
     if (request.method === 'OPTIONS') return preflight(request);
@@ -1096,5 +1121,4 @@ export default {
       default:
         return jsonResponse({ error: 'Not found' }, 404, request);
     }
-  },
-};
+}

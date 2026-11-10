@@ -7,6 +7,7 @@ import { Bedtime, Close, DeleteOutline, WbSunny } from '@mui/icons-material';
 import type { LogbookRow } from '../domain/types';
 import { logbookRowKey } from '../storage/rosterStore';
 import { sectorSun } from '../domain/sectorSun';
+import { todayISO } from '../domain/rosterWindow';
 
 // Edit (or add) a single logbook row by hand. Changing the flight data marks the row `edited`
 // so roster re-imports never overwrite the correction (annotating who was Pilot Flying does
@@ -41,7 +42,7 @@ export default function LogbookEditDialog({
 
   useEffect(() => {
     if (!open) return;
-    setDate(initial?.date ?? new Date().toISOString().slice(0, 10));
+    setDate(initial?.date ?? todayISO());
     setFlight(initial?.flightNumber ?? '');
     setFrom(initial?.from ?? '');
     setTo(initial?.to ?? '');

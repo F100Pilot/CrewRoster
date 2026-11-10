@@ -1,47 +1,80 @@
-import { createTheme, type Theme } from '@mui/material/styles';
+import { alpha, createTheme, type Theme } from '@mui/material/styles';
 
 export type ColorMode = 'light' | 'dark';
 
-// Build the MUI theme for a given colour mode. Keeps the deep-indigo brand in light mode
-// and a lighter indigo in dark mode (legible on dark surfaces), with proper dark surfaces.
+// Build the MUI theme for a given colour mode — the same design language as the "Hoje" screen
+// (night-blue app bar, flat cards with a hairline border instead of shadows, soft tinted notices,
+// rounded inputs), so every page reads as one app. The "Hoje" page layers its phase palette on top.
+type Severity = 'info' | 'success' | 'warning' | 'error';
 export function createAppTheme(mode: ColorMode): Theme {
   const light = mode === 'light';
+  const navy = '#0A1222';
+  const line = light ? '#E1E7F0' : '#24314D';
   return createTheme({
     palette: {
       mode,
       primary: light
-        ? { main: '#1a237e', light: '#534bae', dark: '#000051', contrastText: '#ffffff' }
-        : { main: '#7986cb', light: '#aab6fe', dark: '#49599a', contrastText: '#0b0b0b' },
-      secondary: { main: '#00c853', light: '#5efc82', dark: '#009624', contrastText: '#000000' },
-      background: light
-        ? { default: '#f5f5f5', paper: '#ffffff' }
-        : { default: '#121212', paper: '#1e1e1e' },
-      error: { main: '#d32f2f' },
-      warning: { main: '#f57c00' },
-      info: { main: '#0288d1' },
-      success: { main: '#2e7d32' },
+        ? { main: '#1F63B5', light: '#4E8BD6', dark: '#164E96', contrastText: '#ffffff' }
+        : { main: '#7DB3F2', light: '#A9CDF7', dark: '#4E8BD6', contrastText: '#0A1222' },
+      secondary: { main: '#F59E0B', light: '#FFC56B', dark: '#B45309', contrastText: '#1A1206' },
+      background: light ? { default: '#EEF3FA', paper: '#FFFFFF' } : { default: navy, paper: '#131D33' },
+      text: light ? { primary: '#101828', secondary: '#475467' } : { primary: '#EAF0FA', secondary: '#A6B5CE' },
+      divider: line,
+      error: { main: light ? '#C62828' : '#F87171' },
+      warning: { main: light ? '#C2410C' : '#FBBF24' },
+      info: { main: light ? '#0369A1' : '#60A5FA' },
+      success: { main: light ? '#15803D' : '#4ADE80' },
     },
     typography: {
       fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-      h4: { fontWeight: 700 },
-      h5: { fontWeight: 600 },
-      h6: { fontWeight: 600 },
-      subtitle1: { fontWeight: 500 },
-      button: { textTransform: 'none', fontWeight: 600 },
+      h4: { fontWeight: 800, letterSpacing: '-0.02em' },
+      h5: { fontWeight: 800, letterSpacing: '-0.01em' },
+      h6: { fontWeight: 800, letterSpacing: '-0.01em' },
+      subtitle1: { fontWeight: 600 },
+      subtitle2: { fontWeight: 700 },
+      overline: { fontWeight: 700, letterSpacing: '0.08em' },
+      button: { textTransform: 'none', fontWeight: 700 },
     },
     shape: { borderRadius: 12 },
     components: {
-      MuiButton: { styleOverrides: { root: { borderRadius: 8, padding: '10px 20px' } } },
+      MuiPaper: { styleOverrides: { root: { backgroundImage: 'none' } } },
+      MuiAppBar: {
+        defaultProps: { elevation: 0, color: 'inherit' },
+        styleOverrides: { root: { backgroundColor: navy, color: '#EAF0FA', borderBottom: `1px solid ${light ? navy : line}` } },
+      },
       MuiCard: {
+        defaultProps: { elevation: 0 },
+        styleOverrides: { root: { borderRadius: 16, border: `1px solid ${line}`, boxShadow: 'none' } },
+      },
+      MuiButton: { styleOverrides: { root: { borderRadius: 10, padding: '8px 18px' } } },
+      MuiToggleButton: { styleOverrides: { root: { borderRadius: 10, textTransform: 'none', fontWeight: 600 } } },
+      MuiChip: { styleOverrides: { root: { fontWeight: 600 } } },
+      MuiDialog: { styleOverrides: { paper: { borderRadius: 20 } } },
+      MuiOutlinedInput: { styleOverrides: { root: { borderRadius: 12 } } },
+      // Notices: a soft tint of their colour with a hairline border, text in the normal ink.
+      MuiAlert: {
         styleOverrides: {
-          root: { boxShadow: light ? '0 2px 12px rgba(0,0,0,0.08)' : '0 2px 12px rgba(0,0,0,0.5)' },
+          root: ({ ownerState, theme }) => {
+            const sev = (ownerState.severity ?? 'info') as Severity;
+            const c = theme.palette[sev].main;
+            if (ownerState.variant && ownerState.variant !== 'standard') return { borderRadius: 14 };
+            return {
+              borderRadius: 14,
+              border: `1px solid ${alpha(c, 0.35)}`,
+              backgroundColor: alpha(c, light ? 0.07 : 0.14),
+              color: theme.palette.text.primary,
+              '& .MuiAlert-icon': { color: c },
+            };
+          },
         },
+      },
+      MuiBottomNavigation: { styleOverrides: { root: { backgroundColor: light ? '#FFFFFF' : '#0E172B', height: 60 } } },
+      MuiBottomNavigationAction: {
+        styleOverrides: { root: { '&.Mui-selected': { fontWeight: 700 } }, label: { fontSize: '0.72rem', '&.Mui-selected': { fontSize: '0.74rem' } } },
       },
     },
   });
 }
-
-const theme = createAppTheme('light');
 
 // Duty type -> color, ported from the original pages. Used by chips and the calendar.
 export const DUTY_COLORS: Record<string, string> = {
@@ -63,5 +96,3 @@ export const DUTY_COLORS: Record<string, string> = {
 export function dutyColor(dutyType: string): string {
   return DUTY_COLORS[dutyType] || '#9e9e9e';
 }
-
-export default theme;

@@ -13,6 +13,8 @@ import MonthStatsCard from '../components/MonthStatsCard';
 import { shareMonthImage } from '../utils/shareDay';
 import { dutyColor } from '../theme';
 import type { ParsedDuty } from '../domain/types';
+import { monthLabel } from '../utils/dates';
+import PageHero from '../components/PageHero';
 
 const WEEKDAYS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 
@@ -92,32 +94,28 @@ export default function CalendarPage() {
 
   return (
     <Stack spacing={2} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-      <Box display="flex" alignItems="center" gap={1}>
-        <Box flex={1} />
-        <IconButton size="small" onClick={() => setMonth((m) => subMonths(m, 1))} aria-label="Mês anterior">
-          <ChevronLeft />
-        </IconButton>
-        <Typography variant="h6" sx={{ minWidth: 150, textAlign: 'center' }}>
-          {format(month, 'MMMM yyyy')}
-        </Typography>
-        <IconButton size="small" onClick={() => setMonth((m) => addMonths(m, 1))} aria-label="Mês seguinte">
-          <ChevronRight />
-        </IconButton>
-        <Box flex={1} display="flex" justifyContent="flex-end" alignItems="center">
-          <IconButton
-            size="small"
-            color="primary"
-            aria-label="Partilhar o mês"
-            title="Partilhar o mês"
-            onClick={() => shareMonthImage(format(month, 'yyyy-MM'), roster?.duties ?? [], activeUser?.name)}
-          >
-            <IosShare fontSize="small" />
+      <PageHero
+        label="Calendário"
+        title={monthLabel(month)}
+        actions={
+          <>
+            <IconButton size="small" aria-label="Partilhar o mês" title="Partilhar o mês"
+              onClick={() => shareMonthImage(format(month, 'yyyy-MM'), roster?.duties ?? [], activeUser?.name)}>
+              <IosShare fontSize="small" />
+            </IconButton>
+            <Button size="small" variant="outlined" startIcon={<Today />} onClick={() => setMonth(new Date())}>Hoje</Button>
+          </>
+        }
+      >
+        <Box display="flex" gap={1} mt={1}>
+          <IconButton size="small" onClick={() => setMonth((m) => subMonths(m, 1))} aria-label="Mês anterior" sx={{ bgcolor: 'rgba(255,255,255,0.12)' }}>
+            <ChevronLeft />
           </IconButton>
-          <Button size="small" startIcon={<Today />} onClick={() => setMonth(new Date())}>
-            Hoje
-          </Button>
+          <IconButton size="small" onClick={() => setMonth((m) => addMonths(m, 1))} aria-label="Mês seguinte" sx={{ bgcolor: 'rgba(255,255,255,0.12)' }}>
+            <ChevronRight />
+          </IconButton>
         </Box>
-      </Box>
+      </PageHero>
 
       <Box display="grid" gridTemplateColumns="repeat(7, 1fr)" gap={0.5}>
         {WEEKDAYS.map((d) => (

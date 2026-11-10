@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Alert, Box, Button, Card, CardContent, Chip, Divider, IconButton, InputAdornment,
-  Popover, Stack, TextField, Tooltip, Typography,
+  Popover, Stack, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography,
 } from '@mui/material';
 import {
   ChevronLeft, ChevronRight, Login, Today, InfoOutlined,
-  EditCalendar, Search, Clear,
+  EditCalendar, Search, Clear, ViewAgenda, DepartureBoard as BoardIcon,
 } from '@mui/icons-material';
 import { alpha } from '@mui/material/styles';
 import { addMonths, format, isSameMonth, parseISO, subMonths } from 'date-fns';
@@ -14,7 +14,7 @@ import { useRoster } from '../state/useRoster';
 import { useViewedMonth } from '../state/viewedMonth';
 import UploadDropzone from '../components/UploadDropzone';
 import DutyChip from '../components/DutyChip';
-import NextDutyCard from '../components/NextDutyCard';
+import DepartureBoard from '../components/DepartureBoard';
 import MonthStatsCard from '../components/MonthStatsCard';
 import LimitsSummaryCard from '../components/LimitsSummaryCard';
 import DocumentAlertCard from '../components/DocumentAlertCard';
@@ -23,6 +23,9 @@ import { getAeroDataBoxKey } from '../storage/settings';
 import { checkInTimeLabel } from '../utils/localTime';
 import { MARK_SHORT, dayMarks, isInstructorMark } from '../domain/dutyMarks';
 import type { ParsedDuty, ChangeType } from '../domain/types';
+import { todayISO } from '../domain/rosterWindow';
+import { dayLabel, monthLabel } from '../utils/dates';
+import PageHero from '../components/PageHero';
 
 // Wide enough for the widest "EEE, dd MMM" (e.g. "Wed, 28 Sep") in bold.
 const DATE_COLUMN = '6.6em';
@@ -42,6 +45,13 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: 'standby', label: 'Standby' },
   { key: 'off', label: 'Folgas' },
 ];
+
+// The list as cards (default) or as a departures board; remembered on this device.
+type ListView = 'cards' | 'board';
+const VIEW_KEY = 'crewroster.listView';
+function readView(): ListView {
+  try { return localStorage.getItem(VIEW_KEY) === 'board' ? 'board' : 'cards'; } catch { return 'cards'; }
+}
 
 // Tracks which users have an auto-capture run in flight, so a quick remount can't fire a
 // second one before the first resolves (module-level: survives component remounts).
@@ -80,7 +90,12 @@ export default function RosterPage() {
   const [infoAnchor, setInfoAnchor] = useState<null | HTMLElement>(null);
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
-  const todayISO = format(new Date(), 'yyyy-MM-dd');
+  const [view, setView] = useState<ListView>(readView);
+  const chooseView = (v: ListView) => {
+    setView(v);
+    try { localStorage.setItem(VIEW_KEY, v); } catch { /* not remembered — harmless */ }
+  };
+  const today = todayISO();
 
   const changeByDate = useMemo(() => {
     const map = new Map<string, ChangeType>();
@@ -99,7 +114,6 @@ export default function RosterPage() {
     if (!activeUser || !roster || !getAeroDataBoxKey()) return;
     const userId = activeUser.id;
     const stampKey = `crewroster.autoreg.${userId}`;
-    const today = new Date().toISOString().slice(0, 10);
     if (localStorage.getItem(stampKey) === today) return;
     // Guard against duplicate concurrent runs on remount, but only mark "done for today"
     // once it actually resolves — a transient failure should be retried, not skipped.
@@ -109,7 +123,7 @@ export default function RosterPage() {
       .then(() => localStorage.setItem(stampKey, today))
       .catch(() => {})
       .finally(() => autoRegInFlight.delete(userId));
-  }, [activeUser, roster]);
+  }, [activeUser, roster, today]);
 
   const dutiesByDay = useMemo(() => {
     const map = new Map<string, ParsedDuty[]>();
@@ -147,6 +161,43 @@ export default function RosterPage() {
 
   return (
     <Stack spacing={2}>
+      <PageHero
+        label="Escala"
+        title={monthLabel(month)}
+        subtitle={`${monthDuties.length ? new Set(monthDuties.map((d) => d.date)).size : 0} dias na escala`}
+        actions={
+          <>
+          <IconButton size="small" onClick={(e) => setInfoAnchor(e.currentTarget)} title="Detalhes da escala">
+            <InfoOutlined fontSize="small" />
+          </IconButton>
+          <Popover
+            open={Boolean(infoAnchor)}
+            anchorEl={infoAnchor}
+            onClose={() => setInfoAnchor(null)}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+          >
+            <Box sx={{ p: 1.5, maxWidth: 280 }}>
+              <Typography variant="caption" color="text.secondary" sx={{ wordBreak: 'break-word' }}>
+                {roster.fileName} · {roster.duties.length} dias · importado{' '}
+                {format(parseISO(roster.importedAt), 'dd/MM/yyyy HH:mm')}
+              </Typography>
+            </Box>
+          </Popover>
+            <Button size="small" variant="outlined" startIcon={<Today />} onClick={() => setMonth(new Date())}>Hoje</Button>
+          </>
+        }
+      >
+        <Box display="flex" gap={1} mt={1}>
+          <IconButton size="small" onClick={() => setMonth((m) => subMonths(m, 1))} aria-label="Mês anterior" sx={{ bgcolor: 'rgba(255,255,255,0.12)' }}>
+            <ChevronLeft />
+          </IconButton>
+          <IconButton size="small" onClick={() => setMonth((m) => addMonths(m, 1))} aria-label="Mês seguinte" sx={{ bgcolor: 'rgba(255,255,255,0.12)' }}>
+            <ChevronRight />
+          </IconButton>
+        </Box>
+      </PageHero>
+
       {error && <Alert severity="error">{error}</Alert>}
       {warnings.map((w, i) => (
         <Alert key={i} severity="warning">
@@ -172,42 +223,6 @@ export default function RosterPage() {
           </Typography>
         </Alert>
       )}
-
-      <NextDutyCard duties={roster.duties} />
-
-      <Box display="flex" alignItems="center" justifyContent="space-between">
-        <Box display="flex" alignItems="center" gap={1}>
-          <IconButton size="small" onClick={() => setMonth((m) => subMonths(m, 1))}>
-            <ChevronLeft />
-          </IconButton>
-          <Typography variant="h6">{format(month, 'MMMM yyyy')}</Typography>
-          <IconButton size="small" onClick={() => setMonth((m) => addMonths(m, 1))}>
-            <ChevronRight />
-          </IconButton>
-        </Box>
-        <Box display="flex" alignItems="center" gap={0.5}>
-          <IconButton size="small" onClick={(e) => setInfoAnchor(e.currentTarget)} title="Detalhes da escala">
-            <InfoOutlined fontSize="small" />
-          </IconButton>
-          <Popover
-            open={Boolean(infoAnchor)}
-            anchorEl={infoAnchor}
-            onClose={() => setInfoAnchor(null)}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-          >
-            <Box sx={{ p: 1.5, maxWidth: 280 }}>
-              <Typography variant="caption" color="text.secondary" sx={{ wordBreak: 'break-word' }}>
-                {roster.fileName} · {roster.duties.length} dias · importado{' '}
-                {format(parseISO(roster.importedAt), 'dd/MM/yyyy HH:mm')}
-              </Typography>
-            </Box>
-          </Popover>
-          <Button size="small" startIcon={<Today />} onClick={() => setMonth(new Date())}>
-            Hoje
-          </Button>
-        </Box>
-      </Box>
 
       <MonthStatsCard duties={monthDuties} />
 
@@ -240,7 +255,7 @@ export default function RosterPage() {
         }}
       />
 
-      <Box display="flex" gap={1} flexWrap="wrap">
+      <Box display="flex" gap={1} flexWrap="wrap" alignItems="center">
         {FILTERS.map((f) => (
           <Chip
             key={f.key}
@@ -251,6 +266,11 @@ export default function RosterPage() {
             onClick={() => setFilter(f.key)}
           />
         ))}
+        <Box flexGrow={1} />
+        <ToggleButtonGroup size="small" exclusive value={view} onChange={(_, v: ListView | null) => v && chooseView(v)} aria-label="Vista da lista">
+          <ToggleButton value="cards" aria-label="Cartões" sx={{ py: 0.25 }}><ViewAgenda fontSize="small" /></ToggleButton>
+          <ToggleButton value="board" aria-label="Painel de partidas" sx={{ py: 0.25 }}><BoardIcon fontSize="small" /></ToggleButton>
+        </ToggleButtonGroup>
       </Box>
 
       {monthDuties.length === 0 && (
@@ -260,9 +280,13 @@ export default function RosterPage() {
         <Alert severity="info">Nenhum registo corresponde ao filtro ou pesquisa.</Alert>
       )}
 
-      {[...dutiesByDay.entries()].map(([date, duties]) => {
+      {view === 'board' && dutiesByDay.size > 0 && (
+        <DepartureBoard days={[...dutiesByDay.entries()]} changes={changeByDate} today={today} onOpen={(d) => navigate(`/day/${d}`)} />
+      )}
+
+      {view === 'cards' && [...dutiesByDay.entries()].map(([date, duties]) => {
         const change = changeByDate.get(date);
-        const isToday = date === todayISO;
+        const isToday = date === today;
         return (
         <Card
           key={date}
@@ -289,7 +313,7 @@ export default function RosterPage() {
                   variant="subtitle2" fontWeight={isToday ? 700 : 600} color={isToday ? 'primary.main' : 'text.primary'}
                   sx={{ minWidth: DATE_COLUMN, flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}
                 >
-                  {format(parseISO(date), 'EEE, dd MMM')}
+                  {dayLabel(date)}
                 </Typography>
                 {isToday && (
                   <Chip

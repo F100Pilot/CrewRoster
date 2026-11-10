@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
-import { Box, Card, CardActionArea, CardContent, Chip, IconButton, InputAdornment, Stack, TextField, Typography } from '@mui/material';
-import { ArrowBack, FlightTakeoff, Search } from '@mui/icons-material';
-import { format, parseISO } from 'date-fns';
+import { Box, Card, CardActionArea, CardContent, Chip, InputAdornment, Stack, TextField, Typography } from '@mui/material';
+import { FlightTakeoff, Search } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import { searchRoster } from '../domain/rosterSearch';
+import { dayLabel } from '../utils/dates';
+import PageHero from '../components/PageHero';
 
 // Global search across the roster: flights (number, airport, route, crew), duty types and dates.
 // A hit jumps to its day, focusing the specific flight.
@@ -17,10 +18,7 @@ export default function SearchPage() {
 
   return (
     <Stack spacing={2}>
-      <Box display="flex" alignItems="center" gap={0.5}>
-        <IconButton onClick={() => navigate(-1)} aria-label="Voltar"><ArrowBack /></IconButton>
-        <Typography variant="h6" sx={{ flexGrow: 1 }}>Pesquisar</Typography>
-      </Box>
+      <PageHero back label="Pesquisa" title="Pesquisar" subtitle="Voos, aeroportos, rotas, colegas e datas da escala" />
 
       <TextField
         value={q}
@@ -49,7 +47,7 @@ export default function SearchPage() {
                 <Box flexGrow={1}>
                   <Typography variant="body2" sx={{ fontWeight: 600 }}>{h.title}</Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {format(parseISO(h.date), 'EEE, dd MMM yyyy')}
+                    {dayLabel(h.date, true)}
                   </Typography>
                 </Box>
                 {!h.isFlight && <Chip size="small" variant="outlined" label={h.title} />}

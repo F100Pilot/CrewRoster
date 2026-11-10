@@ -3,8 +3,7 @@ import {
   Alert, Box, Card, CardContent, Chip, IconButton, Stack, ToggleButton, ToggleButtonGroup, Typography,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { Add, ArrowBack, CenterFocusStrong, Remove } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { Add, CenterFocusStrong, Remove } from '@mui/icons-material';
 import { geoDistance, geoGraticule10, geoMercator, geoOrthographic, geoPath } from 'd3-geo';
 import { feature } from 'topojson-client';
 import worldTopo from 'world-atlas/countries-110m.json';
@@ -13,6 +12,7 @@ import { useRoster } from '../state/useRoster';
 import { loadLogbook } from '../storage/rosterStore';
 import { buildFlightNetwork } from '../domain/flightMap';
 import type { LogbookRow } from '../domain/types';
+import PageHero from '../components/PageHero';
 
 const W = 100;
 const H = 100;
@@ -36,7 +36,6 @@ function loadMode(): MapMode {
 }
 
 export default function MapPage() {
-  const navigate = useNavigate();
   const theme = useTheme();
   const { activeUser } = useRoster();
   const userId = activeUser?.id;
@@ -151,14 +150,16 @@ export default function MapPage() {
 
   return (
     <Stack spacing={2}>
-      <Box display="flex" alignItems="center" gap={1}>
-        <IconButton onClick={() => navigate(-1)}><ArrowBack /></IconButton>
-        <Typography variant="h6" sx={{ flexGrow: 1 }}>Mapa de voos</Typography>
-        <ToggleButtonGroup size="small" exclusive value={mode} onChange={(_, m) => changeMode(m)}>
-          <ToggleButton value="flat" sx={{ px: 1.25, py: 0.25 }}>Plano</ToggleButton>
-          <ToggleButton value="globe" sx={{ px: 1.25, py: 0.25 }}>Globo</ToggleButton>
-        </ToggleButtonGroup>
-      </Box>
+      <PageHero
+        back label="Mapa" title="Mapa de voos"
+        actions={
+          <ToggleButtonGroup size="small" exclusive value={mode} onChange={(_, m) => changeMode(m)}
+            sx={{ '& .MuiToggleButton-root': { color: 'rgba(255,255,255,0.8)', borderColor: 'rgba(255,255,255,0.35)' }, '& .Mui-selected': { color: '#0B1222 !important', bgcolor: '#93C5FD !important' } }}>
+            <ToggleButton value="flat" sx={{ px: 1.25, py: 0.25 }}>Plano</ToggleButton>
+            <ToggleButton value="globe" sx={{ px: 1.25, py: 0.25 }}>Globo</ToggleButton>
+          </ToggleButtonGroup>
+        }
+      />
 
       <Card variant="outlined">
         <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>

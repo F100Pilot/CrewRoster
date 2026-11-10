@@ -175,7 +175,7 @@ export default function ImportPage() {
                       size="small"
                       variant="outlined"
                       endIcon={<ChevronRight />}
-                      onClick={() => navigate('/')}
+                      onClick={() => navigate('/lista')}
                     >
                       Ver escala
                     </Button>
@@ -263,7 +263,7 @@ export default function ImportPage() {
               <Button
                 variant="outlined"
                 endIcon={<ChevronRight />}
-                onClick={() => navigate('/')}
+                onClick={() => navigate('/lista')}
               >
                 Ver escala
               </Button>

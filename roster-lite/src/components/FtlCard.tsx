@@ -5,6 +5,7 @@ import { formatDuration } from '../utils/duration';
 import { limitLevel, limitRows, type LimitRow } from '../domain/limitRows';
 import type { CrewRole, ParsedDuty } from '../domain/types';
 import { ExperimentalChip } from './AeDisclaimer';
+import { todayISO } from '../domain/rosterWindow';
 
 // One labelled group of limit bars (flight time, or duty).
 function LimitGroup({ title, rows }: { title: string; rows: LimitRow[] }) {
@@ -56,7 +57,7 @@ const EASA_TOOLTIP =
 // consecutive days"), so it warns before a breach instead of after. Indicative — it depends on
 // the imported history being complete.
 export default function FtlCard({ duties, role = 'pilot' }: { duties: ParsedDuty[]; role?: CrewRole }) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayISO();
   const pilot = role !== 'cabin';
   const { flightRows, dutyRows } = useMemo(() => {
     const rows = limitRows(duties, role, today);

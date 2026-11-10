@@ -1,9 +1,17 @@
 // LAYER A: PDF -> positioned tokens + raw text. No roster knowledge lives here.
-import * as pdfjs from 'pdfjs-dist';
 // Vite resolves this to a hashed URL for the pdf.js worker bundle.
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
-pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+// pdf.js (~330 KB) is loaded on first use — importing or re-parsing a PDF — instead of with the
+// app shell, which only needs it when a file comes in.
+let pdfjsReady: Promise<typeof import('pdfjs-dist')> | null = null;
+export function loadPdfjs(): Promise<typeof import('pdfjs-dist')> {
+  pdfjsReady ??= import('pdfjs-dist').then((m) => {
+    m.GlobalWorkerOptions.workerSrc = workerUrl;
+    return m;
+  });
+  return pdfjsReady;
+}
 
 export interface PositionedToken {
   text: string;
@@ -21,7 +29,8 @@ export interface ExtractedPdf {
 }
 
 export async function extractPdf(data: ArrayBuffer): Promise<ExtractedPdf> {
-  const doc = await pdfjs.getDocument({ data }).promise;
+  const pdfjs = await loadPdfjs();
+  const doc = await pdfjs.getDocument({ data, isEvalSupported: false }).promise;
   const tokens: PositionedToken[] = [];
   const rawLines: string[] = [];
 

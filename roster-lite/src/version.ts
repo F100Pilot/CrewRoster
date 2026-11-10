@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.27.1';
+export const APP_VERSION = '0.8.29.4';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,60 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.29.4',
+    date: '2026-11-10',
+    highlights: [
+      'Todas as páginas têm agora o mesmo banner do "Hoje": o céu da tua base (madrugada, dia, fim de tarde ou noite), a etiqueta da secção, um título grande e os números principais.',
+      'Lista e Calendário: o mês em destaque, com as setas e o "Hoje" no banner.',
+      'Dia: a data, a rota do dia e o bloco / serviço no topo.',
+      'AE: o limite mais apertado em percentagem logo à cabeça.',
+      'Diário de bordo, Estatísticas, Vencimento, Mapa, Pesquisa, Documentos, PDFs e Códigos com o mesmo cabeçalho.',
+    ],
+  },
+  {
+    version: '0.8.29.3',
+    date: '2026-11-10',
+    highlights: [
+      '"Hoje" segue o tema da app como as outras páginas: no tema claro fica claro, só com um tom leve da fase (frio antes do serviço, azul em serviço, verde-água na estadia, areia na folga); o topo continua a mostrar o céu da hora local.',
+    ],
+  },
+  {
+    version: '0.8.29.2',
+    date: '2026-11-10',
+    highlights: [
+      'Toda a app com o estilo do "Hoje": barra azul-noite, cartões planos com contorno fino, avisos em tons suaves, cantos arredondados — em modo claro e escuro.',
+      'Datas e tipos de serviço em português em todo o lado ("Ter, 10 nov", "Novembro 2026", "Voo", "Simulador").',
+      'Estatísticas: o gráfico de atividade abre no mês atual (antes abria em janeiro e parecia vazio).',
+    ],
+  },
+  {
+    version: '0.8.29.1',
+    date: '2026-11-10',
+    highlights: [
+      '"Hoje" mostra sempre o dia inteiro: simulador, formação, gabinete e assistência também (não só voos), numa linha do tempo com horas locais, mais o serviço, o bloco e o FDP do dia.',
+      'O ecrã ganha as cores da fase, como no esboço: azul-noite antes do serviço, claro em serviço, verde-noite na estadia e areia na folga (com versão escura).',
+    ],
+  },
+  {
+    version: '0.8.29',
+    date: '2026-11-10',
+    highlights: [
+      'Novo ecrã "Hoje", que muda com o teu dia: antes do voo, a contagem até à apresentação e o primeiro voo em cartão de embarque; em serviço, o avião na linha da rota, a chegada e o FDP que resta; na estadia, a cidade, o descanso mínimo a contar e o voo de regresso; na folga, os limites em anéis e os próximos 7 dias.',
+      'O topo é o céu à hora local do aeroporto onde estás — madrugada, dia, fim de tarde ou noite, pelo nascer e pôr do sol — e a cor acompanha o destino do dia.',
+      'A Lista pode ser vista como um painel de partidas (botão ao lado dos filtros), com HOJE, NOVO, ALTERADO e FOLGA como no aeroporto.',
+    ],
+  },
+  {
+    version: '0.8.28',
+    date: '2026-11-10',
+    highlights: [
+      'Vencimento: os subsídios seguem agora o recibo real, ao cêntimo — sobre todos os fixos (com prémio de chefia e complementos); o de férias vale os 42 dias de férias (fixos ÷ 30 × 42); IRS à parte, SS e fundo de pensões de 6,5% / 7,5% sobre o próprio subsídio.',
+      'Segurança: a cópia de segurança já não leva a password do CrewLink (fica só no dispositivo); a app passa a ter uma política de segurança de conteúdos (CSP) e o proxy só envia a sessão do CrewLink para o próprio CrewLink.',
+      'Arranque mais rápido: o leitor de PDF, o tutorial e a documentação só carregam quando são precisos.',
+      '"Hoje" passa a ser sempre o dia local (entre a meia-noite e a 1h de verão algumas vistas ainda mostravam o dia anterior).',
+    ],
+  },
   {
     version: '0.8.27.1',
     date: '2026-11-09',

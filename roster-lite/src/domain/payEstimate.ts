@@ -5,6 +5,7 @@ import { nationalHolidays } from './holidaysPT';
 import { planVsFlown } from './planVsFlown';
 import { HOME_BASE } from './dutyStats';
 import { irsRetention, type IrsTable } from './irsWithholding';
+import { HOLIDAY_ENTITLEMENT_DAYS } from './aeCompliance';
 import type { ParsedDuty } from './types';
 
 // A gross monthly pay estimate for a Portugália pilot, from the RRRGS (the pay annex of the
@@ -412,19 +413,21 @@ export function payEstimate(
 
   const pension = pensionLines(s);
   const rb = s.vb + s.ve + s.vs + s.extras + pension.contribution;
-  // ── Subsidies (RRRGS cl. 7 and 8), each one RB (VB + VE + VS), on the payslip this estimate is
-  // paid in (the month after the work). Christmas: the AE says "até 15 de dezembro"; the PGA pays
-  // it with the November pay, received at the end of November. Holidays: with the pay of the
-  // month before the first holidays of 10 working days or more — from the roster, unless the
-  // pilot ticked the month on the card.
+  // ── Subsidies (RRRGS cl. 7 and 8), on the payslip this estimate is paid in (the month after the
+  // work). As a real July payslip pays them, to the cent: on ALL the fixed monthly lines (VB, VE,
+  // VS, chief bonus, complements — not the pension contribution), the holiday subsidy for the 42
+  // holiday days the pilot is entitled to (fixed pay ÷ 30 × 42, "a totalidade dos dias de férias",
+  // cl. 7.2), the Christmas one a month's fixed pay. Christmas: the AE says "até 15 de dezembro";
+  // the PGA pays it with the November pay. Holidays: with the pay of the month before the first
+  // holidays of 10 working days or more — from the roster, unless the pilot ticked the month.
   const paidIn = nextMonth(month);
   const paidYear = Number(paidIn.slice(0, 4));
   const paidMonth = Number(paidIn.slice(5, 7));
-  const subsidyRb = cents(s.vb + s.ve + s.vs);
+  const fixedPay = s.vb + s.ve + s.vs + s.extras - (s.pensionAuto ? 0 : s.nonTaxableFixed || 0);
   const ticked = s.holidayPay && s.holidayPay.year === paidYear ? s.holidayPay.month : null;
   const holidayPayMonth = ticked ?? autoHolidayPayMonth(duties, paidYear);
-  const holidaySubsidy = holidayPayMonth === paidMonth ? subsidyRb : 0;
-  const christmasSubsidy = paidMonth === CHRISTMAS_PAY_MONTH ? subsidyRb : 0;
+  const holidaySubsidy = holidayPayMonth === paidMonth ? cents((fixedPay / 30) * HOLIDAY_ENTITLEMENT_DAYS) : 0;
+  const christmasSubsidy = paidMonth === CHRISTMAS_PAY_MONTH ? cents(fixedPay) : 0;
 
   const variable = overtimeVal + perDiemValue + complementValue + extensionValue + reductionValue + instructorValue + lineTrainingValue;
   const lastDay = `${month}-${String(daysInMonth(month)).padStart(2, '0')}`;
@@ -476,6 +479,7 @@ export interface NetEstimate {
   // The subsidies' own withholding: by law (CIRS art. 99.º-C) they are taxed apart from the
   // month's pay, each one on its own through the same table.
   subsidyIrs: number;
+  subsidyPensionContribution: number; // the PGA's 6,5% on the subsidies (abono, no tax)
   net: number;
 }
 
@@ -494,12 +498,15 @@ export function netEstimate(r: PayEstimate, s: PaySettings): NetEstimate {
   const ssBase = fixedTaxable + variableTaxed + travelTaxable(s.perDiemExemptSs);
   const irs = irsRetention(irsBase, s.irsTable || 'I', s.dependents || 0);
   // Subsidies: SS like any pay, IRS withheld apart for each one, and the pension plan applies to
-  // them too (it "incide 14 vezes por ano", RRRGS cl. 16.2) — the PGA's 6,5% as a non-taxable
-  // abono, the 7,5% deposit taken off.
+  // them too (it "incide 14 vezes por ano", RRRGS cl. 16.2): 6,5% / 7,5% of the subsidy itself —
+  // the PGA's part as a non-taxable abono ("Fundo pensões contr. SF/SN"), the deposit taken off.
+  // All matched a July payslip to the cent; the union fee is not taken from them.
   const subsidies = [r.holidaySubsidy, r.christmasSubsidy].filter((v) => v > 0);
   const subsidyTotal = subsidies.reduce((a, v) => a + v, 0);
   const subsidyIrs = subsidies.reduce((a, v) => a + irsRetention(v, s.irsTable || 'I', s.dependents || 0), 0);
-  const subsidyPension = { contribution: pension.contribution * subsidies.length, deposit: pension.deposit * subsidies.length };
+  const subsidyPension = s.pensionAuto
+    ? { contribution: cents(subsidyTotal * PENSION_COMPANY), deposit: cents(subsidyTotal * PENSION_TOTAL) }
+    : { contribution: 0, deposit: 0 };
   const ss = Math.round((ssBase + subsidyTotal) * SS_RATE * 100) / 100;
   const fixedDeductions = s.fixedDeductions || 0;
   const union = unionFee(s);
@@ -508,6 +515,7 @@ export function netEstimate(r: PayEstimate, s: PaySettings): NetEstimate {
   return {
     gross: grossAll, irsBase, irs, irsRate: irsBase > 0 ? irs / irsBase : 0, ssBase, ss, pensionDeposit, union, fixedDeductions,
     subsidyIrs,
+    subsidyPensionContribution: subsidyPension.contribution,
     net: grossAll - irs - subsidyIrs - ss - pensionDeposit - union - fixedDeductions,
   };
 }

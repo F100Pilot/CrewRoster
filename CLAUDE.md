@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (402 tests) — keep green
+npm test           # vitest run (410 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -81,8 +81,12 @@ cross-origin. Endpoints: `POST /api/login`, `/api/roster`, `/api/flightinfo`,
 - **Crew per flight is flagged "em testes"** in the UI and release notes — always keep
   that caveat when touching it; advise users to confirm against the official roster.
 - **Auto re-parse on load:** `RosterProvider` re-parses stored PDFs when
-  `parseVersion`/`crewParserVersion` is behind the current constant, so parser
-  improvements apply without the user re-importing.
+  `parseVersion` is behind `PARSE_VERSION`, so parser improvements (crew included) apply
+  without the user re-importing.
+- **pdf.js is lazy** (`loadPdfjs()` in `extractText.ts`): never import `pdfjs-dist` statically,
+  or the 330 KB chunk goes back into the first paint. Same for `tour.ts` (driver.js) and the README.
+- **CSP:** `vite.config.ts` injects a Content-Security-Policy at build time (self + the worker
+  origin + api.open-meteo.com; frames: embed.windy.com). A new external host must be added there.
 - **Lazy datasets** keep the main bundle lean: `airportCoordsFallback.json` (in the
   MapPage chunk) and `iataToIcao.json` (loaded only when METAR is fetched).
 - **FLIC scraping:** `flic.tap.pt` is public (no login) but sends no CORS headers, so
@@ -184,13 +188,35 @@ Things learned over this collaboration that should persist across sessions:
   is automatic: `unionBaseAuto()` = all fixed pay minus the command lines "Anuid. técnica Comando"
   (`veCommand`, part of VE) and "Prémio de chefia" (`chiefBonus`, part of extras) — matched a real
   payslip to the cent (user wants it automatic); a typed `unionBase` still overrides, under Avançado.
-- **Holiday / Christmas subsidies** (since 0.8.27): each = RB (VB+VE+VS) — RRRGS cl. 7/8. Christmas on the
+- **Holiday / Christmas subsidies** (since 0.8.27; base fixed in 0.8.28 from a real July payslip, to the
+  cent): on ALL fixed lines (VB+VE+VS+chief bonus+complements, not the pension contribution); holiday =
+  fixed ÷ 30 × 42 (`HOLIDAY_ENTITLEMENT_DAYS`), Christmas = one month's fixed pay (to confirm on a November
+  payslip); pension 6,5% / 7,5% of the subsidy itself. Christmas on the
   **November** payslip (user: PGA pays it with the end-of-November pay, though the AE says "até 15 de
   dezembro"); holiday subsidy on the payslip of the month before the first holidays of ≥ 10 working days
   (`autoHolidayPayMonth()` from the roster's Vacation runs), with a tick box on the pay card to confirm /
   correct it (`holidayPay: {year, month}`, month 0 = not this year). IRS
-  withheld apart per subsidy (CIRS art. 99.º-C), SS 11%, pension 14×/year (cl. 16.2). Union fee on
-  subsidies not applied — to confirm against a June/December payslip.
+  withheld apart per subsidy (CIRS art. 99.º-C — matched the July payslip exactly), SS 11%. Union fee
+  is not taken from subsidies (confirmed).
+- **Backups never carry the CrewLink login** (`crewroster.cred.*` is neither exported nor restored);
+  they do carry the pilot's pay figures (by design — the user restores them from it). Test data and
+  fixtures must use synthetic crew names (real ones were scrubbed from tests in 0.8.28).
+- **CI runs Node 22** (vitest 5 requires ≥ 22.12).
+- **Home screen = "Hoje"** (since 0.8.29, from the user-approved "layout dinâmico" sketch): route `/`
+  (`pages/TodayPage.tsx`), the roster list moved to `/lista`. `domain/dayPhase.ts` derives the phase
+  (preflight / duty / standby / layover / off) from the roster only, where the crew member is, the sky
+  (dawn/day/dusk/night from `sun.ts` at that airport) and a destination accent. AE figures on it (FDP,
+  rest minima) are pilots-only, like everywhere. The page follows the app's light/dark theme like every
+  other page (user: a dark first page in light mode "não faz sentido"); the phase only tints the
+  background and accent, and the sky header stays time-of-day. The list can also render as a departures board
+  (`DepartureBoard.tsx`, view in localStorage `crewroster.listView`).
+- **One design language** (since 0.8.29.2): `theme.ts` carries the "Hoje" look for every page (navy
+  AppBar, flat bordered cards, soft tinted Alerts). Display dates go through `utils/dates.ts`
+  (`dayLabel`, `monthLabel`, pt locale) — NEVER set date-fns' default locale: `pgaGrid.ts` matches the
+  PDF's English day headers with `format(d, 'EEEdd')`. Duty-type words: `domain/dutyLabels.ts`.
+  Every page opens with `components/PageHero.tsx` (since 0.8.29.4, user: the other pages were "bland"):
+  the sky at the base (shared `SKY`/`Stars` with "Hoje"), a section pill, a big title, optional stat
+  tiles; page controls go in `actions`/`children`. New pages use it instead of a plain title row.
 - **Settings are tabbed** (since 0.8.24): Perfil · Vencimento (pilots only) · App · Dados · Ajuda in
   `SettingsDialog.tsx`; last tab in localStorage `crewroster.settingsTab`. Guardar only on Perfil/App
   (the rest saves on change). New settings go in the tab for their subject, not at the bottom.

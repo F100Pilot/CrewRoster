@@ -6,6 +6,7 @@ import { getPaySettings, setPaySettings } from '../storage/settings';
 import { ExperimentalChip } from './AeDisclaimer';
 import { formatDuration } from '../utils/duration';
 import type { ParsedDuty } from '../domain/types';
+import { todayISO } from '../domain/rosterWindow';
 
 const MONTHS_LONG = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto',
   'setembro', 'outubro', 'novembro', 'dezembro'];
@@ -30,7 +31,7 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
     window.addEventListener('pay-settings-updated', reload);
     return () => window.removeEventListener('pay-settings-updated', reload);
   }, [userId]);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayISO();
   const [month, setMonth] = useState(today.slice(0, 7));
   const [showDays, setShowDays] = useState(false);
   const r = useMemo(() => payEstimate(duties, month, settings, today, base), [duties, month, settings, today, base]);
@@ -115,7 +116,7 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
               <Stack spacing={0.25} mt={1}>
                 <Row label="Base (VB + VE + VS + outros fixos)" value={r.rb - r.pensionContribution} />
                 {r.pensionContribution > 0 && (
-                  <Row label={`Fundo pensões contr. PGA (6,5%${subsidyCount ? `, ${subsidyCount + 1}×` : ''})`} value={r.pensionContribution * (subsidyCount + 1)} />
+                  <Row label={`Fundo pensões contr. PGA (6,5%${subsidyCount ? ', com subsídio' : ''})`} value={r.pensionContribution + n.subsidyPensionContribution} />
                 )}
                 <Row label={`Horas acima do plafond (${r.overtime === 'block' ? 'block-pay' : 'duty-pay'})`} value={r.overtimeValue} />
                 {/* Tap to list the days, to check them one by one against the payslip's per diem lines. */}
@@ -151,7 +152,7 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                   />
                 )}
                 {r.reducedMinutes > 0 && <Row label={`Descansos reduzidos: ${formatDuration(r.reducedMinutes)}`} value={r.reductionValue} />}
-                {r.holidaySubsidy > 0 && <Row label="Subsídio de férias (cl. 7)" value={r.holidaySubsidy} />}
+                {r.holidaySubsidy > 0 && <Row label="Subsídio de férias (42 dias, cl. 7)" value={r.holidaySubsidy} />}
                 {r.christmasSubsidy > 0 && <Row label="Subsídio de Natal (cl. 8)" value={r.christmasSubsidy} />}
                 {/* The roster rarely shows the long holidays months ahead, so the pilot can confirm or
                     correct the month here; it's kept per year. */}
@@ -185,8 +186,8 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
             )}
 
             <Typography variant="caption" color="text.disabled" display="block" mt={0.75} lineHeight={1.35}>
-              O variável (per diem incluído) é pago no mês seguinte. IRS pelas tabelas de retenção de 2026 (continente); não prevê acertos de meses anteriores. Noturno 23h–06h e feriados nacionais em hora de Lisboa. Subsídios de férias e de Natal = VB + VE + VS
-              (cl. 7 e 8), com o IRS retido à parte. Não inclui folgas trabalhadas, split-duty, subsídio de
+              O variável (per diem incluído) é pago no mês seguinte. IRS pelas tabelas de retenção de 2026 (continente); não prevê acertos de meses anteriores. Noturno 23h–06h e feriados nacionais em hora de Lisboa. Subsídios sobre todos os fixos: férias = 42 dias (fixos ÷ 30 × 42), Natal = um mês
+              (cl. 7 e 8), com IRS retido à parte, SS e fundo de pensões. Não inclui folgas trabalhadas, split-duty, subsídio de
               alimentação, nem o acerto anual dos plafonds (março).
               Confirma sempre no recibo.
             </Typography>

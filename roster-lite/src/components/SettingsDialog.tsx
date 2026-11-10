@@ -9,7 +9,6 @@ import {
   DarkMode, LightMode, InfoOutlined, Backup, Restore, School, CloudDownload, ChevronRight,
   PersonOutline, EuroOutlined, TuneOutlined, StorageOutlined, HelpOutline,
 } from '@mui/icons-material';
-import readmeText from '../../README.md?raw';
 import { useNavigate } from 'react-router-dom';
 import { useColorMode } from '../state/colorMode';
 import {
@@ -23,7 +22,8 @@ import { APP_NAME, APP_VERSION_LABEL } from '../version';
 import { DISCLAIMER_TEXT } from '../disclaimer';
 import { operatedFlights } from '../domain/flightTime';
 import { downloadIcs } from '../utils/icsExport';
-import { startTour } from '../tour';
+// The tour (driver.js) and the README text load only when asked for.
+const startTour = () => { void import('../tour').then((m) => m.startTour()); };
 import { useRoster } from '../state/useRoster';
 import { baseOf } from '../domain/dutyStats';
 import type { CrewBase } from '../domain/types';
@@ -32,6 +32,7 @@ import { SETTINGS_TAB_KEY as TAB_KEY, type SettingsTab } from './settingsEvents'
 import {
   downloadBackup, readBackupFile, restoreBackup, BackupError, type BackupSummary,
 } from '../storage/backup';
+import { todayISO } from '../domain/rosterWindow';
 
 // The dialog is split into tabs by subject; the last one opened is remembered on this device.
 
@@ -77,6 +78,10 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
   const [confirmClear, setConfirmClear] = useState(false);
   const [lead, setLead] = useState(getCheckinLeadMinutes());
   const [readmeOpen, setReadmeOpen] = useState(false);
+  const [readmeText, setReadmeText] = useState('');
+  useEffect(() => {
+    if (readmeOpen && !readmeText) void import('../../README.md?raw').then((m) => setReadmeText(m.default));
+  }, [readmeOpen, readmeText]);
   const fileInput = useRef<HTMLInputElement>(null);
   // Read the credential inputs straight from the DOM on save: password managers (Bitwarden, etc.)
   // fill the field without firing React's onChange, so the controlled state can stay empty and an
@@ -227,7 +232,7 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
     setTestResult(null);
     // Save the current key first, so the test uses what's in the box.
     if (!invalid) setAeroDataBoxKey(trimmed);
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayISO();
     const sample = operatedFlights(roster?.duties ?? [])
       .filter((d) => d.flightNumber && d.date <= today)
       .sort((a, b) => (a.date < b.date ? 1 : -1))[0];

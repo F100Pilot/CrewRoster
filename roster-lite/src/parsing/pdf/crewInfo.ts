@@ -13,14 +13,6 @@ import type { PositionedToken } from './extractText';
 import { operatedFlights } from '../../domain/flightTime';
 import { rotationChains } from '../../domain/aircraftRegs';
 
-// Bumped whenever the crew parser changes in a way that should re-derive crew for ALREADY
-// imported rosters (the app re-runs the parser on the stored PDF when a roster's stamp is
-// behind this — see refreshCrewFromPdfs). 1 = role required; 2 = optional role + inference;
-// 3 = crew on ground activities (simulator); 4 = + begin/end/location for ground activities;
-// 5 = ground-activity section parsed as a transposed grid (event: prefix, column geometry);
-// 6 = route airports read above the crew list (a name fragment is no longer taken as the arrival);
-// 7 = new simulator codes (LIS-EBT-1/-2, LIS-OTHER) recognised as ground activities.
-export const CREW_PARSER_VERSION = 7;
 
 const DOW = /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\d{2}$/;
 const NUM = /^\d{2,4}$/;
@@ -350,13 +342,4 @@ function layoverHours(d1: string, t1: string | null, d2: string, t2: string | nu
     : [Date.parse(`${d1}T00:00:00Z`), Date.parse(`${d2}T00:00:00Z`)];
   if (isNaN(a) || isNaN(b)) return null;
   return (b - a) / 3_600_000;
-}
-
-// Re-derive crew from scratch: clear whatever crew the duties already carry (possibly stale,
-// parsed by an older version) and attach again from the given legs. Used when re-processing a
-// stored roster's PDF after the parser improved, so old rosters pick up the new crew logic.
-export function reattachCrew(duties: ParsedDuty[], legs: CrewLeg[], groundLegs: GroundCrewLeg[] = []): void {
-  for (const d of duties) if (d.crew) d.crew = undefined;
-  attachCrewToDuties(duties, legs);
-  attachGroundCrewToDuties(duties, groundLegs);
 }

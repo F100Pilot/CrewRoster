@@ -11,6 +11,7 @@ import { exportAllStores, importAllStores, type BackupStore } from './rosterStor
 import { downloadBlob } from '../utils/download';
 import { APP_VERSION } from '../version';
 import { API_KEY_PATTERN } from './settings';
+import { todayISO } from '../domain/rosterWindow';
 
 const BACKUP_FORMAT = 'crewroster-backup';
 const BACKUP_VERSION = 1;
@@ -122,7 +123,9 @@ export async function buildBackup(): Promise<BackupFile> {
   const ls: Record<string, string> = {};
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
-    if (key) ls[key] = localStorage.getItem(key) ?? '';
+    // Only what a restore would take back — and never secrets: the backup is meant to travel
+    // (WhatsApp, e-mail, Drive), so the CrewLink password and old OAuth tokens stay behind.
+    if (key && lsAllowed(key) && !LS_NEVER_EXPORT.some((p) => key.startsWith(p))) ls[key] = localStorage.getItem(key) ?? '';
   }
   return {
     format: BACKUP_FORMAT,
@@ -138,15 +141,19 @@ export async function buildBackup(): Promise<BackupFile> {
 export async function downloadBackup(): Promise<BackupSummary> {
   const backup = await buildBackup();
   const json = JSON.stringify(backup);
-  const stamp = new Date().toISOString().slice(0, 10);
+  const stamp = todayISO();
   downloadBlob(new Blob([json], { type: 'application/json' }), `crewroster-backup-${stamp}.json`);
   return summarize(backup.stores);
 }
 
 export class BackupError extends Error {}
 
+// Saved PDFs make backups a few MB; anything far past that isn't one of ours.
+const MAX_BACKUP_BYTES = 200 * 1024 * 1024;
+
 // Parse + validate a backup file without writing anything (for a confirm preview).
 export async function readBackupFile(file: File): Promise<{ backup: BackupFile; summary: BackupSummary }> {
+  if (file.size > MAX_BACKUP_BYTES) throw new BackupError('Ficheiro demasiado grande para ser uma cópia de segurança.');
   let parsed: unknown;
   try {
     parsed = JSON.parse(await file.text());
@@ -178,12 +185,11 @@ function validRow(store: BackupStore, row: unknown): row is Record<string, unkno
 // ignored, so a hostile backup can't set arbitrary trusted keys.
 const LS_ALLOW_EXACT = new Set(['active_user_id']);
 const LS_ALLOW_PREFIXES = [
-  'crewroster.',            // aerodataboxKey, checkinLeadMin, lastSeenVersion, colorMode, autoreg.*
+  'crewroster.',            // aerodataboxKey, checkinLeadMin, lastSeenVersion, colorMode, pay.*, autoreg.*
   'crewlink_notifications_',
-  'gcal_client_id_',        // OAuth client id (not a secret) and the resolved calendar id…
-  'gcal_calendar_id_',
-  // …but NOT gcal_token_/gcal_expires_ — access tokens are never restored; re-auth instead.
 ];
+// Kept on the device only: the saved CrewLink login is neither exported nor restored.
+const LS_NEVER_EXPORT = ['crewroster.cred.'];
 const LS_MAX_VALUE = 256 * 1024; // 256 KB per key
 
 function lsAllowed(key: string): boolean {
@@ -194,6 +200,7 @@ function restoreLocalStorage(ls: Record<string, string> | undefined): void {
   if (!ls || typeof ls !== 'object') return;
   for (const [k, v] of Object.entries(ls)) {
     if (typeof v !== 'string' || v.length > LS_MAX_VALUE || !lsAllowed(k)) continue;
+    if (LS_NEVER_EXPORT.some((p) => k.startsWith(p))) continue;
     // Never let an imported file poison the API key with an invalid/hostile value.
     if (k === 'crewroster.aerodataboxKey' && !API_KEY_PATTERN.test(v.trim())) continue;
     try { localStorage.setItem(k, v); } catch { /* ignore */ }
@@ -207,7 +214,7 @@ function restoreLocalStorage(ls: Record<string, string> | undefined): void {
 export async function restoreBackup(backup: BackupFile, replace: boolean): Promise<void> {
   const stores: Partial<Record<BackupStore, unknown[]>> = {};
   for (const [name, rows] of Object.entries(backup.stores)) {
-    if (!(name in STORE_KEYPATH) || !Array.isArray(rows)) continue; // ignore unknown stores
+    if (!Object.prototype.hasOwnProperty.call(STORE_KEYPATH, name) || !Array.isArray(rows)) continue; // ignore unknown stores
     const store = name as BackupStore;
     const clean: unknown[] = [];
     for (const r of rows) {

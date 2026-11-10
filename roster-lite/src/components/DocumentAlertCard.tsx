@@ -4,6 +4,7 @@ import { Badge, ChevronRight } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { loadDocuments } from '../storage/rosterStore';
 import { DOC_ALERT_DAYS, describeAlert, documentAlerts, type DocAlert } from '../domain/documentAlerts';
+import { todayISO } from '../domain/rosterWindow';
 
 // A heads-up line on the roster page when a document is expired or about to — and nothing at
 // all otherwise, so the page stays light. Taps through to the Documents page. Its own line rather
@@ -14,7 +15,7 @@ export default function DocumentAlertCard({ userId }: { userId: string }) {
   useEffect(() => {
     let alive = true;
     loadDocuments(userId)
-      .then((docs) => { if (alive) setAlerts(documentAlerts(docs, new Date().toISOString().slice(0, 10))); })
+      .then((docs) => { if (alive) setAlerts(documentAlerts(docs, todayISO())); })
       .catch(() => { if (alive) setAlerts([]); });
     return () => { alive = false; };
   }, [userId]);

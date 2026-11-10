@@ -183,7 +183,8 @@ export default function PaySettingsSection({ userId }: { userId: string }) {
               {/* RRRGS cl. 7 and 8: each subsidy is one RB, worked out on the pay card. */}
               {sectionTitle('Subsídios (cl. 7 e 8)')}
               <Typography variant="caption" color="text.secondary" sx={{ mt: -0.5 }}>
-                Cada um = VB + VE + VS ({EUR2.format(s.vb + s.ve + s.vs)}). Natal no recibo de novembro. Férias no recibo
+                Sobre todos os fixos ({EUR2.format(s.vb + s.ve + s.vs + s.extras - (s.pensionAuto ? 0 : s.nonTaxableFixed || 0))}): férias = 42 dias
+                (fixos ÷ 30 × 42), Natal = um mês. Natal no recibo de novembro. Férias no recibo
                 do mês antes das primeiras férias de 10 dias úteis ou mais — automático pela escala, ou marca a caixa
                 "Subsídio de férias neste recibo" no cartão do Vencimento.
               </Typography>

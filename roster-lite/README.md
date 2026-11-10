@@ -33,8 +33,20 @@ Quando existe uma notificação pendente no portal, a app faz parsing do PDF de
 notificação e mostra **antes → depois** para cada dia alterado. Só então permite
 confirmar no portal e descarregar a nova escala.
 
+### Hoje (ecrã de entrada dinâmico)
+
+- Muda com a fase do dia, só a partir da escala: **pré-voo** (contagem até à apresentação, primeiro
+  voo em cartão de embarque, setores do dia, FDP planeado), **em serviço** (o avião na linha da rota,
+  chegada, FDP restante, METAR do destino), **estadia** (cidade, descanso mínimo a contar, voo de
+  regresso), **assistência** e **folga** (anéis dos limites, próximos 7 dias).
+- O topo é o céu à hora local do aeroporto onde estás (madrugada, dia, fim de tarde, noite, pelo
+  nascer e pôr do sol reais); a cor de destaque segue o destino do dia (ilhas, sul, norte).
+- FDP e descanso mínimo do AE só para pilotos. `domain/dayPhase.ts`, `pages/TodayPage.tsx`.
+- O atalho **Hoje** da app instalada (Android) abre este ecrã; a contagem e o céu atualizam-se a cada minuto.
+
 ### Vistas da escala
-- **Lista** — duties agrupados por dia com navegação por mês e indicador "Hoje".
+- **Lista** (`/lista`) — duties agrupados por dia, com navegação por mês e indicador "Hoje", em cartões
+  ou como **painel de partidas** (código, rota, apresentação e estado HOJE / NOVO / ALTERADO / FOLGA).
 - **Calendário** — grelha mensal com cor por tipo de duty, totais semanais e
   indicador de dias com hotel.
 - **Detalhe do dia** — report, STD/STA, rota, aeronave, observações, hotel, repouso

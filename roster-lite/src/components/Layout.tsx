@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import {
   CalendarMonth, FormatListBulleted, CloudDownload, PictureAsPdf, Logout, HelpOutline, Timer,
-  Settings, MenuBook, QueryStats, Public, Badge, Search, MoreVert, Gavel, Payments,
+  Settings, MenuBook, QueryStats, Public, Badge, Search, MoreVert, Gavel, Payments, FlightTakeoff,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
@@ -18,12 +18,14 @@ import WhatsNewDialog from './WhatsNewDialog';
 import DisclaimerDialog from './DisclaimerDialog';
 import { getPaySettings, getTourSeen } from '../storage/settings';
 import { OPEN_SETTINGS_EVENT } from './settingsEvents';
-import { startTour } from '../tour';
+// The guided tour (driver.js, ~20 KB) loads only when it runs.
+const startTour = () => { void import('../tour').then((m) => m.startTour()); };
 
 interface NavItem { label: string; icon: ReactNode; path: string }
 
 const BASE_NAV: NavItem[] = [
-  { label: 'Lista', icon: <FormatListBulleted />, path: '/' },
+  { label: 'Hoje', icon: <FlightTakeoff />, path: '/' },
+  { label: 'Lista', icon: <FormatListBulleted />, path: '/lista' },
   { label: 'Calendário', icon: <CalendarMonth />, path: '/calendar' },
   { label: 'Diário', icon: <MenuBook />, path: '/logbook' },
   { label: 'Estatísticas', icon: <QueryStats />, path: '/stats' },
@@ -164,7 +166,8 @@ export default function Layout({ children }: { children: ReactNode }) {
       >
         <BottomNavigation
           showLabels
-          value={current === -1 ? 0 : current}
+          // A page that isn't a tab (a day, a PDF…) highlights none rather than the first.
+          value={current === -1 ? false : current}
           onChange={(_, idx) => navigate(NAV[idx].path)}
           sx={{ width: 'max-content', minWidth: '100%' }}
         >
