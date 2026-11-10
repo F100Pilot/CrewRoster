@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (428 tests) — keep green
+npm test           # vitest run (431 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -179,12 +179,19 @@ Things learned over this collaboration that should persist across sessions:
   2nd day; FP…_INST is ground training given, not a sim session. Line training as instructor = days
   with a flight marked LIFUS_INS or FAM_INS (mark in its own sub-column just left of its leg; the
   parser attaches it to the nearest flight sub-column on its right), paid once per day. Variable items
-  paid the month after.
+  paid the month after. Since 0.8.34: office days ("Subs. gabinete", per GAB day, `officeDay` typed by the
+  pilot) and meal tickets ("Sub. alimentação tickets", one per per-diem-B day at base, `mealTicket` 10,46 €,
+  tax-free, taken off the net as "Cartão-refeição"). LCC (line check, 200 €) is not modelled: no roster mark.
 - **Net pay** (since 0.8.23): `domain/irsWithholding.ts` holds the 2026 mainland withholding tables
   I–III (Despacho 233-A/2026; replace yearly); `netEstimate()` = gross − IRS (on the month's whole
   taxable pay, floor to €) − SS 11% − fixed deductions. Non-taxable: the pilot's `nonTaxableFixed`
-  (PGA pension contribution) and the exempt per diem of days away (`perDiemExemptIrs/Ss` per day,
-  default = average of two real payslips); per diem for days at base ("… T") is taxed in full.
+  (PGA pension contribution) and the exempt per diem of days away — since 0.8.33 PER DAY: national or
+  abroad limit (`exemptNational/AbroadIrs/Ss`: IRS 36,33 / 116,95, SS 54,49 / 175,42 — read off four real 2026
+  payslips, already reduced for the hotel the company pays; update with the State Budget), applied to that day's
+  per diem + its RAACO abonos; the rest is taxed with the salary (the payslip's "Outros valores p/ impostos",
+  which is INCLUDED in its "Sujeito a IRS" and in the next month's SS line); per diem for days at base ("… T") is
+  taxed in full. A SIM away (e.g. FRA during a stay) is per diem A away, not "… T". With the real abonos, IRS and SS
+  of Jun–Sep 2026 match to the cent; the remaining error is the RAACO abonos estimate.
   Verified to within a few euros on two real payslips. Pension plan (RRRGS cl. 16, `pensionAuto`):
   PGA contribution 6,5% of VB+VE+VS paid as a non-taxable abono, SIPLA deposit 7,5% deducted — both
   matched the payslip to the cent. Union fee = `unionPct` (1%) of a base that (since 0.8.26.1)
