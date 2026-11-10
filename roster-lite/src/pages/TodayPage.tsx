@@ -14,8 +14,10 @@ import { fdpForDay } from '../domain/fdp';
 import { restBefore } from '../domain/restPeriods';
 import { limitRows } from '../domain/limitRows';
 import { createAppTheme, dutyColor } from '../theme';
-import { formatDuration, utcDateTime } from '../utils/duration';
-import { toLocalTime } from '../utils/localTime';
+import { formatDuration } from '../utils/duration';
+import { localClock } from '../utils/localTime';
+import { dayItems, type Item } from '../domain/dayItems';
+import { PassCard, StatTile, TimelineRow, PASS_MONO } from '../components/PassCard';
 import { todayISO } from '../domain/rosterWindow';
 import UploadDropzone from '../components/UploadDropzone';
 import MetarTaf from '../components/MetarTaf';
@@ -64,7 +66,7 @@ const PALETTE: Record<Phase, { light: Palette; dark: Palette }> = {
 const DEST_ACCENT: Record<Exclude<Accent, 'base'>, { bright: string; deep: string }> = {
   islands: { bright: '#5EEAD4', deep: '#0F766E' }, south: { bright: '#FCD34D', deep: '#B45309' }, north: { bright: '#93C5FD', deep: '#1D4ED8' },
 };
-const MONO = 'ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace';
+const MONO = PASS_MONO;
 const TYPE_LABEL = DUTY_TYPE_LABEL;
 const PHASE_LABEL: Record<Phase, string> = {
   preflight: 'Antes do serviço', duty: 'Em serviço', standby: 'Assistência', layover: 'Estadia', off: 'Folga',
@@ -72,11 +74,7 @@ const PHASE_LABEL: Record<Phase, string> = {
 
 const DAY = 86_400_000;
 const isoOf = (d: Date) => d.toISOString().slice(0, 10);
-const hhmmUtc = (d: Date) => d.toISOString().slice(11, 16);
-// Local clock time at an airport for an instant, falling back to the device's clock.
-function localAt(d: Date, airport: string | null | undefined): string {
-  return toLocalTime(isoOf(d), hhmmUtc(d), airport) ?? d.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
-}
+const localAt = localClock;
 function countdown(ms: number): string {
   const m = Math.max(0, Math.round(ms / 60000));
   const d = Math.floor(m / 1440);
@@ -94,22 +92,6 @@ const dayWord = (iso: string) => {
   if (iso === isoOf(new Date(Date.parse(`${t}T12:00:00Z`) + DAY))) return 'amanhã';
   return longDay(iso);
 };
-
-// One item of the day on the timeline: a leg, or any other duty with its own times.
-interface Item { duty: ParsedDuty; start: Date | null; end: Date | null; place: string | null; leg: Leg | null }
-function dayItems(date: string, duties: ParsedDuty[], base: string): Item[] {
-  const legs = legsOf(date, duties);
-  const items: Item[] = duties.map((d) => {
-    const leg = legs.find((l) => l.duty === d) ?? null;
-    if (leg) return { duty: d, start: leg.off, end: leg.on, place: d.departureAirport, leg };
-    const s = d.reportingTime ?? d.departureTime;
-    const start = s ? utcDateTime(date, s) : null;
-    let end = d.arrivalTime ? utcDateTime(date, d.arrivalTime) : null;
-    if (start && end && end < start) end = new Date(end.getTime() + DAY);
-    return { duty: d, start, end, place: d.departureAirport ?? base, leg: null };
-  });
-  return items.sort((a, b) => (a.start?.getTime() ?? 0) - (b.start?.getTime() ?? 0));
-}
 
 export default function TodayPage() {
   const { roster, loading, activeUser } = useRoster();
@@ -289,7 +271,7 @@ function Body({ ctx, p, pilot, base, duties }: { ctx: DayContext; p: Palette; pi
 
       {ctx.date && (mainLeg
         ? <BoardingPass leg={mainLeg} title={ctx.phase === 'duty' ? 'A seguir' : ctx.date === todayISO() ? 'Primeiro voo' : `Voo de ${dayWord(ctx.date)}`} />
-        : mainItem && mainItem.duty.dutyType !== 'Day Off' && <ActivityPass item={mainItem} p={p} date={ctx.date} />)}
+        : mainItem && mainItem.duty.dutyType !== 'Day Off' && <ActivityPass item={mainItem} date={ctx.date} />)}
 
       {ctx.date && items.length > 0 && ctx.phase !== 'off' && (
         <Timeline ctx={ctx} items={items} p={p} onOpen={() => navigate(`/day/${ctx.date}`)} />
@@ -353,25 +335,23 @@ function BoardingPass({ leg, title }: { leg: Leg; title: string }) {
 }
 
 // The same pass for a day without flights: a simulator, course, office day or standby.
-function ActivityPass({ item, p, date }: { item: Item; p: Palette; date: string }) {
+function ActivityPass({ item, date }: { item: Item; date: string }) {
   const d = item.duty;
   const span = item.start && item.end ? Math.round((item.end.getTime() - item.start.getTime()) / 60000) : null;
-  const color = dutyColor(d.dutyType);
   return (
-    <Box component="section" aria-label={`${TYPE_LABEL[d.dutyType] ?? d.dutyType}: ${d.dutyCode}`} sx={{ ...card(p), overflow: 'hidden' }}>
-      <Box sx={{ height: 6, bgcolor: color }} />
-      <Box sx={{ px: 2, pt: 1.5, pb: 1.5 }}>
-        <Typography sx={overline(p)}>{(TYPE_LABEL[d.dutyType] ?? d.dutyType).toUpperCase()} · {dayWord(date).toUpperCase()}</Typography>
-        <Typography sx={{ fontFamily: MONO, fontSize: '1.7rem', fontWeight: 800, mt: 0.25, wordBreak: 'break-word' }}>{d.dutyCode}</Typography>
-        {d.observations && <Typography variant="body2" sx={{ color: p.soft, mt: 0.25 }}>{d.observations}</Typography>}
-      </Box>
-      <Box display="grid" gridTemplateColumns="repeat(4, minmax(0, 1fr))" gap={0.5} sx={{ px: 2, py: 1.25, borderTop: `1px dashed ${p.line}` }}>
-        <InfoCell p={p} label="INÍCIO" value={item.start ? localAt(item.start, item.place) : '—'} />
-        <InfoCell p={p} label="FIM" value={item.end ? localAt(item.end, item.place) : '—'} />
-        <InfoCell p={p} label="DURAÇÃO" value={span !== null ? formatDuration(span) : '—'} />
-        <InfoCell p={p} label="LOCAL" value={item.place ?? '—'} />
-      </Box>
-    </Box>
+    <PassCard
+      label={`${TYPE_LABEL[d.dutyType] ?? d.dutyType}: ${d.dutyCode}`}
+      color={dutyColor(d.dutyType)}
+      overline={`${(TYPE_LABEL[d.dutyType] ?? d.dutyType).toUpperCase()} · ${dayWord(date).toUpperCase()}`}
+      title={d.dutyCode}
+      sub={d.observations ?? undefined}
+      cells={[
+        { label: 'INÍCIO', value: item.start ? localAt(item.start, item.place) : '—' },
+        { label: 'FIM', value: item.end ? localAt(item.end, item.place) : '—' },
+        { label: 'DURAÇÃO', value: span !== null ? formatDuration(span) : '—' },
+        { label: 'LOCAL', value: item.place ?? '—' },
+      ]}
+    />
   );
 }
 
@@ -383,15 +363,6 @@ function PassCell({ label, value }: { label: string; value: string }) {
     </Box>
   );
 }
-function InfoCell({ p, label, value }: { p: Palette; label: string; value: string }) {
-  return (
-    <Box minWidth={0}>
-      <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: p.soft, letterSpacing: '0.04em' }}>{label}</Typography>
-      <Typography noWrap sx={{ fontSize: '0.92rem', fontWeight: 700 }}>{value}</Typography>
-    </Box>
-  );
-}
-
 // Every duty of the day, in order — flights as routes, everything else by its code — with the
 // one in progress or next marked and what's done dimmed.
 function Timeline({ ctx, items, p, onOpen }: { ctx: DayContext; items: Item[]; p: Palette; onOpen: () => void }) {
@@ -416,20 +387,10 @@ function Timeline({ ctx, items, p, onOpen }: { ctx: DayContext; items: Item[]; p
           const sub = it.leg ? d.flightNumber ?? '' : TYPE_LABEL[d.dutyType] ?? d.dutyType;
           const span = it.start && it.end ? Math.round((it.end.getTime() - it.start.getTime()) / 60000) : null;
           return (
-            <Box key={i} display="flex" alignItems="center" gap={1.25}
-              sx={{ px: 1.5, py: 1, borderRadius: 2.5, bgcolor: p.card, border: `1px solid ${live ? p.accent : p.line}`, opacity: done ? 0.55 : 1 }}>
-              <Box sx={{ width: 5, alignSelf: 'stretch', borderRadius: 1, bgcolor: live ? p.accent : dutyColor(d.dutyType) }} />
-              <Box minWidth={0} sx={{ flexGrow: 1 }}>
-                <Typography noWrap sx={{ fontFamily: MONO, fontWeight: 700, fontSize: '0.92rem' }}>{label}</Typography>
-                <Typography noWrap sx={{ fontSize: '0.75rem', color: p.soft }}>{sub}{live ? (it.start && it.start.getTime() > now ? ' · a seguir' : ' · agora') : ''}</Typography>
-              </Box>
-              <Box textAlign="right">
-                <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-                  {it.start ? localAt(it.start, it.place) : '—'}{it.end ? `–${localAt(it.end, it.leg ? d.arrivalAirport : it.place)}` : ''}
-                </Typography>
-                {span !== null && <Typography sx={{ fontSize: '0.72rem', color: p.soft }}>{formatDuration(span)}</Typography>}
-              </Box>
-            </Box>
+            <TimelineRow key={i} color={dutyColor(d.dutyType)} live={live} done={done} title={label}
+              sub={`${sub}${live ? (it.start && it.start.getTime() > now ? ' · a seguir' : ' · agora') : ''}`}
+              right={`${it.start ? localAt(it.start, it.place) : '—'}${it.end ? `–${localAt(it.end, it.leg ? d.arrivalAirport : it.place)}` : ''}`}
+              rightSub={span !== null ? formatDuration(span) : undefined} />
           );
         })}
       </Stack>
@@ -458,16 +419,13 @@ function DayNumbers({ ctx, p, pilot, base, duties }: { ctx: DayContext; p: Palet
   return (
     <Box display="grid" gridTemplateColumns={`repeat(${tiles.length}, minmax(0, 1fr))`} gap={1}>
       {tiles.map((t) => (
-        <Box key={t.label} sx={{ ...card(p), px: 1.5, py: 1.25 }}>
-          <Typography sx={overline(p)}>{t.label}</Typography>
-          <Typography sx={{ fontSize: '1.35rem', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{t.value}</Typography>
+        <StatTile key={t.label} label={t.label} value={t.value} note={t.note}>
           {t.frac !== undefined && (
             <Box sx={{ my: 0.5, height: 6, borderRadius: 3, bgcolor: alpha(p.soft, 0.25) }}>
               <Box sx={{ width: `${Math.min(100, t.frac * 100)}%`, height: 6, borderRadius: 3, bgcolor: t.frac > 0.9 ? '#F59E0B' : p.accent }} />
             </Box>
           )}
-          <Typography noWrap sx={{ fontSize: '0.7rem', color: p.soft }}>{t.note}</Typography>
-        </Box>
+        </StatTile>
       ))}
     </Box>
   );

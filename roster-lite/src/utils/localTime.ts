@@ -69,3 +69,9 @@ export function checkInTimeLabel(
   const lt = toLocalTime(dateISO, utcHHMM, airport);
   return lt ? `${lt} LT` : `${utcHHMM}z`;
 }
+
+// Local clock time at an airport for an instant, falling back to the device's clock.
+export function localClock(d: Date, airport: string | null | undefined): string {
+  const iso = d.toISOString();
+  return toLocalTime(iso.slice(0, 10), iso.slice(11, 16), airport) ?? d.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
+}

@@ -43,6 +43,8 @@ confirmar no portal e descarregar a nova escala.
   nascer e pôr do sol reais); a cor de destaque segue o destino do dia (ilhas, sul, norte).
 - FDP e descanso mínimo do AE só para pilotos. `domain/dayPhase.ts`, `pages/TodayPage.tsx`.
 - O atalho **Hoje** da app instalada (Android) abre este ecrã; a contagem e o céu atualizam-se a cada minuto.
+- O céu do banner mostra o tempo atual onde o tripulante está (sol, lua, nuvens, chuva…, Open-Meteo), e os
+  cartões do "Hoje" (`components/PassCard.tsx`) são usados em toda a app (Lista, Dia, Pesquisa); totais do mês em mosaicos centrados.
 
 ### Vistas da escala
 - **Lista** (`/lista`) — duties agrupados por dia, com navegação por mês e indicador "Hoje", em cartões

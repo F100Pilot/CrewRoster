@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react';
-import { Box, Card, CardActionArea, CardContent, Chip, InputAdornment, Stack, TextField, Typography } from '@mui/material';
-import { FlightTakeoff, Search } from '@mui/icons-material';
+import { InputAdornment, Stack, TextField, Typography } from '@mui/material';
+import { Search } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import { searchRoster } from '../domain/rosterSearch';
+import { TimelineRow } from '../components/PassCard';
+import { dutyColor } from '../theme';
 import { dayLabel } from '../utils/dates';
 import PageHero from '../components/PageHero';
 
@@ -37,24 +39,13 @@ export default function SearchPage() {
       )}
 
       {hits.map((h, i) => (
-        <Card key={`${h.date}-${h.flightNumber}-${i}`} variant="outlined">
-          <CardActionArea
-            onClick={() => navigate(`/day/${h.date}`, h.isFlight ? { state: { flightNumber: h.flightNumber, dep: h.dep, arr: h.arr } } : undefined)}
-          >
-            <CardContent sx={{ py: 1.25 }}>
-              <Box display="flex" alignItems="center" gap={1}>
-                {h.isFlight && <FlightTakeoff fontSize="small" color="action" />}
-                <Box flexGrow={1}>
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>{h.title}</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {dayLabel(h.date, true)}
-                  </Typography>
-                </Box>
-                {!h.isFlight && <Chip size="small" variant="outlined" label={h.title} />}
-              </Box>
-            </CardContent>
-          </CardActionArea>
-        </Card>
+        <TimelineRow
+          key={`${h.date}-${h.flightNumber}-${i}`}
+          color={dutyColor(h.isFlight ? 'Flight Duty' : h.dutyType)}
+          title={h.title}
+          sub={dayLabel(h.date, true)}
+          onClick={() => navigate(`/day/${h.date}`, h.isFlight ? { state: { flightNumber: h.flightNumber, dep: h.dep, arr: h.arr } } : undefined)}
+        />
       ))}
     </Stack>
   );
