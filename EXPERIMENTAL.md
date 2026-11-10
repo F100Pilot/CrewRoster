@@ -8,7 +8,7 @@ Serve para **juntar várias alterações** e depois fazer **um único deploy** p
 produção, em vez de promover uma a uma.
 
 - **Produção (`master`) está em:** `0.8.31.1`
-- **Próxima versão ao promover:** `0.8.32` (ou superior) (ou superior, conforme o âmbito)
+- **Próxima versão ao promover:** `0.8.32` (ou superior, conforme o âmbito)
 
 ## Como promover tudo para produção (quando estiver pronto)
 
@@ -25,7 +25,15 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(nada — tudo promovido em `0.8.31.1`)_
+Em `0.8.32` (na exp):
+
+- **Abonos RAACO** (ROV-PGA 4.5, Rev. 01; Anexo 7.6 Tabelas 32–34) — `domain/raaco.ts` (+ testes), página `/abonos`
+  (menu "⋮", no formato do extrato "Abonos Operacionais") e cartão "Refeições · RAACO" no Dia. Pilotos e cabine.
+  Calibrado pelo padrão de um extrato real: estadia paga almoço, jantar e ceia à Tabela 34 + pernoita, o
+  pequeno-almoço do hotel não; Tabela 33 (5 € / 18 €, valor local no início de pernoita) para refeições não
+  embarcáveis (setores ≤ 1h30, 2.ª refeição em voo < 5h); refeição devida na estadia e no PSV de regresso é paga
+  na estadia. **Por confirmar com a escala do mesmo mês:** um pequeno-almoço de 22 € no dia de ida para FRA.
+  Marrocos não está na Tabela 34. Não entra no Vencimento (é pago à parte).
 
 ---
 

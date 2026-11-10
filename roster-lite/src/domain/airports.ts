@@ -39,6 +39,11 @@ export const AIRPORT_COORD: Record<string, Coord> = {
   DUB: { lat: 53.426, lon: -6.250 }, AMS: { lat: 52.311, lon: 4.768 }, BRU: { lat: 50.901, lon: 4.484 },
   LUX: { lat: 49.627, lon: 6.212 }, GVA: { lat: 46.238, lon: 6.109 }, ZRH: { lat: 47.458, lon: 8.556 },
   VIE: { lat: 48.110, lon: 16.570 },
+  // Other countries in the RAACO per-diem table
+  CPH: { lat: 55.618, lon: 12.656 }, BLL: { lat: 55.740, lon: 9.152 }, HEL: { lat: 60.317, lon: 24.963 },
+  OSL: { lat: 60.194, lon: 11.100 }, BGO: { lat: 60.294, lon: 5.218 }, PRG: { lat: 50.101, lon: 14.260 },
+  ZAG: { lat: 45.743, lon: 16.069 }, SPU: { lat: 43.539, lon: 16.298 }, DBV: { lat: 42.561, lon: 18.268 },
+  RAI: { lat: 14.924, lon: -23.494 }, SID: { lat: 16.741, lon: -22.949 }, BVC: { lat: 16.137, lon: -22.889 },
 };
 
 const toRad = (d: number) => (d * Math.PI) / 180;

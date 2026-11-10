@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (417 tests) — keep green
+npm test           # vitest run (424 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -224,6 +224,14 @@ Things learned over this collaboration that should persist across sessions:
   Cards follow the "Hoje" ones everywhere (since 0.8.31, user request): use `components/PassCard.tsx`
   (`PassCard` strip + overline + mono title + dashed `PassCells`; `TimelineRow`; `StatTile`; `PassBadge`)
   instead of a plain `Card` with chips. The Lista day card is `DayPass.tsx`.
+- **RAACO meal allowances** (since 0.8.32, user request): ROV-PGA cap. 4.5 (Rev. 01), values in Anexo 7.6 —
+  Tabela 32 (meal windows, local time), 33 (5 € breakfast / 18 € main; local rate when the PSV ends away),
+  34 (per country: on-ground meals + night stop). `domain/raaco.ts`, page `/abonos` (menu "⋮"), day card
+  `RaacoDayCard`. Applies to ALL crew (ROV, not the SIPLA AE) — do not gate on role. **Paid apart from the
+  salary, the month after** (an "Abonos Operacionais" statement) — never add it to the pay estimate. Calibrated
+  on the pattern of a real statement: stays pay lunch, dinner and supper at Tabela 34 plus the night (column
+  "Ceia/+Pernoita"), the hotel breakfast is NOT paid, a SIM away doesn't break the stay, sectors ≤ 1h30 pay
+  Tabela 33. The ROV PDF and the statement are not in the repo.
 - **Settings are tabbed** (since 0.8.24): Perfil · Vencimento (pilots only) · App · Dados · Ajuda in
   `SettingsDialog.tsx`; last tab in localStorage `crewroster.settingsTab`. Guardar only on Perfil/App
   (the rest saves on change). New settings go in the tab for their subject, not at the bottom.

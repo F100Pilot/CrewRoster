@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import {
   CalendarMonth, FormatListBulleted, CloudDownload, PictureAsPdf, Logout, HelpOutline, Timer,
-  Settings, MenuBook, QueryStats, Public, Badge, Search, MoreVert, Gavel, Payments, FlightTakeoff,
+  Settings, MenuBook, QueryStats, Public, Badge, Search, MoreVert, Gavel, Payments, FlightTakeoff, Restaurant,
 } from '@mui/icons-material';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
@@ -136,6 +136,11 @@ export default function Layout({ children }: { children: ReactNode }) {
                 <ListItemText>Limites</ListItemText>
               </MenuItem>
             )}
+            {/* RAACO meal allowances apply to every crew member (pilots and cabin). */}
+            <MenuItem onClick={() => { setMoreAnchor(null); navigate('/abonos'); }}>
+              <ListItemIcon><Restaurant fontSize="small" /></ListItemIcon>
+              <ListItemText>Abonos (refeições)</ListItemText>
+            </MenuItem>
             <MenuItem onClick={() => { setMoreAnchor(null); navigate('/codes'); }}>
               <ListItemIcon><HelpOutline fontSize="small" /></ListItemIcon>
               <ListItemText>Legenda de códigos</ListItemText>

@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.31.1';
+export const APP_VERSION = '0.8.32';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,16 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.32',
+    date: '2026-11-10',
+    highlights: [
+      'Novo: Abonos (refeições) — o RAACO do ROV (cap. 4.5, Tabelas 32 a 34) calculado pela escala, para pilotos e cabine. Menu "⋮" → Abonos.',
+      'A página mostra o mês como o extrato de Abonos Operacionais: data, início, escala de pernoita, pequeno-almoço, almoço, jantar e ceia + pernoita.',
+      'No Dia, cada refeição devida com o porquê: a bordo, em terra, ajuda de custo (Tabela 33) ou estadia (Tabela 34).',
+      'Em testes: o Meal Plan e as irregularidades não estão na escala — confirma sempre no extrato.',
+    ],
+  },
   {
     version: '0.8.31.1',
     date: '2026-11-10',

@@ -29,6 +29,7 @@ const CrewSearchPage = lazy(() => import('./pages/CrewSearchPage'));
 const SearchPage = lazy(() => import('./pages/SearchPage'));
 const LimitsPage = lazy(() => import('./pages/LimitsPage'));
 const PayPage = lazy(() => import('./pages/PayPage'));
+const AbonosPage = lazy(() => import('./pages/AbonosPage'));
 
 function RouteFallback() {
   return (
@@ -103,6 +104,7 @@ function AppRoutes() {
           <Route path="/codes" element={<CodesPage />} />
           <Route path="/limites" element={<LimitsPage />} />
           <Route path="/vencimento" element={<PayPage />} />
+          <Route path="/abonos" element={<AbonosPage />} />
           {/* The app shortcut "Hoje" — the home screen that follows the day. */}
           <Route path="/hoje" element={<Navigate to="/" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
