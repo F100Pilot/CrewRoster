@@ -203,8 +203,8 @@ export default function PaySettingsSection({ userId }: { userId: string }) {
               </Box>
               <Typography variant="caption" color="text.secondary">
                 Per diem pela tabela A2.2 do AE ("sujeito a confirmação"). Instrutor: sessões OPC_INS / LPC_INS e o
-                2.º dia do check; line training por dia com voos LIFUS_INS ou FAM_INS; line check por cada um — a escala não
-                o marca, conta-os no cartão do Vencimento. 0 se não és instrutor.
+                2.º dia do check; line training por dia com voos LIFUS_INS ou FAM_INS; line check por dia com voos W_INS
+                (corrige a contagem no cartão do Vencimento). 0 se não és instrutor.
                 Gabinete por dia GAB; subsídio de alimentação por dia em terra na base (isento, vai para o cartão-refeição).
               </Typography>
             </Stack>

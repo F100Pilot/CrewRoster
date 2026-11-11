@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (443 tests) — keep green
+npm test           # vitest run (445 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -186,9 +186,10 @@ Things learned over this collaboration that should persist across sessions:
   parser attaches it to the nearest flight sub-column on its right), paid once per day. Variable items
   paid the month after. Since 0.8.34: office days ("Subs. gabinete", per GAB day, `officeDay` typed by the
   pilot) and meal tickets ("Sub. alimentação tickets", one per per-diem-B day at base, `mealTicket` 10,46 €,
-  tax-free, taken off the net as "Cartão-refeição"). Line checks (payslip "LCC_Line Check") since 0.8.36: the roster has NO mark for them, so the pilot types
-  the fee (`lineCheck`, Settings → Vencimento) and counts them per month worked with −/+ on the pay card
-  (`lineChecks['yyyy-MM']`); they go into the variable part.
+  tax-free, taken off the net as "Cartão-refeição"). Line checks (payslip "LCC_Line Check") since 0.8.36: the fee is typed by the pilot (`lineCheck`); since
+  0.8.36.1 counted from the roster — one per day with flights marked **W_INS** (the examiner; the day's code is
+  W_PNT; user found it on a CrewLine roster) via `isLineCheckFlight`; −/+ on the pay card stores a per-month
+  correction (`lineChecks['yyyy-MM']`, dropped when it equals the roster's count). Variable part.
 - **Net pay** (since 0.8.23): `domain/irsWithholding.ts` holds the 2026 mainland withholding tables
   I–III (Despacho 233-A/2026; replace yearly); `netEstimate()` = gross − IRS (on the month's whole
   taxable pay, floor to €) − SS 11% − fixed deductions. Non-taxable: the pilot's `nonTaxableFixed`

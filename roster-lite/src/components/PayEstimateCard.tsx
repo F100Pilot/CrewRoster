@@ -46,10 +46,11 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
     const holidayPay = on ? { year, month: m } : auto && auto !== m ? null : { year, month: 0 };
     setPaySettings(userId, { ...settings, holidayPay });
   };
-  // Line checks aren't marked in the roster: the pilot counts them here, per month worked.
+  // Line checks come from the roster (W_INS days); − / + corrects the month's count, and going back
+  // to the roster's number drops the correction.
   const setLineChecks = (n: number) => {
     const lineChecks = { ...(settings.lineChecks ?? {}) };
-    if (n > 0) lineChecks[month] = n; else delete lineChecks[month];
+    if (n === r.lineChecksAuto) delete lineChecks[month]; else lineChecks[month] = Math.max(0, n);
     setPaySettings(userId, { ...settings, lineChecks });
   };
   if (!settings.enabled) return null;
@@ -157,10 +158,10 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                     value={r.lineTrainingValue}
                   />
                 )}
-                {(r.lineChecks > 0 || settings.lineCheck > 0) && (
+                {(r.lineChecks > 0 || r.lineChecksAuto > 0 || settings.lineCheck > 0) && (
                   <Box display="flex" alignItems="center" gap={0.5}>
                     <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1, minWidth: 0 }}>
-                      Line checks: {r.lineChecks}{r.lineChecks > 0 && !settings.lineCheck ? ' · falta o valor nas Definições' : ''}
+                      Line checks: {r.lineChecks}{r.lineChecks !== r.lineChecksAuto ? ` · corrigido (escala: ${r.lineChecksAuto})` : r.lineChecks > 0 ? ' · pela escala (W_INS)' : ''}{r.lineChecks > 0 && !settings.lineCheck ? ' · falta o valor nas Definições' : ''}
                     </Typography>
                     <IconButton size="small" aria-label="Menos um line check" disabled={r.lineChecks === 0} onClick={() => setLineChecks(r.lineChecks - 1)}><Remove fontSize="small" /></IconButton>
                     <IconButton size="small" aria-label="Mais um line check" onClick={() => setLineChecks(r.lineChecks + 1)}><Add fontSize="small" /></IconButton>
@@ -213,8 +214,8 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
 
             <Typography variant="caption" color="text.disabled" display="block" mt={0.75} lineHeight={1.35}>
               O variável (per diem incluído) é pago no mês seguinte. IRS pelas tabelas de retenção de 2026 (continente); não prevê acertos de meses anteriores. Noturno 23h–06h e feriados nacionais em hora de Lisboa. Subsídios sobre todos os fixos: férias = 42 dias (fixos ÷ 30 × 42), Natal = um mês
-              (cl. 7 e 8), com IRS retido à parte, SS e fundo de pensões. Line checks: a escala não os marca —
-              conta-os com − / +. Não inclui folgas trabalhadas, split-duty, nem o acerto anual dos plafonds (março).
+              (cl. 7 e 8), com IRS retido à parte, SS e fundo de pensões. Line checks: um por dia com voos W_INS —
+              corrige com − / + se não bater. Não inclui folgas trabalhadas, split-duty, nem o acerto anual dos plafonds (março).
               Confirma sempre no recibo.
             </Typography>
           </>

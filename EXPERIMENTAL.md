@@ -27,16 +27,17 @@ produção, em vez de promover uma a uma.
 
 - **0.8.35.1 — Vencimento:** limite isento de SS nacional por dia 51,90 € (era 54,49 €); o valor antigo guardado
   migra sozinho.
-- **0.8.36 — Vencimento:** campo "Line check (cada)" + contador por mês no cartão do Vencimento (a escala não os
-  marca).
+- **0.8.36 / 0.8.36.1 — Vencimento:** campo "Line check (cada)"; contados pela escala, um por dia com voos W_INS
+  (examinador), com − / + no cartão para corrigir o mês. Por confirmar com um PDF real: como o parser lê o código do
+  dia W_PNT (só testado o W_INS, sobre o fixture com LIFUS_INS).
 
 ---
 
 ## TODO / Backlog (decidir mais tarde)
 
 - **Vencimento (em produção desde 0.8.34):** isenção por dia (IRS 36,33 / 116,95, SS 51,90 / 175,42 — SS nacional
-  corrigido pelo utilizador em 0.8.35.1). Por confirmar: regra do "Subs. gabinete" (maio: 5 pagos para 7 dias GAB); line checks contados à
-  mão no cartão (0.8.36) — a escala não os marca; abonos estimados vs recibo (jun 697/873, ago 130/62).
+  corrigido pelo utilizador em 0.8.35.1). Por confirmar: regra do "Subs. gabinete" (maio: 5 pagos para 7 dias GAB); line checks pela marca
+  W_INS (0.8.36.1); abonos estimados vs recibo (jun 697/873, ago 130/62).
 
 - **Abonos RAACO (em produção, experimental):** conferido com maio 2026 (711 € vs 768 €). Por explicar: almoço
   de 39 € num DH LIS→FRA com apresentação 8 min depois do horário (atraso? hora planeada?) e almoço de 18 € num

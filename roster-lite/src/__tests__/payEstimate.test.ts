@@ -144,7 +144,25 @@ describe('payEstimate', () => {
     expect(r).toMatchObject({ lineTrainingDays: 2, lineTrainingValue: 260 });
   });
 
-  it('pays the line checks the pilot counted for the month (the roster has no mark for them)', () => {
+  it('counts one line check per day of flights marked W_INS (the examiner), apart from line training', () => {
+    const mk = (date: string, from: string, to: string, off: string, on: string, mark: string | null) =>
+      ({ ...leg(date, from, to, off, on), observations: mark });
+    // A W_PNT day: W_INS on both legs → one line check; another day → a second one.
+    const duties = [
+      mk('2026-09-21', 'LIS', 'RAK', '08:00', '09:35', 'W_INS'), mk('2026-09-21', 'RAK', 'LIS', '10:45', '12:25', 'W_INS'),
+      mk('2026-09-22', 'LIS', 'BIO', '14:20', '16:00', 'W_INS'),
+      mk('2026-09-27', 'LIS', 'TFS', '11:22', '14:05', 'LIFUS_INS'),
+    ];
+    const s = { ...S, lineCheck: 200, lineTrainingDay: 130 };
+    expect(payEstimate(duties, '2026-09', s, '2026-11-30')).toMatchObject({
+      lineChecks: 2, lineChecksAuto: 2, lineCheckValue: 400, lineTrainingDays: 1, lineTrainingValue: 130,
+    });
+    // The pilot's correction for the month wins over the roster's count.
+    expect(payEstimate(duties, '2026-09', { ...s, lineChecks: { '2026-09': 3 } }, '2026-11-30'))
+      .toMatchObject({ lineChecks: 3, lineChecksAuto: 2, lineCheckValue: 600 });
+  });
+
+  it('pays the line checks the pilot counted for the month', () => {
     const s = { ...S, lineCheck: 200, lineChecks: { '2026-09': 2 } };
     const sep = payEstimate([duty('2026-09-02', 'Day Off')], '2026-09', s, '2026-11-30');
     expect(sep).toMatchObject({ lineChecks: 2, lineCheckValue: 400 });
