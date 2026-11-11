@@ -25,7 +25,8 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(nada — tudo promovido em `0.8.36.1`)_
+- **0.8.37 — Simulador EBT:** o serviço conta briefing + sessão + debriefing (duty-pay, limites, descanso, apresentação
+  no Hoje); block-pay e horas da escala ficam com a sessão.
 
 ---
 
