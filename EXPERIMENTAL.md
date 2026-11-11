@@ -7,8 +7,8 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.8.34.3`
-- **Próxima versão ao promover:** `0.8.35` (ou superior, conforme o âmbito)
+- **Produção (`master`) está em:** `0.8.35`
+- **Próxima versão ao promover:** `0.8.36` (ou superior, conforme o âmbito)
 
 ## Como promover tudo para produção (quando estiver pronto)
 
@@ -25,8 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **0.8.35 — Simulador EBT:** LIS-EBT-1 / LIS-EBT-2 mostram o briefing e o debriefing (dia 1: 30 min / 1 h;
-  dia 2: 1 h / 30 min) no dia, na Lista e no Hoje. Só informação: as horas da escala e os tempos de serviço não mudam.
+_(nada — tudo promovido em `0.8.35`)_
 
 ---
 
@@ -51,4 +50,4 @@ produção, em vez de promover uma a uma.
 
 ---
 
-_Última atualização: 2026-11-10._
+_Última atualização: 2026-11-11._
