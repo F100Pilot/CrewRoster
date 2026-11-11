@@ -28,6 +28,7 @@ produção, em vez de promover uma a uma.
 - **0.8.37.1:** dias em branco no PDF apagam o dia guardado (PARSE_VERSION 16; caso real: 29/09, voo retirado que
   continuava a pagar per diem A); SS nacional de volta a 54,49 € (recibo de outubro ao cêntimo); dia médico sem
   ticket de refeição.
+- **0.8.37.2:** cartão do Vencimento ao cêntimo (sem arredondar ao euro, sem "≈"); taxa de IRS com 2 casas.
 
 ---
 

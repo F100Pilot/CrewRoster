@@ -10,7 +10,8 @@ import { todayISO } from '../domain/rosterWindow';
 
 const MONTHS_LONG = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto',
   'setembro', 'outubro', 'novembro', 'dezembro'];
-const EUR = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+// Always to the cent, as on the payslip (user: no rounding).
+const EUR = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const shiftMonth = (key: string, by: number) => {
   const [y, m] = key.split('-').map(Number);
@@ -98,13 +99,13 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                   Recibo de {monthName(paidIn)} (bruto)
                 </Typography>
                 <Typography variant="h5" fontWeight={700} sx={{ fontVariantNumeric: 'tabular-nums' }}>
-                  ≈ {EUR.format(n.gross)}
+                  {EUR.format(n.gross)}
                 </Typography>
                 <Typography variant="caption" color="text.secondary" display="block">
                   base + variável de {monthName(month)}{subsidyNames ? ` + ${subsidyNames}` : ''}{r.includesPlanned ? ' (inclui o planeado)' : ''}
                 </Typography>
                 <Typography variant="body2" sx={{ mt: 0.5, fontVariantNumeric: 'tabular-nums' }}>
-                  Líquido ≈ <b>{EUR.format(n.net)}</b>
+                  Líquido <b>{EUR.format(n.net)}</b>
                 </Typography>
               </Box>
             )}
@@ -195,7 +196,7 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                 />
                 <Box sx={{ borderTop: 1, borderColor: 'divider', my: 0.5 }} />
                 <Row label="Bruto" value={n.gross} strong />
-                <Row label={`IRS (${(n.irsRate * 100).toFixed(1).replace('.', ',')}% de ${EUR.format(n.irsBase)})`} value={-n.irs} />
+                <Row label={`IRS (${(n.irsRate * 100).toFixed(2).replace('.', ',')}% de ${EUR.format(n.irsBase)})`} value={-n.irs} />
                 {n.subsidyIrs > 0 && <Row label="IRS dos subsídios (retenção à parte)" value={-n.subsidyIrs} />}
                 <Row label="Segurança Social (11%)" value={-n.ss} />
                 {n.pensionDeposit > 0 && <Row label="Depósito f. pensões SIPLA (7,5%)" value={-n.pensionDeposit} />}

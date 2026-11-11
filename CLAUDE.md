@@ -195,6 +195,9 @@ Things learned over this collaboration that should persist across sessions:
   0.8.36.1 counted from the roster — one per day with flights marked **W_INS** (the examiner; the day's code is
   W_PNT; user found it on a CrewLine roster) via `isLineCheckFlight`; −/+ on the pay card stores a per-month
   correction (`lineChecks['yyyy-MM']`, dropped when it equals the roster's count). Variable part.
+- **Pay figures are shown to the cent** (since 0.8.37.2, user: "não quero que faças arredondamentos"): no whole-euro
+  formatting and no "≈" on the pay card; the maths was already in cents. The one rounding kept is the payroll's own:
+  IRS withheld floored to the euro (the payslip shows 6 950,00 for 40,08 % × 17 341,22).
 - **Net pay** (since 0.8.23): `domain/irsWithholding.ts` holds the 2026 mainland withholding tables
   I–III (Despacho 233-A/2026; replace yearly); `netEstimate()` = gross − IRS (on the month's whole
   taxable pay, floor to €) − SS 11% − fixed deductions. Non-taxable: the pilot's `nonTaxableFixed`
