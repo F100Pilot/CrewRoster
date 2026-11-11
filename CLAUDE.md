@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (451 tests) — keep green
+npm test           # vitest run (455 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -198,6 +198,10 @@ Things learned over this collaboration that should persist across sessions:
 - **Pay figures are shown to the cent** (since 0.8.37.2, user: "não quero que faças arredondamentos"): no whole-euro
   formatting and no "≈" on the pay card; the maths was already in cents. The one rounding kept is the payroll's own:
   IRS withheld floored to the euro (the payslip shows 6 950,00 for 40,08 % × 17 341,22).
+- **Calculator in the money fields** (since 0.8.38, user request): every money field in Settings → Vencimento has a
+  🧮 button opening `CalculatorDialog.tsx` (the phone's decimal keyboard has no "+"); a sum can also be typed in the
+  field (shows "= …", settles on blur). `utils/calc.ts` `evalExpression()` is a tiny recursive-descent parser
+  (pt numbers "7.413,47", + − × ÷ and brackets, to the cent) — never `eval`.
 - **Net pay** (since 0.8.23): `domain/irsWithholding.ts` holds the 2026 mainland withholding tables
   I–III (Despacho 233-A/2026; replace yearly); `netEstimate()` = gross − IRS (on the month's whole
   taxable pay, floor to €) − SS 11% − fixed deductions. Non-taxable: the pilot's `nonTaxableFixed`

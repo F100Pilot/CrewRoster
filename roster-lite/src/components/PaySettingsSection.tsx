@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import {
-  Accordion, AccordionDetails, AccordionSummary, Box, InputAdornment, MenuItem, Stack, Switch, TextField,
+  Accordion, AccordionDetails, AccordionSummary, Box, IconButton, InputAdornment, MenuItem, Stack, Switch, TextField,
   ToggleButton, ToggleButtonGroup, Typography,
 } from '@mui/material';
-import { ExpandMore } from '@mui/icons-material';
+import { Calculate, ExpandMore } from '@mui/icons-material';
+import CalculatorDialog from './CalculatorDialog';
+import { evalExpression, isExpression } from '../utils/calc';
 import { getPaySettings, setPaySettings } from '../storage/settings';
 import { PAY_CATEGORIES, pensionLines, perDiemDefaults, unionBaseAuto, unionFee, type PayCategory, type PaySettings } from '../domain/payEstimate';
 import { IRS_TABLES, type IrsTable } from '../domain/irsWithholding';
@@ -36,7 +38,8 @@ export default function PaySettingsSection({ userId }: { userId: string }) {
 
   const onMoney = (field: MoneyField, raw: string) => {
     setText((t) => ({ ...t, [field]: raw }));
-    const v = Number(raw.replace(/\s/g, '').replace(',', '.'));
+    // A sum typed in the field ("69 + 236,38") counts as its result; a half-typed one waits.
+    const v = isExpression(raw) ? evalExpression(raw) ?? NaN : Number(raw.replace(/\s/g, '').replace(',', '.'));
     if (raw.trim() !== '' && !Number.isFinite(v)) return;
     const n = raw.trim() === '' ? 0 : Math.max(0, v);
     const cmd = s.veCommand ?? 0;
@@ -86,6 +89,20 @@ export default function PaySettingsSection({ userId }: { userId: string }) {
 
   // Labels always sit on the border: an empty field otherwise draws its label across the € / %
   // sign, which on a phone made "Quota sindical" unreadable. The placeholder says what empty means.
+  // Each money field has a calculator (🧮) for sums of payslip lines; a sum can also be typed
+  // straight in — it shows "= …" while editing and becomes the number when the field is left.
+  const [calc, setCalc] = useState<{ field: MoneyField; label: string } | null>(null);
+  const showSum = (field: MoneyField) => {
+    const t = text[field];
+    if (!isExpression(t)) return undefined;
+    const v = evalExpression(t);
+    return v === null ? 'Conta incompleta' : `= ${EUR2.format(v)}`;
+  };
+  const settle = (field: MoneyField) => {
+    const t = text[field];
+    const v = isExpression(t) ? evalExpression(t) : null;
+    if (v !== null) setText((x) => ({ ...x, [field]: String(Math.max(0, v)).replace('.', ',') }));
+  };
   const money = (field: MoneyField, label: string, helper?: string, placeholder = '0') => (
     <TextField
       label={label}
@@ -93,12 +110,31 @@ export default function PaySettingsSection({ userId }: { userId: string }) {
       InputLabelProps={{ shrink: true }}
       value={text[field]}
       onChange={(e) => onMoney(field, e.target.value)}
+      onBlur={() => settle(field)}
       size="small"
       fullWidth
       inputMode="decimal"
-      helperText={helper}
-      InputProps={{ endAdornment: <InputAdornment position="end">€</InputAdornment> }}
+      helperText={showSum(field) ?? helper}
+      InputProps={{
+        endAdornment: (
+          <InputAdornment position="end" sx={{ gap: 0.25 }}>
+            <IconButton size="small" edge="end" aria-label={`Calculadora · ${label}`} onClick={() => setCalc({ field, label })} sx={{ mr: 0.25 }}>
+              <Calculate fontSize="small" />
+            </IconButton>
+            €
+          </InputAdornment>
+        ),
+      }}
       inputProps={{ inputMode: 'decimal', autoComplete: 'off' }}
+    />
+  );
+  const calculator = (
+    <CalculatorDialog
+      open={!!calc}
+      label={calc?.label ?? ''}
+      initial={calc ? text[calc.field] : ''}
+      onUse={(v) => { if (calc) onMoney(calc.field, String(v).replace('.', ',')); }}
+      onClose={() => setCalc(null)}
     />
   );
 
@@ -109,6 +145,7 @@ export default function PaySettingsSection({ userId }: { userId: string }) {
 
   return (
     <Stack spacing={1.5}>
+      {calculator}
       <Box display="flex" alignItems="center" gap={1}>
         <Box flexGrow={1}>
           <Typography variant="subtitle2">Mostrar a estimativa (experimental)</Typography>
