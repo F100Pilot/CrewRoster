@@ -7,8 +7,8 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.8.36.1`
-- **Próxima versão ao promover:** `0.8.37` (ou superior, conforme o âmbito)
+- **Produção (`master`) está em:** `0.8.37`
+- **Próxima versão ao promover:** `0.8.38` (ou superior, conforme o âmbito)
 
 ## Como promover tudo para produção (quando estiver pronto)
 
@@ -25,8 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **0.8.37 — Simulador EBT:** o serviço conta briefing + sessão + debriefing (duty-pay, limites, descanso, apresentação
-  no Hoje); block-pay e horas da escala ficam com a sessão.
+_(nada — tudo promovido em `0.8.37`)_
 
 ---
 
