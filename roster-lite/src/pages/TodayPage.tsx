@@ -25,6 +25,7 @@ import SkyWeather, { SKY } from '../components/SkyWeather';
 import { useCurrentWeather } from '../state/useCurrentWeather';
 import type { ParsedDuty } from '../domain/types';
 import { DUTY_TYPE_LABEL } from '../domain/dutyLabels';
+import { ebtBriefing, ebtBriefingText } from '../domain/simSession';
 
 // The home screen that changes with the crew member's day (from the approved "layout dinâmico"
 // sketch). The header is the sky over the airport they're at — dawn, day, dusk or night from the
@@ -384,10 +385,11 @@ function Timeline({ ctx, items, p, onOpen }: { ctx: DayContext; items: Item[]; p
           const done = !!it.end && it.end.getTime() <= now;
           const live = i === liveIdx;
           const label = it.leg ? `${d.departureAirport} → ${d.arrivalAirport}` : d.dutyCode;
-          const sub = it.leg ? d.flightNumber ?? '' : TYPE_LABEL[d.dutyType] ?? d.dutyType;
+          const ebt = ebtBriefing(d);
+          const sub = it.leg ? d.flightNumber ?? '' : `${TYPE_LABEL[d.dutyType] ?? d.dutyType}${ebt ? ` · ${ebtBriefingText(ebt)}` : ''}`;
           const span = it.start && it.end ? Math.round((it.end.getTime() - it.start.getTime()) / 60000) : null;
           return (
-            <TimelineRow key={i} color={dutyColor(d.dutyType)} live={live} done={done} title={label}
+            <TimelineRow key={i} color={dutyColor(d.dutyType)} live={live} done={done} title={label} wrapSub={!!ebt}
               sub={`${sub}${live ? (it.start && it.start.getTime() > now ? ' · a seguir' : ' · agora') : ''}`}
               right={`${it.start ? localAt(it.start, it.place) : '—'}${it.end ? `–${localAt(it.end, it.leg ? d.arrivalAirport : it.place)}` : ''}`}
               rightSub={span !== null ? formatDuration(span) : undefined} />

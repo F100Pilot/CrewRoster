@@ -15,7 +15,7 @@ const CODES: { code: string; dutyType: string; label: string }[] = [
   { code: 'S.EXT.', dutyType: 'Office Duty', label: 'Serviço externo' },
   { code: 'FPE-LEARN', dutyType: 'Training', label: 'Formação (e-learning)' },
   { code: 'SIM / E90-…', dutyType: 'Simulator', label: 'Simulador' },
-  { code: 'LIS-EBT-1 / LIS-EBT-2', dutyType: 'Simulator', label: 'Sessão de simulador EBT (dia 1 / dia 2)' },
+  { code: 'LIS-EBT-1 / LIS-EBT-2', dutyType: 'Simulator', label: 'Sessão de simulador EBT — dia 1: briefing 30 min, debriefing 1 h; dia 2: briefing 1 h, debriefing 30 min' },
   { code: 'LIS-OTHER', dutyType: 'Simulator', label: 'Sessão de simulador fora do âmbito EBT' },
   { code: 'SBY / STBY', dutyType: 'Standby Airport', label: 'Assistência no aeroporto' },
   { code: 'A1 / A2+ / A3++ / A4… A8', dutyType: 'Standby Home', label: 'Assistência em casa (cabina) — janela horária fixa' },

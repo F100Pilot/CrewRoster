@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (438 tests) — keep green
+npm test           # vitest run (440 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -262,6 +262,9 @@ Things learned over this collaboration that should persist across sessions:
   paid) AND a row in `roster-lite/docs/ABONOS-CASOS.md` (same id: what was reported, cause, rule adopted, version).
   Write the case first and see it fail; a fix may not break any older case — if two cases contradict, record it
   under "Em aberto" and ask instead of forcing. Unresolved reports also go to "Em aberto" there.
+- **EBT simulator briefing** (since 0.8.35, user rule): LIS-EBT-1 = briefing 30 min + debriefing 1 h, LIS-EBT-2 = briefing
+  1 h + debriefing 30 min; the roster only prints the session (4h00/5h00). `domain/simSession.ts`; shown as
+  information on the day, Lista card and "Hoje" — roster times and duty totals are NOT changed by it.
 - **Settings are tabbed** (since 0.8.24): Perfil · Vencimento (pilots only) · App · Dados · Ajuda in
   `SettingsDialog.tsx`; last tab in localStorage `crewroster.settingsTab`. Guardar only on Perfil/App
   (the rest saves on change). New settings go in the tab for their subject, not at the bottom.

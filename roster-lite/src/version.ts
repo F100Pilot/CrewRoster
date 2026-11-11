@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.34.3';
+export const APP_VERSION = '0.8.35';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,13 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.35',
+    date: '2026-11-11',
+    highlights: [
+      'Simulador EBT: as sessões LIS-EBT-1 e LIS-EBT-2 mostram o briefing e o debriefing, que a escala não indica — dia 1: briefing 30 min e debriefing 1 h; dia 2: briefing 1 h e debriefing 30 min. As horas da escala (sessão de 4h00 ou 5h00) não mudam.',
+    ],
+  },
   {
     version: '0.8.34.3',
     date: '2026-11-10',
