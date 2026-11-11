@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.37';
+export const APP_VERSION = '0.8.37.1';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,14 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.37.1',
+    date: '2026-11-11',
+    highlights: [
+      'Escala: um dia que o PDF mostra em branco passa a apagar o que estava guardado nesse dia. Antes, um voo retirado de um dia (que ficou vazio) continuava na app — e contava per diem. As escalas guardadas reprocessam sozinhas.',
+      'Vencimento: limite isento de SS nacional de volta a 54,49 € (o recibo de outubro bate ao cêntimo); o dia de exame médico não dá subsídio de alimentação (o per diem B mantém-se).',
+    ],
+  },
   {
     version: '0.8.37',
     date: '2026-11-11',

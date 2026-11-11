@@ -94,6 +94,8 @@ export interface ParseResult {
   duties: ParsedDuty[];
   rawText: string;
   warnings: string[];
+  // Days the file shows with nothing on them (PDF grid only): the merge clears what was stored there.
+  blankDates?: string[];
 }
 
 // A flown aircraft registration, recorded per crew member + day + flight. Kept apart

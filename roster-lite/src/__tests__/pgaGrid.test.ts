@@ -110,3 +110,10 @@ describe('interpretPgaGrid — line check marks (W_INS)', () => {
     expect(marked(interpretPgaGrid(swapped), 'W_INS')).toEqual(lifus);
   });
 });
+
+describe('pgaBlankDates', () => {
+  it('finds no blank day in a fully printed roster', async () => {
+    const { pgaBlankDates } = await import('../parsing/pdf/pgaGrid');
+    expect(pgaBlankDates(tokens as PositionedToken[])).toEqual([]);
+  });
+});

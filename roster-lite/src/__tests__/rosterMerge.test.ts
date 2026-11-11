@@ -26,6 +26,15 @@ describe('mergeDuties', () => {
     expect(dates(merged)).toEqual(['2026-01-10', '2026-01-20', '2026-02-05', '2026-02-15']);
   });
 
+  it('clears a stored day the new download shows blank (a flight removed, nothing printed)', () => {
+    const previous = [duty('2026-09-28', 'GAB1'), duty('2026-09-29', 'FLT', 'TP9001'), duty('2026-09-30', 'OFF')];
+    const incoming = [duty('2026-09-28', 'GAB1'), duty('2026-09-30', 'OFF')];
+    // Without the blank list a silent day is kept (a partial parse must not wipe it)…
+    expect(dates(mergeDuties(previous, incoming))).toEqual(['2026-09-28', '2026-09-29', '2026-09-30']);
+    // …but a day the PDF shows empty is gone.
+    expect(dates(mergeDuties(previous, incoming, '2026-10-31', ['2026-09-29']))).toEqual(['2026-09-28', '2026-09-30']);
+  });
+
   it('keeps dates outside the incoming window and replaces those inside', () => {
     const previous = [duty('2026-01-10'), duty('2026-02-10', 'FLT', 'TP100'), duty('2026-03-10')];
     // Re-download February only, with a changed flight number.
