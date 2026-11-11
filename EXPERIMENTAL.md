@@ -25,7 +25,8 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(nada — tudo promovido em `0.8.34.3`)_
+- **0.8.35 — Simulador EBT:** LIS-EBT-1 / LIS-EBT-2 mostram o briefing e o debriefing (dia 1: 30 min / 1 h;
+  dia 2: 1 h / 30 min) no dia, na Lista e no Hoje. Só informação: as horas da escala e os tempos de serviço não mudam.
 
 ---
 
