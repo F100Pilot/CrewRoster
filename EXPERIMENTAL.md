@@ -25,14 +25,15 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(nada — tudo promovido em `0.8.35`)_
+- **0.8.35.1 — Vencimento:** limite isento de SS nacional por dia 51,90 € (era 54,49 €); o valor antigo guardado
+  migra sozinho.
 
 ---
 
 ## TODO / Backlog (decidir mais tarde)
 
-- **Vencimento (em produção desde 0.8.34):** isenção por dia acertada ao cêntimo com 4 recibos (IRS 36,33 / 116,95,
-  SS 54,49 / 175,42). Por confirmar: regra do "Subs. gabinete" (maio: 5 pagos para 7 dias GAB); como se sabe que
+- **Vencimento (em produção desde 0.8.34):** isenção por dia (IRS 36,33 / 116,95, SS 51,90 / 175,42 — SS nacional
+  corrigido pelo utilizador em 0.8.35.1). Por confirmar: regra do "Subs. gabinete" (maio: 5 pagos para 7 dias GAB); como se sabe que
   houve line check (LCC, 200 €) — a escala não o marca; abonos estimados vs recibo (jun 697/873, ago 130/62).
 
 - **Abonos RAACO (em produção, experimental):** conferido com maio 2026 (711 € vs 768 €). Por explicar: almoço

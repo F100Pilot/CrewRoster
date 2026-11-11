@@ -186,7 +186,12 @@ const PAY_PREFIX = 'crewroster.pay.';
 export function getPaySettings(userId: string): PaySettings {
   try {
     const raw = localStorage.getItem(PAY_PREFIX + userId);
-    return raw ? { ...DEFAULT_PAY_SETTINGS, ...JSON.parse(raw) } : { ...DEFAULT_PAY_SETTINGS };
+    if (!raw) return { ...DEFAULT_PAY_SETTINGS };
+    const s: PaySettings = { ...DEFAULT_PAY_SETTINGS, ...JSON.parse(raw) };
+    // The old default national SS limit (54,49 €) was saved with every pilot's figures; move it to
+    // the corrected 51,90 € (0.8.35.1). Any other value the pilot typed stays.
+    if (s.exemptNationalSs === 54.49) s.exemptNationalSs = DEFAULT_PAY_SETTINGS.exemptNationalSs;
+    return s;
   } catch {
     return { ...DEFAULT_PAY_SETTINGS };
   }
