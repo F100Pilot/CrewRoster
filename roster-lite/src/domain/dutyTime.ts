@@ -1,6 +1,7 @@
 import type { CrewRole, ParsedDuty } from './types';
 import { peakQuarter, peakWindow, trailingSum, type DayAmount, type PeakQuarter, type PeakWindow } from './limitWindows';
 import { standbyWindowUtc } from './standbyWindows';
+import { asWorked } from './simSession';
 
 export type { PeakWindow } from './limitWindows';
 
@@ -106,7 +107,8 @@ export interface DutyWindow {
 export function dutyWindow(date: string, duties: ParsedDuty[]): DutyWindow | null {
   const starts: string[] = [];
   const ends: string[] = [];
-  for (const d of duties) {
+  // An EBT session's duty includes its briefing and debriefing (simSession.ts).
+  for (const d of duties.map(asWorked)) {
     if (d.reportingTime) starts.push(d.reportingTime);
     if (d.departureTime) {
       starts.push(d.departureTime);
@@ -199,7 +201,7 @@ function groundSessionsMinutes(work: ParsedDuty[], w: DutyWindow): number | null
 
 function dutyDay(date: string, duties: ParsedDuty[], rules: DutyRules): DutyDay | null {
   const w = workWindow(date, duties, rules);
-  const work = duties.filter((d) => !FREE.has(d.dutyType) && !STANDBY.has(d.dutyType));
+  const work = duties.filter((d) => !FREE.has(d.dutyType) && !STANDBY.has(d.dutyType)).map(asWorked);
   let span = w ? groundSessionsMinutes(work, w) ?? w.span : 0;
   let minutes = span;
   let anyStandby = false;

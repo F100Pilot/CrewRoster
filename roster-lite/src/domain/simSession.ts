@@ -2,8 +2,9 @@ import type { ParsedDuty } from './types';
 
 // EBT simulator sessions (LIS-EBT-1 / LIS-EBT-2, since Sep 2026): the roster only gives the session
 // block (4h00 or 5h00); the briefing and debriefing around it are not printed. User rule: day 1 has a
-// 30-min briefing and a 1-hour debriefing, day 2 the other way round. Shown as extra information —
-// the roster's own times stay as they are.
+// 30-min briefing and a 1-hour debriefing, day 2 the other way round. The roster's times stay as
+// printed (the session); the DUTY — limits, rest, duty-pay — runs from the briefing to the end of the
+// debriefing (user, Nov 2026: "o tempo de simulador conta o simulador mais o briefing e debriefing").
 export interface EbtBriefing { day: 1 | 2; briefMin: number; debriefMin: number }
 
 export function ebtBriefing(d: Pick<ParsedDuty, 'dutyType' | 'dutyCode'>): EbtBriefing | null {
@@ -17,3 +18,17 @@ export const briefLabel = (min: number) => (min < 60 ? `${min} min` : `${min / 6
 
 // One line for lists: "briefing 30 min · debriefing 1 h".
 export const ebtBriefingText = (b: EbtBriefing) => `briefing ${briefLabel(b.briefMin)} · debriefing ${briefLabel(b.debriefMin)}`;
+
+const shift = (hhmm: string, min: number) => {
+  const t = ((Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5)) + min) % 1440 + 1440) % 1440;
+  return `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
+};
+
+// The duty as worked: an EBT session widened by its briefing before and debriefing after (a copy;
+// any other duty is returned as it is). Used by the duty-time maths, never for display.
+export function asWorked(d: ParsedDuty): ParsedDuty {
+  const b = ebtBriefing(d);
+  if (!b || !d.departureTime || !d.arrivalTime) return d;
+  const start = shift(d.departureTime, -b.briefMin);
+  return { ...d, reportingTime: start, departureTime: start, arrivalTime: shift(d.arrivalTime, b.debriefMin) };
+}
