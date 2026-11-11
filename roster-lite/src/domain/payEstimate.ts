@@ -59,6 +59,11 @@ export interface PaySettings {
   perDiemB: number;
   instructorSession: number; // € per session given as an instructor; 0 if not an instructor
   lineTrainingDay: number; // € per day of flights flown as instructor (LIFUS_INS / FAM_INS)
+  // € per line check ("LCC_Line Check" on the payslip), one per day of flights marked W_INS (the
+  // examiner's mark; the day's own code is W_PNT). `lineChecks` ('yyyy-MM' → count) is the pilot's
+  // correction on the pay card, when the roster's count is wrong; absent = the roster's.
+  lineCheck: number;
+  lineChecks: Record<string, number>;
   officeDay: number; // € per office day ("Subs. gabinete" on the payslip — GAB days), the pilot's own figure
   mealTicket: number; // € per day of ground duty at base ("Sub. alimentação tickets", paid to the meal card)
   // ── For the net estimate ──
@@ -83,7 +88,7 @@ export interface PaySettings {
 
 export const DEFAULT_PAY_SETTINGS: PaySettings = {
   enabled: false, category: 'OP3', vb: 0, ve: 0, veCommand: 0, vs: 0, extras: 0, chiefBonus: 0,
-  perDiemA: AE_PER_DIEM.OP.a, perDiemB: AE_PER_DIEM.OP.b, instructorSession: 0, lineTrainingDay: 0,
+  perDiemA: AE_PER_DIEM.OP.a, perDiemB: AE_PER_DIEM.OP.b, instructorSession: 0, lineTrainingDay: 0, lineCheck: 0, lineChecks: {},
   // The meal-card value of a real 2026 payslip (10,46 € a day, = the card's tax-free limit); office
   // days are paid at a rate the pilot types.
   officeDay: 0, mealTicket: 10.46,
@@ -92,9 +97,10 @@ export const DEFAULT_PAY_SETTINGS: PaySettings = {
   // (simulator, training, office — "Perdiem … T" on payslips) is taxed in full. The limit is per
   // day: national, or abroad when the day touches an airport outside Portugal, already reduced for
   // the hotel the company pays. Read off four real 2026 payslips, where "Outros valores p/ impostos"
-  // = per diem away + that month's abonos − the limits, to the cent: IRS 36,33 / 116,95 €, SS 54,49 /
-  // 175,42 € (national / abroad). Editable, to follow the State Budget.
-  exemptNationalIrs: 36.33, exemptNationalSs: 54.49, exemptAbroadIrs: 116.95, exemptAbroadSs: 175.42,
+  // = per diem away + that month's abonos − the limits, to the cent: IRS 36,33 / 116,95 €, SS 51,90 /
+  // 175,42 € (national / abroad; the national SS was 54,49 until 0.8.35.1 — corrected by the user).
+  // Editable, to follow the State Budget.
+  exemptNationalIrs: 36.33, exemptNationalSs: 51.9, exemptAbroadIrs: 116.95, exemptAbroadSs: 175.42,
   pensionAuto: false,
   unionPct: 0, unionBase: 0,
   holidayPay: null,
@@ -136,6 +142,11 @@ export const SS_RATE = 0.11; // Segurança Social, the worker's share
 // with one FAM_INS day (two legs) paid one.
 export const isInstructorFlight = (d: ParsedDuty) =>
   (d.dutyType === 'Flight Duty' || d.dutyType === 'Positioning') && /\b(?:LIFUS|FAM)_INS\b/.test(d.observations ?? '');
+
+// A flight on a line check given as the examiner: marked W_INS on each sector (user, Nov 2026,
+// from a CrewLine roster: a W_PNT day with W_INS on both legs). One line check per such day.
+export const isLineCheckFlight = (d: ParsedDuty) =>
+  (d.dutyType === 'Flight Duty' || d.dutyType === 'Positioning') && /\bW_INS\b/.test(d.observations ?? '');
 
 // Simulator sessions given as an instructor. The roster marks the first day of a check with
 // "OPC" / "LPC" when the pilot is the one checked, or with "OPC_INS" / "LPC_INS" when he gives it;
@@ -219,6 +230,9 @@ export interface PayEstimate {
   instructorValue: number;
   lineTrainingDays: number;
   lineTrainingValue: number;
+  lineChecks: number;
+  lineChecksAuto: number; // the roster's count (days with W_INS flights)
+  lineCheckValue: number;
   officeDays: number; // GAB days
   officeValue: number;
   mealTicketDays: number; // per diem B days at base (ground duty): one meal ticket each
@@ -449,6 +463,12 @@ export function payEstimate(
   const lineTrainingDays = new Set(duties.filter((d) => inMonth(d.date) && isInstructorFlight(d)).map((d) => d.date)).size;
   const lineTrainingValue = lineTrainingDays * (s.lineTrainingDay || 0);
 
+  // ── Line checks: days with W_INS flights, unless the pilot corrected the month's count ──
+  const lineChecksAuto = new Set(duties.filter((d) => inMonth(d.date) && isLineCheckFlight(d)).map((d) => d.date)).size;
+  const typed = s.lineChecks?.[month];
+  const lineChecks = typed === undefined ? lineChecksAuto : Math.max(0, typed);
+  const lineCheckValue = lineChecks * (s.lineCheck || 0);
+
   // ── Office days ("Subs. gabinete"): the GAB days of the month, at the pilot's rate ──
   const officeDays = new Set(duties.filter((d) => inMonth(d.date) && d.dutyType === 'Office Duty' && /^GAB/i.test(d.dutyCode)).map((d) => d.date)).size;
   const officeValue = officeDays * (s.officeDay || 0);
@@ -478,7 +498,7 @@ export function payEstimate(
   const christmasSubsidy = paidMonth === CHRISTMAS_PAY_MONTH ? cents(fixedPay) : 0;
 
   const variable = overtimeVal + perDiemValue + complementValue + extensionValue + reductionValue + instructorValue + lineTrainingValue
-    + officeValue + mealTicketValue;
+    + lineCheckValue + officeValue + mealTicketValue;
   const lastDay = `${month}-${String(daysInMonth(month)).padStart(2, '0')}`;
   return {
     month,
@@ -508,6 +528,9 @@ export function payEstimate(
     instructorValue,
     lineTrainingDays,
     lineTrainingValue,
+    lineChecks,
+    lineChecksAuto,
+    lineCheckValue,
     officeDays,
     officeValue,
     mealTicketDays,

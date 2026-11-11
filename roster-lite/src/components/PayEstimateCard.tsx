@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Alert, Box, Card, CardContent, Checkbox, FormControlLabel, IconButton, Stack, Typography } from '@mui/material';
-import { ChevronLeft, ChevronRight, ExpandLess, ExpandMore, Payments } from '@mui/icons-material';
+import { Add, ChevronLeft, ChevronRight, ExpandLess, ExpandMore, Payments, Remove } from '@mui/icons-material';
 import { netEstimate, payEstimate, type Credit } from '../domain/payEstimate';
 import { getPaySettings, setPaySettings } from '../storage/settings';
 import { ExperimentalChip } from './AeDisclaimer';
@@ -45,6 +45,13 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
     const auto = payEstimate(duties, month, { ...settings, holidayPay: null }, today, base).holidayPayMonth;
     const holidayPay = on ? { year, month: m } : auto && auto !== m ? null : { year, month: 0 };
     setPaySettings(userId, { ...settings, holidayPay });
+  };
+  // Line checks come from the roster (W_INS days); − / + corrects the month's count, and going back
+  // to the roster's number drops the correction.
+  const setLineChecks = (n: number) => {
+    const lineChecks = { ...(settings.lineChecks ?? {}) };
+    if (n === r.lineChecksAuto) delete lineChecks[month]; else lineChecks[month] = Math.max(0, n);
+    setPaySettings(userId, { ...settings, lineChecks });
   };
   if (!settings.enabled) return null;
   const subsidyCount = (r.holidaySubsidy > 0 ? 1 : 0) + (r.christmasSubsidy > 0 ? 1 : 0);
@@ -151,6 +158,16 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                     value={r.lineTrainingValue}
                   />
                 )}
+                {(r.lineChecks > 0 || r.lineChecksAuto > 0 || settings.lineCheck > 0) && (
+                  <Box display="flex" alignItems="center" gap={0.5}>
+                    <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1, minWidth: 0 }}>
+                      Line checks: {r.lineChecks}{r.lineChecks !== r.lineChecksAuto ? ` · corrigido (escala: ${r.lineChecksAuto})` : r.lineChecks > 0 ? ' · pela escala (W_INS)' : ''}{r.lineChecks > 0 && !settings.lineCheck ? ' · falta o valor nas Definições' : ''}
+                    </Typography>
+                    <IconButton size="small" aria-label="Menos um line check" disabled={r.lineChecks === 0} onClick={() => setLineChecks(r.lineChecks - 1)}><Remove fontSize="small" /></IconButton>
+                    <IconButton size="small" aria-label="Mais um line check" onClick={() => setLineChecks(r.lineChecks + 1)}><Add fontSize="small" /></IconButton>
+                    <Typography variant="body2" fontWeight={600} sx={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{EUR.format(r.lineCheckValue)}</Typography>
+                  </Box>
+                )}
                 {r.officeDays > 0 && (
                   <Row
                     label={`Subsídio de gabinete: ${r.officeDays} ${r.officeDays === 1 ? 'dia' : 'dias'} GAB${settings.officeDay ? '' : ' · falta o valor nas Definições'}`}
@@ -197,8 +214,8 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
 
             <Typography variant="caption" color="text.disabled" display="block" mt={0.75} lineHeight={1.35}>
               O variável (per diem incluído) é pago no mês seguinte. IRS pelas tabelas de retenção de 2026 (continente); não prevê acertos de meses anteriores. Noturno 23h–06h e feriados nacionais em hora de Lisboa. Subsídios sobre todos os fixos: férias = 42 dias (fixos ÷ 30 × 42), Natal = um mês
-              (cl. 7 e 8), com IRS retido à parte, SS e fundo de pensões. Não inclui folgas trabalhadas, split-duty,
-              line checks (LCC), nem o acerto anual dos plafonds (março).
+              (cl. 7 e 8), com IRS retido à parte, SS e fundo de pensões. Line checks: um por dia com voos W_INS —
+              corrige com − / + se não bater. Não inclui folgas trabalhadas, split-duty, nem o acerto anual dos plafonds (março).
               Confirma sempre no recibo.
             </Typography>
           </>

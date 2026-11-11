@@ -6,6 +6,7 @@ import type { ParsedDuty } from './types';
 export const MARK_LABEL: Record<string, string> = {
   LIFUS_INS: 'Line training · instrutor',
   FAM_INS: 'Familiarização · instrutor',
+  W_INS: 'Line check · instrutor',
   OPC_INS: 'OPC · instrutor',
   LPC_INS: 'LPC · instrutor',
   OPC: 'OPC',
@@ -16,6 +17,7 @@ export const MARK_LABEL: Record<string, string> = {
 export const MARK_SHORT: Record<string, string> = {
   LIFUS_INS: 'LIFUS · instr.',
   FAM_INS: 'FAM · instr.',
+  W_INS: 'LC · instr.',
   OPC_INS: 'OPC · instr.',
   LPC_INS: 'LPC · instr.',
   OPC: 'OPC',

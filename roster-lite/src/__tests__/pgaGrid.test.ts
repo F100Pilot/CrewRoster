@@ -99,3 +99,14 @@ describe('interpretPgaGrid (real PGA PDF fixture)', () => {
     expect(duties.some((d) => d.dutyType === 'Simulator')).toBe(true);
   });
 });
+
+describe('interpretPgaGrid — line check marks (W_INS)', () => {
+  it('attaches W_INS to its flights the same way as LIFUS_INS (the examiner on a line check)', () => {
+    const swapped = (tokens as PositionedToken[]).map((t) => (t.text.trim() === 'LIFUS_INS' ? { ...t, text: 'W_INS' } : t));
+    const marked = (list: typeof duties, mark: string) =>
+      list.filter((d) => (d.observations ?? '').split(/,\s*/).includes(mark)).map((d) => `${d.date} ${d.flightNumber}`);
+    const lifus = marked(duties, 'LIFUS_INS');
+    expect(lifus.length).toBeGreaterThan(0);
+    expect(marked(interpretPgaGrid(swapped), 'W_INS')).toEqual(lifus);
+  });
+});

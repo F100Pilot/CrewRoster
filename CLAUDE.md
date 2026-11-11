@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (440 tests) — keep green
+npm test           # vitest run (445 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -186,13 +186,16 @@ Things learned over this collaboration that should persist across sessions:
   parser attaches it to the nearest flight sub-column on its right), paid once per day. Variable items
   paid the month after. Since 0.8.34: office days ("Subs. gabinete", per GAB day, `officeDay` typed by the
   pilot) and meal tickets ("Sub. alimentação tickets", one per per-diem-B day at base, `mealTicket` 10,46 €,
-  tax-free, taken off the net as "Cartão-refeição"). LCC (line check, 200 €) is not modelled: no roster mark.
+  tax-free, taken off the net as "Cartão-refeição"). Line checks (payslip "LCC_Line Check") since 0.8.36: the fee is typed by the pilot (`lineCheck`); since
+  0.8.36.1 counted from the roster — one per day with flights marked **W_INS** (the examiner; the day's code is
+  W_PNT; user found it on a CrewLine roster) via `isLineCheckFlight`; −/+ on the pay card stores a per-month
+  correction (`lineChecks['yyyy-MM']`, dropped when it equals the roster's count). Variable part.
 - **Net pay** (since 0.8.23): `domain/irsWithholding.ts` holds the 2026 mainland withholding tables
   I–III (Despacho 233-A/2026; replace yearly); `netEstimate()` = gross − IRS (on the month's whole
   taxable pay, floor to €) − SS 11% − fixed deductions. Non-taxable: the pilot's `nonTaxableFixed`
   (PGA pension contribution) and the exempt per diem of days away — since 0.8.33 PER DAY: national or
-  abroad limit (`exemptNational/AbroadIrs/Ss`: IRS 36,33 / 116,95, SS 54,49 / 175,42 — read off four real 2026
-  payslips, already reduced for the hotel the company pays; update with the State Budget), applied to that day's
+  abroad limit (`exemptNational/AbroadIrs/Ss`: IRS 36,33 / 116,95, SS 51,90 / 175,42 — read off four real 2026
+  payslips; national SS corrected by the user from 54,49 in 0.8.35.1, with a load-time migration of the old saved default, already reduced for the hotel the company pays; update with the State Budget), applied to that day's
   per diem + its RAACO abonos; the rest is taxed with the salary (the payslip's "Outros valores p/ impostos",
   which is INCLUDED in its "Sujeito a IRS" and in the next month's SS line); per diem for days at base ("… T") is
   taxed in full. A SIM away (e.g. FRA during a stay) is per diem A away, not "… T". With the real abonos, IRS and SS
@@ -265,6 +268,7 @@ Things learned over this collaboration that should persist across sessions:
 - **EBT simulator briefing** (since 0.8.35, user rule): LIS-EBT-1 = briefing 30 min + debriefing 1 h, LIS-EBT-2 = briefing
   1 h + debriefing 30 min; the roster only prints the session (4h00/5h00). `domain/simSession.ts`; shown as
   information on the day, Lista card and "Hoje" — roster times and duty totals are NOT changed by it.
+  User confirmed (Nov 2026): the roster's times are the session only, and the info-only display is what they want.
 - **Settings are tabbed** (since 0.8.24): Perfil · Vencimento (pilots only) · App · Dados · Ajuda in
   `SettingsDialog.tsx`; last tab in localStorage `crewroster.settingsTab`. Guardar only on Perfil/App
   (the rest saves on change). New settings go in the tab for their subject, not at the bottom.

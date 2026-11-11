@@ -7,8 +7,8 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.8.35`
-- **Próxima versão ao promover:** `0.8.36` (ou superior, conforme o âmbito)
+- **Produção (`master`) está em:** `0.8.36.1`
+- **Próxima versão ao promover:** `0.8.37` (ou superior, conforme o âmbito)
 
 ## Como promover tudo para produção (quando estiver pronto)
 
@@ -25,15 +25,18 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(nada — tudo promovido em `0.8.35`)_
+_(nada — tudo promovido em `0.8.36.1`)_
 
 ---
 
 ## TODO / Backlog (decidir mais tarde)
 
-- **Vencimento (em produção desde 0.8.34):** isenção por dia acertada ao cêntimo com 4 recibos (IRS 36,33 / 116,95,
-  SS 54,49 / 175,42). Por confirmar: regra do "Subs. gabinete" (maio: 5 pagos para 7 dias GAB); como se sabe que
-  houve line check (LCC, 200 €) — a escala não o marca; abonos estimados vs recibo (jun 697/873, ago 130/62).
+- **Line checks (W_INS, em produção desde 0.8.36.1):** confirmar com um PDF real que o código do dia W_PNT é lido
+  sem baralhar o dia (só o W_INS foi testado, sobre o fixture com LIFUS_INS) e que o recibo paga um por dia.
+
+- **Vencimento (em produção desde 0.8.34):** isenção por dia (IRS 36,33 / 116,95, SS 51,90 / 175,42 — SS nacional
+  corrigido pelo utilizador em 0.8.35.1). Por confirmar: regra do "Subs. gabinete" (maio: 5 pagos para 7 dias GAB); line checks pela marca
+  W_INS (0.8.36.1); abonos estimados vs recibo (jun 697/873, ago 130/62).
 
 - **Abonos RAACO (em produção, experimental):** conferido com maio 2026 (711 € vs 768 €). Por explicar: almoço
   de 39 € num DH LIS→FRA com apresentação 8 min depois do horário (atraso? hora planeada?) e almoço de 18 € num
