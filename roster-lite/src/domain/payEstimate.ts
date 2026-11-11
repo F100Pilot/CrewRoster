@@ -59,6 +59,10 @@ export interface PaySettings {
   perDiemB: number;
   instructorSession: number; // € per session given as an instructor; 0 if not an instructor
   lineTrainingDay: number; // € per day of flights flown as instructor (LIFUS_INS / FAM_INS)
+  // € per line check ("LCC_Line Check" on the payslip). The roster has no mark for it, so the pilot
+  // counts them per month worked on the pay card (`lineChecks`, keyed 'yyyy-MM').
+  lineCheck: number;
+  lineChecks: Record<string, number>;
   officeDay: number; // € per office day ("Subs. gabinete" on the payslip — GAB days), the pilot's own figure
   mealTicket: number; // € per day of ground duty at base ("Sub. alimentação tickets", paid to the meal card)
   // ── For the net estimate ──
@@ -83,7 +87,7 @@ export interface PaySettings {
 
 export const DEFAULT_PAY_SETTINGS: PaySettings = {
   enabled: false, category: 'OP3', vb: 0, ve: 0, veCommand: 0, vs: 0, extras: 0, chiefBonus: 0,
-  perDiemA: AE_PER_DIEM.OP.a, perDiemB: AE_PER_DIEM.OP.b, instructorSession: 0, lineTrainingDay: 0,
+  perDiemA: AE_PER_DIEM.OP.a, perDiemB: AE_PER_DIEM.OP.b, instructorSession: 0, lineTrainingDay: 0, lineCheck: 0, lineChecks: {},
   // The meal-card value of a real 2026 payslip (10,46 € a day, = the card's tax-free limit); office
   // days are paid at a rate the pilot types.
   officeDay: 0, mealTicket: 10.46,
@@ -220,6 +224,8 @@ export interface PayEstimate {
   instructorValue: number;
   lineTrainingDays: number;
   lineTrainingValue: number;
+  lineChecks: number;
+  lineCheckValue: number;
   officeDays: number; // GAB days
   officeValue: number;
   mealTicketDays: number; // per diem B days at base (ground duty): one meal ticket each
@@ -450,6 +456,10 @@ export function payEstimate(
   const lineTrainingDays = new Set(duties.filter((d) => inMonth(d.date) && isInstructorFlight(d)).map((d) => d.date)).size;
   const lineTrainingValue = lineTrainingDays * (s.lineTrainingDay || 0);
 
+  // ── Line checks: not in the roster — the count the pilot typed for this month ──
+  const lineChecks = Math.max(0, s.lineChecks?.[month] ?? 0);
+  const lineCheckValue = lineChecks * (s.lineCheck || 0);
+
   // ── Office days ("Subs. gabinete"): the GAB days of the month, at the pilot's rate ──
   const officeDays = new Set(duties.filter((d) => inMonth(d.date) && d.dutyType === 'Office Duty' && /^GAB/i.test(d.dutyCode)).map((d) => d.date)).size;
   const officeValue = officeDays * (s.officeDay || 0);
@@ -479,7 +489,7 @@ export function payEstimate(
   const christmasSubsidy = paidMonth === CHRISTMAS_PAY_MONTH ? cents(fixedPay) : 0;
 
   const variable = overtimeVal + perDiemValue + complementValue + extensionValue + reductionValue + instructorValue + lineTrainingValue
-    + officeValue + mealTicketValue;
+    + lineCheckValue + officeValue + mealTicketValue;
   const lastDay = `${month}-${String(daysInMonth(month)).padStart(2, '0')}`;
   return {
     month,
@@ -509,6 +519,8 @@ export function payEstimate(
     instructorValue,
     lineTrainingDays,
     lineTrainingValue,
+    lineChecks,
+    lineCheckValue,
     officeDays,
     officeValue,
     mealTicketDays,

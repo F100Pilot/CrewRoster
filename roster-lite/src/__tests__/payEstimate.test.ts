@@ -144,6 +144,14 @@ describe('payEstimate', () => {
     expect(r).toMatchObject({ lineTrainingDays: 2, lineTrainingValue: 260 });
   });
 
+  it('pays the line checks the pilot counted for the month (the roster has no mark for them)', () => {
+    const s = { ...S, lineCheck: 200, lineChecks: { '2026-09': 2 } };
+    const sep = payEstimate([duty('2026-09-02', 'Day Off')], '2026-09', s, '2026-11-30');
+    expect(sep).toMatchObject({ lineChecks: 2, lineCheckValue: 400 });
+    expect(netEstimate(sep, s).gross - netEstimate(payEstimate([duty('2026-09-02', 'Day Off')], '2026-09', S, '2026-11-30'), S).gross).toBe(400);
+    expect(payEstimate([duty('2026-10-02', 'Day Off')], '2026-10', s, '2026-11-30')).toMatchObject({ lineChecks: 0, lineCheckValue: 0 });
+  });
+
   it('pays the Christmas subsidy (one RB) on the November payslip, taxed apart (cl. 8)', () => {
     const nov = payEstimate([duty('2026-10-02', 'Day Off')], '2026-10', S, '2026-10-31'); // work of Oct → Nov payslip
     expect(nov).toMatchObject({ christmasSubsidy: 5300, holidaySubsidy: 0 });

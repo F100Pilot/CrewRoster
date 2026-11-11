@@ -13,7 +13,7 @@ const cents = (v: number) => Math.round(v * 100) / 100;
 
 // `veTech` and `extrasOther` are what's left of VE / the complements once the command lines are
 // typed apart (the union fee's base leaves those out); the stored totals stay `ve` and `extras`.
-type MoneyField = 'vb' | 'veTech' | 'veCommand' | 'vs' | 'extrasOther' | 'chiefBonus' | 'perDiemA' | 'perDiemB' | 'instructorSession' | 'lineTrainingDay'
+type MoneyField = 'vb' | 'veTech' | 'veCommand' | 'vs' | 'extrasOther' | 'chiefBonus' | 'perDiemA' | 'perDiemB' | 'instructorSession' | 'lineTrainingDay' | 'lineCheck'
   | 'officeDay' | 'mealTicket'
   | 'nonTaxableFixed' | 'fixedDeductions' | 'exemptNationalIrs' | 'exemptNationalSs' | 'exemptAbroadIrs' | 'exemptAbroadSs'
   | 'unionPct' | 'unionBase';
@@ -197,12 +197,14 @@ export default function PaySettingsSection({ userId }: { userId: string }) {
                 {money('perDiemB', 'Per diem B')}
                 {money('instructorSession', 'Sessão simulador (instr.)')}
                 {money('lineTrainingDay', 'Line training (dia)')}
+                {money('lineCheck', 'Line check (cada)')}
                 {money('officeDay', 'Subs. gabinete (dia GAB)')}
                 {money('mealTicket', 'Sub. alimentação (dia)')}
               </Box>
               <Typography variant="caption" color="text.secondary">
                 Per diem pela tabela A2.2 do AE ("sujeito a confirmação"). Instrutor: sessões OPC_INS / LPC_INS e o
-                2.º dia do check; line training por dia com voos LIFUS_INS ou FAM_INS. 0 se não és instrutor.
+                2.º dia do check; line training por dia com voos LIFUS_INS ou FAM_INS; line check por cada um — a escala não
+                o marca, conta-os no cartão do Vencimento. 0 se não és instrutor.
                 Gabinete por dia GAB; subsídio de alimentação por dia em terra na base (isento, vai para o cartão-refeição).
               </Typography>
             </Stack>
@@ -296,7 +298,7 @@ function toText(s: PaySettings): Record<MoneyField, string> {
     vb: f(s.vb), veTech: f(cents(s.ve - (s.veCommand ?? 0))), veCommand: f(s.veCommand ?? 0), vs: f(s.vs),
     extrasOther: f(cents(s.extras - (s.chiefBonus ?? 0))), chiefBonus: f(s.chiefBonus ?? 0),
     perDiemA: f(s.perDiemA), perDiemB: f(s.perDiemB), instructorSession: f(s.instructorSession),
-    lineTrainingDay: f(s.lineTrainingDay), officeDay: f(s.officeDay ?? 0), mealTicket: f(s.mealTicket ?? 0), nonTaxableFixed: f(s.nonTaxableFixed), fixedDeductions: f(s.fixedDeductions),
+    lineTrainingDay: f(s.lineTrainingDay), lineCheck: f(s.lineCheck ?? 0), officeDay: f(s.officeDay ?? 0), mealTicket: f(s.mealTicket ?? 0), nonTaxableFixed: f(s.nonTaxableFixed), fixedDeductions: f(s.fixedDeductions),
     exemptNationalIrs: f(s.exemptNationalIrs), exemptNationalSs: f(s.exemptNationalSs),
     exemptAbroadIrs: f(s.exemptAbroadIrs), exemptAbroadSs: f(s.exemptAbroadSs),
     unionPct: f(s.unionPct), unionBase: f(s.unionBase),
