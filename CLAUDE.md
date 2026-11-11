@@ -270,7 +270,8 @@ Things learned over this collaboration that should persist across sessions:
   information on the day, Lista card and "Hoje". The roster's times are the session only (user confirmed); since 0.8.37
   the DUTY counts briefing + session + debriefing (user: "o tempo de simulador conta o simulador mais o briefing e
   debriefing"): `asWorked()` widens EBT sessions inside `dutyWindow` / `dutyDay`, so duty-pay, limits, rest and the
-  "Hoje" report time follow; displayed session times and block-pay stay on the session.
+  "Hoje" report time follow; displayed session times and block-pay stay on the session (block-pay = sim time only,
+  user confirmed).
 - **Settings are tabbed** (since 0.8.24): Perfil · Vencimento (pilots only) · App · Dados · Ajuda in
   `SettingsDialog.tsx`; last tab in localStorage `crewroster.settingsTab`. Guardar only on Perfil/App
   (the rest saves on change). New settings go in the tab for their subject, not at the bottom.
