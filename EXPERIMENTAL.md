@@ -7,8 +7,8 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.8.35`
-- **Próxima versão ao promover:** `0.8.36` (ou superior, conforme o âmbito)
+- **Produção (`master`) está em:** `0.8.36.1`
+- **Próxima versão ao promover:** `0.8.37` (ou superior, conforme o âmbito)
 
 ## Como promover tudo para produção (quando estiver pronto)
 
@@ -25,15 +25,14 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **0.8.35.1 — Vencimento:** limite isento de SS nacional por dia 51,90 € (era 54,49 €); o valor antigo guardado
-  migra sozinho.
-- **0.8.36 / 0.8.36.1 — Vencimento:** campo "Line check (cada)"; contados pela escala, um por dia com voos W_INS
-  (examinador), com − / + no cartão para corrigir o mês. Por confirmar com um PDF real: como o parser lê o código do
-  dia W_PNT (só testado o W_INS, sobre o fixture com LIFUS_INS).
+_(nada — tudo promovido em `0.8.36.1`)_
 
 ---
 
 ## TODO / Backlog (decidir mais tarde)
+
+- **Line checks (W_INS, em produção desde 0.8.36.1):** confirmar com um PDF real que o código do dia W_PNT é lido
+  sem baralhar o dia (só o W_INS foi testado, sobre o fixture com LIFUS_INS) e que o recibo paga um por dia.
 
 - **Vencimento (em produção desde 0.8.34):** isenção por dia (IRS 36,33 / 116,95, SS 51,90 / 175,42 — SS nacional
   corrigido pelo utilizador em 0.8.35.1). Por confirmar: regra do "Subs. gabinete" (maio: 5 pagos para 7 dias GAB); line checks pela marca
