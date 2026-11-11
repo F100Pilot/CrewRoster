@@ -265,6 +265,7 @@ Things learned over this collaboration that should persist across sessions:
 - **EBT simulator briefing** (since 0.8.35, user rule): LIS-EBT-1 = briefing 30 min + debriefing 1 h, LIS-EBT-2 = briefing
   1 h + debriefing 30 min; the roster only prints the session (4h00/5h00). `domain/simSession.ts`; shown as
   information on the day, Lista card and "Hoje" — roster times and duty totals are NOT changed by it.
+  User confirmed (Nov 2026): the roster's times are the session only, and the info-only display is what they want.
 - **Settings are tabbed** (since 0.8.24): Perfil · Vencimento (pilots only) · App · Dados · Ajuda in
   `SettingsDialog.tsx`; last tab in localStorage `crewroster.settingsTab`. Guardar only on Perfil/App
   (the rest saves on change). New settings go in the tab for their subject, not at the bottom.
