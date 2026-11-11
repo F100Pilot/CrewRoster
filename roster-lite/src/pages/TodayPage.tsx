@@ -137,7 +137,7 @@ export default function TodayPage() {
   return (
     <ThemeProvider theme={theme}>
       {/* Bleed to the screen edges and fill the height, so the phase colours are the page. */}
-      <Box sx={{ mx: { xs: -2, sm: -3 }, mt: -2, mb: -2, bgcolor: p.bg, color: p.fg, minHeight: 'calc(100vh - 104px)', pb: 3 }}>
+      <Box sx={{ mx: { xs: -2, sm: -3 }, mt: -2, mb: -2, bgcolor: p.bg, color: p.fg, minHeight: 'calc(100dvh - 104px - var(--sat) - var(--sab))', pb: 3 }}>
         <SkyHeader ctx={ctx} sky={sky.sky} sunrise={sky.sunrise} sunset={sky.sunset} accent={p.pill} base={base} />
         <Stack spacing={1.5} sx={{ px: 2, pt: 2 }}>
           <Body ctx={ctx} p={p} pilot={pilot} base={base} duties={roster.duties} />

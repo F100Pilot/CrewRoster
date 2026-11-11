@@ -84,6 +84,12 @@ cross-origin. Endpoints: `POST /api/login`, `/api/roster`, `/api/flightinfo`,
   under them; `mergeDuties(…, blankDates)` clears the stored day there (otherwise silent days are kept, to survive
   partial parses). Real case: a flight removed from 29/09 left the day blank and the stale flight kept paying a
   per diem A.
+- **iPhone = the PWA through Safari** (since 0.8.39; the user has no iPhone and chose this over an App Store wrapper):
+  `viewport-fit=cover` + status bar black-translucent, so the AppBar / bottom nav / root padding use the safe-area
+  CSS vars `--sat/--sab/--sal/--sar` (set in `theme.ts` CssBaseline from `env(safe-area-inset-*)`; a test can override
+  them — Chromium reports 0). Heights use `dvh`. `downloadBlob()` uses the share sheet on iOS (blob download links
+  strand a standalone web app); `main.tsx` asks `navigator.storage.persist()`. Verified only in an emulated iPhone —
+  a colleague with a real iPhone must confirm.
 - **Auto re-parse on load:** `RosterProvider` re-parses stored PDFs when
   `parseVersion` is behind `PARSE_VERSION`, so parser improvements (crew included) apply
   without the user re-importing.

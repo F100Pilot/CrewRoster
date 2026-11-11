@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.38';
+export const APP_VERSION = '0.8.39';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,14 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.39',
+    date: '2026-11-11',
+    highlights: [
+      'iPhone: a app ocupa o ecrã todo sem ficar por baixo do relógio / Dynamic Island nem da barra de gestos; guardar PDFs, backups e o diário abre a folha de partilha do iPhone (Guardar em Ficheiros, Mail, WhatsApp…); a app pede ao telemóvel para não apagar os seus dados.',
+      'Definições → Ajuda: como instalar a app no iPhone (Safari → Partilhar → Adicionar ao ecrã principal) e no Android.',
+    ],
+  },
   {
     version: '0.8.38',
     date: '2026-11-11',

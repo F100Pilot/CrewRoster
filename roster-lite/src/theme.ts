@@ -37,6 +37,19 @@ export function createAppTheme(mode: ColorMode): Theme {
     },
     shape: { borderRadius: 12 },
     components: {
+      // iPhone: the app is drawn edge to edge (viewport-fit=cover, status bar "black-translucent"),
+      // so the bars keep clear of the notch / Dynamic Island and the home indicator with the safe
+      // areas. Kept in variables so a test can set them (desktop browsers report 0).
+      MuiCssBaseline: {
+        styleOverrides: {
+          ':root': {
+            '--sat': 'env(safe-area-inset-top, 0px)', '--sab': 'env(safe-area-inset-bottom, 0px)',
+            '--sal': 'env(safe-area-inset-left, 0px)', '--sar': 'env(safe-area-inset-right, 0px)',
+          },
+          // No rubber-band bounce dragging the whole app (and the bars) on iOS.
+          body: { overscrollBehaviorY: 'none' },
+        },
+      },
       MuiPaper: { styleOverrides: { root: { backgroundImage: 'none' } } },
       MuiAppBar: {
         defaultProps: { elevation: 0, color: 'inherit' },

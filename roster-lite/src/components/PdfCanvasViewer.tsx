@@ -251,7 +251,7 @@ export default function PdfCanvasViewer({ blob }: { blob: Blob }) {
         ref={scrollRef}
         sx={{
           width: '100%',
-          height: 'calc(100vh - 210px)',
+          height: 'calc(100dvh - 210px - var(--sat) - var(--sab))',
           minHeight: 360,
           overflow: 'auto',
           bgcolor: 'action.hover',

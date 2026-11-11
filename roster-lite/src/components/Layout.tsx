@@ -92,8 +92,8 @@ export default function Layout({ children }: { children: ReactNode }) {
   }, [activeUser]);
 
   return (
-    <Box sx={{ pb: 8, minHeight: '100vh', bgcolor: 'background.default' }}>
-      <AppBar position="sticky" elevation={0}>
+    <Box sx={{ pb: 'calc(64px + var(--sab))', pl: 'var(--sal)', pr: 'var(--sar)', minHeight: '100dvh', bgcolor: 'background.default' }}>
+      <AppBar position="sticky" elevation={0} sx={{ pt: 'var(--sat)' }}>
         <Toolbar variant="dense">
           {/* App name with the version stacked underneath. */}
           <Box sx={{ flexGrow: 1, minWidth: 0 }}>
@@ -168,7 +168,8 @@ export default function Layout({ children }: { children: ReactNode }) {
       <Paper
         data-tour="nav"
         ref={navRef}
-        sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, overflowX: 'auto' }}
+        // pb: clear of the iPhone's home indicator; pl/pr: of the notch in landscape.
+        sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, overflowX: 'auto', pb: 'var(--sab)', pl: 'var(--sal)', pr: 'var(--sar)' }}
         elevation={3}
       >
         <BottomNavigation
@@ -191,14 +192,14 @@ export default function Layout({ children }: { children: ReactNode }) {
       {/* Subtle edge fades hinting the bottom bar scrolls sideways. */}
       <Box
         sx={{
-          position: 'fixed', bottom: 0, left: 0, width: 24, height: 56, zIndex: 1300,
+          position: 'fixed', bottom: 'var(--sab)', left: 0, width: 24, height: 56, zIndex: 1300,
           pointerEvents: 'none',
           background: (t) => `linear-gradient(to right, ${t.palette.background.paper}, transparent)`,
         }}
       />
       <Box
         sx={{
-          position: 'fixed', bottom: 0, right: 0, width: 24, height: 56, zIndex: 1300,
+          position: 'fixed', bottom: 'var(--sab)', right: 0, width: 24, height: 56, zIndex: 1300,
           pointerEvents: 'none',
           background: (t) => `linear-gradient(to left, ${t.palette.background.paper}, transparent)`,
         }}
