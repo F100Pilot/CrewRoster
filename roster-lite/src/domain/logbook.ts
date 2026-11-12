@@ -66,10 +66,17 @@ export function rowNightTakeoff(r: LogbookRow): boolean {
   return sectorSun(r.from, r.to, r.date, r.off, r.on)?.depDay === false;
 }
 
+// Was there a take-off / a landing on the sector at all? A ramp return (back to the same airport,
+// e.g. LIS→LIS — a user's report) has neither by default; the pilot can say otherwise (an air
+// return) or mark any sector as without one in "Editar setor".
+export const isRampReturn = (r: Pick<LogbookRow, 'from' | 'to'>): boolean => !!r.from && r.from === r.to;
+export const hadTakeoff = (r: LogbookRow): boolean => (r.toNone === undefined ? !isRampReturn(r) : !r.toNone);
+export const hadLanding = (r: LogbookRow): boolean => (r.ldgNone === undefined ? !isRampReturn(r) : !r.ldgNone);
+
 // Did I perform the take-off / the landing (Pilot Flying)? Unset defaults to yes, so an
 // un-annotated logbook counts each sector as flown by me until I mark the exceptions.
-export const didTakeoff = (r: LogbookRow): boolean => r.toSelf !== false;
-export const didLanding = (r: LogbookRow): boolean => r.ldgSelf !== false;
+export const didTakeoff = (r: LogbookRow): boolean => hadTakeoff(r) && r.toSelf !== false;
+export const didLanding = (r: LogbookRow): boolean => hadLanding(r) && r.ldgSelf !== false;
 
 // My take-offs and landings split day/night — the EASA logbook tally. Counts only the ones I
 // flew (Pilot Flying), deduped by day+flight+route so a re-import can't inflate them. Pass a
@@ -83,7 +90,7 @@ export function takeoffLandingCounts(
   const seen = new Set<string>();
   const out: TakeoffLandingCounts = { toDay: 0, toNight: 0, ldgDay: 0, ldgNight: 0 };
   for (const r of sortLogbook(rows)) {
-    if (!r.from || !r.to || r.from === r.to) continue;
+    if (!r.from || !r.to) continue; // a ramp return has none unless marked (hadTakeoff / hadLanding)
     if (window && (r.date > window.refISO || (fromISO && r.date < fromISO))) continue;
     const dedupe = `${r.date}|${r.flightNumber}|${r.from}-${r.to}`;
     if (seen.has(dedupe)) continue;
@@ -133,6 +140,8 @@ export function mergeLogbook(
       // Preserve who-flew annotations across roster refreshes (they aren't roster-derived).
       toSelf: cur?.toSelf,
       ldgSelf: cur?.ldgSelf,
+      toNone: cur?.toNone,
+      ldgNone: cur?.ldgNone,
       ...(pic ? { pic } : {}),
       ...(cur?.notes ? { notes: cur.notes } : {}), // the pilot's notes, never roster-derived
     };
@@ -184,7 +193,7 @@ export interface Recency { landings90: number; current: boolean; validUntil: str
 function landingDates(rows: LogbookRow[], refISO: string): string[] {
   const seen = new Map<string, string>();
   for (const r of rows) {
-    if (r.date > refISO || !r.from || !r.to || r.from === r.to) continue;
+    if (r.date > refISO || !r.from || !r.to || !hadLanding(r)) continue;
     seen.set(`${r.date}|${r.flightNumber}|${r.from}-${r.to}`, r.date);
   }
   return [...seen.values()].sort((a, b) => b.localeCompare(a)); // most recent first

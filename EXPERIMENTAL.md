@@ -7,7 +7,7 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.8.40`
+- **Produção (`master`) está em:** `0.8.40.2`
 - **Próxima versão ao promover:** `0.8.41` (ou superior, conforme o âmbito)
 
 ## Como promover tudo para produção (quando estiver pronto)
@@ -25,11 +25,15 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(nada — tudo promovido em `0.8.40`)_
+_(nada — tudo promovido em `0.8.40.2`)_
 
 ---
 
 ## TODO / Backlog (decidir mais tarde)
+
+- **Duty vs DT da escala (perguntas em aberto ao utilizador):** a escala soma 30 min depois de um DHC que fecha o dia
+  (a app segue o AE cl. 17: acaba à chegada) e conta a hora de almoço nos dias GAB (8:00 vs 7:00 na app). Mudar só se
+  o recibo mostrar que contam para o vencimento.
 
 - **iPhone (em produção desde 0.8.40, via 0.8.39):** só testado num iPhone simulado (Chromium). Falta um colega com
   iPhone confirmar no Safari: barras fora do notch / barra de gestos, folha de partilha ao exportar, importação de PDF.

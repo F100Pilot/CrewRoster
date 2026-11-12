@@ -6,6 +6,7 @@ import {
 import { Bedtime, Close, DeleteOutline, WbSunny } from '@mui/icons-material';
 import type { LogbookRow } from '../domain/types';
 import { logbookRowKey } from '../storage/rosterStore';
+import { hadLanding, hadTakeoff, isRampReturn } from '../domain/logbook';
 import { sectorSun } from '../domain/sectorSun';
 import { todayISO } from '../domain/rosterWindow';
 
@@ -37,8 +38,11 @@ export default function LogbookEditDialog({
   const [aircraft, setAircraft] = useState('');
   const [reg, setReg] = useState('');
   // Who was Pilot Flying for the take-off / the landing (day vs night is derived below).
-  const [toSelf, setToSelf] = useState(true);
-  const [ldgSelf, setLdgSelf] = useState(true);
+  // Who flew the take-off / the landing — or that there was none (a ramp return).
+  const [toWho, setToWho] = useState<Who>('me');
+  const [ldgWho, setLdgWho] = useState<Who>('me');
+  // Until the pilot picks one, the choice follows the route: a ramp return has none.
+  const [whoTouched, setWhoTouched] = useState(false);
   const [notes, setNotes] = useState('');
 
   useEffect(() => {
@@ -51,10 +55,20 @@ export default function LogbookEditDialog({
     setOn(initial?.on ?? '');
     setAircraft(initial?.aircraft ?? '');
     setReg(initial?.reg ?? '');
-    setToSelf(initial?.toSelf !== false);
-    setLdgSelf(initial?.ldgSelf !== false);
+    setToWho(!initial ? 'me' : !hadTakeoff(initial) ? 'none' : initial.toSelf === false ? 'other' : 'me');
+    setLdgWho(!initial ? 'me' : !hadLanding(initial) ? 'none' : initial.ldgSelf === false ? 'other' : 'me');
     setNotes(initial?.notes ?? '');
+    setWhoTouched(false);
   }, [open, initial]);
+
+  // Typing the route (a new sector, or a corrected one): LIS→LIS switches to "Não houve", a real
+  // route back to "Eu" — unless the pilot already chose.
+  useEffect(() => {
+    if (!open || whoTouched) return;
+    const ramp = isRampReturn({ from: from.trim().toUpperCase(), to: to.trim().toUpperCase() });
+    setToWho((w) => (ramp ? 'none' : w === 'none' ? 'me' : w));
+    setLdgWho((w) => (ramp ? 'none' : w === 'none' ? 'me' : w));
+  }, [open, from, to, whoTouched]);
 
   const upper = (s: string) => s.trim().toUpperCase();
   const validDate = DATE_RE.test(date);
@@ -90,8 +104,11 @@ export default function LogbookEditDialog({
       reg: upper(reg),
       regInferred: flightDataChanged ? false : (initial.regInferred ?? false),
       edited: flightDataChanged ? true : initial.edited,
-      toSelf,
-      ldgSelf,
+      toSelf: toWho !== 'other',
+      ldgSelf: ldgWho !== 'other',
+      // "Não houve" is stored; "there was one" only needs storing against the ramp-return default.
+      toNone: toWho === 'none' ? true : isRampReturn({ from: upper(from), to: upper(to) }) ? false : undefined,
+      ldgNone: ldgWho === 'none' ? true : isRampReturn({ from: upper(from), to: upper(to) }) ? false : undefined,
       // Notes, like PF, never freeze the row against roster syncs.
       ...(notes.trim() ? { notes: notes.trim() } : {}),
       ...(initial?.pic ? { pic: initial.pic } : {}),
@@ -156,10 +173,10 @@ export default function LogbookEditDialog({
             </Typography>
             <Stack spacing={1}>
               <PfRow
-                label="Descolagem" self={toSelf} onChange={setToSelf} chip={dayNightChip(sun?.depDay)}
+                label="Descolagem" who={toWho} onChange={(v) => { setWhoTouched(true); setToWho(v); }} chip={dayNightChip(sun?.depDay)}
               />
               <PfRow
-                label="Aterragem" self={ldgSelf} onChange={setLdgSelf} chip={dayNightChip(sun?.arrDay)}
+                label="Aterragem" who={ldgWho} onChange={(v) => { setWhoTouched(true); setLdgWho(v); }} chip={dayNightChip(sun?.arrDay)}
               />
             </Stack>
           </Box>
@@ -176,7 +193,8 @@ export default function LogbookEditDialog({
           <Typography variant="caption" color="text.secondary">
             Horas em UTC (z). Dia/noite calculado pelo nascer/pôr do sol. Se alterares os dados
             do voo, o setor fica marcado como editado e deixa de ser atualizado pela escala.
-            Marcar quem foi PF ou escrever notas não o congela.
+            Marcar quem foi PF ou escrever notas não o congela. Num ramp return (mesmo aeroporto de partida e
+            chegada) não conta descolagem nem aterragem — muda para Eu/Colega se foi um air return.
           </Typography>
         </Stack>
       </DialogContent>
@@ -194,27 +212,33 @@ export default function LogbookEditDialog({
   );
 }
 
-// One "who flew it" row: a label, an Eu/Colega toggle, and the computed day/night chip.
+type Who = 'me' | 'other' | 'none';
+
+// One "who flew it" row: a label, an Eu / Colega / Não houve toggle, and the computed day/night chip.
 function PfRow({
-  label, self, onChange, chip,
+  label, who, onChange, chip,
 }: {
   label: string;
-  self: boolean;
-  onChange: (v: boolean) => void;
+  who: Who;
+  onChange: (v: Who) => void;
   chip: React.ReactNode;
 }) {
   return (
-    <Box display="flex" alignItems="center" gap={1}>
-      <Typography variant="body2" sx={{ width: 88 }}>{label}</Typography>
+    // Label and the day/night chip on one line, the three choices across the width below — three
+    // buttons and a chip don't fit beside the label on a phone.
+    <Box>
+      <Box display="flex" alignItems="center" gap={1} mb={0.5}>
+        <Typography variant="body2" sx={{ flexGrow: 1 }}>{label}</Typography>
+        {who !== 'none' && chip}
+      </Box>
       <ToggleButtonGroup
-        exclusive size="small" value={self ? 'me' : 'other'}
-        onChange={(_, v) => { if (v != null) onChange(v === 'me'); }}
+        exclusive size="small" fullWidth value={who}
+        onChange={(_, v) => { if (v != null) onChange(v as Who); }}
       >
-        <ToggleButton value="me" sx={{ px: 1.25, py: 0.25 }}>Eu</ToggleButton>
-        <ToggleButton value="other" sx={{ px: 1.25, py: 0.25 }}>Colega</ToggleButton>
+        <ToggleButton value="me" sx={{ py: 0.25 }}>Eu</ToggleButton>
+        <ToggleButton value="other" sx={{ py: 0.25 }}>Colega</ToggleButton>
+        <ToggleButton value="none" sx={{ py: 0.25, whiteSpace: 'nowrap' }}>Não houve</ToggleButton>
       </ToggleButtonGroup>
-      <Box flexGrow={1} />
-      {chip}
     </Box>
   );
 }

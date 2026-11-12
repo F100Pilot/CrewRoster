@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (457 tests) — keep green
+npm test           # vitest run (459 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -239,6 +239,10 @@ Things learned over this collaboration that should persist across sessions:
   shown in the logbook list (📝, 2 lines), the EASA print's "Voo / Obs." column and the CSV's last column ("Notas").
   Like PF, notes never set `edited`; `mergeLogbook` carries them across roster refreshes. The dialog also keeps `pic`
   now (it used to drop the commander's name on save).
+- **Ramp returns** (since 0.8.40.2, a colleague's report): a sector with from === to has NO take-off/landing by default
+  (`isRampReturn`, `hadTakeoff`/`hadLanding` in `logbook.ts`); `LogbookRow.toNone`/`ldgNone` record the pilot's choice
+  (true = none, false = there was one, e.g. an air return). "Editar setor" offers Eu / Colega / Não houve and picks
+  "Não houve" by itself when the typed route is a ramp return. Counts, recency, EASA and CSV all go through `didTakeoff`.
 - **Backups never carry the CrewLink login** (`crewroster.cred.*` is neither exported nor restored);
   they do carry the pilot's pay figures (by design — the user restores them from it). Test data and
   fixtures must use synthetic crew names (real ones were scrubbed from tests in 0.8.28).
@@ -289,12 +293,15 @@ Things learned over this collaboration that should persist across sessions:
   Write the case first and see it fail; a fix may not break any older case — if two cases contradict, record it
   under "Em aberto" and ask instead of forcing. Unresolved reports also go to "Em aberto" there.
 - **EBT simulator briefing** (since 0.8.35, user rule): LIS-EBT-1 = briefing 30 min + debriefing 1 h, LIS-EBT-2 = briefing
-  1 h + debriefing 30 min; the roster only prints the session (4h00/5h00). `domain/simSession.ts`; shown as
+  1 h + debriefing **1 h** (0.8.40.1 — was 30 min; a colleague's November duty-pay was 30 min short; a 4 h EBT-2 is the
+  roster's DT 06:00); the roster only prints the session (4h00/5h00). `domain/simSession.ts`; shown as
   information on the day, Lista card and "Hoje". The roster's times are the session only (user confirmed); since 0.8.37
   the DUTY counts briefing + session + debriefing (user: "o tempo de simulador conta o simulador mais o briefing e
   debriefing"): `asWorked()` widens EBT sessions inside `dutyWindow` / `dutyDay`, so duty-pay, limits, rest and the
   "Hoje" report time follow; displayed session times and block-pay stay on the session (block-pay = sim time only,
-  user confirmed).
+  user confirmed). The duty stays on this rule, NOT on the roster's printed [DT] (user: "mantém como estava"); found while
+  checking: the roster's DT also adds 30 min after a day-ending DHC (the app follows AE cl. 17: DHC ends at arrival) and
+  counts the lunch hour on GAB days — both left as they are, open questions to the user.
 - **Settings are tabbed** (since 0.8.24): Perfil · Vencimento (pilots only) · App · Dados · Ajuda in
   `SettingsDialog.tsx`; last tab in localStorage `crewroster.settingsTab`. Guardar only on Perfil/App
   (the rest saves on change). New settings go in the tab for their subject, not at the bottom.
