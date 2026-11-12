@@ -28,6 +28,7 @@ export interface EasaSector {
   dayLdg: number;
   nightLdg: number;
   pic?: string; // commander for the sector (from the roster crew)
+  notes?: string; // the pilot's own notes, printed under "Voo / Obs."
 }
 
 export interface EasaTotals {
@@ -82,6 +83,7 @@ export function easaSectors(rows: LogbookRow[]): EasaSector[] {
       dayLdg: ldgMine && !ldgNight ? 1 : 0,
       nightLdg: ldgMine && ldgNight ? 1 : 0,
       pic: r.pic,
+      notes: r.notes,
     };
   });
 }

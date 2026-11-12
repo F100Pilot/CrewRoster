@@ -97,10 +97,11 @@ export const DEFAULT_PAY_SETTINGS: PaySettings = {
   // (simulator, training, office — "Perdiem … T" on payslips) is taxed in full. The limit is per
   // day: national, or abroad when the day touches an airport outside Portugal, already reduced for
   // the hotel the company pays. Read off four real 2026 payslips, where "Outros valores p/ impostos"
-  // = per diem away + that month's abonos − the limits, to the cent: IRS 36,33 / 116,95 €, SS 51,90 /
-  // 175,42 € (national / abroad; the national SS was 54,49 until 0.8.35.1 — corrected by the user).
+  // = per diem away + that month's abonos − the limits, to the cent: IRS 36,33 / 116,95 €, SS 54,49 /
+  // 175,42 € (national / abroad). 51,90 was tried in 0.8.35.1 and reverted in 0.8.37.1: the October
+  // payslip's "Sujeito a SS 283,17" = 3 × 229,50 − 54,49 − 2 × 175,42, to the cent.
   // Editable, to follow the State Budget.
-  exemptNationalIrs: 36.33, exemptNationalSs: 51.9, exemptAbroadIrs: 116.95, exemptAbroadSs: 175.42,
+  exemptNationalIrs: 36.33, exemptNationalSs: 54.49, exemptAbroadIrs: 116.95, exemptAbroadSs: 175.42,
   pensionAuto: false,
   unionPct: 0, unionBase: 0,
   holidayPay: null,
@@ -434,7 +435,9 @@ export function payEstimate(
     } else if (awayAtStart || day.some((x) => GROUND_B.has(x.dutyType))) {
       perDiemB++;
       perDiemDates.b.push(date);
-      if (!awayAtStart) mealTicketDays++;
+      // A medical day pays per diem B "T" but no meal ticket (October payslip: 7 B T, 6 tickets —
+      // the one without is the aeromedical exam, user-confirmed).
+      if (!awayAtStart && !day.every((x) => x.dutyType === 'Medical' || !GROUND_B.has(x.dutyType))) mealTicketDays++;
       if (awayAtStart) {
         perDiemTravelDays++; perDiemTravelValue += s.perDiemB;
         perDiemTravel.push({ date, value: s.perDiemB, abroad: abroadOn(day, whereAtStart) });

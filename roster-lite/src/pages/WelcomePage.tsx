@@ -23,7 +23,7 @@ export default function WelcomePage() {
       flexDirection="column"
       alignItems="center"
       justifyContent="center"
-      minHeight="100vh"
+      minHeight="100dvh"
       px={3}
       sx={{ bgcolor: 'background.default' }}
     >

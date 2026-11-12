@@ -57,12 +57,12 @@ describe('logbookCsvRows', () => {
     // Daytime sector flown by me: IFR = block (1h00), and the last 4 columns are
     // Desc.dia=1, Desc.noite=0, Aterr.dia=1, Aterr.noite=0.
     expect(line).toContain('1h00');
-    expect(line.endsWith('1,0,1,0')).toBe(true);
+    expect(line.endsWith('1,0,1,0,')).toBe(true);
   });
 
   it('does not count a take-off a colleague flew', () => {
     const line = logbookCsvRows([row({ off: '12:00', on: '13:00', toSelf: false })]).split('\r\n')[1];
     // Desc.dia=0, Desc.noite=0, Aterr.dia=1, Aterr.noite=0.
-    expect(line.endsWith('0,0,1,0')).toBe(true);
+    expect(line.endsWith('0,0,1,0,')).toBe(true);
   });
 });

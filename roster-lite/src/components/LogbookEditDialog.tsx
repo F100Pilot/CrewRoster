@@ -39,6 +39,7 @@ export default function LogbookEditDialog({
   // Who was Pilot Flying for the take-off / the landing (day vs night is derived below).
   const [toSelf, setToSelf] = useState(true);
   const [ldgSelf, setLdgSelf] = useState(true);
+  const [notes, setNotes] = useState('');
 
   useEffect(() => {
     if (!open) return;
@@ -52,6 +53,7 @@ export default function LogbookEditDialog({
     setReg(initial?.reg ?? '');
     setToSelf(initial?.toSelf !== false);
     setLdgSelf(initial?.ldgSelf !== false);
+    setNotes(initial?.notes ?? '');
   }, [open, initial]);
 
   const upper = (s: string) => s.trim().toUpperCase();
@@ -90,6 +92,9 @@ export default function LogbookEditDialog({
       edited: flightDataChanged ? true : initial.edited,
       toSelf,
       ldgSelf,
+      // Notes, like PF, never freeze the row against roster syncs.
+      ...(notes.trim() ? { notes: notes.trim() } : {}),
+      ...(initial?.pic ? { pic: initial.pic } : {}),
     };
     onSave({ row, previousKey: initial && initial.key !== row.key ? initial.key : null });
   }
@@ -159,10 +164,19 @@ export default function LogbookEditDialog({
             </Stack>
           </Box>
 
+          <TextField
+            label="Notas" value={notes} size="small" fullWidth multiline minRows={2} maxRows={5}
+            InputLabelProps={{ shrink: true }}
+            placeholder="Ex.: aproximação RNP, vento cruzado, observador no cockpit…"
+            onChange={(e) => setNotes(e.target.value)}
+            inputProps={{ maxLength: 300 }}
+            helperText="Aparecem na caderneta (lista, impressão EASA em “Voo / Obs.” e CSV)."
+          />
+
           <Typography variant="caption" color="text.secondary">
             Horas em UTC (z). Dia/noite calculado pelo nascer/pôr do sol. Se alterares os dados
             do voo, o setor fica marcado como editado e deixa de ser atualizado pela escala.
-            Marcar quem foi PF não o congela.
+            Marcar quem foi PF ou escrever notas não o congela.
           </Typography>
         </Stack>
       </DialogContent>

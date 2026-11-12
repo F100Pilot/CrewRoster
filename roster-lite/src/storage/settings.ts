@@ -188,9 +188,9 @@ export function getPaySettings(userId: string): PaySettings {
     const raw = localStorage.getItem(PAY_PREFIX + userId);
     if (!raw) return { ...DEFAULT_PAY_SETTINGS };
     const s: PaySettings = { ...DEFAULT_PAY_SETTINGS, ...JSON.parse(raw) };
-    // The old default national SS limit (54,49 €) was saved with every pilot's figures; move it to
-    // the corrected 51,90 € (0.8.35.1). Any other value the pilot typed stays.
-    if (s.exemptNationalSs === 54.49) s.exemptNationalSs = DEFAULT_PAY_SETTINGS.exemptNationalSs;
+    // 0.8.35.1 moved the saved national SS limit to 51,90 €; a real payslip put it back at 54,49 €
+    // (0.8.37.1), so the 51,90 that release saved goes back too. Any other value the pilot typed stays.
+    if (s.exemptNationalSs === 51.9) s.exemptNationalSs = DEFAULT_PAY_SETTINGS.exemptNationalSs;
     return s;
   } catch {
     return { ...DEFAULT_PAY_SETTINGS };

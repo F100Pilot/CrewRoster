@@ -7,8 +7,8 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.8.37`
-- **Próxima versão ao promover:** `0.8.38` (ou superior, conforme o âmbito)
+- **Produção (`master`) está em:** `0.8.40`
+- **Próxima versão ao promover:** `0.8.41` (ou superior, conforme o âmbito)
 
 ## Como promover tudo para produção (quando estiver pronto)
 
@@ -25,11 +25,14 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(nada — tudo promovido em `0.8.37`)_
+_(nada — tudo promovido em `0.8.40`)_
 
 ---
 
 ## TODO / Backlog (decidir mais tarde)
+
+- **iPhone (em produção desde 0.8.40, via 0.8.39):** só testado num iPhone simulado (Chromium). Falta um colega com
+  iPhone confirmar no Safari: barras fora do notch / barra de gestos, folha de partilha ao exportar, importação de PDF.
 
 - **Line checks (W_INS, em produção desde 0.8.36.1):** confirmar com um PDF real que o código do dia W_PNT é lido
   sem baralhar o dia (só o W_INS foi testado, sobre o fixture com LIFUS_INS) e que o recibo paga um por dia.
@@ -53,4 +56,4 @@ _(nada — tudo promovido em `0.8.37`)_
 
 ---
 
-_Última atualização: 2026-11-11._
+_Última atualização: 2026-11-12._

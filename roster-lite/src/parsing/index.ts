@@ -4,14 +4,14 @@ import { parseIcs } from './ics/parseIcs';
 import { extractPdf } from './pdf/extractText';
 import { reconstructLines } from './pdf/reconstructLines';
 import { interpret } from './pdf/interpret';
-import { interpretPgaGrid } from './pdf/pgaGrid';
+import { interpretPgaGrid, pgaBlankDates } from './pdf/pgaGrid';
 import { parseCrewInfo, parseGroundCrewInfo, attachCrewToDuties, attachGroundCrewToDuties } from './pdf/crewInfo';
 
 // Bumped whenever the PDF parsing (duties, crew, times, routes…) changes in a way that should
 // re-apply to ALREADY-imported rosters. On app load a stored PDF roster whose parseVersion is
 // behind this is re-parsed from its saved PDF(s) — see RosterProvider — so improvements reach
 // the user without re-downloading. Bump this with any meaningful parser change.
-export const PARSE_VERSION = 15; // 15: a delayed day keeps the planned report (rosterMerge); 14: LIFUS_INS / FAM_INS marks
+export const PARSE_VERSION = 16; // 16: blank grid days clear the stored day (merge); 15: a delayed day keeps the planned report (rosterMerge); 14: LIFUS_INS / FAM_INS marks
 
 function sortByDate(duties: ParseResult['duties']): ParseResult['duties'] {
   return [...duties].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
@@ -33,7 +33,9 @@ export async function parseRosterFile(file: File): Promise<ParseResult> {
       // and the simulator/ground crew (from "Crew Information on Ground Activity") to those duties.
       attachCrewToDuties(pgaDuties, parseCrewInfo(extracted.tokens));
       attachGroundCrewToDuties(pgaDuties, parseGroundCrewInfo(extracted.tokens));
-      return { sourceType: 'pdf', duties: sortByDate(pgaDuties), rawText: extracted.rawText, warnings: [] };
+      const parsed = new Set(pgaDuties.map((d) => d.date));
+      const blankDates = pgaBlankDates(extracted.tokens).filter((d) => !parsed.has(d));
+      return { sourceType: 'pdf', duties: sortByDate(pgaDuties), rawText: extracted.rawText, warnings: [], blankDates };
     }
 
     // Fallback: generic line-based interpreter (other/unknown PDF layouts).

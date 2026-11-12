@@ -11,6 +11,11 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   </React.StrictMode>
 );
 
+// Ask the browser to keep this app's storage (rosters, PDFs, settings) instead of clearing it
+// under pressure — Safari on iPhone can evict a web app's data. Granted silently where allowed
+// (an installed app, Safari 17+, Chrome); a refusal changes nothing, the backup remains the net.
+navigator.storage?.persist?.().catch(() => {});
+
 // Reliable updates. The service worker is generated with skipWaiting+clientsClaim, but a
 // running tab keeps executing the OLD in-memory JS until it reloads — on an installed PWA
 // that's rarely, so users got stuck on a stale build. When a newly deployed worker takes

@@ -622,6 +622,19 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
               </ListItemButton>
             </List>
 
+            {/* How to install it as an app — Safari on iPhone has no install prompt, so say where it is. */}
+            <Box>
+              <Typography variant="subtitle2" gutterBottom>Instalar como app</Typography>
+              <Typography variant="body2" color="text.secondary">
+                <b>iPhone / iPad:</b> abre no <b>Safari</b> → botão Partilhar → “Adicionar ao ecrã principal”. Faz uma cópia
+                de segurança de vez em quando (Dados → Exportar): o iPhone pode apagar os dados de uma app web que fique
+                muito tempo sem ser aberta.
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                <b>Android:</b> no Chrome, menu ⋮ → “Instalar app” (ou “Adicionar ao ecrã principal”).
+              </Typography>
+            </Box>
+
             <Box>
               <Typography variant="subtitle2" gutterBottom>Sobre</Typography>
               <Typography variant="body2" color="text.secondary">

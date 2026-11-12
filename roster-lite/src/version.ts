@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.37';
+export const APP_VERSION = '0.8.40';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,44 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.40',
+    date: '2026-11-12',
+    highlights: [
+      'Diário de bordo: campo de notas em cada setor (Editar setor). As notas aparecem na lista do diário, na caderneta EASA impressa (coluna "Voo / Obs.") e no CSV, e mantêm-se quando a escala atualiza o voo — escrever uma nota não congela o setor.',
+      'Corrigido: guardar um setor à mão apagava o nome do comandante (coluna "Nome PIC" da caderneta EASA).',
+    ],
+  },
+  {
+    version: '0.8.39',
+    date: '2026-11-11',
+    highlights: [
+      'iPhone: a app ocupa o ecrã todo sem ficar por baixo do relógio / Dynamic Island nem da barra de gestos; guardar PDFs, backups e o diário abre a folha de partilha do iPhone (Guardar em Ficheiros, Mail, WhatsApp…); a app pede ao telemóvel para não apagar os seus dados.',
+      'Definições → Ajuda: como instalar a app no iPhone (Safari → Partilhar → Adicionar ao ecrã principal) e no Android.',
+    ],
+  },
+  {
+    version: '0.8.38',
+    date: '2026-11-11',
+    highlights: [
+      'Vencimento: calculadora em cada campo de valor (botão 🧮) — soma várias linhas do recibo (ex.: 69 + 236,38) e "Usar" põe o resultado no campo. Também podes escrever a conta diretamente no campo; aparece "= …" por baixo e fica o resultado.',
+    ],
+  },
+  {
+    version: '0.8.37.2',
+    date: '2026-11-11',
+    highlights: [
+      'Vencimento: todos os valores ao cêntimo, como no recibo — bruto, líquido e cada linha (deixou de arredondar ao euro) — e a taxa de IRS com duas casas decimais.',
+    ],
+  },
+  {
+    version: '0.8.37.1',
+    date: '2026-11-11',
+    highlights: [
+      'Escala: um dia que o PDF mostra em branco passa a apagar o que estava guardado nesse dia. Antes, um voo retirado de um dia (que ficou vazio) continuava na app — e contava per diem. As escalas guardadas reprocessam sozinhas.',
+      'Vencimento: limite isento de SS nacional de volta a 54,49 € (o recibo de outubro bate ao cêntimo); o dia de exame médico não dá subsídio de alimentação (o per diem B mantém-se).',
+    ],
+  },
   {
     version: '0.8.37',
     date: '2026-11-11',

@@ -49,6 +49,15 @@ describe('payEstimate', () => {
     expect(r.rb).toBe(5300);
   });
 
+  it('gives no meal ticket on a medical day, though it pays per diem B', () => {
+    const r = payEstimate([
+      duty('2026-09-09', 'Medical', { dutyCode: 'IM', departureAirport: 'LIS', departureTime: '07:00', arrivalTime: '11:00' }),
+      duty('2026-09-21', 'Office Duty', { dutyCode: 'GAB1', departureAirport: 'LIS', departureTime: '08:30', arrivalTime: '12:00' }),
+    ], '2026-09', S, '2026-10-31');
+    expect(r.perDiemDates.b).toEqual(['2026-09-09', '2026-09-21']);
+    expect(r.mealTicketDays).toBe(1);
+  });
+
   it('pays office days and a tax-free meal ticket per ground day at base', () => {
     const gab = (date: string) => [
       duty(date, 'Office Duty', { dutyCode: 'GAB1', departureAirport: 'LIS', departureTime: '07:30', arrivalTime: '11:00' }),

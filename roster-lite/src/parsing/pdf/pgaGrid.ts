@@ -576,6 +576,42 @@ const CHECK_MARK = /^(?:OPC|LPC)(?:_INS)?(?:,\s*(?:OPC|LPC)(?:_INS)?)*$/;
 // mark sits in its own sub-column just LEFT of its flight's, one per leg.
 const FLIGHT_INS_MARK = /^(?!OPC_|LPC_)[A-Z][A-Z0-9]*_INS$/;
 
+// The days a band's header shows, and which day each of its sub-columns belongs to.
+function bandDays(b: CollectedBand, calendar: CalDay[]): { dates: string[]; dateAt: (x: number) => string | undefined } {
+  const bandDate = new Map<string, string>();
+  b.colKeys.forEach((key, i) => {
+    const d = bandColumnDate(b.cand, b.offset!, i, calendar);
+    if (d) bandDate.set(key, d);
+  });
+  // A sub-column belongs to the day with the smallest label-x that is >= its x.
+  const dayFor = (x: number): Column => {
+    for (const c of b.cols) if (c.x >= x - 4) return c;
+    return b.cols[b.cols.length - 1];
+  };
+  return { dates: [...bandDate.values()], dateAt: (x) => bandDate.get(dayFor(x).token) };
+}
+
+// Days the grid's header shows with NOTHING printed under them — not a flight, not a day off.
+// The merge needs them: a date missing from a download normally means the parse produced
+// nothing (keep the stored day), but a genuinely blank day in the PDF means whatever was stored
+// for it is gone (a real September: a flight planned on the 29th, later removed, left the 29th
+// blank — and the stale flight kept paying a per diem A).
+export function pgaBlankDates(tokens: PositionedToken[]): string[] {
+  const { calendar, bands } = prepareBands(tokens);
+  const shown = new Set<string>();
+  const used = new Set<string>();
+  for (const b of bands) {
+    if (b.offset === undefined) continue;
+    const { dates, dateAt } = bandDays(b, calendar);
+    for (const d of dates) shown.add(d);
+    for (const s of b.subs) {
+      const d = dateAt(s.x);
+      if (d && s.tokens.some((t) => t.text.trim())) used.add(d);
+    }
+  }
+  return [...shown].filter((d) => !used.has(d)).sort();
+}
+
 export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
   const { calendar, bands } = prepareBands(tokens);
   const hotels = parseHotels(tokens); // "Hn" marker -> { name, phone }
@@ -591,18 +627,9 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
   const flightMarks: { date: string; x: number; mark: string }[] = [];
   for (const b of bands) {
     if (b.offset === undefined) continue;
-    const bandDate = new Map<string, string>();
-    b.colKeys.forEach((key, i) => {
-      const d = bandColumnDate(b.cand, b.offset!, i, calendar);
-      if (d) bandDate.set(key, d);
-    });
-    // A sub-column belongs to the day with the smallest label-x that is >= its x.
-    const dayFor = (x: number): Column => {
-      for (const c of b.cols) if (c.x >= x - 4) return c;
-      return b.cols[b.cols.length - 1];
-    };
+    const { dateAt } = bandDays(b, calendar);
     for (const s of b.subs) {
-      const date = bandDate.get(dayFor(s.x).token);
+      const date = dateAt(s.x);
       if (!date) continue;
       const hn = s.tokens.find((t) => /^H\d$/.test(t.text));
       if (hn && !hotelRefByDate.has(date)) hotelRefByDate.set(date, hn.text);

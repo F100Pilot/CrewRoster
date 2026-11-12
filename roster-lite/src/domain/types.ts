@@ -94,6 +94,8 @@ export interface ParseResult {
   duties: ParsedDuty[];
   rawText: string;
   warnings: string[];
+  // Days the file shows with nothing on them (PDF grid only): the merge clears what was stored there.
+  blankDates?: string[];
 }
 
 // A flown aircraft registration, recorded per crew member + day + flight. Kept apart
@@ -133,6 +135,9 @@ export interface LogbookRow {
   /** Commander (the CP-role crew member) for this sector, captured from the roster crew.
    *  Fills the EASA logbook's "Name PIC" column when the user flew as co-pilot. */
   pic?: string;
+  /** The pilot's own notes on the sector (user request): typed in "Editar setor", shown in the
+   *  logbook list, the EASA print ("Voo / Obs.") and the CSV. Never touched by roster merges. */
+  notes?: string;
 }
 
 // A crew document with an expiry the pilot wants to track (medical, licence, OPC/LPC,

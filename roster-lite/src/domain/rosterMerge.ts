@@ -20,10 +20,14 @@ import type { ParsedDuty, PlannedTimes } from './types';
 // with the times actually flown, so before a past day is overwritten the plan it replaces is
 // kept on each sector (`planned`) — the last version seen while the day was still ahead. The
 // incoming duty is marked `settled` so a later sync never mistakes flown times for a plan.
-export function mergeDuties(previous: ParsedDuty[], incoming: ParsedDuty[], asOfISO?: string): ParsedDuty[] {
+//
+// `blankDates` are the exception to "silent days are kept": days the download SHOWS with nothing
+// printed under them (pgaBlankDates). There the day really is empty now, so what was stored goes —
+// a flight removed from the 29th must not keep paying a per diem.
+export function mergeDuties(previous: ParsedDuty[], incoming: ParsedDuty[], asOfISO?: string, blankDates: string[] = []): ParsedDuty[] {
   if (incoming.length === 0) return [...previous];
 
-  const incomingDates = new Set(incoming.map((d) => d.date));
+  const incomingDates = new Set([...incoming.map((d) => d.date), ...blankDates]);
   const kept = previous.filter((d) => !incomingDates.has(d.date));
   const next = asOfISO ? carryPlans(previous, incoming, asOfISO) : incoming;
 

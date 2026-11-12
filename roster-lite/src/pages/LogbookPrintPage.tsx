@@ -129,7 +129,7 @@ function PageTable({ page, userName, fn }: { page: EasaPage; userName: string; f
                 <td>{hm(r.sector.nightMin)}</td><td>{hm(r.sector.ifrMin)}</td>
                 <td>{fn === 'PIC' ? hm(r.sector.blockMin) : ''}</td>
                 <td>{fn === 'COPILOT' ? hm(r.sector.blockMin) : ''}</td>
-                <td className="obs">{r.sector.flightNumber}</td>
+                <td className="obs">{r.sector.flightNumber}{r.sector.notes ? ` · ${r.sector.notes}` : ''}</td>
               </tr>
             )
           ))}
