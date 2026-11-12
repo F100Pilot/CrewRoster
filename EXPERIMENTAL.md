@@ -25,7 +25,12 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(nada — tudo promovido em `0.8.40.2`)_
+- **0.8.41 — visual 3D** (esboço aprovado pelo utilizador): tokens `depth(mode)`/`keyStyle` em `theme.ts`
+  (cartões em relevo, botões-tecla, campos/toggles/tabs afundados, progresso em tubo), `PageHero` como painel
+  flutuante (colinas, pílula em relevo, teclas de vidro), "Hoje" no mesmo estilo, dock de navegação flutuante,
+  calendário com dias-tecla, barras 3D na evolução mensal, tubos nos limites/férias/vencimento.
+  Mapa: Terra em satélite (`SatelliteEarth.tsx`, NASA Blue Marble 4096×2048 WebP ~0,5 MB em `src/assets`,
+  reprojetada pixel a pixel pela projeção d3; cache em runtime pelo SW, não pré-cache); abre no globo.
 
 ---
 

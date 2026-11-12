@@ -23,7 +23,6 @@ export default function HolidayCard({ duties }: { duties: ParsedDuty[] }) {
         <LinearProgress
           variant="determinate"
           value={Math.min(100, Math.round((h.calendarDays / h.entitlement) * 100))}
-          sx={{ height: 6, borderRadius: 3 }}
         />
         <Typography variant="caption" color="text.secondary" display="block" mt={0.75}>
           {h.carriedDays > 0 ? `Mais ${h.carriedDays} de F (férias em atraso, dias úteis). ` : ''}

@@ -92,9 +92,19 @@ export default function Layout({ children }: { children: ReactNode }) {
   }, [activeUser]);
 
   return (
-    <Box sx={{ pb: 'calc(64px + var(--sab))', pl: 'var(--sal)', pr: 'var(--sar)', minHeight: '100dvh', bgcolor: 'background.default' }}>
+    <Box sx={{ pb: 'calc(100px + var(--sab))', pl: 'var(--sal)', pr: 'var(--sar)', minHeight: '100dvh', bgcolor: 'background.default' }}>
       <AppBar position="sticky" elevation={0} sx={{ pt: 'var(--sat)' }}>
-        <Toolbar variant="dense">
+        {/* The bar's icons as small glass keys (3D look). */}
+        <Toolbar variant="dense" sx={{
+          gap: 0.75, minHeight: 58,
+          '& .MuiIconButton-root': {
+            width: 32, height: 32, borderRadius: '10px',
+            background: 'linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.04))',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,.2), 0 4px 8px rgba(0,0,0,.4)',
+            '&:active': { transform: 'translateY(1px)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,.35)' },
+          },
+          '& .MuiTypography-h6': { fontWeight: 800, textShadow: '0 2px 6px rgba(0,0,0,.45)' },
+        }}>
           {/* App name with the version stacked underneath. */}
           <Box sx={{ flexGrow: 1, minWidth: 0 }}>
             <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.15 }} noWrap>
@@ -169,8 +179,19 @@ export default function Layout({ children }: { children: ReactNode }) {
         data-tour="nav"
         ref={navRef}
         // pb: clear of the iPhone's home indicator; pl/pr: of the notch in landscape.
-        sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, overflowX: 'auto', pb: 'var(--sab)', pl: 'var(--sal)', pr: 'var(--sar)' }}
-        elevation={3}
+        // A floating dock (3D look): rounded, lit from above, a long shadow under it.
+        sx={{
+          position: 'fixed', bottom: 'calc(14px + var(--sab))', left: 'calc(12px + var(--sal))', right: 'calc(12px + var(--sar))',
+          maxWidth: 720, mx: 'auto', overflowX: 'auto', borderRadius: '24px', zIndex: 1200,
+          background: (t) => (t.palette.mode === 'light'
+            ? 'linear-gradient(180deg, rgba(255,255,255,.97), rgba(234,240,247,.97))'
+            : 'linear-gradient(180deg, rgba(30,43,70,.97), rgba(17,26,46,.97))'),
+          boxShadow: (t) => (t.palette.mode === 'light'
+            ? '0 20px 32px -14px rgba(15,27,45,.5), 0 4px 10px rgba(15,27,45,.12), inset 0 1px 0 #fff'
+            : '0 20px 32px -14px rgba(0,0,0,.8), 0 4px 10px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.08)'),
+          scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' },
+        }}
+        elevation={0}
       >
         <BottomNavigation
           showLabels
@@ -192,14 +213,14 @@ export default function Layout({ children }: { children: ReactNode }) {
       {/* Subtle edge fades hinting the bottom bar scrolls sideways. */}
       <Box
         sx={{
-          position: 'fixed', bottom: 'var(--sab)', left: 0, width: 24, height: 56, zIndex: 1300,
+          position: 'fixed', bottom: 'calc(14px + var(--sab))', left: 'calc(12px + var(--sal))', width: 24, height: 66, zIndex: 1300, borderRadius: '24px 0 0 24px',
           pointerEvents: 'none',
           background: (t) => `linear-gradient(to right, ${t.palette.background.paper}, transparent)`,
         }}
       />
       <Box
         sx={{
-          position: 'fixed', bottom: 'var(--sab)', right: 0, width: 24, height: 56, zIndex: 1300,
+          position: 'fixed', bottom: 'calc(14px + var(--sab))', right: 'calc(12px + var(--sar))', width: 24, height: 66, zIndex: 1300, borderRadius: '0 24px 24px 0',
           pointerEvents: 'none',
           background: (t) => `linear-gradient(to left, ${t.palette.background.paper}, transparent)`,
         }}

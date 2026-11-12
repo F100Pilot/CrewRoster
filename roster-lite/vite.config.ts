@@ -78,6 +78,13 @@ export default defineConfig({
         // Never serve the production shell for the experimental preview at /CrewRoster/exp/
         // — let those navigations hit the network so the preview isn't hijacked by this SW.
         navigateFallbackDenylist: [/\/exp\//],
+        // The map's satellite Earth (~0.5 MB) isn't precached — only crew who open the map pay
+        // for it — but once fetched it is kept, so the map works offline from then on.
+        runtimeCaching: [{
+          urlPattern: /\.webp$/,
+          handler: 'CacheFirst',
+          options: { cacheName: 'crewroster-images', expiration: { maxEntries: 8 } },
+        }],
       },
     })]),
   ],

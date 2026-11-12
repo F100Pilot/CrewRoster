@@ -22,6 +22,7 @@ import { todayISO } from '../domain/rosterWindow';
 import UploadDropzone from '../components/UploadDropzone';
 import MetarTaf from '../components/MetarTaf';
 import SkyWeather, { SKY } from '../components/SkyWeather';
+import { HeroHills, heroPanel, pillKey } from '../components/PageHero';
 import { useCurrentWeather } from '../state/useCurrentWeather';
 import type { ParsedDuty } from '../domain/types';
 import { DUTY_TYPE_LABEL } from '../domain/dutyLabels';
@@ -159,8 +160,10 @@ function SkyHeader({ ctx, sky, sunrise, sunset, accent, base }: {
     : sunset && `Pôr do sol ${localAt(sunset, ctx.location)}`;
   const { over, big, under } = headline(ctx, base);
   return (
-    <Box sx={{ background: c.bg, color: '#fff', px: 2.5, pt: 2, pb: 2.5, position: 'relative', overflow: 'hidden', '& .MuiTypography-root': { textShadow: '0 1px 3px rgba(0, 0, 0, 0.28)' } }}>
+    // 3D look: the sky as a floating panel with hills in front, like every page's banner.
+    <Box sx={{ background: c.bg, color: '#fff', m: 1.75, mb: 0, px: 2.25, pt: 2, pb: 2.75, position: 'relative', overflow: 'hidden', ...heroPanel, '& .MuiTypography-root': { textShadow: '0 1px 3px rgba(0, 0, 0, 0.28)' } }}>
       <SkyWeather sky={sky} wx={wx} now={ctx.now} top={48} />
+      <HeroHills />
       <Box display="flex" alignItems="center" gap={1} position="relative">
         <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.08em', color: c.soft }}>
           {ctx.location} · {localAt(ctx.now, ctx.location)} LT{wx && ` · ${wx.tempC}° ${wx.label}`}
@@ -169,11 +172,11 @@ function SkyHeader({ ctx, sky, sunrise, sunset, accent, base }: {
         {sun && <Typography sx={{ fontSize: '0.75rem', color: c.soft }}>{sun}</Typography>}
       </Box>
       <Box mt={1.5} position="relative">
-        <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', height: 26, px: 1.25, borderRadius: 13, bgcolor: accent, color: '#0B1222', fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.05em' }}>
+        <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', height: 26, px: 1.4, borderRadius: 13, ...pillKey(accent), color: '#0B1222', fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.05em' }}>
           {PHASE_LABEL[ctx.phase].toUpperCase()}
         </Box>
         <Typography sx={{ mt: 1, fontSize: '0.95rem', color: c.soft }}>{over}</Typography>
-        <Typography sx={{ fontSize: '2.6rem', fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>{big}</Typography>
+        <Typography sx={{ fontSize: '2.6rem', fontWeight: 900, letterSpacing: '-0.03em', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums', '&&': { textShadow: '0 2px 0 rgba(0,0,0,.2), 0 10px 22px rgba(0,0,0,.4)' } }}>{big}</Typography>
         {under && <Typography sx={{ mt: 0.5, fontSize: '0.85rem', color: c.soft }}>{under}</Typography>}
         {ctx.phase === 'duty' && ctx.currentLeg && <LegProgress leg={ctx.currentLeg} now={ctx.now} accent={accent} />}
       </Box>
@@ -295,6 +298,15 @@ function Body({ ctx, p, pilot, base, duties }: { ctx: DayContext; p: Palette; pi
   );
 }
 
+// Progress as a tube sunk into the card, the fill a lit cylinder (3D sketch).
+const tube = (p: Palette, h: number) => ({
+  height: h, borderRadius: h / 2, overflow: 'hidden', bgcolor: alpha(p.soft, 0.2),
+  boxShadow: 'inset 0 2px 4px rgba(15,27,45,.25), inset 0 -1px 0 rgba(255,255,255,.35)',
+});
+const tubeFill = (c: string) => ({
+  height: '100%', borderRadius: 'inherit', bgcolor: c,
+  boxShadow: 'inset 0 2px 0 rgba(255,255,255,.5), inset 0 -3px 0 rgba(0,0,0,.18)',
+});
 const card = (p: Palette) => ({ bgcolor: p.card, borderRadius: 3, border: `1px solid ${p.line}` });
 const overline = (p: Palette) => ({ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', color: p.soft });
 
@@ -423,8 +435,8 @@ function DayNumbers({ ctx, p, pilot, base, duties }: { ctx: DayContext; p: Palet
       {tiles.map((t) => (
         <StatTile key={t.label} label={t.label} value={t.value} note={t.note}>
           {t.frac !== undefined && (
-            <Box sx={{ my: 0.5, height: 6, borderRadius: 3, bgcolor: alpha(p.soft, 0.25) }}>
-              <Box sx={{ width: `${Math.min(100, t.frac * 100)}%`, height: 6, borderRadius: 3, bgcolor: t.frac > 0.9 ? '#F59E0B' : p.accent }} />
+            <Box sx={{ my: 0.5, ...tube(p, 10) }}>
+              <Box sx={{ width: `${Math.min(100, t.frac * 100)}%`, ...tubeFill(t.frac > 0.9 ? '#F59E0B' : p.accent) }} />
             </Box>
           )}
         </StatTile>
@@ -452,8 +464,8 @@ function RestCard({ ctx, p, duties, pilot, base }: { ctx: DayContext; p: Palette
         <Typography sx={{ fontSize: '2rem', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{left > 0 ? countdown(left) : 'Cumprido'}</Typography>
         <Typography sx={{ fontSize: '0.85rem', color: p.soft }}>{left > 0 ? `até às ${localAt(until, ctx.location)} LT` : `desde as ${localAt(until, ctx.location)} LT`}</Typography>
       </Box>
-      <Box sx={{ mt: 1, height: 8, borderRadius: 4, bgcolor: alpha(p.soft, 0.25) }}>
-        <Box sx={{ width: `${done}%`, height: 8, borderRadius: 4, bgcolor: p.accent }} />
+      <Box sx={{ mt: 1, ...tube(p, 12) }}>
+        <Box sx={{ width: `${done}%`, ...tubeFill(p.accent) }} />
       </Box>
     </Box>
   );

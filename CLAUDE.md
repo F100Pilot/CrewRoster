@@ -309,6 +309,15 @@ Things learned over this collaboration that should persist across sessions:
 - **AE and pay have their own bottom-nav tabs** (since 0.8.25, pilots only, user request): "AE" →
   `/limites`, "Vencimento" → `/vencimento` (shown only when the estimate is enabled), placed right
   after Estatísticas. Cabin crew reach EASA limits from the "⋮" menu.
+- **3D look** (since 0.8.41, from the user-approved sketch "banner em 3D, com sombras e noção de profundidade. Os
+  botões também e os gráficos"): `theme.ts` exports `depth(mode)` (surface/card/well/keyLight/keyEdge…), `keyStyle` /
+  `keyPressed` (key-cap with a bottom edge that sinks on press). Cards are raised (no border), inputs/toggle groups/
+  tabs/LinearProgress are sunken wells (progress = 12 px tube — don't set small `height` on LinearProgress), the bottom
+  nav is a floating dock (root bottom padding `calc(100px + var(--sab))`), `PageHero` is a floating panel
+  (`heroPanel`, `HeroHills`, `pillKey`, `glassKey` exported for reuse). Charts: 3D columns (MonthlyChart), tubes.
+  **The map stays the Earth by satellite** (user rule): `SatelliteEarth.tsx` paints NASA Blue Marble (public domain,
+  bundled `src/assets/earth-blue-marble.webp`, from the MIT `three-globe` npm package's example) under the SVG
+  through the same d3 projection; only the map's banner follows the 3D style.
 - **Backlog:** the rest of the AE items (folgas check, ES/LF/ND, per diem, duty-pay/block-pay
   credits, holiday counter), PWA local reminders, crosswind (runway DB). See `EXPERIMENTAL.md`
   (TODO/Backlog) and `roster-lite/TODO.md`.

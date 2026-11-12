@@ -90,10 +90,14 @@ function Cloud({ w, color, opacity }: { w: number; color: string; opacity: numbe
 function Sun({ sky }: { sky: Sky }) {
   const low = sky !== 'day'; // dawn / dusk: a low, orange sun
   const core = low ? '#FFB36B' : '#FFD95A';
+  // A ball, not a disc (3D look): lit from the top left, shaded bottom right, casting a shadow.
   return (
     <Box sx={{
-      width: 50, height: 50, borderRadius: '50%', bgcolor: core,
-      boxShadow: `0 0 0 8px ${core}33, 0 0 34px 14px ${core}55`,
+      width: 50, height: 50, borderRadius: '50%',
+      background: low
+        ? 'radial-gradient(circle at 35% 30%, #FFE9B0 0%, #FFB347 50%, #E8642C 100%)'
+        : 'radial-gradient(circle at 35% 30%, #FFF7D0 0%, #FFD24D 45%, #F29A1A 100%)',
+      boxShadow: `0 0 0 8px ${core}29, 0 0 34px 14px ${core}55, inset -6px -8px 12px rgba(170,80,0,.35), 0 14px 16px -8px rgba(0,0,0,.4)`,
       animation: `${glow} 3.5s ease-in-out infinite alternate`, ...still,
     }} />
   );
@@ -104,7 +108,12 @@ function Moon({ now }: { now: Date }) {
   return (
     <svg width="46" height="46" viewBox="0 0 46 46" style={{ display: 'block', filter: 'drop-shadow(0 0 10px rgba(240,236,220,0.45))' }}>
       <circle cx="23" cy="23" r="20" fill="rgba(255,255,255,0.10)" />
-      <path d={moonLitPath(phase, 23, 23, 20)} fill="#F2EEDF" />
+      <defs>
+        <radialGradient id="moon3d" cx="38%" cy="32%" r="75%">
+          <stop offset="0%" stopColor="#FFFFFF" /><stop offset="55%" stopColor="#ECE8D8" /><stop offset="100%" stopColor="#B9B6A6" />
+        </radialGradient>
+      </defs>
+      <path d={moonLitPath(phase, 23, 23, 20)} fill="url(#moon3d)" />
     </svg>
   );
 }

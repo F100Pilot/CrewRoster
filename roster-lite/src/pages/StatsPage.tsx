@@ -122,7 +122,6 @@ export default function StatsPage() {
                     <LinearProgress
                       variant="determinate"
                       value={(a.sectors / maxAircraft) * 100}
-                      sx={{ borderRadius: 1, height: 6 }}
                     />
                   </Box>
                 ))}
