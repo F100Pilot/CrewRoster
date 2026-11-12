@@ -25,7 +25,8 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(nada — tudo promovido em `0.8.40`)_
+- **0.8.40.1 — EBT-2:** debriefing 1 h (era 30 min) → serviço = 1 h + sessão + 1 h (4 h → 6h00, = DT da escala). EBT-1
+  mantém 30 min + sessão + 1 h. Achado pelo duty-pay de novembro de um colega (faltavam 30 min).
 
 ---
 

@@ -289,12 +289,15 @@ Things learned over this collaboration that should persist across sessions:
   Write the case first and see it fail; a fix may not break any older case — if two cases contradict, record it
   under "Em aberto" and ask instead of forcing. Unresolved reports also go to "Em aberto" there.
 - **EBT simulator briefing** (since 0.8.35, user rule): LIS-EBT-1 = briefing 30 min + debriefing 1 h, LIS-EBT-2 = briefing
-  1 h + debriefing 30 min; the roster only prints the session (4h00/5h00). `domain/simSession.ts`; shown as
+  1 h + debriefing **1 h** (0.8.40.1 — was 30 min; a colleague's November duty-pay was 30 min short; a 4 h EBT-2 is the
+  roster's DT 06:00); the roster only prints the session (4h00/5h00). `domain/simSession.ts`; shown as
   information on the day, Lista card and "Hoje". The roster's times are the session only (user confirmed); since 0.8.37
   the DUTY counts briefing + session + debriefing (user: "o tempo de simulador conta o simulador mais o briefing e
   debriefing"): `asWorked()` widens EBT sessions inside `dutyWindow` / `dutyDay`, so duty-pay, limits, rest and the
   "Hoje" report time follow; displayed session times and block-pay stay on the session (block-pay = sim time only,
-  user confirmed).
+  user confirmed). The duty stays on this rule, NOT on the roster's printed [DT] (user: "mantém como estava"); found while
+  checking: the roster's DT also adds 30 min after a day-ending DHC (the app follows AE cl. 17: DHC ends at arrival) and
+  counts the lunch hour on GAB days — both left as they are, open questions to the user.
 - **Settings are tabbed** (since 0.8.24): Perfil · Vencimento (pilots only) · App · Dados · Ajuda in
   `SettingsDialog.tsx`; last tab in localStorage `crewroster.settingsTab`. Guardar only on Perfil/App
   (the rest saves on change). New settings go in the tab for their subject, not at the bottom.
