@@ -7,8 +7,8 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.8.37`
-- **Próxima versão ao promover:** `0.8.38` (ou superior, conforme o âmbito)
+- **Produção (`master`) está em:** `0.8.40`
+- **Próxima versão ao promover:** `0.8.41` (ou superior, conforme o âmbito)
 
 ## Como promover tudo para produção (quando estiver pronto)
 
@@ -25,20 +25,14 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **0.8.37.1:** dias em branco no PDF apagam o dia guardado (PARSE_VERSION 16; caso real: 29/09, voo retirado que
-  continuava a pagar per diem A); SS nacional de volta a 54,49 € (recibo de outubro ao cêntimo); dia médico sem
-  ticket de refeição.
-- **0.8.40 — Diário:** notas por setor (Editar setor) → lista, caderneta EASA ("Voo / Obs.") e CSV; sobrevivem às
-  atualizações da escala. Corrigido: guardar um setor à mão perdia o "Nome PIC".
-- **0.8.39 — iPhone:** safe areas (viewport-fit=cover, barras fora do notch e da barra de gestos), alturas em dvh,
-  downloads pela folha de partilha no iOS, `navigator.storage.persist()`, instruções de instalação na Ajuda. Testado só
-  num iPhone simulado (Chromium) — falta confirmar num iPhone real (Safari).
-- **0.8.38:** calculadora nos campos de valor do Vencimento (🧮, + − × ÷, "Usar"), e contas escritas no campo.
-- **0.8.37.2:** cartão do Vencimento ao cêntimo (sem arredondar ao euro, sem "≈"); taxa de IRS com 2 casas.
+_(nada — tudo promovido em `0.8.40`)_
 
 ---
 
 ## TODO / Backlog (decidir mais tarde)
+
+- **iPhone (em produção desde 0.8.40, via 0.8.39):** só testado num iPhone simulado (Chromium). Falta um colega com
+  iPhone confirmar no Safari: barras fora do notch / barra de gestos, folha de partilha ao exportar, importação de PDF.
 
 - **Line checks (W_INS, em produção desde 0.8.36.1):** confirmar com um PDF real que o código do dia W_PNT é lido
   sem baralhar o dia (só o W_INS foi testado, sobre o fixture com LIFUS_INS) e que o recibo paga um por dia.
@@ -62,4 +56,4 @@ produção, em vez de promover uma a uma.
 
 ---
 
-_Última atualização: 2026-11-11._
+_Última atualização: 2026-11-12._
