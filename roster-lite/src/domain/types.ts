@@ -132,6 +132,11 @@ export interface LogbookRow {
   // Day vs night for each is derived from the sun at the respective airport/time (not stored).
   toSelf?: boolean;
   ldgSelf?: boolean;
+  // Was there a take-off / a landing at all? A sector back to its own airport (a ramp return,
+  // LIS→LIS) has neither unless the pilot says so (an air return): true = none, false = there was
+  // one, undefined = the default (none only when from === to).
+  toNone?: boolean;
+  ldgNone?: boolean;
   /** Commander (the CP-role crew member) for this sector, captured from the roster crew.
    *  Fills the EASA logbook's "Name PIC" column when the user flew as co-pilot. */
   pic?: string;

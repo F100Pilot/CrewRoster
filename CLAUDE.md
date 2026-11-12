@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (457 tests) — keep green
+npm test           # vitest run (459 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -239,6 +239,10 @@ Things learned over this collaboration that should persist across sessions:
   shown in the logbook list (📝, 2 lines), the EASA print's "Voo / Obs." column and the CSV's last column ("Notas").
   Like PF, notes never set `edited`; `mergeLogbook` carries them across roster refreshes. The dialog also keeps `pic`
   now (it used to drop the commander's name on save).
+- **Ramp returns** (since 0.8.40.2, a colleague's report): a sector with from === to has NO take-off/landing by default
+  (`isRampReturn`, `hadTakeoff`/`hadLanding` in `logbook.ts`); `LogbookRow.toNone`/`ldgNone` record the pilot's choice
+  (true = none, false = there was one, e.g. an air return). "Editar setor" offers Eu / Colega / Não houve and picks
+  "Não houve" by itself when the typed route is a ramp return. Counts, recency, EASA and CSV all go through `didTakeoff`.
 - **Backups never carry the CrewLink login** (`crewroster.cred.*` is neither exported nor restored);
   they do carry the pilot's pay figures (by design — the user restores them from it). Test data and
   fixtures must use synthetic crew names (real ones were scrubbed from tests in 0.8.28).

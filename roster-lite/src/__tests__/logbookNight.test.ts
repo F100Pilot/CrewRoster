@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { rowNight, rowNightLanding, rowNightTakeoff, takeoffLandingCounts, logbookCsvRows } from '../domain/logbook';
+import { rowNight, rowNightLanding, rowNightTakeoff, takeoffLandingCounts, logbookCsvRows, recencyStatus } from '../domain/logbook';
 import type { LogbookRow } from '../domain/types';
 
 const row = (over: Partial<LogbookRow>): LogbookRow => ({
@@ -64,5 +64,22 @@ describe('logbookCsvRows', () => {
     const line = logbookCsvRows([row({ off: '12:00', on: '13:00', toSelf: false })]).split('\r\n')[1];
     // Desc.dia=0, Desc.noite=0, Aterr.dia=1, Aterr.noite=0.
     expect(line.endsWith('0,0,1,0,')).toBe(true);
+  });
+});
+
+describe('ramp return (back to the same airport)', () => {
+  it('counts no take-off or landing by default — a user report: LIS→LIS came in as 1 + 1', () => {
+    const ramp = row({ from: 'LIS', to: 'LIS', off: '12:00', on: '12:25' });
+    expect(takeoffLandingCounts([ramp])).toMatchObject({ toDay: 0, toNight: 0, ldgDay: 0, ldgNight: 0 });
+    expect(logbookCsvRows([ramp]).split('\r\n')[1].endsWith('0,0,0,0,')).toBe(true);
+    expect(recencyStatus([ramp], '2026-06-30').landings90).toBe(0);
+  });
+
+  it('an air return the pilot marks as flown counts again; any sector can be marked without one', () => {
+    const air = row({ from: 'LIS', to: 'LIS', toNone: false, ldgNone: false });
+    expect(takeoffLandingCounts([air])).toMatchObject({ toDay: 1, ldgDay: 1 });
+    expect(recencyStatus([air], '2026-06-30').landings90).toBe(1);
+    const noLanding = row({ ldgNone: true });
+    expect(takeoffLandingCounts([noLanding])).toMatchObject({ toDay: 1, ldgDay: 0 });
   });
 });

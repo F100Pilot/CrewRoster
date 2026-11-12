@@ -6,7 +6,7 @@ import {
 import { Add, Download, Edit, ExpandLess, ExpandMore, FlightTakeoff, Print, Sync } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
-import { logbookCsvRows, landingsInRows, mergeLogbook, rowBlock, rowNight, sortLogbook, takeoffLandingCounts, didTakeoff, didLanding } from '../domain/logbook';
+import { logbookCsvRows, landingsInRows, mergeLogbook, rowBlock, rowNight, sortLogbook, takeoffLandingCounts, didTakeoff, didLanding, hadTakeoff, hadLanding } from '../domain/logbook';
 import { sectorSun } from '../domain/sectorSun';
 import { backfillRegs, pendingBackfillCount, regMap, type BackfillResult } from '../domain/aircraftRegs';
 import { loadLogbook, putLogbookRows, deleteLogbookRow } from '../storage/rosterStore';
@@ -359,8 +359,8 @@ export default function LogbookPage() {
                       <Box sx={{ color: 'text.secondary', fontSize: '0.8rem' }}>{e.from}–{e.to}</Box>
                       {/* Take-off / landing, day or night; dimmed when a colleague flew that one. */}
                       <Box sx={{ mt: 0.25, fontSize: '0.72rem', display: 'flex', gap: 0.75, justifyContent: 'center' }}>
-                        <DayNightTag icon="🛫" day={dayNightByKey.get(e.key)?.depDay ?? null} mine={didTakeoff(e)} />
-                        <DayNightTag icon="🛬" day={dayNightByKey.get(e.key)?.arrDay ?? null} mine={didLanding(e)} />
+                        <DayNightTag icon="🛫" day={dayNightByKey.get(e.key)?.depDay ?? null} mine={didTakeoff(e)} none={!hadTakeoff(e)} />
+                        <DayNightTag icon="🛬" day={dayNightByKey.get(e.key)?.arrDay ?? null} mine={didLanding(e)} none={!hadLanding(e)} />
                       </Box>
                       {e.notes && (
                         <Box title={e.notes} sx={{ mt: 0.25, fontSize: '0.72rem', lineHeight: 1.3, color: 'text.secondary', fontStyle: 'italic', maxWidth: 170, mx: 'auto', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', wordBreak: 'break-word' }}>
@@ -418,7 +418,15 @@ export default function LogbookPage() {
 
 // One take-off/landing tag: an icon + D (day, amber) / N (night, indigo) / — (unknown), dimmed and
 // marked "col." when a colleague flew that segment (so it isn't counted among mine).
-function DayNightTag({ icon, day, mine }: { icon: string; day: boolean | null; mine: boolean }) {
+function DayNightTag({ icon, day, mine, none = false }: { icon: string; day: boolean | null; mine: boolean; none?: boolean }) {
+  // No take-off / landing on this sector (a ramp return): a dimmed dash, nothing counted.
+  if (none) {
+    return (
+      <Box component="span" title="Não houve" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25, opacity: 0.4 }}>
+        <span>{icon}</span><Box component="span" sx={{ fontWeight: 700 }}>—</Box>
+      </Box>
+    );
+  }
   const label = day == null ? '—' : day ? 'D' : 'N';
   const color = day === false ? '#5c6bc0' : day === true ? '#f9a825' : 'text.disabled';
   return (

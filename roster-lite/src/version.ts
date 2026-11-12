@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.40.1';
+export const APP_VERSION = '0.8.40.2';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,14 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.40.2',
+    date: '2026-11-12',
+    highlights: [
+      'Diário: um ramp return (setor com partida e chegada no mesmo aeroporto, ex.: LIS→LIS) já não conta descolagem nem aterragem — nem na recência, na impressão EASA ou no CSV.',
+      'Editar setor: nova opção "Não houve" para a descolagem e para a aterragem (escolhida sozinha num ramp return); num air return muda para Eu ou Colega.',
+    ],
+  },
   {
     version: '0.8.40.1',
     date: '2026-11-12',
