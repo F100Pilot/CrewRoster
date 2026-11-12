@@ -362,6 +362,11 @@ export default function LogbookPage() {
                         <DayNightTag icon="🛫" day={dayNightByKey.get(e.key)?.depDay ?? null} mine={didTakeoff(e)} />
                         <DayNightTag icon="🛬" day={dayNightByKey.get(e.key)?.arrDay ?? null} mine={didLanding(e)} />
                       </Box>
+                      {e.notes && (
+                        <Box title={e.notes} sx={{ mt: 0.25, fontSize: '0.72rem', lineHeight: 1.3, color: 'text.secondary', fontStyle: 'italic', maxWidth: 170, mx: 'auto', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', wordBreak: 'break-word' }}>
+                          📝 {e.notes}
+                        </Box>
+                      )}
                     </TableCell>
                     <TableCell sx={{ whiteSpace: 'nowrap' }}>
                       <Box>{formatDuration(rowBlock(e))}</Box>

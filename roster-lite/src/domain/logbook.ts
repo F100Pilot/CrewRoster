@@ -134,6 +134,7 @@ export function mergeLogbook(
       toSelf: cur?.toSelf,
       ldgSelf: cur?.ldgSelf,
       ...(pic ? { pic } : {}),
+      ...(cur?.notes ? { notes: cur.notes } : {}), // the pilot's notes, never roster-derived
     };
     if (!cur || cur.from !== next.from || cur.to !== next.to || cur.off !== next.off ||
         cur.on !== next.on || cur.aircraft !== next.aircraft || cur.reg !== next.reg ||
@@ -152,7 +153,7 @@ export function logbookCsvRows(rows: LogbookRow[]): string {
   const header = [
     'Data', 'Voo', 'De', 'Off (UTC)', 'Para', 'On (UTC)', 'Aeronave', 'Matrícula',
     'Bloco', 'IFR', 'Noite',
-    'Desc. dia', 'Desc. noite', 'Aterr. dia', 'Aterr. noite',
+    'Desc. dia', 'Desc. noite', 'Aterr. dia', 'Aterr. noite', 'Notas',
   ];
   const body = sortLogbook(rows).map((r) => {
     const block = rowBlock(r);
@@ -167,6 +168,7 @@ export function logbookCsvRows(rows: LogbookRow[]): string {
       formatDuration(block), formatDuration(block), formatDuration(night),
       toMine && !toNight ? '1' : '0', toMine && toNight ? '1' : '0',
       ldgMine && !ldgNight ? '1' : '0', ldgMine && ldgNight ? '1' : '0',
+      r.notes ?? '',
     ];
   });
   return [header, ...body].map((r) => r.map(csvCell).join(',')).join('\r\n');

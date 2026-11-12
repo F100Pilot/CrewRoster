@@ -28,6 +28,8 @@ produção, em vez de promover uma a uma.
 - **0.8.37.1:** dias em branco no PDF apagam o dia guardado (PARSE_VERSION 16; caso real: 29/09, voo retirado que
   continuava a pagar per diem A); SS nacional de volta a 54,49 € (recibo de outubro ao cêntimo); dia médico sem
   ticket de refeição.
+- **0.8.40 — Diário:** notas por setor (Editar setor) → lista, caderneta EASA ("Voo / Obs.") e CSV; sobrevivem às
+  atualizações da escala. Corrigido: guardar um setor à mão perdia o "Nome PIC".
 - **0.8.39 — iPhone:** safe areas (viewport-fit=cover, barras fora do notch e da barra de gestos), alturas em dvh,
   downloads pela folha de partilha no iOS, `navigator.storage.persist()`, instruções de instalação na Ajuda. Testado só
   num iPhone simulado (Chromium) — falta confirmar num iPhone real (Safari).

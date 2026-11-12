@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { mergeLogbook, sortLogbook } from '../domain/logbook';
+import { logbookCsvRows, mergeLogbook, sortLogbook } from '../domain/logbook';
+import { easaSectors } from '../domain/easaLogbook';
 import { logbookRowKey } from '../storage/rosterStore';
 import type { AircraftReg, LogbookRow, ParsedDuty } from '../domain/types';
 
@@ -31,6 +32,15 @@ describe('mergeLogbook', () => {
     const first = apply([], mergeLogbook([], [flight({ date: '2026-06-10' })], U));
     const withEarlier = apply(first, mergeLogbook(first, [flight({ date: '2026-06-01', flightNumber: 'TP9' })], U));
     expect(sortLogbook(withEarlier).map((r) => r.date)).toEqual(['2026-06-01', '2026-06-10']);
+  });
+
+  it('keeps the pilot\'s notes when a roster refresh updates the sector', () => {
+    const [row] = apply([], mergeLogbook([], [flight({})], U));
+    const noted = { ...row, notes: 'RNP 21, vento cruzado 20 kt' };
+    // The flown times come in later: the row is refreshed, the note stays.
+    const [refreshed] = mergeLogbook([noted], [flight({ departureTime: '08:07', arrivalTime: '09:41' })], U);
+    expect(refreshed).toMatchObject({ off: '08:07', on: '09:41', notes: 'RNP 21, vento cruzado 20 kt' });
+    expect(refreshed.edited).toBeFalsy();
   });
 
   it('never overwrites a hand-edited row', () => {
@@ -114,5 +124,16 @@ describe('mergeLogbook — re-sync updates an operated sector', () => {
 
   it('leaves a hand-corrected row alone', () => {
     expect(mergeLogbook([stored({ edited: true })], [reflown], U)).toHaveLength(0);
+  });
+});
+
+describe('sector notes in the logbook outputs', () => {
+  it('go to the CSV (last column) and to the EASA sector', () => {
+    const [row] = apply([], mergeLogbook([], [flight({})], U));
+    const noted = { ...row, notes: 'Observador, "CAA"' };
+    const csv = logbookCsvRows([noted]).split('\r\n');
+    expect(csv[0].endsWith(',Notas')).toBe(true);
+    expect(csv[1].endsWith('"Observador, ""CAA"""')).toBe(true);
+    expect(easaSectors([noted])[0].notes).toBe('Observador, "CAA"');
   });
 });
