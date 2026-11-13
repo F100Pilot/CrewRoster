@@ -136,7 +136,7 @@ export default function SavedPdfsPage() {
                     {pdf.id === latestId && <Chip size="small" color="success" label="Mais recente" sx={{ height: 20, fontSize: '0.65rem' }} />}
                   </Box>
                   <Typography variant="caption" color="text.secondary" display="block">
-                    Escala {formatRange(pdf)}
+                    {pdf.source === 'import' ? `Importado · ${pdf.fileName}` : `Escala ${formatRange(pdf)}`}
                   </Typography>
                 </Box>
                 <IconButton color="primary" size="small" title="Ver PDF" aria-label="Ver PDF" onClick={() => navigate(`/pdf/${pdf.id}`)}>
@@ -159,7 +159,7 @@ export default function SavedPdfsPage() {
         <DialogTitle>Apagar este PDF?</DialogTitle>
         <DialogContent>
           <Typography variant="body2">
-            {toDelete && `Descarregado a ${format(parseISO(toDelete.downloadedAt), 'dd/MM/yyyy HH:mm')}. `}
+            {toDelete && `${toDelete.source === 'import' ? 'Importado' : 'Descarregado'} a ${format(parseISO(toDelete.downloadedAt), 'dd/MM/yyyy HH:mm')}. `}
             A app usa os PDFs guardados para comparar o planeado com o voado (atrasos, IO / prevenir). Sem
             ele, essas comparações podem deixar de ser possíveis.
           </Typography>

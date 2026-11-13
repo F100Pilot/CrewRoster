@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (478 tests) — keep green
+npm test           # vitest run (480 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -93,6 +93,9 @@ cross-origin. Endpoints: `POST /api/login`, `/api/roster`, `/api/flightinfo`,
 - **Auto re-parse on load:** `RosterProvider` re-parses stored PDFs when
   `parseVersion` is behind `PARSE_VERSION`, so parser improvements (crew included) apply
   without the user re-importing.
+  It can only replay PDFs in the history: in-app downloads AND (since 0.9.3.1) hand-imported PDFs
+  (`keepImportedPdf`, `source: 'import'`, deduped by `sha256`). Before that, a hand-imported day the parser missed
+  (an IO) stayed empty until re-imported.
 - **pdf.js is lazy** (`loadPdfjs()` in `extractText.ts`): never import `pdfjs-dist` statically,
   or the 330 KB chunk goes back into the first paint. Same for `tour.ts` (driver.js) and the README.
 - **CSP:** `vite.config.ts` injects a Content-Security-Policy at build time (self + the worker

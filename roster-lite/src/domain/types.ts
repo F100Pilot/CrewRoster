@@ -170,4 +170,7 @@ export interface SavedPdf {
   downloadedAt: string; // ISO timestamp of when it was fetched
   beginDate: string | null; // ISO YYYY-MM-DD (requested range start), or null
   endDate: string | null; // ISO YYYY-MM-DD (requested range end), or null = server max
+  // 'import' = a file the crew member picked (Importar escala); absent = downloaded by the app.
+  source?: 'download' | 'import';
+  sha256?: string; // of the file's bytes — the same file imported twice is kept once
 }

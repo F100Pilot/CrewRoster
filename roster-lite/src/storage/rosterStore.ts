@@ -191,6 +191,28 @@ export async function savePdf(pdf: SavedPdf): Promise<void> {
   await db.put('pdfs', pdf);
 }
 
+// Keep a PDF the crew member imported by hand in the history too, so a later parser fix re-reads
+// it like the downloaded ones (an IO day imported before 0.9.2 stayed empty: nothing kept it to
+// re-parse). The same file imported twice is kept once. Returns false when it was already there.
+export async function keepImportedPdf(userId: string, file: File): Promise<boolean> {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes));
+  const sha256 = Array.from(digest, (b) => b.toString(16).padStart(2, '0')).join('');
+  if ((await listPdfs(userId)).some((p) => p.sha256 === sha256)) return false;
+  await savePdf({
+    id: crypto.randomUUID(),
+    userId,
+    fileName: file.name,
+    blob: new Blob([bytes], { type: 'application/pdf' }),
+    downloadedAt: new Date().toISOString(),
+    beginDate: null,
+    endDate: null,
+    source: 'import',
+    sha256,
+  });
+  return true;
+}
+
 export async function listPdfs(userId?: string): Promise<SavedPdf[]> {
   const db = await getDb();
   const all = await db.getAll('pdfs');

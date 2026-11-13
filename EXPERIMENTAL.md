@@ -29,6 +29,9 @@ produção, em vez de promover uma a uma.
   identificado por dia/hora do download, "Mais recente", confirmação ao apagar (os PDFs reconstroem planeado vs
   voado e o prevenir). `dutyLabel()` em `dutyLabels.ts`: S.EXT. = "Serviço externo" (continua Office Duty para
   contas — não é dia GAB), IO = "Irregularidade operacional".
+- **0.9.3.1** — bug "o dia de IO não aparece": o parser lê o IO na grelha (teste com o layout real), mas os PDFs
+  importados à mão nunca ficavam no histórico, logo o re-parse automático não os relia. `keepImportedPdf()` guarda-os
+  (`source: 'import'`, dedupe por `sha256`). Para os dias já afetados: importar/descarregar o PDF uma vez.
 
 ---
 
