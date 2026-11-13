@@ -39,8 +39,8 @@ produção, em vez de promover uma a uma.
   `mergeDuties` guarda no IO a apresentação do serviço que substituiu (`planned`); `domain/irregularity.ts`:
   prevenir = IO que começa à apresentação planeada, ou marcado no dia (`crewroster.prevenir.<user>`,
   aplicado no RosterProvider). Prevenir → abonos RAACO do período (Tabela 33, caso C07), ajuda de custo A
-  nacional sem isenção, duty. **Em aberto:** IO que não é prevenir (só conta como serviço) — o utilizador
-  vai verificar. Também: chaves `crewroster.gcal*` fora das cópias de segurança.
+  nacional sem isenção (recibo: "Per diem A PGA CTE T"), duty. IO normal: conta o PSV da escala (confirmado);
+  **em aberto:** se paga ajuda de custo / abonos. Também: chaves `crewroster.gcal*` fora das cópias de segurança.
 
 ---
 

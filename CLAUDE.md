@@ -334,7 +334,9 @@ Things learned over this collaboration that should persist across sessions:
   base (Tabela 33 — casebook C07). Detected when the IO starts at the planned PSV's report (`mergeDuties` keeps the
   replaced day's earliest report on the IO as `planned`), or marked by the crew member on the day page
   (`ParsedDuty.prevenir`, stored in `crewroster.prevenir.<userId>`, applied by RosterProvider). `domain/irregularity.ts`.
-  An IO that is NOT the prevenir: counted as duty only — rule pending (user checking).
+  On the payslip the prevenir shows as "Per diem A PGA CTE T" (at base, taxed in full) — as the app counts it.
+  An IO that is NOT the prevenir ("IO normal"): the PSV the roster shows counts as duty (confirmed; usually a duty
+  of up to 1 h — the report — then the IO); its per diem / allowances are still an open question (not paid now).
 - **Backlog:** the rest of the AE items (folgas check, ES/LF/ND, per diem, duty-pay/block-pay
   credits, holiday counter), PWA local reminders, crosswind (runway DB). See `EXPERIMENTAL.md`
   (TODO/Backlog) and `roster-lite/TODO.md`.

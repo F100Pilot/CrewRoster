@@ -48,7 +48,9 @@ nos testes de regra em `src/domain/__tests__/raaco.test.ts`.
 - **Almoço de 18 € num setor de 1h37** (RAK→LIS): bloco planeado ≤ 1h30?
 - **Marrocos não está na Tabela 34**: os valores de estadia ficam de fora do total.
 - **Nota "Pernoita\*"** da Tabela 34: texto por confirmar.
-- **IO que não é o prevenir** (hora diferente da apresentação planeada): a app conta o tempo como
-  serviço, sem ajuda de custo nem abonos — regra a confirmar pelo utilizador (nov 2026).
+- **IO que não é o prevenir** ("IO normal", hora diferente do PSV previsto): confirmado que **conta o PSV que
+  a escala mostra** (normalmente um serviço de até 1 h — a apresentação — e depois o IO); a app conta-o como
+  serviço. **Por confirmar:** se paga ajuda de custo A (T) e os abonos desse PSV — por agora não paga.
+- O prevenir vem no recibo como **"Per diem A PGA CTE T"** (na base, tributado por inteiro) — é como a app o conta.
 - **Totais de junho e agosto** do utilizador diferentes dos que o recibo implica — por explicar
   dia a dia com o extrato desses meses.
