@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.8.41';
+export const APP_VERSION = '0.8.41.1';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,16 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.8.41.1',
+    date: '2026-11-13',
+    highlights: [
+      'Campos: o nome de cada campo passa para dentro da caixa — já não fica por cima da margem.',
+      'Definições: os nomes dos separadores já não ficam cortados ("Vencimento" passa a "Venc.").',
+      'Mapa: o Plano/Globo vê-se nas duas opções e fica alinhado no banner.',
+      '"Hoje": os anéis dos limites em 3D (sulco afundado, anel em relevo, centro levantado), os cartões em relevo e os próximos dias como teclas.',
+    ],
+  },
   {
     version: '0.8.41',
     date: '2026-11-12',

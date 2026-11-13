@@ -182,7 +182,11 @@ export function createAppTheme(mode: ColorMode): Theme {
       // Settings' tabs: a trough with the chosen tab as a raised key.
       MuiTabs: {
         styleOverrides: {
-          root: { margin: '0 16px', padding: 4, borderRadius: 18, background: d.well, boxShadow: d.wellShadow, borderBottom: '0 !important' },
+          root: {
+            margin: '0 16px', padding: 4, borderRadius: 18, background: d.well, boxShadow: d.wellShadow, borderBottom: '0 !important',
+            // Let the raised tab's edge and shadow show instead of being cut at the trough.
+            '& .MuiTabs-scroller': { overflow: 'visible !important' },
+          },
           indicator: { display: 'none' },
         },
       },
@@ -192,6 +196,26 @@ export function createAppTheme(mode: ColorMode): Theme {
             borderRadius: 14, color: theme.palette.text.secondary,
             '&.Mui-selected': { color: theme.palette.primary.main, background: d.keyLight, boxShadow: `0 3px 0 ${d.keyEdge}, 0 8px 12px -6px rgba(15,27,45,.4)` },
           }),
+        },
+      },
+      // A field's label lives INSIDE its well (an outlined label would sit on the well's edge, with
+      // no border line to cut through): shrunk, it goes to the top of the well and the text moves down.
+      MuiFormControl: {
+        styleOverrides: {
+          root: {
+            '& .MuiInputLabel-root + .MuiOutlinedInput-root:not(.MuiInputBase-multiline) .MuiOutlinedInput-input': { paddingTop: 23, paddingBottom: 10 },
+            '& .MuiInputLabel-root + .MuiOutlinedInput-sizeSmall:not(.MuiInputBase-multiline) .MuiOutlinedInput-input': { paddingTop: 17, paddingBottom: 4 },
+            '& .MuiInputLabel-root + .MuiInputBase-multiline': { paddingTop: 24, paddingBottom: 10 },
+            '& .MuiOutlinedInput-notchedOutline legend': { display: 'none' },
+          },
+        },
+      },
+      MuiInputLabel: {
+        styleOverrides: {
+          root: {
+            '&.MuiInputLabel-outlined.MuiInputLabel-shrink': { transform: 'translate(14px, 5px) scale(0.72)', fontWeight: 600 },
+            '&.MuiInputLabel-outlined.MuiInputLabel-sizeSmall.MuiInputLabel-shrink': { transform: 'translate(14px, 2px) scale(0.68)' },
+          },
         },
       },
       // Fields pressed into the page.

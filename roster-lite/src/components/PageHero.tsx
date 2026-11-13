@@ -75,6 +75,17 @@ export default function PageHero({
         '& .MuiIconButton-root': { color: '#fff', width: 36, height: 36, ...glassKey },
         '& .MuiButton-outlined, & .MuiButton-outlined:hover': { color: '#fff', border: 0, borderRadius: '12px', ...glassKey },
         '& .MuiButton-text': { color: '#fff' },
+        // Segmented choices (e.g. the map's Plano/Globo): a glass trough cut into the sky, white
+        // labels, the chosen one a pale key whose edge stays inside the trough.
+        '& .MuiToggleButtonGroup-root': {
+          background: 'rgba(4,14,40,.35)', padding: '3px', borderRadius: '14px',
+          boxShadow: 'inset 0 2px 5px rgba(0,0,0,.4), inset 0 -1px 0 rgba(255,255,255,.18)',
+        },
+        '& .MuiToggleButton-root': { color: 'rgba(255,255,255,.88)', fontWeight: 700, px: 1.25, py: 0.25, lineHeight: 1.6 },
+        '& .MuiToggleButton-root.Mui-selected, & .MuiToggleButton-root.Mui-selected:hover': {
+          color: '#0B1222', background: `linear-gradient(180deg, ${lighten(pill, 0.45)}, ${pill})`,
+          boxShadow: `0 2px 0 ${darken(pill, 0.3)}, inset 0 1px 0 rgba(255,255,255,.9)`,
+        },
         // Weather can draw light clouds behind the text: a soft shadow keeps it legible.
         '& .MuiTypography-root': { textShadow: '0 1px 3px rgba(0, 0, 0, 0.28)' },
       }}

@@ -31,6 +31,9 @@ produção, em vez de promover uma a uma.
   calendário com dias-tecla, barras 3D na evolução mensal, tubos nos limites/férias/vencimento.
   Mapa: Terra em satélite (`SatelliteEarth.tsx`, NASA Blue Marble 4096×2048 WebP ~0,5 MB em `src/assets`,
   reprojetada pixel a pixel pela projeção d3; cache em runtime pelo SW, não pré-cache); abre no globo.
+- **0.8.41.1** — correções do 3D vistas no telemóvel: etiquetas dos campos dentro do poço (`MuiFormControl`/
+  `MuiInputLabel` em `theme.ts`), separadores das Definições sem corte ("Venc."), Plano/Globo legível no banner
+  (estilo de toggle no `PageHero`), anéis 3D (`Ring3D`), cartões em relevo e dias-tecla no "Hoje".
 
 ---
 

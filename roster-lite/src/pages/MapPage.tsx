@@ -159,8 +159,7 @@ export default function MapPage() {
       <PageHero
         back label="Mapa" title="Mapa de voos"
         actions={
-          <ToggleButtonGroup size="small" exclusive value={mode} onChange={(_, m) => changeMode(m)}
-            sx={{ '& .MuiToggleButton-root': { color: 'rgba(255,255,255,0.8)', borderColor: 'rgba(255,255,255,0.35)' }, '& .Mui-selected': { color: '#0B1222 !important', bgcolor: '#93C5FD !important' } }}>
+          <ToggleButtonGroup size="small" exclusive value={mode} onChange={(_, m) => changeMode(m)} aria-label="Vista do mapa">
             <ToggleButton value="flat" sx={{ px: 1.25, py: 0.25 }}>Plano</ToggleButton>
             <ToggleButton value="globe" sx={{ px: 1.25, py: 0.25 }}>Globo</ToggleButton>
           </ToggleButtonGroup>
