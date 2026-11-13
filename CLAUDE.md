@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (477 tests) — keep green
+npm test           # vitest run (478 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -163,7 +163,8 @@ Things learned over this collaboration that should persist across sessions:
   no "AE" wording. Any new AE feature must be gated the same way.
 - **Pilot base is a per-profile setting** (Settings → Base: Lisboa/Porto, `UserProfile.base`,
   default LIS; `baseOf()` in `dutyStats.ts`). Never hardcode LIS for at-base/away logic.
-- **S.EXT. = any external duty** (course, meeting, …) → Office Duty, timed. RUPT cl. 7.1 waives the
+- **S.EXT. = any external duty** (course, meeting, …) → Office Duty, timed — but SHOWN as "Serviço externo", never
+  "Gabinete" (user, 0.9.3: `dutyLabel()` in `dutyLabels.ts`; use it, not `dutyTypeLabel`, for a duty's word). RUPT cl. 7.1 waives the
   FOLGA rules for qualification/command courses but never the weekly rest; the app can't tell a
   course apart, so folga warnings involving S.EXT./training carry a caveat instead of being dropped.
 - **AE analysis is labelled experimental everywhere it shows** (user request): `AeDisclaimer.tsx`.
@@ -340,6 +341,9 @@ Things learned over this collaboration that should persist across sessions:
   the IO's end) and the RAACO meals by the usual rules, the stay where it ends paying its Tabela 34 rates (casebook
   C08, MAN: "teria de assumir as ajudas de lá"; "aquele do prevenir é especial"). Open: per diem for an IO normal
   alone at base. Without a report, the roster shows APT / assistência / PLS instead of IO (APT not parsed yet).
+- **PDF history** (since 0.9.3, user request): `/pdfs` groups the saved PDFs in tabs by year → month of the DOWNLOAD
+  (local time), newest first, each named by its download day/time; deleting asks first (the PDFs replay planned vs
+  flown and the IO prevenir).
 - **Backlog:** the rest of the AE items (folgas check, ES/LF/ND, per diem, duty-pay/block-pay
   credits, holiday counter), PWA local reminders, crosswind (runway DB). See `EXPERIMENTAL.md`
   (TODO/Backlog) and `roster-lite/TODO.md`.

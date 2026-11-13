@@ -6,7 +6,7 @@ import { format, parseISO } from 'date-fns';
 import { pt } from 'date-fns/locale';
 import type { ParsedDuty } from '../domain/types';
 import { dayLabel } from './dates';
-import { dutyTypeLabel } from '../domain/dutyLabels';
+import { dutyLabel } from '../domain/dutyLabels';
 import { toLocalTime } from './localTime';
 import { buildIcsFor } from './icsExport';
 import { downloadBlob } from './download';
@@ -36,7 +36,7 @@ export function monthText(monthKey: string, duties: ParsedDuty[], base: string):
       const d = day[0];
       const t0 = clock(date, d.departureTime, d.departureAirport ?? base);
       const t1 = clock(date, d.arrivalTime, d.departureAirport ?? base);
-      what = `${dutyTypeLabel(d.dutyType)}${d.dutyType === 'Day Off' || d.dutyType === 'Vacation' ? '' : ` ${d.dutyCode}`}${t0 && t1 ? ` · ${t0}–${t1}` : ''}`;
+      what = `${dutyLabel(d)}${d.dutyType === 'Day Off' || d.dutyType === 'Vacation' ? '' : ` ${d.dutyCode}`}${t0 && t1 ? ` · ${t0}–${t1}` : ''}`;
     }
     return `${dayLabel(date)} — ${what}`;
   });

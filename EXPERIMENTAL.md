@@ -25,7 +25,10 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(nada — tudo promovido em `0.9.2.2`)_
+- **0.9.3** — Histórico de PDFs em abas ano → mês pela data de download (`SavedPdfsPage.tsx`), cada PDF
+  identificado por dia/hora do download, "Mais recente", confirmação ao apagar (os PDFs reconstroem planeado vs
+  voado e o prevenir). `dutyLabel()` em `dutyLabels.ts`: S.EXT. = "Serviço externo" (continua Office Duty para
+  contas — não é dia GAB), IO = "Irregularidade operacional".
 
 ---
 

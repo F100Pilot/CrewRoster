@@ -3,7 +3,7 @@ import { PassBadge, PassCard, type PassCell } from './PassCard';
 import { dutyColor } from '../theme';
 import { legsOf } from '../domain/dayPhase';
 import { dayItems } from '../domain/dayItems';
-import { dutyTypeLabel } from '../domain/dutyLabels';
+import { dutyLabel } from '../domain/dutyLabels';
 import { MARK_SHORT, dayMarks, isInstructorMark } from '../domain/dutyMarks';
 import { formatDuration } from '../utils/duration';
 import { checkInTimeLabel, localClock } from '../utils/localTime';
@@ -99,7 +99,7 @@ export default function DayPass({ date, duties, change, isToday, base, onOpen }:
           <Box component="span" sx={{ minWidth: DATE_COLUMN, flexShrink: 0, color: isToday ? 'primary.main' : 'text.primary' }}>
             {dayLabel(date).toUpperCase()}
           </Box>
-          <span>{dutyTypeLabel(main.dutyType).toUpperCase()}</span>
+          <span>{dutyLabel(main).toUpperCase()}</span>
         </Box>
       )}
       badges={badges}
