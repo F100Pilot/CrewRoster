@@ -7,8 +7,8 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.9.0`
-- **Próxima versão ao promover:** `0.9.1` (ou superior, conforme o âmbito)
+- **Produção (`master`) está em:** `0.9.2.2`
+- **Próxima versão ao promover:** `0.9.3` (ou superior, conforme o âmbito)
 
 ## Como promover tudo para produção (quando estiver pronto)
 
@@ -25,30 +25,16 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **0.9.1 — partilha do mês e Google Calendar.** Menu "Partilhar o mês" no Calendário (`ShareMonthMenu.tsx`):
-  imagem, texto dia a dia (`utils/shareMonth.ts`, horas locais, sem tripulantes/valores) e `.ics` só do mês.
-  Google Calendar (`services/googleCalendar.ts`): Google Identity Services (token em memória), scope
-  `calendar.app.created`, calendário próprio "CrewRoster", sincronização insere/atualiza/apaga pelos ids
-  derivados de `RosterEvent.key` (modelo comum ao `.ics` em `icsExport.ts`). **Precisa do secret
-  `VITE_GOOGLE_CLIENT_ID`** (cliente OAuth "Web application", origem `https://f100pilot.github.io`); sem ele o
-  botão não aparece. A CSP só abre accounts.google.com / www.googleapis.com nesses builds.
-  Datas com tamanho normal (tirado o `fontSize: 0.8rem`).
-- **0.9.1.1** — a imagem do mês (`renderMonthCard` em `shareDay.ts`) passa a ser o calendário completo: dias-tecla
-  com a cor do serviço, destino + hora local de saída, resumo do mês e legenda (antes só listava rotas).
-- **0.9.2 — IO / prevenir** (bug de um colega): o parser lê `IO` (Other, com horas; PARSE_VERSION 17);
-  `mergeDuties` guarda no IO a apresentação do serviço que substituiu (`planned`); `domain/irregularity.ts`:
-  prevenir = IO que começa à apresentação planeada, ou marcado no dia (`crewroster.prevenir.<user>`,
-  aplicado no RosterProvider). Prevenir → abonos RAACO do período (Tabela 33, caso C07), ajuda de custo A
-  nacional sem isenção (recibo: "Per diem A PGA CTE T"), duty. IO normal: conta o PSV da escala (confirmado);
-  **em aberto:** se paga ajuda de custo / abonos.
-- **0.9.2.1** — o botão "Foi o prevenir" só aparece quando não há escala anterior para comparar; com ela, a app
-  decide e mostra o motivo (Prevenir / IO normal).
-- **0.9.2.2** — IO normal entra no PSV do dia para os abonos (caso C08, MAN). Em aberto: ajuda de custo de um IO
-  normal sozinho na base; código APT. Também: chaves `crewroster.gcal*` fora das cópias de segurança.
+_(nada — tudo promovido em `0.9.2.2`)_
 
 ---
 
 ## TODO / Backlog (decidir mais tarde)
+
+- **Google Calendar (0.9.1) está no código mas escondido** até existir o secret `VITE_GOOGLE_CLIENT_ID` (cliente
+  OAuth "Web application", origem `https://f100pilot.github.io`, Calendar API ativa, âmbito
+  `calendar.app.created`). Com o secret, o próximo deploy mostra o botão — juntar então uma nota de versão.
+- **IO:** ajuda de custo de um IO normal sozinho na base; código **APT** (sem apresentação) ainda não lido.
 
 - **Duty vs DT da escala (perguntas em aberto ao utilizador):** a escala soma 30 min depois de um DHC que fecha o dia
   (a app segue o AE cl. 17: acaba à chegada) e conta a hora de almoço nos dias GAB (8:00 vs 7:00 na app). Mudar só se

@@ -53,7 +53,6 @@ export const RELEASE_NOTES: ReleaseNote[] = [
     date: '2026-11-13',
     highlights: [
       'Calendário → Partilhar o mês: além da imagem, a escala como texto dia a dia (para WhatsApp ou SMS, em horas locais) e como ficheiro de calendário só desse mês, para juntar ao calendário de outra pessoa. Sem nomes de tripulantes nem valores.',
-      'Enviar a escala para o Google Calendar, a partir da app (Definições → Dados, ou Partilhar o mês): cria o calendário "CrewRoster" na tua conta e deixa-o igual à escala — junta, altera e apaga os serviços. Só mexe nesse calendário.',
       'Campos de data com os números do tamanho normal.',
     ],
   },
