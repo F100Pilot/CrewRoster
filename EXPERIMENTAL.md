@@ -40,7 +40,9 @@ produção, em vez de promover uma a uma.
   prevenir = IO que começa à apresentação planeada, ou marcado no dia (`crewroster.prevenir.<user>`,
   aplicado no RosterProvider). Prevenir → abonos RAACO do período (Tabela 33, caso C07), ajuda de custo A
   nacional sem isenção (recibo: "Per diem A PGA CTE T"), duty. IO normal: conta o PSV da escala (confirmado);
-  **em aberto:** se paga ajuda de custo / abonos. Também: chaves `crewroster.gcal*` fora das cópias de segurança.
+  **em aberto:** se paga ajuda de custo / abonos.
+- **0.9.2.1** — o botão "Foi o prevenir" só aparece quando não há escala anterior para comparar; com ela, a app
+  decide e mostra o motivo (Prevenir / IO normal). Também: chaves `crewroster.gcal*` fora das cópias de segurança.
 
 ---
 

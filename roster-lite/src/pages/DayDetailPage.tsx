@@ -30,7 +30,7 @@ import { PASS_MONO, PassCells, passOverline } from '../components/PassCard';
 import { localClock } from '../utils/localTime';
 import { utcDateTime } from '../utils/duration';
 import { briefLabel, ebtBriefing } from '../domain/simSession';
-import { autoPrevenir, isIO, isPrevenirIO } from '../domain/irregularity';
+import { canCompareIO, isIO, isPrevenirIO } from '../domain/irregularity';
 
 export default function DayDetailPage() {
   const { date } = useParams<{ date: string }>();
@@ -521,32 +521,39 @@ function daySummary(duties: ParsedDuty[]): string | undefined {
   return duties[0] ? `${dutyTypeLabel(duties[0].dutyType)} · ${duties[0].dutyCode}` : undefined;
 }
 
-// An IO: was it the "prevenir" (called at the report for the alcohol test)? Read from the roster —
-// the IO opens at the planned report — and the crew member can say otherwise. Prevenir counts the
-// day in full: duty, per diem A and the meal allowances (domain/irregularity.ts).
+// An IO: was it the "prevenir" (called at the report for the alcohol test)? When an earlier download
+// kept the planned report, the roster decides — the IO opens at it or not — and the page just says
+// so. Only without that comparison does the crew member get the switch (user rule). Prevenir counts
+// the day in full: duty, per diem A and the meal allowances (domain/irregularity.ts).
 function IoPrevenir({ duty }: { duty: ParsedDuty }) {
   const { setPrevenir } = useRoster();
   const on = isPrevenirIO(duty);
-  const auto = autoPrevenir(duty);
   const start = duty.reportingTime ?? duty.departureTime;
   const plan = duty.planned?.reportingTime;
   const at = (t: string) => toLocalTime(duty.date, t, duty.departureAirport) ?? `${t}z`;
-  const why = plan
-    ? auto
-      ? `Começou à hora da apresentação do serviço planeado (${at(plan)}).`
-      : `O serviço planeado apresentava às ${at(plan)}${start ? `; o IO começou às ${at(start)}` : ''}.`
-    : 'Sem escala anterior guardada para comparar com o serviço planeado.';
+  const counts = on
+    ? 'Conta o duty, a ajuda de custo A (nacional) e os abonos do período.'
+    : 'Conta como tempo de serviço.';
+  if (canCompareIO(duty) && plan) {
+    return (
+      <Alert severity={on ? 'success' : 'info'} sx={{ mt: 1.5 }}>
+        <strong>{on ? 'Prevenir' : 'IO normal'}</strong>
+        {' — '}
+        {on
+          ? `começou à hora da apresentação do serviço planeado (${at(plan)}).`
+          : `o serviço planeado apresentava às ${at(plan)}${start ? `; o IO começou às ${at(start)}` : ''}.`}
+        {' '}{counts}
+      </Alert>
+    );
+  }
   return (
     <Box sx={{ mt: 1.5 }}>
       <FormControlLabel
-        control={<Switch checked={on} onChange={(e) => setPrevenir(duty.date, e.target.checked === auto ? null : e.target.checked)} />}
+        control={<Switch checked={on} onChange={(e) => setPrevenir(duty.date, e.target.checked ? true : null)} />}
         label={<Typography variant="body2" fontWeight={700}>Foi o prevenir (teste de álcool na apresentação)</Typography>}
       />
       <Typography variant="caption" color="text.secondary" display="block">
-        {why} {on
-          ? 'Conta o duty, a ajuda de custo A (nacional) e os abonos do período.'
-          : 'Conta como tempo de serviço; ajuda de custo e abonos por confirmar.'}
-        {duty.prevenir !== undefined && duty.prevenir !== auto && ' Marcado por ti.'}
+        Sem a escala anterior guardada, a app não consegue comparar com o serviço planeado — diz tu. {counts}
       </Typography>
     </Box>
   );

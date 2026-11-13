@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { autoPrevenir, isPrevenirIO } from '../irregularity';
+import { autoPrevenir, canCompareIO, isPrevenirIO } from '../irregularity';
 import { mergeDuties } from '../rosterMerge';
 import { dutyDays, PGA_PILOT_RULES } from '../dutyTime';
 import { DEFAULT_PAY_SETTINGS, payEstimate } from '../payEstimate';
@@ -26,12 +26,13 @@ describe('IO / prevenir', () => {
     expect(isPrevenirIO(merged)).toBe(true);
   });
 
-  it('an IO starting at another time is not the prevenir — unless the crew member marks it', () => {
+  it('an IO starting at another time is not the prevenir — and when the roster can tell, it decides', () => {
     const [merged] = mergeDuties(planned, [io('12:00')], '2026-11-02');
     expect(autoPrevenir(merged)).toBe(false);
     expect(isPrevenirIO(merged)).toBe(false);
-    expect(isPrevenirIO({ ...merged, prevenir: true })).toBe(true);
-    expect(isPrevenirIO({ ...mergeDuties(planned, [io()])[0], prevenir: false })).toBe(false);
+    // A mark (e.g. left from before the earlier download) doesn't override the comparison.
+    expect(isPrevenirIO({ ...merged, prevenir: true })).toBe(false);
+    expect(isPrevenirIO({ ...mergeDuties(planned, [io()])[0], prevenir: false })).toBe(true);
   });
 
   it('a later download showing the same IO keeps the plan', () => {
@@ -41,10 +42,11 @@ describe('IO / prevenir', () => {
     expect(isPrevenirIO(again[0])).toBe(true);
   });
 
-  it('without an earlier download there is nothing to compare: not the prevenir until marked', () => {
+  it('without an earlier download there is nothing to compare: the crew member says it', () => {
     const [only] = mergeDuties([], [io()], '2026-11-01');
-    expect(only.planned).toBeUndefined();
+    expect(canCompareIO(only)).toBe(false);
     expect(isPrevenirIO(only)).toBe(false);
+    expect(isPrevenirIO({ ...only, prevenir: true })).toBe(true);
   });
 
   it('the IO counts as duty for its whole period (10:15–16:40 = 6h25)', () => {

@@ -8,7 +8,8 @@ import type { ParsedDuty } from './types';
 // counts in full — duty, per diem A (national, at base: no tax exemption) and the RAACO meal
 // allowances of the IO's period (Tabela 33). It shows on the roster as an IO that starts exactly at
 // the planned PSV's report (`planned.reportingTime`, kept by mergeDuties from the earlier download).
-// Without an earlier download to compare with, the crew member marks it (`prevenir`).
+// Only without an earlier download to compare with does the crew member say it (`prevenir`) — when the
+// roster can tell, it decides (user: the button only when there's no way to compare).
 // Any other IO: shown and counted as duty time; per diem and allowances pending the user's check.
 
 export const isIO = (d: ParsedDuty): boolean => d.dutyCode === 'IO';
@@ -21,8 +22,12 @@ export function autoPrevenir(d: ParsedDuty): boolean {
   return isIO(d) && !!start && !!d.planned?.reportingTime && d.planned.reportingTime === start;
 }
 
+// The roster can tell: there is a planned report to compare the IO's start with.
+export const canCompareIO = (d: ParsedDuty): boolean => isIO(d) && !!d.planned?.reportingTime;
+
 export function isPrevenirIO(d: ParsedDuty): boolean {
-  return isIO(d) && (d.prevenir ?? autoPrevenir(d));
+  if (!isIO(d)) return false;
+  return canCompareIO(d) ? autoPrevenir(d) : d.prevenir === true;
 }
 
 // The IO's period as real instants (UTC times on the roster; an end before the start = next day).

@@ -332,7 +332,8 @@ Things learned over this collaboration that should persist across sessions:
   for the alcohol test, can't fly) counts the day in full (user: "se for prevenir conta tudo"): duty, per diem **A,
   national** (at base, no exempt part — "mete nacional o perdiem"), and the RAACO meals of the IO's period as a PSV at
   base (Tabela 33 — casebook C07). Detected when the IO starts at the planned PSV's report (`mergeDuties` keeps the
-  replaced day's earliest report on the IO as `planned`), or marked by the crew member on the day page
+  replaced day's earliest report on the IO as `planned`); ONLY when there is no such comparison (`canCompareIO`
+  false) does the day page offer the "Foi o prevenir" switch (user rule, 0.9.2.1) — the mark is ignored otherwise
   (`ParsedDuty.prevenir`, stored in `crewroster.prevenir.<userId>`, applied by RosterProvider). `domain/irregularity.ts`.
   On the payslip the prevenir shows as "Per diem A PGA CTE T" (at base, taxed in full) — as the app counts it.
   An IO that is NOT the prevenir ("IO normal"): the PSV the roster shows counts as duty (confirmed; usually a duty
