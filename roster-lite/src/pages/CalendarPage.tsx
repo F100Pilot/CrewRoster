@@ -1,6 +1,6 @@
 import { useMemo, useRef } from 'react';
-import { Box, Button, Card, CardContent, IconButton, Paper, Stack, Typography } from '@mui/material';
-import { alpha } from '@mui/material/styles';
+import { Box, Button, Card, CardContent, IconButton, Stack, Typography } from '@mui/material';
+import { alpha, darken, lighten, useTheme } from '@mui/material/styles';
 import { ChevronLeft, ChevronRight, Today, IosShare } from '@mui/icons-material';
 import {
   addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, isToday,
@@ -11,7 +11,7 @@ import { useRoster } from '../state/useRoster';
 import { useViewedMonth } from '../state/viewedMonth';
 import MonthStatsCard from '../components/MonthStatsCard';
 import { shareMonthImage } from '../utils/shareDay';
-import { dutyColor } from '../theme';
+import { depth, dutyColor } from '../theme';
 import type { ParsedDuty } from '../domain/types';
 import { monthLabel } from '../utils/dates';
 import PageHero from '../components/PageHero';
@@ -37,6 +37,8 @@ const DUTY_LABELS: Record<string, string> = {
 
 export default function CalendarPage() {
   const { roster, activeUser } = useRoster();
+  const theme = useTheme();
+  const d3 = depth(theme.palette.mode);
   const navigate = useNavigate();
   const [month, setMonth] = useViewedMonth();
 
@@ -108,76 +110,63 @@ export default function CalendarPage() {
         }
       >
         <Box display="flex" gap={1} mt={1}>
-          <IconButton size="small" onClick={() => setMonth((m) => subMonths(m, 1))} aria-label="Mês anterior" sx={{ bgcolor: 'rgba(255,255,255,0.12)' }}>
+          <IconButton size="small" onClick={() => setMonth((m) => subMonths(m, 1))} aria-label="Mês anterior">
             <ChevronLeft />
           </IconButton>
-          <IconButton size="small" onClick={() => setMonth((m) => addMonths(m, 1))} aria-label="Mês seguinte" sx={{ bgcolor: 'rgba(255,255,255,0.12)' }}>
+          <IconButton size="small" onClick={() => setMonth((m) => addMonths(m, 1))} aria-label="Mês seguinte">
             <ChevronRight />
           </IconButton>
         </Box>
       </PageHero>
 
-      <Box display="grid" gridTemplateColumns="repeat(7, 1fr)" gap={0.5}>
-        {WEEKDAYS.map((d) => (
-          <Typography key={d} variant="caption" align="center" color="text.secondary" fontWeight={600}>
-            {d}
-          </Typography>
-        ))}
-        {days.map((day) => {
-          const key = format(day, 'yyyy-MM-dd');
-          const dayDuties = dutiesByDay.get(key) ?? [];
-          const inMonth = isSameMonth(day, month);
-          const today = isToday(day);
-          return (
-            <Paper
-              key={key}
-              variant="outlined"
-              onClick={() => navigate(`/day/${key}`)}
-              sx={{
-                minHeight: 88, minWidth: 0, p: 0.5, cursor: 'pointer',
-                opacity: inMonth ? 1 : 0.45,
-                borderColor: today ? 'primary.main' : 'divider',
-                borderWidth: today ? 2 : 1,
-                bgcolor: today ? (t) => alpha(t.palette.primary.main, 0.08) : undefined,
-              }}
-            >
-              {today ? (
-                <Box
-                  sx={{
-                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                    width: 20, height: 20, borderRadius: '50%',
-                    bgcolor: 'primary.main', color: '#fff',
-                    fontSize: '0.7rem', fontWeight: 700,
-                  }}
-                >
-                  {format(day, 'd')}
-                </Box>
-              ) : (
-                <Typography variant="caption" fontWeight={600}>{format(day, 'd')}</Typography>
-              )}
-              <Stack spacing={0.25} mt={0.25}>
-                {dayDuties.slice(0, 3).map((d, i) => (
-                  <Box
-                    key={i}
-                    sx={{
-                      bgcolor: dutyColor(d.dutyType),
-                      color: d.dutyType === 'Day Off' ? 'text.primary' : '#fff',
-                      borderRadius: 0.5, px: 0.5, fontSize: '0.62rem', lineHeight: 1.35,
-                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {d.flightNumber || d.dutyCode}
+      {/* 3D look: the month on a raised board, each day a key coloured by its main duty. */}
+      <Box sx={{ p: 1.25, borderRadius: '22px', background: d3.surface, boxShadow: d3.card }}>
+        <Box display="grid" gridTemplateColumns="repeat(7, minmax(0, 1fr))" gap={0.6}>
+          {WEEKDAYS.map((d) => (
+            <Typography key={d} variant="caption" align="center" color="text.secondary" fontWeight={800} sx={{ fontSize: '0.62rem', letterSpacing: '0.06em', mb: 0.25 }}>
+              {d}
+            </Typography>
+          ))}
+          {days.map((day) => {
+            const key = format(day, 'yyyy-MM-dd');
+            const dayDuties = dutiesByDay.get(key) ?? [];
+            const inMonth = isSameMonth(day, month);
+            const today = isToday(day);
+            const main = dayDuties.find((x) => x.dutyType === 'Flight Duty' || x.dutyType === 'Positioning')
+              ?? dayDuties.find((x) => x.dutyType !== 'Day Off') ?? dayDuties[0];
+            const off = !main || main.dutyType === 'Day Off';
+            const col = main ? dutyColor(main.dutyType) : '#9e9e9e';
+            const label = main ? (main.flightNumber || main.dutyCode) : '';
+            const keyBg = off ? d3.keyLight : `linear-gradient(180deg, ${lighten(col, 0.25)}, ${darken(col, 0.05)})`;
+            const edge = off ? d3.keyEdge : darken(col, 0.4);
+            return (
+              <Box
+                key={key}
+                component="button"
+                onClick={() => navigate(`/day/${key}`)}
+                aria-label={`${format(day, 'd')}${label ? ` · ${label}` : ''}`}
+                sx={{
+                  minHeight: 54, minWidth: 0, p: 0.4, border: 0, cursor: 'pointer', borderRadius: '12px', mb: '3px',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1px',
+                  font: 'inherit', color: off ? 'text.primary' : '#fff',
+                  opacity: inMonth ? 1 : 0.35,
+                  background: keyBg,
+                  boxShadow: today
+                    ? `0 0 0 3px ${theme.palette.background.paper}, 0 0 0 5px ${theme.palette.primary.main}, 0 10px 16px -6px ${alpha(theme.palette.primary.main, 0.7)}`
+                    : `0 3px 0 ${edge}, 0 8px 10px -6px rgba(15,27,45,.45), inset 0 1px 0 rgba(255,255,255,.45)`,
+                  '&:active': { transform: 'translateY(2px)' },
+                }}
+              >
+                <Box component="span" sx={{ fontWeight: 800, fontSize: '0.9rem', lineHeight: 1.1 }}>{format(day, 'd')}</Box>
+                {label && (
+                  <Box component="span" sx={{ fontFamily: 'ui-monospace, Menlo, monospace', fontSize: '0.56rem', fontWeight: 700, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', opacity: off ? 0.75 : 0.95 }}>
+                    {label}{dayDuties.length > 1 ? ` +${dayDuties.length - 1}` : ''}
                   </Box>
-                ))}
-                {dayDuties.length > 3 && (
-                  <Typography variant="caption" sx={{ fontSize: '0.55rem' }} color="text.secondary">
-                    +{dayDuties.length - 3}
-                  </Typography>
                 )}
-              </Stack>
-            </Paper>
-          );
-        })}
+              </Box>
+            );
+          })}
+        </Box>
       </Box>
 
       <MonthStatsCard duties={monthDuties} />

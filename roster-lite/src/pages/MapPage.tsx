@@ -13,6 +13,7 @@ import { loadLogbook } from '../storage/rosterStore';
 import { buildFlightNetwork } from '../domain/flightMap';
 import type { LogbookRow } from '../domain/types';
 import PageHero from '../components/PageHero';
+import SatelliteEarth from '../components/SatelliteEarth';
 
 const W = 100;
 const H = 100;
@@ -23,7 +24,7 @@ const WORLD = feature(worldTopo as any, (worldTopo as any).objects.countries) as
 const GRATICULE = geoGraticule10();
 const SPHERE = { type: 'Sphere' } as const;
 
-// The two ways to draw the network. "Plano" is the Mercator fitted to the airports flown —
+// The two ways to draw the network, both over the satellite Earth (SatelliteEarth). "Plano" is the Mercator fitted to the airports flown —
 // the right default for a regional network, where it uses the whole card. "Globo" is an
 // orthographic globe the user can rotate: routes follow the great circle, at the cost of
 // the network occupying a small patch of the sphere.
@@ -32,7 +33,8 @@ const MODE_KEY = 'crewroster.mapMode';
 const GLOBE_ZOOM_MAX = 4;
 
 function loadMode(): MapMode {
-  try { return localStorage.getItem(MODE_KEY) === 'globe' ? 'globe' : 'flat'; } catch { return 'flat'; }
+  // The globe first (user: "o planeta Terra em satélite"), unless the user picked the flat map.
+  try { return localStorage.getItem(MODE_KEY) === 'flat' ? 'flat' : 'globe'; } catch { return 'globe'; }
 }
 
 export default function MapPage() {
@@ -80,10 +82,13 @@ export default function MapPage() {
   // finger roughly follows it.
   const svgRef = useRef<SVGSVGElement | null>(null);
   const drag = useRef<{ x: number; y: number; r: [number, number] } | null>(null);
+  const [moving, setMoving] = useState(false);
+  const [sat, setSat] = useState(false);
   const onPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
     if (mode !== 'globe') return;
     e.currentTarget.setPointerCapture(e.pointerId);
     drag.current = { x: e.clientX, y: e.clientY, r: rotate };
+    setMoving(true);
   };
   const onPointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
     const d = drag.current;
@@ -93,7 +98,7 @@ export default function MapPage() {
     const phi = Math.max(-90, Math.min(90, d.r[1] - (e.clientY - d.y) * k));
     setRotate([lambda, phi]);
   };
-  const onPointerUp = () => { drag.current = null; };
+  const onPointerUp = () => { drag.current = null; setMoving(false); };
 
   // Plano: fit a Mercator projection to the airports flown (with padding), then use it for
   // BOTH the country backdrop and the route overlay so everything lines up. Falls back to
@@ -142,8 +147,9 @@ export default function MapPage() {
   // Zoomed out, the globe packs a regional network into a few millimetres: codes would pile
   // on top of each other, so they appear only once zoomed in, and the dots shrink to match.
   const compact = mode === 'globe' && zoom < 2;
-  const route = theme.palette.primary.main;
-  const dot = dark ? '#ffd54f' : theme.palette.primary.main;
+  // On the satellite image: warm routes and pins that read on both sea and land (3D sketch).
+  const route = sat ? '#FFD24D' : theme.palette.primary.main;
+  const dot = sat || dark ? '#FFD24D' : theme.palette.primary.main;
   const landFill = dark ? '#2b3a4a' : '#dfe6ec';
   const landStroke = dark ? '#3f5266' : '#c2ccd6';
   const sea = dark ? '#16202b' : '#eef3f7';
@@ -153,8 +159,7 @@ export default function MapPage() {
       <PageHero
         back label="Mapa" title="Mapa de voos"
         actions={
-          <ToggleButtonGroup size="small" exclusive value={mode} onChange={(_, m) => changeMode(m)}
-            sx={{ '& .MuiToggleButton-root': { color: 'rgba(255,255,255,0.8)', borderColor: 'rgba(255,255,255,0.35)' }, '& .Mui-selected': { color: '#0B1222 !important', bgcolor: '#93C5FD !important' } }}>
+          <ToggleButtonGroup size="small" exclusive value={mode} onChange={(_, m) => changeMode(m)} aria-label="Vista do mapa">
             <ToggleButton value="flat" sx={{ px: 1.25, py: 0.25 }}>Plano</ToggleButton>
             <ToggleButton value="globe" sx={{ px: 1.25, py: 0.25 }}>Globo</ToggleButton>
           </ToggleButtonGroup>
@@ -178,6 +183,13 @@ export default function MapPage() {
       ) : (
         <Card variant="outlined">
           <CardContent sx={{ position: 'relative' }}>
+            <Box sx={{
+              position: 'relative', borderRadius: '18px', overflow: 'hidden',
+              // Deep space behind the globe, sunk into the card.
+              background: 'radial-gradient(120% 90% at 50% 35%, #1B3B6F 0%, #0C1B36 60%, #070F20 100%)',
+              boxShadow: 'inset 0 3px 10px rgba(0,0,0,.45)',
+            }}>
+            <SatelliteEarth projection={projection} view={W} globe={mode === 'globe'} moving={moving} onReady={setSat} />
             <Box
               component="svg"
               ref={svgRef}
@@ -187,12 +199,33 @@ export default function MapPage() {
               onPointerUp={onPointerUp}
               onPointerCancel={onPointerUp}
               sx={{
-                width: '100%', height: 'auto', display: 'block', borderRadius: 1,
+                width: '100%', height: 'auto', display: 'block', position: 'relative',
                 // On the globe a drag turns it, so the page mustn't scroll under the finger.
                 ...(mode === 'globe' && { touchAction: 'none', cursor: 'grab', '&:active': { cursor: 'grabbing' } }),
               }}
             >
-              {mode === 'globe' ? (
+              <defs>
+                {/* Light from the upper left and a darker limb: the globe reads as a ball. */}
+                <radialGradient id="globe-shade" cx="38%" cy="32%" r="70%">
+                  <stop offset="0" stopColor="#fff" stopOpacity={0.14} />
+                  <stop offset="0.55" stopColor="#000" stopOpacity={0} />
+                  <stop offset="1" stopColor="#000" stopOpacity={0.55} />
+                </radialGradient>
+                <filter id="globe-glow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation={1.4} />
+                </filter>
+              </defs>
+              {sat ? (
+                mode === 'globe' ? (
+                  <>
+                    <path d={spherePath} fill="none" stroke="#7DD3FC" strokeOpacity={0.55} strokeWidth={1.6} filter="url(#globe-glow)" />
+                    <path d={landPath} fill="none" stroke="#fff" strokeOpacity={0.22} strokeWidth={0.12} />
+                    <path d={spherePath} fill="url(#globe-shade)" />
+                  </>
+                ) : (
+                  <path d={landPath} fill="none" stroke="#fff" strokeOpacity={0.25} strokeWidth={0.15} />
+                )
+              ) : mode === 'globe' ? (
                 <>
                   {/* Space, then the sphere's sea, a light lat/lon grid, and land on top */}
                   <rect x={0} y={0} width={W} height={H} fill={dark ? '#0b1118' : '#f7f9fb'} />
@@ -247,14 +280,16 @@ export default function MapPage() {
                   <g key={a.code}>
                     <circle cx={p[0]} cy={p[1]} r={radius} fill={dot} stroke="#0008" strokeWidth={0.12} />
                     {!compact && (
-                      <text x={p[0]} y={p[1] - radius - 0.5} fontSize={1.9} textAnchor="middle"
-                        fill={theme.palette.text.secondary}>
+                      <text x={p[0]} y={p[1] - radius - 0.5} fontSize={1.9} textAnchor="middle" fontWeight={sat ? 800 : 400}
+                        fill={sat ? '#fff' : theme.palette.text.secondary}
+                        {...(sat && { stroke: 'rgba(0,0,0,.7)', strokeWidth: 0.35, paintOrder: 'stroke' })}>
                         {a.code}
                       </text>
                     )}
                   </g>
                 );
               })}
+            </Box>
             </Box>
             {mode === 'globe' && (
               <Stack

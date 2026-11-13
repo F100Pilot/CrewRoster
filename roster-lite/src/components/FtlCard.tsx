@@ -28,7 +28,6 @@ function LimitGroup({ title, rows }: { title: string; rows: LimitRow[] }) {
               variant="determinate"
               value={pct}
               color={limitLevel(used, limit)}
-              sx={{ height: 6, borderRadius: 3 }}
             />
           </Box>
         );

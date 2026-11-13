@@ -99,9 +99,10 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
   }
 
   // Pay settings only exist for pilots (the RRRGS is the pilots' agreement); cabin crew get four tabs.
-  const tabs: { id: SettingsTab; label: string; icon: ReactElement }[] = [
+  // `name` is the accessible name when the label is abbreviated to fit five tabs on a phone.
+  const tabs: { id: SettingsTab; label: string; name?: string; icon: ReactElement }[] = [
     { id: 'perfil', label: 'Perfil', icon: <PersonOutline /> },
-    ...(isPilot && activeUser ? [{ id: 'vencimento' as const, label: 'Vencimento', icon: <EuroOutlined /> }] : []),
+    ...(isPilot && activeUser ? [{ id: 'vencimento' as const, label: 'Venc.', name: 'Vencimento', icon: <EuroOutlined /> }] : []),
     { id: 'app', label: 'App', icon: <TuneOutlined /> },
     { id: 'dados', label: 'Dados', icon: <StorageOutlined /> },
     { id: 'ajuda', label: 'Ajuda', icon: <HelpOutline /> },
@@ -284,9 +285,9 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
         onChange={(_, v: SettingsTab) => chooseTab(v)}
         variant="fullWidth"
         aria-label="Secções das definições"
-        sx={{ borderBottom: 1, borderColor: 'divider', minHeight: 56, '& .MuiTab-root': { minHeight: 56, minWidth: 0, px: 0.5, fontSize: '0.7rem', textTransform: 'none', fontWeight: 600 } }}
+        sx={{ borderBottom: 1, borderColor: 'divider', minHeight: 56, '& .MuiTab-root': { minHeight: 56, minWidth: 0, px: 0.5, py: 0.75, fontSize: '0.7rem', textTransform: 'none', fontWeight: 600 }, '& .MuiTab-iconWrapper': { mb: 0.25 } }}
       >
-        {tabs.map((t) => <Tab key={t.id} value={t.id} icon={t.icon} label={t.label} iconPosition="top" />)}
+        {tabs.map((t) => <Tab key={t.id} value={t.id} icon={t.icon} label={t.label} aria-label={t.name ?? t.label} iconPosition="top" />)}
       </Tabs>
       <DialogContent sx={{ pt: 2 }}>
         {shownTab === 'perfil' && (

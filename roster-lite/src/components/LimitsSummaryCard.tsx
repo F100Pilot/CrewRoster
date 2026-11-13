@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Box, Card, CardActionArea, CardContent, Typography } from '@mui/material';
+import { Box, Card, CardActionArea, CardContent, LinearProgress, Typography } from '@mui/material';
 import { ChevronRight, Timer } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { limitLevel, limitRows, tightestRow } from '../domain/limitRows';
@@ -45,6 +45,7 @@ export default function LimitsSummaryCard({ duties, role }: { duties: ParsedDuty
                 {tight.group} {tight.label.replace(' (pico)', '')}: {formatDuration(tight.used)} / {formatDuration(tight.limit)} ({pct}%)
               </Typography>
             )}
+            {tight && <LinearProgress variant="determinate" value={Math.min(100, pct)} color={level} sx={{ mt: 0.5, height: 8 }} />}
           </Box>
           <ChevronRight color="action" />
         </CardContent>

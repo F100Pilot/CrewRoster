@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { Box, Button, ButtonBase, Stack, Typography } from '@mui/material';
 import { ChevronRight, FlightTakeoff, Login } from '@mui/icons-material';
-import { alpha, createTheme, ThemeProvider } from '@mui/material/styles';
+import { alpha, createTheme, darken, lighten, ThemeProvider } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import { useColorMode } from '../state/colorMode';
@@ -22,6 +22,7 @@ import { todayISO } from '../domain/rosterWindow';
 import UploadDropzone from '../components/UploadDropzone';
 import MetarTaf from '../components/MetarTaf';
 import SkyWeather, { SKY } from '../components/SkyWeather';
+import { HeroHills, heroPanel, pillKey } from '../components/PageHero';
 import { useCurrentWeather } from '../state/useCurrentWeather';
 import type { ParsedDuty } from '../domain/types';
 import { DUTY_TYPE_LABEL } from '../domain/dutyLabels';
@@ -159,8 +160,10 @@ function SkyHeader({ ctx, sky, sunrise, sunset, accent, base }: {
     : sunset && `Pôr do sol ${localAt(sunset, ctx.location)}`;
   const { over, big, under } = headline(ctx, base);
   return (
-    <Box sx={{ background: c.bg, color: '#fff', px: 2.5, pt: 2, pb: 2.5, position: 'relative', overflow: 'hidden', '& .MuiTypography-root': { textShadow: '0 1px 3px rgba(0, 0, 0, 0.28)' } }}>
+    // 3D look: the sky as a floating panel with hills in front, like every page's banner.
+    <Box sx={{ background: c.bg, color: '#fff', m: 1.75, mb: 0, px: 2.25, pt: 2, pb: 2.75, position: 'relative', overflow: 'hidden', ...heroPanel, '& .MuiTypography-root': { textShadow: '0 1px 3px rgba(0, 0, 0, 0.28)' } }}>
       <SkyWeather sky={sky} wx={wx} now={ctx.now} top={48} />
+      <HeroHills />
       <Box display="flex" alignItems="center" gap={1} position="relative">
         <Typography sx={{ fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.08em', color: c.soft }}>
           {ctx.location} · {localAt(ctx.now, ctx.location)} LT{wx && ` · ${wx.tempC}° ${wx.label}`}
@@ -169,11 +172,11 @@ function SkyHeader({ ctx, sky, sunrise, sunset, accent, base }: {
         {sun && <Typography sx={{ fontSize: '0.75rem', color: c.soft }}>{sun}</Typography>}
       </Box>
       <Box mt={1.5} position="relative">
-        <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', height: 26, px: 1.25, borderRadius: 13, bgcolor: accent, color: '#0B1222', fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.05em' }}>
+        <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', height: 26, px: 1.4, borderRadius: 13, ...pillKey(accent), color: '#0B1222', fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.05em' }}>
           {PHASE_LABEL[ctx.phase].toUpperCase()}
         </Box>
         <Typography sx={{ mt: 1, fontSize: '0.95rem', color: c.soft }}>{over}</Typography>
-        <Typography sx={{ fontSize: '2.6rem', fontWeight: 800, letterSpacing: '-0.02em', lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>{big}</Typography>
+        <Typography sx={{ fontSize: '2.6rem', fontWeight: 900, letterSpacing: '-0.03em', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums', '&&': { textShadow: '0 2px 0 rgba(0,0,0,.2), 0 10px 22px rgba(0,0,0,.4)' } }}>{big}</Typography>
         {under && <Typography sx={{ mt: 0.5, fontSize: '0.85rem', color: c.soft }}>{under}</Typography>}
         {ctx.phase === 'duty' && ctx.currentLeg && <LegProgress leg={ctx.currentLeg} now={ctx.now} accent={accent} />}
       </Box>
@@ -295,7 +298,23 @@ function Body({ ctx, p, pilot, base, duties }: { ctx: DayContext; p: Palette; pi
   );
 }
 
-const card = (p: Palette) => ({ bgcolor: p.card, borderRadius: 3, border: `1px solid ${p.line}` });
+// Progress as a tube sunk into the card, the fill a lit cylinder (3D sketch).
+const tube = (p: Palette, h: number) => ({
+  height: h, borderRadius: h / 2, overflow: 'hidden', bgcolor: alpha(p.soft, 0.2),
+  boxShadow: 'inset 0 2px 4px rgba(15,27,45,.25), inset 0 -1px 0 rgba(255,255,255,.35)',
+});
+const tubeFill = (c: string) => ({
+  height: '100%', borderRadius: 'inherit', bgcolor: c,
+  boxShadow: 'inset 0 2px 0 rgba(255,255,255,.5), inset 0 -3px 0 rgba(0,0,0,.18)',
+});
+// A raised card (3D sketch, level 2): lit top edge, soft long shadow, no border.
+const card = (p: Palette) => ({
+  borderRadius: '20px',
+  background: p.dark ? `linear-gradient(180deg, ${lighten(p.card, 0.05)}, ${p.card})` : `linear-gradient(180deg, #FFFFFF, ${darken(p.card, 0.03)})`,
+  boxShadow: p.dark
+    ? 'inset 0 1px 0 rgba(255,255,255,.07), 0 14px 24px -12px rgba(0,0,0,.7), 0 3px 6px rgba(0,0,0,.25)'
+    : 'inset 0 1px 0 #fff, 0 14px 24px -12px rgba(15,27,45,.38), 0 3px 6px rgba(15,27,45,.08)',
+});
 const overline = (p: Palette) => ({ fontSize: '0.7rem', fontWeight: 700, letterSpacing: '0.08em', color: p.soft });
 
 function BoardingPass({ leg, title }: { leg: Leg; title: string }) {
@@ -423,8 +442,8 @@ function DayNumbers({ ctx, p, pilot, base, duties }: { ctx: DayContext; p: Palet
       {tiles.map((t) => (
         <StatTile key={t.label} label={t.label} value={t.value} note={t.note}>
           {t.frac !== undefined && (
-            <Box sx={{ my: 0.5, height: 6, borderRadius: 3, bgcolor: alpha(p.soft, 0.25) }}>
-              <Box sx={{ width: `${Math.min(100, t.frac * 100)}%`, height: 6, borderRadius: 3, bgcolor: t.frac > 0.9 ? '#F59E0B' : p.accent }} />
+            <Box sx={{ my: 0.5, ...tube(p, 10) }}>
+              <Box sx={{ width: `${Math.min(100, t.frac * 100)}%`, ...tubeFill(t.frac > 0.9 ? '#F59E0B' : p.accent) }} />
             </Box>
           )}
         </StatTile>
@@ -452,8 +471,8 @@ function RestCard({ ctx, p, duties, pilot, base }: { ctx: DayContext; p: Palette
         <Typography sx={{ fontSize: '2rem', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{left > 0 ? countdown(left) : 'Cumprido'}</Typography>
         <Typography sx={{ fontSize: '0.85rem', color: p.soft }}>{left > 0 ? `até às ${localAt(until, ctx.location)} LT` : `desde as ${localAt(until, ctx.location)} LT`}</Typography>
       </Box>
-      <Box sx={{ mt: 1, height: 8, borderRadius: 4, bgcolor: alpha(p.soft, 0.25) }}>
-        <Box sx={{ width: `${done}%`, height: 8, borderRadius: 4, bgcolor: p.accent }} />
+      <Box sx={{ mt: 1, ...tube(p, 12) }}>
+        <Box sx={{ width: `${done}%`, ...tubeFill(p.accent) }} />
       </Box>
     </Box>
   );
@@ -471,7 +490,6 @@ function LimitRings({ duties, pilot, p }: { duties: ParsedDuty[]; pilot: boolean
   ].filter((r): r is NonNullable<typeof r> => !!r);
   if (!pick.length) return null;
   const colors = ['#EA580C', '#2563EB', '#0D9488'];
-  const C = 2 * Math.PI * 34;
   return (
     <ButtonBase onClick={() => navigate('/limites')} sx={{ ...card(p), display: 'block', textAlign: 'left', width: '100%', px: 2, py: 1.5 }}>
       <Box display="flex" alignItems="baseline" mb={1}>
@@ -483,12 +501,8 @@ function LimitRings({ duties, pilot, p }: { duties: ParsedDuty[]; pilot: boolean
           const frac = r.limit > 0 ? Math.min(1, r.used / r.limit) : 0;
           return (
             <Box key={r.group + r.label} display="flex" flexDirection="column" alignItems="center" gap={0.5}>
-              <svg width="84" height="84" viewBox="0 0 84 84" role="img" aria-label={`${r.group} ${r.label}: ${formatDuration(r.used)} de ${formatDuration(r.limit)}`}>
-                <circle cx="42" cy="42" r="34" fill="none" stroke={p.line} strokeWidth="9" />
-                <circle cx="42" cy="42" r="34" fill="none" stroke={frac > 0.9 ? '#B45309' : colors[i]} strokeWidth="9" strokeLinecap="round"
-                  strokeDasharray={`${frac * C} ${C}`} transform="rotate(-90 42 42)" />
-                <text x="42" y="47" textAnchor="middle" fontSize="15" fontWeight="800" fill={p.fg}>{Math.floor(r.used / 60)}h</text>
-              </svg>
+              <Ring3D frac={frac} color={frac > 0.9 ? '#B45309' : colors[i]} p={p} value={`${Math.floor(r.used / 60)}h`}
+                label={`${r.group} ${r.label}: ${formatDuration(r.used)} de ${formatDuration(r.limit)}`} />
               <Typography sx={{ fontSize: '0.7rem', color: p.soft, textAlign: 'center', lineHeight: 1.25 }}>
                 {r.group === 'Tempo de voo' ? 'Voo' : 'Serviço'} · {r.label.replace(' (pico)', '')}<br />de {Math.floor(r.limit / 60)}h
               </Typography>
@@ -497,6 +511,43 @@ function LimitRings({ duties, pilot, p }: { duties: ParsedDuty[]; pilot: boolean
         })}
       </Box>
     </ButtonBase>
+  );
+}
+
+// A limit as a 3D ring (sketch): the track sunk into the card, the used part a glossy raised
+// band with its own shadow, the number on a raised disc in the middle.
+function Ring3D({ frac, color, p, value, label }: { frac: number; color: string; p: Palette; value: string; label: string }) {
+  const id = useId().replace(/:/g, '');
+  const R = 34;
+  const C = 2 * Math.PI * R;
+  const dash = `${Math.max(0.001, frac) * C} ${C}`;
+  return (
+    <svg width="88" height="88" viewBox="-2 -2 88 88" role="img" aria-label={label}>
+      <defs>
+        <linearGradient id={`${id}g`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={lighten(color, 0.3)} />
+          <stop offset="1" stopColor={darken(color, 0.15)} />
+        </linearGradient>
+        <radialGradient id={`${id}d`} cx="40%" cy="30%" r="75%">
+          <stop offset="0" stopColor={p.dark ? lighten(p.card, 0.12) : '#FFFFFF'} />
+          <stop offset="1" stopColor={p.dark ? p.card : darken(p.card, 0.07)} />
+        </radialGradient>
+        <filter id={`${id}s`} x="-30%" y="-30%" width="160%" height="160%">
+          <feDropShadow dx="0" dy="2.5" stdDeviation="2" floodColor="#000" floodOpacity={p.dark ? 0.55 : 0.3} />
+        </filter>
+      </defs>
+      {/* Sunken track: the groove, darker along its top inner wall. */}
+      <circle cx="42" cy="42" r={R} fill="none" stroke={p.dark ? alpha('#000', 0.35) : alpha(p.line, 1)} strokeWidth="11" />
+      <circle cx="42" cy="43.5" r={R} fill="none" stroke="#000" strokeOpacity={p.dark ? 0.3 : 0.1} strokeWidth="8" />
+      {/* The used part, raised over the groove. */}
+      <g filter={`url(#${id}s)`} transform="rotate(-90 42 42)">
+        <circle cx="42" cy="42" r={R} fill="none" stroke={`url(#${id}g)`} strokeWidth="10" strokeLinecap="round" strokeDasharray={dash} />
+        <circle cx="42" cy="42" r={R + 2.5} fill="none" stroke="#fff" strokeOpacity={0.45} strokeWidth="1.6" strokeLinecap="round" strokeDasharray={`${Math.max(0.001, frac) * 2 * Math.PI * (R + 2.5)} ${C * 2}`} />
+      </g>
+      {/* Raised centre disc. */}
+      <circle cx="42" cy="42" r="24" fill={`url(#${id}d)`} filter={`url(#${id}s)`} />
+      <text x="42" y="47" textAnchor="middle" fontSize="15" fontWeight="800" fill={p.fg}>{value}</text>
+    </svg>
   );
 }
 
@@ -513,12 +564,21 @@ function WeekStrip({ duties, base, p }: { duties: ParsedDuty[]; base: string; p:
           const day = duties.filter((d) => d.date === date);
           const { code, type } = tileOf(date, day, base);
           const color = type ? dutyColor(type) : p.soft;
+          const today = date === start;
           return (
             <ButtonBase key={date} onClick={() => navigate(`/day/${date}`)} aria-label={`${longDay(date)}: ${code}`}
               sx={{
-                borderRadius: 2.5, py: 1, minHeight: 66, display: 'flex', flexDirection: 'column', gap: 0.25,
-                bgcolor: alpha(color, p.dark ? 0.3 : 0.16), color: p.fg,
-                outline: date === start ? `2px solid ${p.accent}` : 'none',
+                // Each day a key (3D sketch): tinted top-lit face, a bottom edge in its colour, and
+                // it sinks when pressed. Today stands taller, ringed in the phase accent.
+                borderRadius: '16px', py: 1, minHeight: 66, display: 'flex', flexDirection: 'column', gap: 0.25, color: p.fg,
+                background: p.dark
+                  ? `linear-gradient(180deg, ${alpha(lighten(color, 0.1), 0.42)}, ${alpha(color, 0.26)})`
+                  : `linear-gradient(180deg, ${lighten(color, 0.9)}, ${lighten(color, 0.74)})`,
+                boxShadow: `0 ${today ? 5 : 3}px 0 ${alpha(darken(color, 0.25), p.dark ? 0.8 : 0.45)}, 0 10px 14px -8px rgba(0,0,0,${p.dark ? 0.7 : 0.35}), inset 0 1px 0 rgba(255,255,255,${p.dark ? 0.15 : 0.8})`
+                  + (today ? `, 0 0 0 2px ${p.accent}` : ''),
+                transform: today ? 'translateY(-2px)' : undefined,
+                transition: 'transform .08s, box-shadow .08s',
+                '&:active': { transform: 'translateY(2px)', boxShadow: `0 1px 0 ${alpha(darken(color, 0.25), 0.5)}` },
               }}>
               <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: p.soft }}>{weekday(date)}</Typography>
               <Typography sx={{ fontSize: '1.05rem', fontWeight: 800, lineHeight: 1 }}>{Number(date.slice(8, 10))}</Typography>

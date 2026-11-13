@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Alert, Box, Card, CardContent, Checkbox, FormControlLabel, IconButton, Stack, Typography } from '@mui/material';
 import { Add, ChevronLeft, ChevronRight, ExpandLess, ExpandMore, Payments, Remove } from '@mui/icons-material';
 import { netEstimate, payEstimate, type Credit } from '../domain/payEstimate';
+import { depth } from '../theme';
 import { getPaySettings, setPaySettings } from '../storage/settings';
 import { ExperimentalChip } from './AeDisclaimer';
 import { formatDuration } from '../utils/duration';
@@ -244,9 +245,10 @@ function CreditBar({ label, c, chosen, showValue }: { label: string; c: Credit; 
       <Typography variant="caption" color="text.secondary" display="block" sx={{ fontVariantNumeric: 'tabular-nums' }}>
         {formatDuration(c.credited)} · Limite 1 {formatDuration(c.l1)} · Limite 2 {formatDuration(c.l2)}
       </Typography>
-      <Box position="relative" height={8} mt={0.25} borderRadius={4} bgcolor="action.hover" overflow="hidden"
+      <Box position="relative" height={12} mt={0.5} borderRadius="6px" overflow="hidden"
+        sx={(t) => ({ background: depth(t.palette.mode).well, boxShadow: depth(t.palette.mode).wellShadow })}
         role="img" aria-label={`${label}: ${formatDuration(c.credited)} de ${formatDuration(c.l1)} (Limite 1) e ${formatDuration(c.l2)} (Limite 2)`}>
-        <Box position="absolute" left={0} top={0} bottom={0} width={pct(c.credited)} bgcolor={tone} sx={{ opacity: chosen ? 1 : 0.6 }} />
+        <Box position="absolute" left={0} top={0} bottom={0} width={pct(c.credited)} bgcolor={tone} sx={{ opacity: chosen ? 1 : 0.6, borderRadius: '6px', boxShadow: 'inset 0 2px 0 rgba(255,255,255,.5), inset 0 -3px 0 rgba(0,0,0,.18)' }} />
         {[c.l1, c.l2].map((l) => (
           <Box key={l} position="absolute" top={0} bottom={0} left={pct(l)} width="2px" bgcolor="text.primary" sx={{ opacity: 0.5 }} />
         ))}
