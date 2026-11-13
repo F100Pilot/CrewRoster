@@ -7,7 +7,7 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.8.40.2`
+- **Produção (`master`) está em:** `0.9.0`
 - **Próxima versão ao promover:** `0.8.41` (ou superior, conforme o âmbito)
 
 ## Como promover tudo para produção (quando estiver pronto)
@@ -25,15 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **0.8.41 — visual 3D** (esboço aprovado pelo utilizador): tokens `depth(mode)`/`keyStyle` em `theme.ts`
-  (cartões em relevo, botões-tecla, campos/toggles/tabs afundados, progresso em tubo), `PageHero` como painel
-  flutuante (colinas, pílula em relevo, teclas de vidro), "Hoje" no mesmo estilo, dock de navegação flutuante,
-  calendário com dias-tecla, barras 3D na evolução mensal, tubos nos limites/férias/vencimento.
-  Mapa: Terra em satélite (`SatelliteEarth.tsx`, NASA Blue Marble 4096×2048 WebP ~0,5 MB em `src/assets`,
-  reprojetada pixel a pixel pela projeção d3; cache em runtime pelo SW, não pré-cache); abre no globo.
-- **0.8.41.1** — correções do 3D vistas no telemóvel: etiquetas dos campos dentro do poço (`MuiFormControl`/
-  `MuiInputLabel` em `theme.ts`), separadores das Definições sem corte ("Venc."), Plano/Globo legível no banner
-  (estilo de toggle no `PageHero`), anéis 3D (`Ring3D`), cartões em relevo e dias-tecla no "Hoje".
+_(nada — tudo promovido em `0.9.0`)_
 
 ---
 

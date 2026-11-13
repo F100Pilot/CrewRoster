@@ -109,9 +109,9 @@ cross-origin. Endpoints: `POST /api/login`, `/api/roster`, `/api/flightinfo`,
 
 ## Conventions
 
-- **Versioning** (`src/version.ts`): `0.8.<centesimal>[.<milésima>]`. New feature →
-  bump the centesimal (`0.8.7 → 0.8.8`); small fix → bump the milésima
-  (`0.8.8 → 0.8.8.1`). **Add a `RELEASE_NOTES` entry for every bump** (pt-PT) — the
+- **Versioning** (`src/version.ts`): `0.<major>.<centesimal>[.<milésima>]` — 0.9.x since the 3D look (user asked
+  for 0.9.0 Beta on promotion). New feature → bump the centesimal (`0.9.0 → 0.9.1`); small fix → bump the milésima
+  (`0.9.1 → 0.9.1.1`). The minor (0.8 → 0.9) moves only when the user asks. **Add a `RELEASE_NOTES` entry for every bump** (pt-PT) — the
   "Novidades" pop-up shows it after an update.
 - **Match the surrounding code:** comment density, naming, idioms. Comments explain
   *why*, in the existing style.
@@ -309,7 +309,7 @@ Things learned over this collaboration that should persist across sessions:
 - **AE and pay have their own bottom-nav tabs** (since 0.8.25, pilots only, user request): "AE" →
   `/limites`, "Vencimento" → `/vencimento` (shown only when the estimate is enabled), placed right
   after Estatísticas. Cabin crew reach EASA limits from the "⋮" menu.
-- **3D look** (since 0.8.41, from the user-approved sketch "banner em 3D, com sombras e noção de profundidade. Os
+- **3D look** (since 0.8.41, in production as **0.9.0**, from the user-approved sketch "banner em 3D, com sombras e noção de profundidade. Os
   botões também e os gráficos"): `theme.ts` exports `depth(mode)` (surface/card/well/keyLight/keyEdge…), `keyStyle` /
   `keyPressed` (key-cap with a bottom edge that sinks on press). Cards are raised (no border), inputs/toggle groups/
   tabs/LinearProgress are sunken wells (progress = 12 px tube — don't set small `height` on LinearProgress), the bottom
