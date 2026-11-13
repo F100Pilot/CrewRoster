@@ -41,6 +41,8 @@ jobs:
         env:
           BASE: /CrewRoster/
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          # OAuth client id for "Enviar para o Google Calendar" (public by nature; unset = feature hidden).
+          VITE_GOOGLE_CLIENT_ID: ${{ secrets.VITE_GOOGLE_CLIENT_ID }}
       # The whole site — this build at the root, the experimental preview (/exp/) as it is
       # published — without keeping old files: keep_files left every past build's hashed assets on
       # the branch (3 000 files, 168 MB, a 61 MB Pages artifact per deploy, eating the Actions

@@ -28,6 +28,12 @@ export interface ParsedDuty {
    * differ. See `mergeDuties`.
    */
   planned?: PlannedTimes;
+  /**
+   * IO (irregularidade operacional) only: the crew member's own mark that it was the "prevenir"
+   * (called at the report for the alcohol test, so the flight wasn't flown). Undefined = decide
+   * from the roster (`isPrevenirIO`).
+   */
+  prevenir?: boolean;
   /** Imported after its day had passed: the times are the flown ones, not a plan. */
   settled?: boolean;
 }

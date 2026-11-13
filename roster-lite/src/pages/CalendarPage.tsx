@@ -1,7 +1,7 @@
 import { useMemo, useRef } from 'react';
 import { Box, Button, Card, CardContent, IconButton, Stack, Typography } from '@mui/material';
 import { alpha, darken, lighten, useTheme } from '@mui/material/styles';
-import { ChevronLeft, ChevronRight, Today, IosShare } from '@mui/icons-material';
+import { ChevronLeft, ChevronRight, Today } from '@mui/icons-material';
 import {
   addMonths, eachDayOfInterval, endOfMonth, endOfWeek, format, isSameMonth, isToday,
   parseISO, startOfMonth, startOfWeek, subMonths,
@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import { useViewedMonth } from '../state/viewedMonth';
 import MonthStatsCard from '../components/MonthStatsCard';
-import { shareMonthImage } from '../utils/shareDay';
+import ShareMonthMenu from '../components/ShareMonthMenu';
 import { depth, dutyColor } from '../theme';
 import type { ParsedDuty } from '../domain/types';
 import { monthLabel } from '../utils/dates';
@@ -101,10 +101,7 @@ export default function CalendarPage() {
         title={monthLabel(month)}
         actions={
           <>
-            <IconButton size="small" aria-label="Partilhar o mês" title="Partilhar o mês"
-              onClick={() => shareMonthImage(format(month, 'yyyy-MM'), roster?.duties ?? [], activeUser?.name)}>
-              <IosShare fontSize="small" />
-            </IconButton>
+            <ShareMonthMenu monthKey={format(month, 'yyyy-MM')} duties={roster?.duties ?? []} user={activeUser ?? null} />
             <Button size="small" variant="outlined" startIcon={<Today />} onClick={() => setMonth(new Date())}>Hoje</Button>
           </>
         }

@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (459 tests) — keep green
+npm test           # vitest run (477 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -318,6 +318,28 @@ Things learned over this collaboration that should persist across sessions:
   **The map stays the Earth by satellite** (user rule): `SatelliteEarth.tsx` paints NASA Blue Marble (public domain,
   bundled `src/assets/earth-blue-marble.webp`, from the MIT `three-globe` npm package's example) under the SVG
   through the same d3 projection; only the map's banner follows the 3D style.
+- **Sharing & Google Calendar** (since 0.9.1, user request): the calendar's share button is a menu
+  (`ShareMonthMenu.tsx`) — image (`shareDay.ts`), day-by-day text and a month-only `.ics` (`utils/shareMonth.ts`).
+  What goes to third parties carries the schedule only: never crew names, pay or AE figures; times local.
+  `services/googleCalendar.ts` syncs the whole roster into the person's own "CrewRoster" Google calendar from the
+  browser: GIS token client (token in memory only, never stored/backed up), scope `calendar.app.created` (the app
+  sees only calendars it created), event ids = "crv0" + hex of `RosterEvent.key` (`rosterEvents()` in `icsExport.ts`
+  is the one event model for .ics, share and Google), `planSync()` inserts / updates / deletes inside the roster's
+  dates only. Gated on the `VITE_GOOGLE_CLIENT_ID` repo secret (both Pages workflows pass it); the CSP adds the
+  Google hosts only in such builds. Manual "Enviar" — no background sync (it needs the Google pop-up).
+- **IO = irregularidade operacional** (since 0.9.2, a colleague's bug): the roster prints `IO` (timed, e.g. LIS
+  10:15–16:40) in place of the planned duty; parsed as `Other` / code `IO`. The **"prevenir"** (called at the report
+  for the alcohol test, can't fly) counts the day in full (user: "se for prevenir conta tudo"): duty, per diem **A,
+  national** (at base, no exempt part — "mete nacional o perdiem"), and the RAACO meals of the IO's period as a PSV at
+  base (Tabela 33 — casebook C07). Detected when the IO starts at the planned PSV's report (`mergeDuties` keeps the
+  replaced day's earliest report on the IO as `planned`); ONLY when there is no such comparison (`canCompareIO`
+  false) does the day page offer the "Foi o prevenir" switch (user rule, 0.9.2.1) — the mark is ignored otherwise
+  (`ParsedDuty.prevenir`, stored in `crewroster.prevenir.<userId>`, applied by RosterProvider). `domain/irregularity.ts`.
+  On the payslip the prevenir shows as "Per diem A PGA CTE T" (at base, taxed in full) — as the app counts it.
+  An IO that is NOT the prevenir ("IO normal"): part of the day's PSV for everything — duty (the roster's DT runs to
+  the IO's end) and the RAACO meals by the usual rules, the stay where it ends paying its Tabela 34 rates (casebook
+  C08, MAN: "teria de assumir as ajudas de lá"; "aquele do prevenir é especial"). Open: per diem for an IO normal
+  alone at base. Without a report, the roster shows APT / assistência / PLS instead of IO (APT not parsed yet).
 - **Backlog:** the rest of the AE items (folgas check, ES/LF/ND, per diem, duty-pay/block-pay
   credits, holiday counter), PWA local reminders, crosswind (runway DB). See `EXPERIMENTAL.md`
   (TODO/Backlog) and `roster-lite/TODO.md`.

@@ -501,7 +501,6 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
                 value={beginDate}
                 onChange={(e) => setBeginDate(e.target.value)}
                 InputLabelProps={{ shrink: true }}
-                inputProps={{ style: { fontSize: '0.8rem' } }}
                 size="small"
                 fullWidth
               />
@@ -511,7 +510,6 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
                 InputLabelProps={{ shrink: true }}
-                inputProps={{ style: { fontSize: '0.8rem' } }}
                 size="small"
                 fullWidth
               />

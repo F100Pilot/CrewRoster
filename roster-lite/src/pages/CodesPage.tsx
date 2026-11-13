@@ -11,6 +11,7 @@ const CODES: { code: string; dutyType: string; label: string }[] = [
   { code: 'W_OFF / OFF', dutyType: 'Day Off', label: 'Folga (atribuída pelo Planeamento)' },
   { code: 'OFF_RQST', dutyType: 'Day Off', label: 'Folga pedida pelo tripulante' },
   { code: 'PLS_… (RECOV, IRREG, ROST, TRACK, TEIA/TEIC)', dutyType: 'Day Off', label: 'Período Livre de Serviço' },
+  { code: 'IO', dutyType: 'Other', label: 'Irregularidade operacional (no lugar do serviço planeado; o "prevenir" conta por inteiro)' },
   { code: 'GAB1 / GAB2', dutyType: 'Office Duty', label: 'Serviço de gabinete (escritório)' },
   { code: 'S.EXT.', dutyType: 'Office Duty', label: 'Serviço externo' },
   { code: 'FPE-LEARN', dutyType: 'Training', label: 'Formação (e-learning)' },

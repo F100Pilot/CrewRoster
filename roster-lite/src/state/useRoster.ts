@@ -26,6 +26,8 @@ export interface RosterState {
   applyImport: (preview: RosterImportPreview) => Promise<void>;
   clear: () => Promise<void>;
   dismissChanges: () => Promise<void>;
+  // Mark an IO day as the "prevenir" (true), as not (false), or back to what the roster says (null).
+  setPrevenir: (date: string, value: boolean | null) => void;
   setSessionToken: (token: string | null) => void;
   // multi-user
   users: UserProfile[];

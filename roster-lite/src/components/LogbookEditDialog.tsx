@@ -137,7 +137,6 @@ export default function LogbookEditDialog({
           <TextField
             label="Data" type="date" value={date} size="small" fullWidth
             InputLabelProps={{ shrink: true }}
-            inputProps={{ style: { fontSize: '0.8rem' } }}
             onChange={(e) => setDate(e.target.value)}
             error={!!date && !validDate}
           />

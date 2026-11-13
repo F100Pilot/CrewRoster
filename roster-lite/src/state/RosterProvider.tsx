@@ -11,7 +11,7 @@ import {
 } from '../storage/rosterStore';
 import { mergeLogbook } from '../domain/logbook';
 import { regMap } from '../domain/aircraftRegs';
-import { setCredentials } from '../storage/settings';
+import { getPrevenirMarks, setCredentials, setPrevenirMark } from '../storage/settings';
 import { RosterContext, type RosterState, type RosterImportPreview } from './useRoster';
 
 // Re-parse a stored PDF roster from its saved PDF(s) with the current parser, so improvements
@@ -337,14 +337,29 @@ export function RosterProvider({ children }: { children: ReactNode }) {
     setRoster(updated);
   }, [activeUser, roster]);
 
+  // IO days the crew member marked as the "prevenir" (or not): applied on the way out, so every
+  // page and calculation sees them while the stored roster stays as parsed (a re-parse keeps them).
+  const [prevenirMarks, setPrevenirMarks] = useState<Record<string, boolean>>({});
+  useEffect(() => { setPrevenirMarks(activeUser ? getPrevenirMarks(activeUser.id) : {}); }, [activeUser]);
+  const setPrevenir = useCallback((date: string, value: boolean | null) => {
+    if (activeUser) setPrevenirMarks(setPrevenirMark(activeUser.id, date, value));
+  }, [activeUser]);
+  const shownRoster = useMemo<Roster | null>(() => {
+    if (!roster || !Object.keys(prevenirMarks).length) return roster;
+    return {
+      ...roster,
+      duties: roster.duties.map((d) => (d.dutyCode === 'IO' && d.date in prevenirMarks ? { ...d, prevenir: prevenirMarks[d.date] } : d)),
+    };
+  }, [roster, prevenirMarks]);
+
   const value = useMemo<RosterState>(
     () => ({
-      roster, loading, importing, error, loadError, warnings, sessionToken,
+      roster: shownRoster, setPrevenir, loading, importing, error, loadError, warnings, sessionToken,
       importFile, previewImport, applyImport, clear, dismissChanges, setSessionToken,
       users, activeUser,
       switchUser, createUser, renameUser, setUserBase, deleteUser: deleteUserFn,
     }),
-    [roster, loading, importing, error, loadError, warnings, sessionToken, setSessionToken,
+    [shownRoster, setPrevenir, loading, importing, error, loadError, warnings, sessionToken, setSessionToken,
      importFile, previewImport, applyImport, clear, dismissChanges, users, activeUser, switchUser, createUser, renameUser, setUserBase, deleteUserFn]
   );
 

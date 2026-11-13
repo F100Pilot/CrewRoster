@@ -1,4 +1,4 @@
-import { Alert, Box, Card, CardContent, Chip, Divider, IconButton, Stack, Tooltip, Typography } from '@mui/material';
+import { Alert, Box, Card, CardContent, Chip, Divider, FormControlLabel, IconButton, Stack, Switch, Tooltip, Typography } from '@mui/material';
 import { ChevronLeft, ChevronRight, FlightLand, FlightTakeoff, Groups, Hotel, IosShare, Phone, WbSunny, Bedtime, Brightness4 } from '@mui/icons-material';
 import { Link } from '@mui/material';
 import { addDays, format, parseISO } from 'date-fns';
@@ -30,6 +30,7 @@ import { PASS_MONO, PassCells, passOverline } from '../components/PassCard';
 import { localClock } from '../utils/localTime';
 import { utcDateTime } from '../utils/duration';
 import { briefLabel, ebtBriefing } from '../domain/simSession';
+import { canCompareIO, isIO, isPrevenirIO } from '../domain/irregularity';
 
 export default function DayDetailPage() {
   const { date } = useParams<{ date: string }>();
@@ -164,7 +165,7 @@ export default function DayDetailPage() {
           <CardContent>
             <Box display="flex" alignItems="baseline" gap={1} mb={duty.flightNumber ? 1.5 : 0.5} flexWrap="wrap">
               <Typography component="div" sx={{ ...passOverline, flexGrow: 1 }}>
-                {dutyTypeLabel(duty.dutyType).toUpperCase()}{duty.flightNumber ? ` · ${duty.dutyCode}` : ''}
+                {isIO(duty) ? 'IRREGULARIDADE OPERACIONAL' : dutyTypeLabel(duty.dutyType).toUpperCase()}{duty.flightNumber ? ` · ${duty.dutyCode}` : ''}
               </Typography>
               {duty.reportingTime && duty.flightNumber && (
                 <Typography sx={{ ...passOverline, color: 'primary.main' }}>
@@ -257,6 +258,7 @@ export default function DayDetailPage() {
               )}
 
             {duty.observations && <Observations text={duty.observations} marksShown={!!duty.flightNumber} />}
+            {isIO(duty) && <IoPrevenir duty={duty} />}
           </CardContent>
         </Card>
       ))}
@@ -517,6 +519,44 @@ function daySummary(duties: ParsedDuty[]): string | undefined {
   const legs = duties.filter((d) => (d.dutyType === 'Flight Duty' || d.dutyType === 'Positioning') && d.departureAirport);
   if (legs.length) return `${[legs[0].departureAirport, ...legs.map((l) => l.arrivalAirport)].join(' → ')} · ${legs.length} ${legs.length === 1 ? 'setor' : 'setores'}`;
   return duties[0] ? `${dutyTypeLabel(duties[0].dutyType)} · ${duties[0].dutyCode}` : undefined;
+}
+
+// An IO: was it the "prevenir" (called at the report for the alcohol test)? When an earlier download
+// kept the planned report, the roster decides — the IO opens at it or not — and the page just says
+// so. Only without that comparison does the crew member get the switch (user rule). Prevenir counts
+// the day in full: duty, per diem A and the meal allowances (domain/irregularity.ts).
+function IoPrevenir({ duty }: { duty: ParsedDuty }) {
+  const { setPrevenir } = useRoster();
+  const on = isPrevenirIO(duty);
+  const start = duty.reportingTime ?? duty.departureTime;
+  const plan = duty.planned?.reportingTime;
+  const at = (t: string) => toLocalTime(duty.date, t, duty.departureAirport) ?? `${t}z`;
+  const counts = on
+    ? 'Conta o duty, a ajuda de custo A (nacional) e os abonos do período.'
+    : 'Conta como tempo de serviço.';
+  if (canCompareIO(duty) && plan) {
+    return (
+      <Alert severity={on ? 'success' : 'info'} sx={{ mt: 1.5 }}>
+        <strong>{on ? 'Prevenir' : 'IO normal'}</strong>
+        {' — '}
+        {on
+          ? `começou à hora da apresentação do serviço planeado (${at(plan)}).`
+          : `o serviço planeado apresentava às ${at(plan)}${start ? `; o IO começou às ${at(start)}` : ''}.`}
+        {' '}{counts}
+      </Alert>
+    );
+  }
+  return (
+    <Box sx={{ mt: 1.5 }}>
+      <FormControlLabel
+        control={<Switch checked={on} onChange={(e) => setPrevenir(duty.date, e.target.checked ? true : null)} />}
+        label={<Typography variant="body2" fontWeight={700}>Foi o prevenir (teste de álcool na apresentação)</Typography>}
+      />
+      <Typography variant="caption" color="text.secondary" display="block">
+        Sem a escala anterior guardada, a app não consegue comparar com o serviço planeado — diz tu. {counts}
+      </Typography>
+    </Box>
+  );
 }
 
 // Start, end, span and place of a ground duty, as the dashed row of a "Hoje" pass.
