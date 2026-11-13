@@ -183,7 +183,7 @@ export default function ImportPage() {
                 </Alert>
               )}
 
-              <Stack direction="row" spacing={2}>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                 <TextField
                   label="Data início"
                   type="date"

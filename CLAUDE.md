@@ -95,7 +95,7 @@ cross-origin. Endpoints: `POST /api/login`, `/api/roster`, `/api/flightinfo`,
   without the user re-importing.
   It can only replay PDFs in the history: in-app downloads AND (since 0.9.3.1) hand-imported PDFs
   (`keepImportedPdf`, `source: 'import'`, deduped by `sha256`). Before that, a hand-imported day the parser missed
-  (an IO) stayed empty until re-imported. The PDF history also has a manual **"Recarregar escala"** (since 0.9.4, user request):
+  (an IO) stayed empty until re-imported. The PDF history also has a manual **"Recarregar escala"** (since 0.9.3.2, user request):
   `reloadFromPdfs()` forces the same replay (`reparseStoredRoster(…, force = true)`) and reports how many PDFs it read.
 - **pdf.js is lazy** (`loadPdfjs()` in `extractText.ts`): never import `pdfjs-dist` statically,
   or the 330 KB chunk goes back into the first paint. Same for `tour.ts` (driver.js) and the README.
@@ -113,9 +113,10 @@ cross-origin. Endpoints: `POST /api/login`, `/api/roster`, `/api/flightinfo`,
 
 ## Conventions
 
-- **Versioning** (`src/version.ts`): `0.<major>.<centesimal>[.<milésima>]` — 0.9.x since the 3D look (user asked
-  for 0.9.0 Beta on promotion). New feature → bump the centesimal (`0.9.0 → 0.9.1`); small fix → bump the milésima
-  (`0.9.1 → 0.9.1.1`). The minor (0.8 → 0.9) moves only when the user asks. **Add a `RELEASE_NOTES` entry for every bump** (pt-PT) — the
+- **Versioning** (`src/version.ts`): `0.<major>.<centesimal>.<milésima>` — 0.9.x since the 3D look (user asked
+  for 0.9.0 Beta on promotion). **Every update bumps the 4th place** (user rule, Nov 2026: "o bump é aumentado na
+  quarta casa"): `0.9.3.2 → 0.9.3.3`, features and fixes alike. The 3rd place and the minor (0.8 → 0.9) move only
+  when the user asks. **Add a `RELEASE_NOTES` entry for every bump** (pt-PT) — the
   "Novidades" pop-up shows it after an update.
 - **Match the surrounding code:** comment density, naming, idioms. Comments explain
   *why*, in the existing style.

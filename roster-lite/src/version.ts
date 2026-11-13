@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.4';
+export const APP_VERSION = '0.9.3.3';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -19,7 +19,14 @@ export interface ReleaseNote {
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
-    version: '0.9.4',
+    version: '0.9.3.3',
+    date: '2026-11-14',
+    highlights: [
+      'Descarregar escala: as datas de início e fim ficam uma por baixo da outra no telemóvel — lado a lado, a data ficava cortada.',
+    ],
+  },
+  {
+    version: '0.9.3.2',
     date: '2026-11-14',
     highlights: [
       'Histórico de PDFs → "Recarregar escala": a app volta a ler todos os PDFs guardados (do mais antigo para o mais recente) e atualiza a escala com o que a versão atual sabe ler — por exemplo, um dia com IO que ainda aparecia vazio. Os dias que não estão em nenhum PDF ficam como estão.',

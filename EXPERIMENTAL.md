@@ -8,7 +8,7 @@ Serve para **juntar várias alterações** e depois fazer **um único deploy** p
 produção, em vez de promover uma a uma.
 
 - **Produção (`master`) está em:** `0.9.2.2`
-- **Próxima versão ao promover:** `0.9.3` (ou superior, conforme o âmbito)
+- **Próxima versão ao promover:** a da experimental (cada atualização sobe a 4.ª casa)
 
 ## Como promover tudo para produção (quando estiver pronto)
 
@@ -32,8 +32,9 @@ produção, em vez de promover uma a uma.
 - **0.9.3.1** — bug "o dia de IO não aparece": o parser lê o IO na grelha (teste com o layout real), mas os PDFs
   importados à mão nunca ficavam no histórico, logo o re-parse automático não os relia. `keepImportedPdf()` guarda-os
   (`source: 'import'`, dedupe por `sha256`). Para os dias já afetados: importar/descarregar o PDF uma vez.
-- **0.9.4** — botão "Recarregar escala" no Histórico de PDFs: `reloadFromPdfs()` (RosterProvider) corre o re-parse
+- **0.9.3.2** — botão "Recarregar escala" no Histórico de PDFs: `reloadFromPdfs()` (RosterProvider) corre o re-parse
   forçado (`reparseStoredRoster(…, force)`), qualquer que seja a versão/origem da escala, e diz quantos PDFs leu.
+- **0.9.3.3** — datas do Descarregar escala / Importar uma por baixo da outra no telemóvel (cortavam).
 
 ---
 
