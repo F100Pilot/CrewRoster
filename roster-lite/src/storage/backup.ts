@@ -188,8 +188,10 @@ const LS_ALLOW_PREFIXES = [
   'crewroster.',            // aerodataboxKey, checkinLeadMin, lastSeenVersion, colorMode, pay.*, autoreg.*
   'crewlink_notifications_',
 ];
-// Kept on the device only: the saved CrewLink login is neither exported nor restored.
-const LS_NEVER_EXPORT = ['crewroster.cred.'];
+// Kept on the device only: the saved CrewLink login is neither exported nor restored, nor the Google
+// calendar the sync writes to — a crafted backup must not point the sync at another calendar (the
+// 0.8.28 audit; the calendar.app.created scope refuses others anyway, and the app then makes its own).
+const LS_NEVER_EXPORT = ['crewroster.cred.', 'crewroster.gcal.', 'crewroster.gcalSync.'];
 const LS_MAX_VALUE = 256 * 1024; // 256 KB per key
 
 function lsAllowed(key: string): boolean {

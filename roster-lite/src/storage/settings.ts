@@ -205,3 +205,23 @@ export function setPaySettings(userId: string, s: PaySettings): void {
     // ignore
   }
 }
+
+// IO days the crew member marked as the "prevenir" (true) or as not (false), by date — over what
+// the roster alone suggests (domain/irregularity.ts). Per profile; carried by backups.
+const PREVENIR_PREFIX = 'crewroster.prevenir.';
+export function getPrevenirMarks(userId: string): Record<string, boolean> {
+  try {
+    const raw = localStorage.getItem(PREVENIR_PREFIX + userId);
+    const v = raw ? JSON.parse(raw) : {};
+    return v && typeof v === 'object' ? v : {};
+  } catch {
+    return {};
+  }
+}
+export function setPrevenirMark(userId: string, date: string, value: boolean | null): Record<string, boolean> {
+  const marks = { ...getPrevenirMarks(userId) };
+  if (value === null) delete marks[date];
+  else marks[date] = value;
+  try { localStorage.setItem(PREVENIR_PREFIX + userId, JSON.stringify(marks)); } catch { /* private mode */ }
+  return marks;
+}

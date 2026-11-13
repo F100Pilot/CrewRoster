@@ -109,6 +109,29 @@ const CASES: Case[] = [
     ],
     days: { '2026-07-12': [0, 0, 0, 43], '2026-07-13': [0, 33, 33, 43] },
   },
+  {
+    id: 'C07-IO-prevenir',
+    since: '0.9.2',
+    reported: 'IO (irregularidade operacional) por causa do prevenir — chamado na apresentação para o teste de álcool, não fez o voo: os abonos desse dia são pagos e o duty conta. A app deixava o dia vazio.',
+    rule: 'IO que começa à hora da apresentação do PSV planeado = prevenir: o período do IO é um PSV na base e paga as refeições cujas janelas apanha, pela Tabela 33 (almoço 18 €).',
+    duties: [
+      base('2026-11-01', {
+        dutyType: 'Other', dutyCode: 'IO', departureAirport: 'LIS', reportingTime: '10:15', departureTime: '10:15', arrivalTime: '16:40',
+        planned: { reportingTime: '10:15', departureTime: '11:15', arrivalTime: '15:30' },
+      }),
+    ],
+    days: { '2026-11-01': [0, 18, 0, 0] },
+  },
+  {
+    id: 'C07b-IO-prevenir-marcado',
+    since: '0.9.2',
+    reported: '(o mesmo, sem escala antiga guardada para comparar: o tripulante marca o dia como prevenir)',
+    rule: 'Marcado à mão como prevenir conta igual ao detetado.',
+    duties: [
+      base('2026-11-01', { dutyType: 'Other', dutyCode: 'IO', departureAirport: 'LIS', reportingTime: '10:15', departureTime: '10:15', arrivalTime: '16:40', prevenir: true }),
+    ],
+    days: { '2026-11-01': [0, 18, 0, 0] },
+  },
 ];
 
 describe('RAACO casebook (real cases — none may regress)', () => {
@@ -116,7 +139,7 @@ describe('RAACO casebook (real cases — none may regress)', () => {
     const days = raacoDays(c.duties, c.base ?? 'LIS');
     for (const [date, cols] of Object.entries(c.days ?? {})) {
       const d = days.get(date);
-      expect(d && [d.breakfast, d.lunch, d.dinner, d.supperNight], `${c.id} ${date} — ${c.rule}`).toEqual(cols);
+      expect(d ? [d.breakfast, d.lunch, d.dinner, d.supperNight] : [0, 0, 0, 0], `${c.id} ${date} — ${c.rule}`).toEqual(cols);
     }
     if (c.nights) {
       expect([...days.values()].flatMap((d) => d.nights.map((n) => `${n.date} ${n.where} ${n.value}`)), `${c.id} — ${c.rule}`)

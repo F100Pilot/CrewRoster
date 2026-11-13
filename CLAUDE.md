@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (467 tests) — keep green
+npm test           # vitest run (475 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -327,6 +327,14 @@ Things learned over this collaboration that should persist across sessions:
   is the one event model for .ics, share and Google), `planSync()` inserts / updates / deletes inside the roster's
   dates only. Gated on the `VITE_GOOGLE_CLIENT_ID` repo secret (both Pages workflows pass it); the CSP adds the
   Google hosts only in such builds. Manual "Enviar" — no background sync (it needs the Google pop-up).
+- **IO = irregularidade operacional** (since 0.9.2, a colleague's bug): the roster prints `IO` (timed, e.g. LIS
+  10:15–16:40) in place of the planned duty; parsed as `Other` / code `IO`. The **"prevenir"** (called at the report
+  for the alcohol test, can't fly) counts the day in full (user: "se for prevenir conta tudo"): duty, per diem **A,
+  national** (at base, no exempt part — "mete nacional o perdiem"), and the RAACO meals of the IO's period as a PSV at
+  base (Tabela 33 — casebook C07). Detected when the IO starts at the planned PSV's report (`mergeDuties` keeps the
+  replaced day's earliest report on the IO as `planned`), or marked by the crew member on the day page
+  (`ParsedDuty.prevenir`, stored in `crewroster.prevenir.<userId>`, applied by RosterProvider). `domain/irregularity.ts`.
+  An IO that is NOT the prevenir: counted as duty only — rule pending (user checking).
 - **Backlog:** the rest of the AE items (folgas check, ES/LF/ND, per diem, duty-pay/block-pay
   credits, holiday counter), PWA local reminders, crosswind (runway DB). See `EXPERIMENTAL.md`
   (TODO/Backlog) and `roster-lite/TODO.md`.

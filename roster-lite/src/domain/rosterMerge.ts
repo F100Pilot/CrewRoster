@@ -29,7 +29,7 @@ export function mergeDuties(previous: ParsedDuty[], incoming: ParsedDuty[], asOf
 
   const incomingDates = new Set([...incoming.map((d) => d.date), ...blankDates]);
   const kept = previous.filter((d) => !incomingDates.has(d.date));
-  const next = asOfISO ? carryPlans(previous, incoming, asOfISO) : incoming;
+  const next = carryIoPlans(previous, asOfISO ? carryPlans(previous, incoming, asOfISO) : incoming);
 
   return [...kept, ...next].sort((a, b) =>
     a.date < b.date ? -1 : a.date > b.date ? 1 : 0,
@@ -65,5 +65,24 @@ function carryPlans(previous: ParsedDuty[], incoming: ParsedDuty[], asOfISO: str
     }
     if (d.date < asOfISO) out.settled = true;
     return out;
+  });
+}
+
+// An IO (irregularidade operacional) replaces the day's planned duty. What it replaced is the
+// evidence of the "prevenir" (domain/irregularity.ts): an IO starting at the planned report. So the
+// stored day's report is kept on the IO, as `planned` — the earliest report of the duties it
+// replaces, or the plan an IO already carried (a later download shows the same IO again).
+function carryIoPlans(previous: ParsedDuty[], incoming: ParsedDuty[]): ParsedDuty[] {
+  if (!incoming.some((d) => d.dutyCode === 'IO')) return incoming;
+  return incoming.map((d) => {
+    if (d.dutyCode !== 'IO') return d;
+    const before = previous.filter((p) => p.date === d.date);
+    const kept = before.find((p) => p.dutyCode === 'IO' && p.planned)?.planned;
+    if (kept) return { ...d, planned: kept };
+    const work = before.filter((p) => p.dutyCode !== 'IO' && p.reportingTime && p.dutyType !== 'Day Off' && p.dutyType !== 'Vacation')
+      .sort((a, b) => (a.reportingTime! < b.reportingTime! ? -1 : 1));
+    if (!work.length) return d;
+    const last = work[work.length - 1];
+    return { ...d, planned: { reportingTime: work[0].reportingTime, departureTime: work[0].departureTime, arrivalTime: last.arrivalTime } };
   });
 }

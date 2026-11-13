@@ -1,4 +1,5 @@
 import { dutyDays, workWindow, PGA_PILOT_RULES } from './dutyTime';
+import { isPrevenirIO } from './irregularity';
 import { diffMinutes } from '../utils/duration';
 import { lisbonMidnightUtc } from './standbyWindows';
 import { nationalHolidays } from './holidaysPT';
@@ -422,7 +423,9 @@ export function payEstimate(
       if ((x.dutyType === 'Flight Duty' || x.dutyType === 'Positioning') && x.arrivalAirport) where = x.arrivalAirport.toUpperCase();
     }
     if (!inMonth(date)) continue;
-    const flying = day.some((x) => FLYING.has(x.dutyType) || x.dutyType === 'Standby Airport');
+    // An IO for the "prevenir" pays the per diem A of the duty it replaced — national, at base,
+    // so taxed in full like any day at base (user, from a colleague: "mete nacional o perdiem").
+    const flying = day.some((x) => FLYING.has(x.dutyType) || x.dutyType === 'Standby Airport' || isPrevenirIO(x));
     const travelling = carryOver.has(date) || day.some((x) => x.dutyType === 'Flight Duty' || x.dutyType === 'Positioning');
     if (flying || carryOver.has(date)) {
       perDiemA++;

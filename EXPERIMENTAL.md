@@ -35,6 +35,12 @@ produção, em vez de promover uma a uma.
   Datas com tamanho normal (tirado o `fontSize: 0.8rem`).
 - **0.9.1.1** — a imagem do mês (`renderMonthCard` em `shareDay.ts`) passa a ser o calendário completo: dias-tecla
   com a cor do serviço, destino + hora local de saída, resumo do mês e legenda (antes só listava rotas).
+- **0.9.2 — IO / prevenir** (bug de um colega): o parser lê `IO` (Other, com horas; PARSE_VERSION 17);
+  `mergeDuties` guarda no IO a apresentação do serviço que substituiu (`planned`); `domain/irregularity.ts`:
+  prevenir = IO que começa à apresentação planeada, ou marcado no dia (`crewroster.prevenir.<user>`,
+  aplicado no RosterProvider). Prevenir → abonos RAACO do período (Tabela 33, caso C07), ajuda de custo A
+  nacional sem isenção, duty. **Em aberto:** IO que não é prevenir (só conta como serviço) — o utilizador
+  vai verificar. Também: chaves `crewroster.gcal*` fora das cópias de segurança.
 
 ---
 

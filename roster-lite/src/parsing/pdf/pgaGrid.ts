@@ -192,6 +192,10 @@ function classifyDuty(name: string): { dutyType: string; dutyCode: string } | nu
   // Medical: the aeromedical exam block, usually several back-to-back slots on one day —
   // IM (inspeção médica), VIM and MED. Keep the exact code on the chip.
   if (/^(MED|VIM|IM)$/.test(n)) return { dutyType: 'Medical', dutyCode: n };
+  // IO = irregularidade operacional: printed in place of the planned duty, timed with the period
+  // the crew member was held (e.g. LIS 10:15–16:40). Not a flight, so 'Other' — work, counted in
+  // full; the "prevenir" case is read in domain/irregularity.ts.
+  if (n === 'IO') return { dutyType: 'Other', dutyCode: 'IO' };
   return null;
 }
 
@@ -340,7 +344,7 @@ export function parseSubColumn(
       // 08:30–12:00, S.EXT. 08:00–16:00); show it as Início/Fim. Without the end, the duty-time
       // limits had nothing to measure and those days never counted.
       const isTimed = named.dutyType === 'Training' || named.dutyType === 'Simulator' ||
-        named.dutyType === 'Medical' || named.dutyType === 'Office Duty';
+        named.dutyType === 'Medical' || named.dutyType === 'Office Duty' || named.dutyCode === 'IO';
       const times = words.map(toTime).filter((t): t is string => !!t);
       duties.push({
         date,

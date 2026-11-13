@@ -36,15 +36,19 @@ nos testes de regra em `src/domain/__tests__/raaco.test.ts`.
 | C04-DUB-26-09 | 0.8.34.2 | Faltava a pernoita da primeira noite (aterragem 23:43 local) | Idem C01 | Idem; ceia ao valor da Irlanda |
 | C05-VLC-14-10 | 0.8.34.2 | Faltava a pernoita da primeira noite | Idem C01 | Idem; jantar e ceia ao valor de Espanha |
 | C06-BCN-12-07-ceia | 0.8.34.3 | Só aparecia a pernoita (10 €), faltava a ceia | A app dava a ceia como embarcada no último setor (LIS→BCN, chegada 01:45 local) | **A ceia nunca é embarcada**: paga sempre que devida, Tabela 34 local se o serviço acaba fora, 18 € na base |
+| C07-IO-prevenir | 0.9.2 | IO (irregularidade operacional) por causa do prevenir — chamado na apresentação para o teste de álcool, não fez o voo; os abonos são pagos e o duty conta. A app deixava o dia vazio | O código IO não era lido | IO que começa à hora da apresentação do PSV planeado = prevenir: o período do IO é um PSV na base, refeições pela Tabela 33 (almoço 18 €); conta duty e ajuda de custo A nacional (sem isenção) |
+| C07b-IO-prevenir-marcado | 0.9.2 | (sem escala anterior guardada para comparar) | — | O tripulante marca o dia como prevenir; conta igual |
 
 ## Em aberto (registar aqui até haver dados)
 
 - **LYS 18/06 — ceia em falta**: mesmo padrão do C06, deve dar ceia 40 € + pernoita 10 €. Falta a
-  escala do dia para o transformar em caso (C07).
+  escala do dia para o transformar em caso (C08).
 - **Almoço pago num DH LIS→FRA** com apresentação 8 min depois do fim do horário (hora local):
   atraso, hora planeada diferente, ou regra própria do DH?
 - **Almoço de 18 € num setor de 1h37** (RAK→LIS): bloco planeado ≤ 1h30?
 - **Marrocos não está na Tabela 34**: os valores de estadia ficam de fora do total.
 - **Nota "Pernoita\*"** da Tabela 34: texto por confirmar.
+- **IO que não é o prevenir** (hora diferente da apresentação planeada): a app conta o tempo como
+  serviço, sem ajuda de custo nem abonos — regra a confirmar pelo utilizador (nov 2026).
 - **Totais de junho e agosto** do utilizador diferentes dos que o recibo implica — por explicar
   dia a dia com o extrato desses meses.
