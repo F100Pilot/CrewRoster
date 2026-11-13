@@ -54,6 +54,15 @@ describe('IO / prevenir', () => {
     expect(day.minutes).toBe(6 * 60 + 25);
   });
 
+  it('an IO normal after the flights extends the duty to its end (MAN case: 05:12–15:08)', () => {
+    const day = [
+      d({ date: '2026-04-08', flightNumber: 'TP9310', departureAirport: 'LIS', arrivalAirport: 'MAN', departureTime: '06:12', arrivalTime: '08:52', reportingTime: '05:12' }),
+      d({ date: '2026-04-08', flightNumber: 'TP9311', departureAirport: 'MAN', arrivalAirport: 'MAN', departureTime: '09:58', arrivalTime: '10:47' }),
+      d({ date: '2026-04-08', dutyType: 'Other', dutyCode: 'IO', departureAirport: 'MAN', reportingTime: '11:00', departureTime: '11:00', arrivalTime: '15:08' }),
+    ];
+    expect(dutyDays(day, PGA_PILOT_RULES)[0].minutes).toBe(9 * 60 + 56);
+  });
+
   it('the prevenir pays per diem A, national (at base: no exempt part)', () => {
     const prevenir = { ...io(), prevenir: true };
     const r = payEstimate([prevenir], '2026-11', DEFAULT_PAY_SETTINGS, '2026-11-30');

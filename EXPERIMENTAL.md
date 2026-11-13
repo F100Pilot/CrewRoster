@@ -42,7 +42,9 @@ produção, em vez de promover uma a uma.
   nacional sem isenção (recibo: "Per diem A PGA CTE T"), duty. IO normal: conta o PSV da escala (confirmado);
   **em aberto:** se paga ajuda de custo / abonos.
 - **0.9.2.1** — o botão "Foi o prevenir" só aparece quando não há escala anterior para comparar; com ela, a app
-  decide e mostra o motivo (Prevenir / IO normal). Também: chaves `crewroster.gcal*` fora das cópias de segurança.
+  decide e mostra o motivo (Prevenir / IO normal).
+- **0.9.2.2** — IO normal entra no PSV do dia para os abonos (caso C08, MAN). Em aberto: ajuda de custo de um IO
+  normal sozinho na base; código APT. Também: chaves `crewroster.gcal*` fora das cópias de segurança.
 
 ---
 

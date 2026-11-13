@@ -132,6 +132,19 @@ const CASES: Case[] = [
     ],
     days: { '2026-11-01': [0, 18, 0, 0] },
   },
+  {
+    id: 'C08-IO-normal-MAN',
+    since: '0.9.2.2',
+    reported: 'IO normal (não é o prevenir): LIS→MAN, MAN→MAN e IO em MAN 11:00–15:08 UTC; fiquei em Manchester (H3) e voltei no dia seguinte em DH. "Teria de assumir as ajudas de lá."',
+    rule: 'O IO faz parte do PSV desse dia: as refeições seguem as regras normais com o período do IO incluído, e a estadia onde o IO acaba paga a Tabela 34 local (Reino Unido 35 € + pernoita 10 €). Só o prevenir é especial.',
+    duties: [
+      leg('2026-04-08', 'TP9310', 'LIS', 'MAN', '06:12', '08:52', '05:12'),
+      leg('2026-04-08', 'TP9311', 'MAN', 'MAN', '09:58', '10:47'),
+      base('2026-04-08', { dutyType: 'Other', dutyCode: 'IO', departureAirport: 'MAN', reportingTime: '11:00', departureTime: '11:00', arrivalTime: '15:08' }),
+      base('2026-04-09', { dutyType: 'Positioning', flightNumber: 'TP9313', departureAirport: 'MAN', arrivalAirport: 'LIS', departureTime: '17:07', arrivalTime: '19:40', reportingTime: '16:07' }),
+    ],
+    days: { '2026-04-08': [0, 35, 35, 45], '2026-04-09': [0, 35, 18, 0] },
+  },
 ];
 
 describe('RAACO casebook (real cases — none may regress)', () => {

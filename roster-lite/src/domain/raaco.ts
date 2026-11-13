@@ -1,7 +1,7 @@
 import type { ParsedDuty } from './types';
 import { legsOf, type Leg } from './dayPhase';
 import { PGA_PILOT_RULES, standbyInterval, workWindow } from './dutyTime';
-import { ioInterval, isPrevenirIO } from './irregularity';
+import { ioInterval, isIO, isPrevenirIO } from './irregularity';
 import { airportTz, tzOffsetMinutes } from '../utils/localTime';
 
 // RAACO — Regulamento de Alimentação e Ajudas de Custo Operacionais, absorbed into the ROV-PGA
@@ -135,7 +135,7 @@ function acquired(start: Date, end: Date, fromTz: string, toTz: string, fromAway
 // ── Duty periods ──
 // A flight duty period (or an airport standby, 4.5.5.5), as real instants. Home standby gives no
 // right (4.5.2.1 a); ground duties (course, simulator, office) are 4.5.9, outside these abonos.
-interface Psv { date: string; start: Date; end: Date; legs: Leg[]; from: string; to: string; minutes: number; io: boolean }
+interface Psv { date: string; start: Date; end: Date; legs: Leg[]; from: string; to: string; minutes: number; io: 'prevenir' | 'normal' | null }
 
 function psvsOf(duties: ParsedDuty[], base: string): Psv[] {
   const byDate = new Map<string, ParsedDuty[]>();
@@ -147,8 +147,10 @@ function psvsOf(duties: ParsedDuty[], base: string): Psv[] {
   for (const [date, day] of byDate) {
     const legs = legsOf(date, day);
     const airportSby = day.filter((d) => d.dutyType === 'Standby Airport').map(standbyInterval).filter((x): x is { start: Date; end: Date } => !!x);
-    // An IO for the "prevenir" is paid as the duty it replaced: its period is a PSV at base (C07).
-    const io = day.filter(isPrevenirIO).map(ioInterval).filter((x): x is { start: Date; end: Date } => !!x);
+    // An IO is part of the day's PSV (C08, "IO normal": the meals follow the usual rules with its
+    // period in, and the stay where it ends pays its own rates). The prevenir — an IO alone, in place
+    // of the planned duty — is a PSV at base paid as that duty (C07).
+    const io = day.filter(isIO).map(ioInterval).filter((x): x is { start: Date; end: Date } => !!x);
     let start: Date | null = null;
     let end: Date | null = null;
     if (legs.length) {
@@ -164,7 +166,7 @@ function psvsOf(duties: ParsedDuty[], base: string): Psv[] {
     if (!start || !end) continue;
     const from = (legs[0]?.duty.departureAirport ?? base).toUpperCase();
     const to = (legs[legs.length - 1]?.duty.arrivalAirport ?? from).toUpperCase();
-    out.push({ date, start, end, legs, from, to, minutes: Math.round((end.getTime() - start.getTime()) / 60000), io: io.length > 0 && !legs.length });
+    out.push({ date, start, end, legs, from, to, minutes: Math.round((end.getTime() - start.getTime()) / 60000), io: io.length && !legs.length ? (day.some(isPrevenirIO) ? 'prevenir' : 'normal') : null });
   }
   return out.sort((a, b) => a.start.getTime() - b.start.getTime());
 }
@@ -263,8 +265,10 @@ function psvMeals(p: Psv, base: string, nextIsStay: boolean, paidInStay: Set<str
     });
     const local = nextIsStay ? rateAt(p.to) : null;
     const value = a.meal === 'breakfast' ? T33_BREAKFAST : nextIsStay ? local?.main ?? null : T33_MAIN;
-    const reason = p.io
+    const reason = p.io === 'prevenir'
       ? 'irregularidade operacional (prevenir) — paga como o serviço planeado'
+      : p.io
+      ? 'irregularidade operacional'
       : p.legs.length === 0
       ? 'assistência no aeroporto (4.5.5.5)'
       : a.meal === 'supper' ? 'a ceia não é embarcada'

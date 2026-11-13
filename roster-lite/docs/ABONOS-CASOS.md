@@ -38,6 +38,7 @@ nos testes de regra em `src/domain/__tests__/raaco.test.ts`.
 | C06-BCN-12-07-ceia | 0.8.34.3 | Só aparecia a pernoita (10 €), faltava a ceia | A app dava a ceia como embarcada no último setor (LIS→BCN, chegada 01:45 local) | **A ceia nunca é embarcada**: paga sempre que devida, Tabela 34 local se o serviço acaba fora, 18 € na base |
 | C07-IO-prevenir | 0.9.2 | IO (irregularidade operacional) por causa do prevenir — chamado na apresentação para o teste de álcool, não fez o voo; os abonos são pagos e o duty conta. A app deixava o dia vazio | O código IO não era lido | IO que começa à hora da apresentação do PSV planeado = prevenir: o período do IO é um PSV na base, refeições pela Tabela 33 (almoço 18 €); conta duty e ajuda de custo A nacional (sem isenção) |
 | C07b-IO-prevenir-marcado | 0.9.2 | (sem escala anterior guardada para comparar) | — | O tripulante marca o dia como prevenir; conta igual |
+| C08-IO-normal-MAN | 0.9.2.2 | IO normal: LIS→MAN, MAN→MAN, IO em MAN 11:00–15:08 UTC, estadia em Manchester, DH no dia seguinte — "teria de assumir as ajudas de lá" | (já dava o mesmo total; o IO ficava fora do PSV) | O IO faz parte do PSV do dia: refeições pelas regras normais com o período do IO, estadia com a Tabela 34 do sítio onde acaba. Só o prevenir é especial. *Sem extrato — regra do colega* |
 
 ## Em aberto (registar aqui até haver dados)
 
@@ -48,9 +49,9 @@ nos testes de regra em `src/domain/__tests__/raaco.test.ts`.
 - **Almoço de 18 € num setor de 1h37** (RAK→LIS): bloco planeado ≤ 1h30?
 - **Marrocos não está na Tabela 34**: os valores de estadia ficam de fora do total.
 - **Nota "Pernoita\*"** da Tabela 34: texto por confirmar.
-- **IO que não é o prevenir** ("IO normal", hora diferente do PSV previsto): confirmado que **conta o PSV que
-  a escala mostra** (normalmente um serviço de até 1 h — a apresentação — e depois o IO); a app conta-o como
-  serviço. **Por confirmar:** se paga ajuda de custo A (T) e os abonos desse PSV — por agora não paga.
+- **IO normal sozinho na base** (apresentou-se, ~1 h de serviço e depois IO, sem voos): os abonos seguem as regras
+  normais (C08); **por confirmar** se paga ajuda de custo A (T) — por agora não paga. Sem apresentação, a escala
+  mostra **APT**, assistência ou PLS em vez de IO — o código APT ainda não é lido (falta saber o que é).
 - O prevenir vem no recibo como **"Per diem A PGA CTE T"** (na base, tributado por inteiro) — é como a app o conta.
 - **Totais de junho e agosto** do utilizador diferentes dos que o recibo implica — por explicar
   dia a dia com o extrato desses meses.

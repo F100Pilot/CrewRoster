@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (475 tests) — keep green
+npm test           # vitest run (477 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -336,8 +336,10 @@ Things learned over this collaboration that should persist across sessions:
   false) does the day page offer the "Foi o prevenir" switch (user rule, 0.9.2.1) — the mark is ignored otherwise
   (`ParsedDuty.prevenir`, stored in `crewroster.prevenir.<userId>`, applied by RosterProvider). `domain/irregularity.ts`.
   On the payslip the prevenir shows as "Per diem A PGA CTE T" (at base, taxed in full) — as the app counts it.
-  An IO that is NOT the prevenir ("IO normal"): the PSV the roster shows counts as duty (confirmed; usually a duty
-  of up to 1 h — the report — then the IO); its per diem / allowances are still an open question (not paid now).
+  An IO that is NOT the prevenir ("IO normal"): part of the day's PSV for everything — duty (the roster's DT runs to
+  the IO's end) and the RAACO meals by the usual rules, the stay where it ends paying its Tabela 34 rates (casebook
+  C08, MAN: "teria de assumir as ajudas de lá"; "aquele do prevenir é especial"). Open: per diem for an IO normal
+  alone at base. Without a report, the roster shows APT / assistência / PLS instead of IO (APT not parsed yet).
 - **Backlog:** the rest of the AE items (folgas check, ES/LF/ND, per diem, duty-pay/block-pay
   credits, holiday counter), PWA local reminders, crosswind (runway DB). See `EXPERIMENTAL.md`
   (TODO/Backlog) and `roster-lite/TODO.md`.
