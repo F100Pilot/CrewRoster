@@ -21,7 +21,7 @@ export default function ShareMonthMenu({ monthKey, duties, user }: { monthKey: s
         <IosShare fontSize="small" />
       </IconButton>
       <Menu anchorEl={anchor} open={!!anchor} onClose={() => setAnchor(null)}>
-        <MenuItem onClick={pick(() => shareMonthImage(monthKey, duties, user?.name))}>
+        <MenuItem onClick={pick(() => shareMonthImage(monthKey, duties, user?.name, baseOf(user)))}>
           <ListItemIcon><Image fontSize="small" /></ListItemIcon>
           <ListItemText primary="Imagem" secondary="Resumo do mês" />
         </MenuItem>

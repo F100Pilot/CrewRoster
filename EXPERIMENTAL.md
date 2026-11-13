@@ -33,6 +33,8 @@ produção, em vez de promover uma a uma.
   `VITE_GOOGLE_CLIENT_ID`** (cliente OAuth "Web application", origem `https://f100pilot.github.io`); sem ele o
   botão não aparece. A CSP só abre accounts.google.com / www.googleapis.com nesses builds.
   Datas com tamanho normal (tirado o `fontSize: 0.8rem`).
+- **0.9.1.1** — a imagem do mês (`renderMonthCard` em `shareDay.ts`) passa a ser o calendário completo: dias-tecla
+  com a cor do serviço, destino + hora local de saída, resumo do mês e legenda (antes só listava rotas).
 
 ---
 
