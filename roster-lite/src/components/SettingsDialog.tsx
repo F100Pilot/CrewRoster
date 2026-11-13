@@ -22,6 +22,7 @@ import { APP_NAME, APP_VERSION_LABEL } from '../version';
 import { DISCLAIMER_TEXT } from '../disclaimer';
 import { operatedFlights } from '../domain/flightTime';
 import { downloadIcs } from '../utils/icsExport';
+import GoogleCalendarSync from './GoogleCalendarSync';
 // The tour (driver.js) and the README text load only when asked for.
 const startTour = () => { void import('../tour').then((m) => m.startTour()); };
 import { useRoster } from '../state/useRoster';
@@ -537,6 +538,7 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
                 >
                   Exportar calendário .ics
                 </Button>
+                <GoogleCalendarSync />
                 <Button
                   onClick={handleClear}
                   disabled={!roster}

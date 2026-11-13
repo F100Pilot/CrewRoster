@@ -151,7 +151,6 @@ export default function DocumentsPage() {
               onChange={(e) => setName(e.target.value)} />
             <TextField label="Validade" type="date" value={expiry} size="small" fullWidth
               InputLabelProps={{ shrink: true }}
-              inputProps={{ style: { fontSize: '0.8rem' } }}
               onChange={(e) => setExpiry(e.target.value)}
               error={!!expiry && !DATE_RE.test(expiry)} />
           </Stack>

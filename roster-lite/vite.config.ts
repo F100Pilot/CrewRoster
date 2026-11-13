@@ -18,14 +18,17 @@ const disablePwa = process.env.DISABLE_PWA === '1';
 function apiOrigin(): string {
   try { return process.env.VITE_API_URL ? new URL(process.env.VITE_API_URL).origin : ''; } catch { return ''; }
 }
+// Google Calendar sync (Google Identity Services + the Calendar API) — only in builds that have
+// an OAuth client id, like the worker origin above.
+const GOOGLE = !!process.env.VITE_GOOGLE_CLIENT_ID;
 const CSP = [
   "default-src 'self'",
-  "script-src 'self'",
-  "style-src 'self' 'unsafe-inline'",
+  `script-src 'self'${GOOGLE ? ' https://accounts.google.com/gsi/client' : ''}`,
+  `style-src 'self' 'unsafe-inline'${GOOGLE ? ' https://accounts.google.com/gsi/style' : ''}`,
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
-  `connect-src 'self' data: blob: https://api.open-meteo.com ${apiOrigin()}`.trim(),
-  'frame-src https://embed.windy.com blob:',
+  `connect-src 'self' data: blob: https://api.open-meteo.com ${apiOrigin()}${GOOGLE ? ' https://www.googleapis.com https://accounts.google.com/gsi/' : ''}`.trim(),
+  `frame-src https://embed.windy.com blob:${GOOGLE ? ' https://accounts.google.com/gsi/' : ''}`,
   "worker-src 'self' blob:",
   "object-src 'none'",
   "base-uri 'self'",

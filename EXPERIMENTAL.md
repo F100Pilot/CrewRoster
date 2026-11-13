@@ -25,7 +25,14 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(nada — tudo promovido em `0.9.0`)_
+- **0.9.1 — partilha do mês e Google Calendar.** Menu "Partilhar o mês" no Calendário (`ShareMonthMenu.tsx`):
+  imagem, texto dia a dia (`utils/shareMonth.ts`, horas locais, sem tripulantes/valores) e `.ics` só do mês.
+  Google Calendar (`services/googleCalendar.ts`): Google Identity Services (token em memória), scope
+  `calendar.app.created`, calendário próprio "CrewRoster", sincronização insere/atualiza/apaga pelos ids
+  derivados de `RosterEvent.key` (modelo comum ao `.ics` em `icsExport.ts`). **Precisa do secret
+  `VITE_GOOGLE_CLIENT_ID`** (cliente OAuth "Web application", origem `https://f100pilot.github.io`); sem ele o
+  botão não aparece. A CSP só abre accounts.google.com / www.googleapis.com nesses builds.
+  Datas com tamanho normal (tirado o `fontSize: 0.8rem`).
 
 ---
 
