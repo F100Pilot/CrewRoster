@@ -32,6 +32,8 @@ produção, em vez de promover uma a uma.
 - **0.9.3.1** — bug "o dia de IO não aparece": o parser lê o IO na grelha (teste com o layout real), mas os PDFs
   importados à mão nunca ficavam no histórico, logo o re-parse automático não os relia. `keepImportedPdf()` guarda-os
   (`source: 'import'`, dedupe por `sha256`). Para os dias já afetados: importar/descarregar o PDF uma vez.
+- **0.9.4** — botão "Recarregar escala" no Histórico de PDFs: `reloadFromPdfs()` (RosterProvider) corre o re-parse
+  forçado (`reparseStoredRoster(…, force)`), qualquer que seja a versão/origem da escala, e diz quantos PDFs leu.
 
 ---
 

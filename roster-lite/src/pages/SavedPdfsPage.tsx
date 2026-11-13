@@ -6,6 +6,7 @@ import {
   Card,
   CardContent,
   Chip,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -16,7 +17,7 @@ import {
   Tabs,
   Typography,
 } from '@mui/material';
-import { Visibility, SaveAlt, Delete, PictureAsPdf } from '@mui/icons-material';
+import { Visibility, SaveAlt, Delete, PictureAsPdf, Refresh } from '@mui/icons-material';
 import { format, parseISO } from 'date-fns';
 import { pt } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
@@ -44,7 +45,15 @@ const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 // that moment; newest first, the latest of all marked.
 export default function SavedPdfsPage() {
   const navigate = useNavigate();
-  const { activeUser } = useRoster();
+  const { activeUser, reloadFromPdfs, importing } = useRoster();
+  const [askReload, setAskReload] = useState(false);
+  const [reloaded, setReloaded] = useState<string | null>(null);
+  const reload = async () => {
+    setAskReload(false);
+    setReloaded(null);
+    const n = await reloadFromPdfs();
+    setReloaded(n ? `Escala recarregada a partir de ${n} ${n === 1 ? 'PDF' : 'PDFs'}.` : n === 0 ? 'Nenhum dos PDFs tinha uma escala que a app conseguisse ler.' : 'Não há PDFs para ler.');
+  };
   const [pdfs, setPdfs] = useState<SavedPdf[]>([]);
   const [loading, setLoading] = useState(true);
   const [year, setYear] = useState<string | null>(null);
@@ -91,7 +100,16 @@ export default function SavedPdfsPage() {
 
   return (
     <Stack spacing={2}>
-      <PageHero label="PDFs" title="Histórico de PDFs" subtitle={pdfs.length ? `${pdfs.length} ${pdfs.length === 1 ? 'escala guardada' : 'escalas guardadas'} neste dispositivo, por data de download` : 'As escalas descarregadas ficam guardadas aqui'} />
+      <PageHero label="PDFs" title="Histórico de PDFs"
+        subtitle={pdfs.length ? `${pdfs.length} ${pdfs.length === 1 ? 'escala guardada' : 'escalas guardadas'} neste dispositivo, por data de download` : 'As escalas descarregadas ficam guardadas aqui'}
+        actions={pdfs.length > 0 && (
+          <Button size="small" variant="outlined" startIcon={importing ? <CircularProgress size={14} color="inherit" /> : <Refresh />}
+            disabled={importing} onClick={() => setAskReload(true)}>
+            Recarregar escala
+          </Button>
+        )}
+      />
+      {reloaded && <Alert severity={reloaded.startsWith('Escala') ? 'success' : 'warning'} onClose={() => setReloaded(null)}>{reloaded}</Alert>}
 
       {loading && <Typography color="text.secondary">A carregar…</Typography>}
 
@@ -153,6 +171,23 @@ export default function SavedPdfsPage() {
           </Card>
         );
       })}
+
+      {/* Re-read every PDF kept here into the roster (user request) — e.g. after a parser fix, or
+          to bring back a day (an IO) that a PDF has but the roster doesn't show. */}
+      <Dialog open={askReload} onClose={() => setAskReload(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Recarregar a escala?</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2">
+            A app volta a ler os {pdfs.length} PDFs deste histórico, do mais antigo para o mais recente, e
+            atualiza a escala com o que a versão atual sabe ler (por exemplo, dias com IO). Os dias que não
+            estão em nenhum PDF ficam como estão.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setAskReload(false)}>Cancelar</Button>
+          <Button variant="contained" onClick={reload}>Recarregar</Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Deleting matters now: the PDFs rebuild planned vs flown and an IO's "prevenir". */}
       <Dialog open={!!toDelete} onClose={() => setToDelete(null)} maxWidth="xs" fullWidth>

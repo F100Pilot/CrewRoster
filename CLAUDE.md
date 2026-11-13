@@ -95,7 +95,8 @@ cross-origin. Endpoints: `POST /api/login`, `/api/roster`, `/api/flightinfo`,
   without the user re-importing.
   It can only replay PDFs in the history: in-app downloads AND (since 0.9.3.1) hand-imported PDFs
   (`keepImportedPdf`, `source: 'import'`, deduped by `sha256`). Before that, a hand-imported day the parser missed
-  (an IO) stayed empty until re-imported.
+  (an IO) stayed empty until re-imported. The PDF history also has a manual **"Recarregar escala"** (since 0.9.4, user request):
+  `reloadFromPdfs()` forces the same replay (`reparseStoredRoster(…, force = true)`) and reports how many PDFs it read.
 - **pdf.js is lazy** (`loadPdfjs()` in `extractText.ts`): never import `pdfjs-dist` statically,
   or the 330 KB chunk goes back into the first paint. Same for `tour.ts` (driver.js) and the README.
 - **CSP:** `vite.config.ts` injects a Content-Security-Policy at build time (self + the worker

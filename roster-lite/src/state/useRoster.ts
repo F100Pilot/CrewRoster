@@ -28,6 +28,8 @@ export interface RosterState {
   dismissChanges: () => Promise<void>;
   // Mark an IO day as the "prevenir" (true), as not (false), or back to what the roster says (null).
   setPrevenir: (date: string, value: boolean | null) => void;
+  // Re-read every PDF in the history (oldest first) into the roster; the count read, or null if none.
+  reloadFromPdfs: () => Promise<number | null>;
   setSessionToken: (token: string | null) => void;
   // multi-user
   users: UserProfile[];
