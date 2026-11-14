@@ -111,6 +111,18 @@ describe('interpretPgaGrid — line check marks (W_INS)', () => {
   });
 });
 
+describe('interpretPgaGrid — line training given (CLTC / CTRI)', () => {
+  it('reads "LOGIN CLTC" after the aircraft: the mark goes to the notes, the login is the trainee', () => {
+    // The token printed after TP868's aircraft, swapped for a synthetic line-training mark.
+    const withMark = (tokens as PositionedToken[]).map((t) =>
+      t.page === 1 && t.x === 434 && t.y === 596 ? { ...t, text: 'QTRAIN CLTC' } : t);
+    const tp868 = interpretPgaGrid(withMark).find((d) => d.date === '2026-06-20' && d.flightNumber === 'TP868');
+    expect(tp868!.observations!.split(', ')).toContain('CLTC');
+    expect(tp868!.trainee).toBe('QTRAIN');
+    expect(onDate('2026-06-20').find((d) => d.flightNumber === 'TP868')!.trainee).toBeUndefined();
+  });
+});
+
 describe('pgaBlankDates', () => {
   it('finds no blank day in a fully printed roster', async () => {
     const { pgaBlankDates } = await import('../parsing/pdf/pgaGrid');

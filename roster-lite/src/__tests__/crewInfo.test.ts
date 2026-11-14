@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   parseCrewInfo, parseGroundCrewInfo, attachCrewToDuties, attachGroundCrewToDuties,
-  sortCrew, placeSafetyMarks, type CrewLeg,
+  sortCrew, placeSafetyMarks, placeTrainees, type CrewLeg,
 } from '../parsing/pdf/crewInfo';
 import { isInstructorFlight } from '../domain/payEstimate';
 import type { PositionedToken } from '../parsing/pdf/extractText';
@@ -325,6 +325,34 @@ describe('crew carried forward, line training given (CLTC) and FO_SAFETY', () =>
     expect(obs('TP9137')).toBeNull();
     expect(obs('TP9020')).toBe('CLTC, FO_SAFETY');
     expect(obs('TP9021')).toBe('CLTC, FO_SAFETY');
+  });
+
+  // User rule: the crew isn't simply the previous flight's — the FO beside CLTC/CTRI is the one
+  // who joins, from his first marked leg.
+  const marked = () => duties().map((d) => (d.observations?.includes('CLTC') ? { ...d, trainee: 'PTRAIN' } : d));
+
+  it('the FO beside CLTC joins at his first marked leg, never on the day\'s earlier legs', () => {
+    const d = marked();
+    // Even when the crew section gives the morning leg the whole crew, trainee included.
+    attachCrewToDuties(d, [...legs, { dow: 'Mon23', flightNumber: 'TP9137', dep: 'AGP', arr: 'LIS', crew: [cp, trainee, fo, pu] }]);
+    placeTrainees(d);
+    placeSafetyMarks(d);
+    const logins = (fn: string) => d.find((x) => x.flightNumber === fn)!.crew!.map((c) => c.login);
+    expect(logins('TP9137')).toEqual(['PCAPT', 'PFIRST', 'PPURS']);
+    expect(logins('TP9020')).toContain('PTRAIN');
+    expect(logins('TP9021')).toContain('PTRAIN');
+    expect(d.find((x) => x.flightNumber === 'TP9137')!.observations).toBeNull();
+    expect(d.find((x) => x.flightNumber === 'TP9021')!.observations).toBe('CLTC, FO_SAFETY');
+  });
+
+  it('a marked leg whose crew lacks the trainee gets him, as an FO', () => {
+    const d = marked();
+    attachCrewToDuties(d, [legs[0]]); // no entry with him: the overnight crew is carried all day
+    placeTrainees(d);
+    const crew = (fn: string) => d.find((x) => x.flightNumber === fn)!.crew!;
+    expect(crew('TP9020').find((c) => c.login === 'PTRAIN')).toMatchObject({ surname: 'PTRAIN', role: 'FO' });
+    expect(crew('TP9021').filter((c) => c.role === 'FO')).toHaveLength(2);
+    expect(crew('TP9137').map((c) => c.login)).not.toContain('PTRAIN');
   });
 
   it('CLTC / CTRI is line training given: the day pays as one', () => {

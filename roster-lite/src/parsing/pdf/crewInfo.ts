@@ -376,3 +376,36 @@ export function placeSafetyMarks(duties: ParsedDuty[]): void {
     for (const d of legs) d.observations = d.observations ? `${d.observations}, FO_SAFETY` : 'FO_SAFETY';
   }
 }
+
+// Line training (CLTC / CTRI): the roster prints the trainee's login beside the mark ("LOGIN CLTC")
+// on each leg he flies. The user's rule: the crew isn't simply the previous flight's — the first
+// officer beside the mark is the one who JOINS. So that day's legs before his first marked leg
+// don't carry him (whatever the carry-over gave them), and every marked leg does, as an FO.
+export function placeTrainees(duties: ParsedDuty[]): void {
+  const flown = (d: ParsedDuty) => d.dutyType === 'Flight Duty' || d.dutyType === 'Positioning';
+  const known = new Map<string, CrewMember>();
+  for (const d of duties) for (const c of d.crew ?? []) if (!known.has(c.login)) known.set(c.login, c);
+  const dates = new Set(duties.filter((d) => d.trainee && flown(d)).map((d) => d.date));
+  for (const date of dates) {
+    const day = duties.filter((d) => d.date === date && flown(d))
+      .sort((a, b) => (a.departureTime ?? '').localeCompare(b.departureTime ?? ''));
+    const logins = new Set(day.filter((d) => d.trainee).map((d) => d.trainee!));
+    for (const login of logins) {
+      const first = day.findIndex((d) => d.trainee === login);
+      for (let i = 0; i < first; i++) {
+        const crew = day[i].crew;
+        if (crew?.some((c) => c.login === login)) day[i].crew = crew.filter((c) => c.login !== login);
+      }
+      for (const d of day.slice(first)) {
+        if (d.trainee !== login || !d.crew?.length) continue;
+        if (d.crew.some((c) => c.login === login)) {
+          // On his marked legs he is a first officer, whatever rank the column lost.
+          d.crew = sortCrew(d.crew.map((c) => (c.login === login ? { ...c, role: 'FO' } : c)));
+          continue;
+        }
+        const who = known.get(login);
+        d.crew = sortCrew([...d.crew, { login, surname: who?.surname ?? login, firstName: who?.firstName, role: 'FO' }]);
+      }
+    }
+  }
+}

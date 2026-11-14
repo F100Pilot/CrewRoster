@@ -249,6 +249,7 @@ interface Segment {
   notes: string[];
   dh?: boolean; // a standalone "DH" appeared above this flight → deadhead crew
   hotelRef?: string; // an "Hn" marker above this duty → layover hotel reference
+  trainee?: string; // login printed with a CLTC/CTRI mark ("LOGIN CLTC") → the FO in line training
 }
 
 // Parse a single sub-column's tokens into duties. Each flight/duty occupies its own
@@ -288,7 +289,12 @@ export function parseSubColumn(
     } else if (/\b(CLTC|CTRI)\b/.test(w)) {
       // Printed after the aircraft, in one piece with the trainee's login ("LOGIN CLTC"): the
       // flight is given as the line-training instructor — a LIFUS the roster doesn't call one (user).
-      if (cur) cur.notes.push(w.match(/\b(CLTC|CTRI)\b/)![1]);
+      // The login is the first officer who JOINS the crew for these legs (user rule).
+      if (cur) {
+        cur.notes.push(w.match(/\b(CLTC|CTRI)\b/)![1]);
+        const login = w.match(/\b([A-Z]{3,})\s+(?:CLTC|CTRI)\b/)?.[1];
+        if (login) cur.trainee = login;
+      }
     } else if (isAnnotation(w) || isCrewName(w)) {
       if (cur && /_INS$/.test(w)) cur.notes.push(w);
     } else if (cur) {
@@ -336,6 +342,7 @@ export function parseSubColumn(
         aircraftType: aircraft,
         observations: seg.notes.join(', ') || null,
         hotel: resolveHotel(seg),
+        ...(seg.trainee ? { trainee: seg.trainee } : {}),
       });
       continue;
     }

@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.3.11';
+export const APP_VERSION = '0.9.3.12';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,14 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.9.3.12',
+    date: '2026-11-14',
+    highlights: [
+      'Tripulação por voo (em testes): o copiloto que aparece ao lado do CLTC / CTRI é o que se junta à tripulação — fica nos voos com essa marca e sai dos voos anteriores do mesmo dia, mesmo que a lista da escala o ponha lá. O FO_SAFETY fica nos voos a partir de onde aparece. Confirma sempre na escala oficial.',
+      'A escala é relida automaticamente para aplicar esta regra.',
+    ],
+  },
   {
     version: '0.9.3.11',
     date: '2026-11-14',

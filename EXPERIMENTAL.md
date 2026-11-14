@@ -30,6 +30,10 @@ produção, em vez de promover uma a uma.
   (`placeSafetyMarks`); a tripulação de um voo sem entrada passa a vir do voo ANTERIOR (antes vinha de um voo
   seguinte do mesmo dia — o regresso AGP→LIS levava o formando); piloto sem posto entre o PU e o cockpit = FO.
   PARSE_VERSION 19. Verificado com o PDF real (não guardado).
+- **0.9.3.12** — regra do utilizador: a tripulação não é obrigatoriamente a do voo anterior; o FO ao lado do
+  `CLTC` / `CTRI` é o que se junta. O login do token fica em `ParsedDuty.trainee`; `placeTrainees()` (depois do
+  attach, antes do `placeSafetyMarks`) tira-o dos voos do dia antes do primeiro voo marcado e põe-no (FO) nos
+  marcados. PARSE_VERSION 20. Verificado com o PDF real (não guardado).
 
 ---
 
