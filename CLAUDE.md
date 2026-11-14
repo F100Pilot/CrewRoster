@@ -171,7 +171,11 @@ Things learned over this collaboration that should persist across sessions:
 - **Company agreement (AE Portugália/SIPLA 2023) is the source for PILOT limits** (since 0.8.18):
   RUPT cl. 30–31 (flight/duty limits), cl. 19.7/20.4 (standby 25% home / 50% airport / R24 0%),
   cl. 25/34 (rest), cl. 35 (FDP table, Lisbon reference). Cabin crew stay on EASA (SIPLA covers
-  pilots only). The AE text is NOT in the repo — only values, each with its clause in a comment.
+  pilots only). The AE text is NOT in the repo (public) — only values, each with its clause in a comment. **The full
+  AE lives in the owner's Google Drive** (user: "é necessário que fique"), five PDFs: "AE SIPLA - Clausulado Geral",
+  "AE SIPLA - RUPT", "AE SIPLA - RRRGS", "AE SIPLA - RAAA", "AE SIPLA - RBO" — read them with the Google Drive
+  connector (`search_files` title contains 'AE SIPLA', then `read_file_content`; the RUPT is too long for one read,
+  slice it). Quote clauses from there before implementing an AE rule; never commit the text.
   Standby code windows (H509, H7+… pilots; A1…A8 cabin) come from the DOV notice of Feb 2025
   (`src/domain/standbyWindows.ts`). A/H codes are home standby (H = pilots, A = cabin).
 - **Every AE calculation is pilots-only (SIPLA)** — user rule. Limits/compliance/rest minima/FDP/
