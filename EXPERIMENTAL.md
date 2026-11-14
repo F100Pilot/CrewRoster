@@ -25,7 +25,8 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(vazio — tudo promovido em 0.9.3.29)_
+- **0.9.3.31** — A apresentação fica **sempre 1 h antes** (utilizador: "mais tarde tratamos dos casos especiais"): a
+  0.9.3.30 (apresentação pelo [DT] e escrita à mão) foi retirada; PARSE_VERSION 27 relê a escala de quem a abriu.
 
 ---
 

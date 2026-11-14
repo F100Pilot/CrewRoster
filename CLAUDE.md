@@ -380,6 +380,10 @@ Things learned over this collaboration that should persist across sessions:
   on a `RED_REP` day, and a typed figure (to the minute) wins. Stored per user
   (`crewroster.offDayPay.*`, `crewroster.restCut.*`), applied in RosterProvider; `domain/offDayWork.ts`. Not yet checked
   against a real PDF carrying the remarks.
+- **Report time = first departure − 1 h, always** (user rule, 0.9.3.31: "a apresentação vai ser sempre 1 hora antes.
+  Mais tarde tratamos dos casos especiais que vão aparecendo"). 0.9.3.30 tried it from the printed [DT] (last arrival +
+  30 min − DT) plus a typed override on the day page — withdrawn (reverted; PARSE_VERSION 27 re-reads). A user's audio
+  had a 13:55 report for a 15:10 take-off: keep such cases for when the user brings them back.
 - **Medical exams** (IM / VIM / MED, `Medical`, timed): done apart (a colleague, 0.9.3.16) the roster has MED on one day
   ([DT] 3h00) and IM + VIM on another ([DT] 4h00 for IM 08:00–12:00 + VIM 12:00–12:30): the VIM is inside the IM's
   block, so `countedWork()` (`dutyTime.ts`) leaves a VIM out of the duty maths when the day has an IM; display unchanged.
