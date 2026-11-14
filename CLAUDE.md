@@ -140,6 +140,11 @@ cross-origin. Endpoints: `POST /api/login`, `/api/roster`, `/api/flightinfo`,
 
 Things learned over this collaboration that should persist across sessions:
 
+- **Pending-work checklist (user request, Nov 2026):** a private Artifact page, https://claude.ai/artifact/AbrVfM4pSxa6F5ksGiTbiF
+  ("CrewRoster · Pendentes"), its items in the artifact's `db` collection `items` (`title`, `area`, `version`, `status`:
+  `todo` | `waiting` | `exp` | `prod`, `waitingFor`, `detail`, `order`). Keep it current with the `ArtifactData` tool in every
+  session: add what the user asks for, move items to `exp` when pushed to the experimental branch and to `prod` on promotion.
+  Never put crew names or pay figures in it.
 - **Promotion is gated on an explicit user request.** Build on exp, validate with the
   user, only then "passa para o main". The user says when.
 - **Production has real PGA crew using it.** Be conservative; prefer batching exp
