@@ -34,6 +34,9 @@ produção, em vez de promover uma a uma.
   (`patchPayGlobal`). O cartão usa os valores de cada mês.
 - **0.9.3.9** — "Recuperar valores de uma cópia de segurança" no Vencimento: `payFiguresFromBackup()` lê só
   `crewroster.pay.<user>` do ficheiro e põe-nos no rascunho (o restauro completo voltaria as escalas à data da cópia).
+- **0.9.3.10** — bug da 0.9.3.8: guardar "a partir de M" deixava versões posteriores (a zero) por cima → "não está a
+  assumir… está a zero". `savePayVersion` agora substitui as versões ≥ M ("" = todas). E se a app antiga (produção)
+  escrever o conjunto atual, esse passa a ser a última versão (`getPayHistory`), porque as duas partilham os dados.
 
 ---
 

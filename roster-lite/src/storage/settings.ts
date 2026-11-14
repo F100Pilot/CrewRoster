@@ -218,15 +218,27 @@ const PAY_HISTORY_PREFIX = 'crewroster.payHistory.';
 // Card notes and the switch: one value for all months, never part of a version.
 const PAY_GLOBAL = ['enabled', 'holidayPay', 'lineChecks'] as const;
 
+const valuesKey = (s: PaySettings) => {
+  const v: Record<string, unknown> = { ...s };
+  for (const k of PAY_GLOBAL) delete v[k];
+  return JSON.stringify(Object.keys(v).sort().map((k) => [k, v[k]]));
+};
+
 export function getPayHistory(userId: string): PayVersion[] {
   try {
     const raw = localStorage.getItem(PAY_HISTORY_PREFIX + userId);
     const list = raw ? (JSON.parse(raw) as PayVersion[]) : null;
     if (Array.isArray(list) && list.length) {
-      return list
+      const versions = list
         .filter((v) => v && typeof v.from === 'string' && v.s && typeof v.s === 'object')
         .map((v) => ({ from: v.from, s: { ...DEFAULT_PAY_SETTINGS, ...v.s } }))
         .sort((a, b) => a.from.localeCompare(b.from));
+      // The installed app before 0.9.3.8 (same storage as /exp/) writes the current set only, on
+      // every key: when it no longer matches the latest version, those figures are the latest.
+      const current = getPaySettings(userId);
+      const last = versions[versions.length - 1];
+      if (last && valuesKey(last.s) !== valuesKey(current)) versions[versions.length - 1] = { from: last.from, s: current };
+      return versions;
     }
   } catch { /* fall through */ }
   return [{ from: '', s: getPaySettings(userId) }];
@@ -243,12 +255,13 @@ export function getPaySettingsFor(userId: string, month: string): PaySettings {
   return out;
 }
 
-// Guardar: the figures apply from `from` (a work month, "" = every month) until the next version.
-// Versions already saved for later months are kept — they were saved for those months.
+// Guardar: the figures apply from `from` (a work month, "" = every month) ON — every later month
+// too, so versions saved for later months give way (they kept zeros over what had just been saved:
+// "não está a assumir… está a zero"). The months before `from` keep theirs.
 export function savePayVersion(userId: string, from: string, s: PaySettings): void {
   const values = { ...s };
   for (const k of PAY_GLOBAL) delete (values as unknown as Record<string, unknown>)[k];
-  const list = getPayHistory(userId).filter((v) => v.from !== from);
+  const list = from ? getPayHistory(userId).filter((v) => v.from < from) : [];
   list.push({ from, s: values as PaySettings });
   list.sort((a, b) => a.from.localeCompare(b.from));
   try {

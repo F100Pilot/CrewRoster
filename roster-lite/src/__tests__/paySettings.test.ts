@@ -39,9 +39,30 @@ describe('pay values by version (a raise never changes the months before)', () =
     expect(getPaySettingsFor(uid, '2026-12').enabled).toBe(true);
     expect(getPaySettingsFor(uid, '2026-10').enabled).toBe(true);
 
-    // "Todos os meses" fixes a typo everywhere — up to the next version.
+    // Saving from an earlier month takes over the later versions too (a later one with zeros kept
+    // showing over what had just been saved — a user's report).
+    savePayVersion(uid, '2026-12', { ...getPaySettings(uid), vb: 0 });
+    savePayVersion(uid, '2026-11', { ...getPaySettings(uid), vb: 7500 });
+    expect(getPaySettingsFor(uid, '2027-01').vb).toBe(7500);
+    expect(getPaySettings(uid).vb).toBe(7500);
+    expect(getPaySettingsFor(uid, '2026-10').vb).toBe(7000);
+
+    // "Todos os meses" fixes a typo everywhere: one version, for every month.
     savePayVersion(uid, '', { ...getPaySettings(uid), vb: 7001 });
     expect(getPaySettingsFor(uid, '2026-10').vb).toBe(7001);
-    expect(getPaySettingsFor(uid, '2026-11').vb).toBe(7413.47);
+    expect(getPaySettingsFor(uid, '2027-01').vb).toBe(7001);
+    expect(getPaySettings(uid).vb).toBe(7001);
+    expect(getPayHistory(uid)).toHaveLength(1);
+  });
+
+  it('figures typed in the older installed app (current set only) win over the latest version', async () => {
+    const { getPaySettingsFor, savePayVersion, setPaySettings, getPaySettings } = await import('../storage/settings');
+    const { DEFAULT_PAY_SETTINGS } = await import('../domain/payEstimate');
+    const uid = 'old-' + Math.random().toString(36).slice(2);
+    setPaySettings(uid, { ...DEFAULT_PAY_SETTINGS, vb: 7000 });
+    savePayVersion(uid, '2026-11', { ...getPaySettings(uid), vb: 0 });
+    setPaySettings(uid, { ...getPaySettings(uid), vb: 7413.47 }); // the old app, writing as you type
+    expect(getPaySettingsFor(uid, '2026-12').vb).toBe(7413.47);
+    expect(getPaySettingsFor(uid, '2026-10').vb).toBe(7000);
   });
 });

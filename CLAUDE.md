@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (486 tests) — keep green
+npm test           # vitest run (487 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -212,7 +212,9 @@ Things learned over this collaboration that should persist across sessions:
   IRS withheld floored to the euro (the payslip shows 6 950,00 for 40,08 % × 17 341,22).
 - **Pay figures are versioned and saved only on Guardar** (since 0.9.3.8, a serious bug: every keystroke saved at once and
   for ALL months — a colleague's test with 1 € wiped his figures). Settings → Vencimento edits a draft; Guardar stores a
-  version from a chosen WORK month on ("a partir do recibo de …", default the next payslip; "" = all months, to fix a typo):
+  version from a chosen WORK month on ("a partir do recibo de …", default the next payslip; "" = all months, to fix a typo),
+  replacing every version from that month on (0.9.3.10 — a later zero version kept hiding a save); the months before
+  keep theirs. If the older installed app wrote the current set (shared storage with /exp/), it becomes the latest version:
   `crewroster.payHistory.<user>`, `savePayVersion()` / `getPaySettingsFor(user, month)` / `getPayHistory()` in
   `storage/settings.ts`; `crewroster.pay.<user>` stays the current set. NEVER let a change rewrite earlier months (user:
   "nunca pode alterar os valores anteriores"). The on/off switch and the card's per-month notes (`holidayPay`, `lineChecks`)
