@@ -210,6 +210,8 @@ Things learned over this collaboration that should persist across sessions:
 - **Pay figures are shown to the cent** (since 0.8.37.2, user: "não quero que faças arredondamentos"): no whole-euro
   formatting and no "≈" on the pay card; the maths was already in cents. The one rounding kept is the payroll's own:
   IRS withheld floored to the euro (the payslip shows 6 950,00 for 40,08 % × 17 341,22).
+- **Settings' "Fixo por mês" = the sum of the typed fields only** (VB + VE + VS + extras; since 0.9.3.7): it used to
+  add the automatic PGA pension 6,5% too, so crew read the VB as "majorado" (1 € → 1,07 €). The pension has its own lines.
 - **Calculator in the money fields** (since 0.8.38, user request): every money field in Settings → Vencimento has a
   🧮 button opening `CalculatorDialog.tsx` (the phone's decimal keyboard has no "+"); a sum can also be typed in the
   field (shows "= …", settles on blur). `utils/calc.ts` `evalExpression()` is a tiny recursive-descent parser
