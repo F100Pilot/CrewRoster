@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.3.10';
+export const APP_VERSION = '0.9.3.11';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,15 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.9.3.11',
+    date: '2026-11-14',
+    highlights: [
+      'Line training: um voo com CLTC ou CTRI ao lado (com o login do formando) passa a contar como LIFUS dado — aparece no dia e conta no vencimento como dia de line training.',
+      'Tripulação por voo (em testes): um voo sem entrada própria fica com a tripulação do voo anterior (ex.: o regresso de uma noite fora), e não com a de um voo seguinte do mesmo dia. Um piloto sem posto na lista (o formando) conta como copiloto.',
+      'FO_SAFETY: assinalado nos voos com dois copilotos (o copiloto extra).',
+    ],
+  },
   {
     version: '0.9.3.10',
     date: '2026-11-14',

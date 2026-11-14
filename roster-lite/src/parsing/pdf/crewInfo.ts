@@ -64,10 +64,13 @@ function inferRoles(crew: PositionedCrew[]): void {
     if (byX[i].role === 'CP' || byX[i].role === 'FO') cockpitStart = i;
     else break;
   }
-  const hasPurser = byX.some((c) => c.role === 'PU');
+  const purser = byX.findIndex((c) => c.role === 'PU');
   for (let i = 0; i < byX.length; i++) {
     if (byX[i].role) continue;
-    byX[i].role = !hasPurser && i === cockpitStart - 1 ? 'PU' : 'ST';
+    // Between the purser and the cockpit sits only cockpit: an extra pilot printed without a
+    // rank (a first officer in line training, beside the CLTC mark — a real November roster).
+    if (purser >= 0 && i > purser && i < cockpitStart) byX[i].role = 'FO';
+    else byX[i].role = purser < 0 && i === cockpitStart - 1 ? 'PU' : 'ST';
   }
 }
 
@@ -300,12 +303,22 @@ export function attachCrewToDuties(duties: ParsedDuty[], legs: CrewLeg[]): void 
     if (leg) d.crew = sortCrew(leg.crew);
   }
 
-  // Fill return/onward legs of a same-day rotation. The PDF lists the crew only ONCE per
-  // rotation when it doesn't change (e.g. only the outbound LIS→AGP, not the AGP→LIS
-  // return). A leg whose crew DID change has its own entry and was matched above, so here
-  // we only fill legs that still have no crew — copying it from a sibling in the same
-  // continuous same-day rotation (same airframe → same crew).
+  // The PDF lists the crew only when it changes, at the first leg it flies. So a leg without its
+  // own entry is flown by the crew of the leg BEFORE it — the one that brought the crew to its
+  // departure airport, the same day or after a night away. Carried forward first, in time order:
+  // filling a day's legs from a LATER entry gave an overnight return (AGP→LIS) the crew that only
+  // joined for the next legs (a real November roster: a trainee and the FO_SAFETY on LIS–MAD–LIS).
   const flightLegs = operatedFlights(duties).filter((d) => d.flightNumber);
+  for (let i = 1; i < flightLegs.length; i++) {
+    const leg = flightLegs[i];
+    const prev = flightLegs[i - 1];
+    if ((leg.crew && leg.crew.length > 0) || !prev.crew?.length || prev.arrivalAirport !== leg.departureAirport) continue;
+    const gap = layoverHours(prev.date, prev.arrivalTime, leg.date, leg.departureTime);
+    if (gap !== null && gap >= -2 && gap <= 48) leg.crew = prev.crew.map((c) => ({ ...c }));
+  }
+
+  // Then a same-day rotation's legs still without crew take it from a sibling (an entry printed
+  // on a later leg of the rotation).
   for (const chain of rotationChains(flightLegs)) {
     const chainDuties = chain as ParsedDuty[];
     const withCrew = chainDuties.find((l) => l.crew && l.crew.length > 0);
@@ -342,4 +355,24 @@ function layoverHours(d1: string, t1: string | null, d2: string, t2: string | nu
     : [Date.parse(`${d1}T00:00:00Z`), Date.parse(`${d2}T00:00:00Z`)];
   if (isNaN(a) || isNaN(b)) return null;
   return (b - a) / 3_600_000;
+}
+
+// FO_SAFETY names the legs flown with an extra first officer (the safety pilot beside a trainee).
+// The roster prints it once, by the first of them; once the crew is known, the mark goes to every
+// leg of that day whose cockpit has two first officers (a real November roster: not the morning's
+// return, flown by the overnight crew alone, but the two legs after it).
+export function placeSafetyMarks(duties: ParsedDuty[]): void {
+  const fos = (d: ParsedDuty) => (d.crew ?? []).filter((c) => c.role === 'FO').length;
+  const strip = (d: ParsedDuty) => {
+    const rest = (d.observations ?? '').split(/,\s*/).filter((p) => p && p !== 'FO_SAFETY');
+    d.observations = rest.length ? rest.join(', ') : null;
+  };
+  const dates = new Set(duties.filter((d) => (d.observations ?? '').includes('FO_SAFETY')).map((d) => d.date));
+  for (const date of dates) {
+    const day = duties.filter((d) => d.date === date);
+    const legs = day.filter((d) => (d.dutyType === 'Flight Duty' || d.dutyType === 'Positioning') && fos(d) >= 2);
+    if (!legs.length) continue; // crew unknown: keep the mark where the roster put it
+    for (const d of day) strip(d);
+    for (const d of legs) d.observations = d.observations ? `${d.observations}, FO_SAFETY` : 'FO_SAFETY';
+  }
 }

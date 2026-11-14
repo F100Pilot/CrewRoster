@@ -5,6 +5,9 @@ import type { ParsedDuty } from './types';
 // view and the roster list so both name them the same way.
 export const MARK_LABEL: Record<string, string> = {
   LIFUS_INS: 'Line training · instrutor',
+  CLTC: 'Line training · instrutor (CLTC)',
+  CTRI: 'Line training · instrutor (CTRI)',
+  FO_SAFETY: 'Copiloto extra (safety pilot)',
   FAM_INS: 'Familiarização · instrutor',
   W_INS: 'Line check · instrutor',
   OPC_INS: 'OPC · instrutor',
@@ -16,6 +19,9 @@ export const MARK_LABEL: Record<string, string> = {
 // Short forms for the roster list, where the chip sits beside the date.
 export const MARK_SHORT: Record<string, string> = {
   LIFUS_INS: 'LIFUS · instr.',
+  CLTC: 'LIFUS · instr.',
+  CTRI: 'LIFUS · instr.',
+  FO_SAFETY: 'FO safety',
   FAM_INS: 'FAM · instr.',
   W_INS: 'LC · instr.',
   OPC_INS: 'OPC · instr.',
@@ -24,7 +30,7 @@ export const MARK_SHORT: Record<string, string> = {
   LPC: 'LPC',
 };
 
-export const isInstructorMark = (m: string) => m.endsWith('_INS');
+export const isInstructorMark = (m: string) => m.endsWith('_INS') || m === 'CLTC' || m === 'CTRI';
 
 // A duty's observations split into known marks and the rest of the text.
 export function splitMarks(text: string): { marks: string[]; rest: string } {

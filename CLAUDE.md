@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (487 tests) — keep green
+npm test           # vitest run (490 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -80,6 +80,10 @@ cross-origin. Endpoints: `POST /api/login`, `/api/roster`, `/api/flightinfo`,
   Leg" section; `notificationReport.ts` parses CrewLink change notifications.
 - **Crew per flight is flagged "em testes"** in the UI and release notes — always keep
   that caveat when touching it; advise users to confirm against the official roster.
+  Since 0.9.3.11 (a real November roster): a leg with no crew entry takes the crew of the leg BEFORE it (same day or
+  after a night away) — not of a later leg of the day; a rank-less name between the PU and the cockpit is an FO (a
+  trainee). `CLTC` / `CTRI` beside a flight ("LOGIN CLTC") = line training given (counts like LIFUS_INS);
+  `FO_SAFETY` (its own sub-column before the flight) is moved to the legs with two FOs (`placeSafetyMarks`).
 - **Blank grid days** (since 0.8.37.1, PARSE_VERSION 16): `pgaBlankDates()` lists header days with nothing printed
   under them; `mergeDuties(…, blankDates)` clears the stored day there (otherwise silent days are kept, to survive
   partial parses). Real case: a flight removed from 29/09 left the day blank and the stale flight kept paying a

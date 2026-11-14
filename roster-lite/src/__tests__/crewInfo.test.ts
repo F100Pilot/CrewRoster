@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import {
   parseCrewInfo, parseGroundCrewInfo, attachCrewToDuties, attachGroundCrewToDuties,
-  sortCrew,
+  sortCrew, placeSafetyMarks, type CrewLeg,
 } from '../parsing/pdf/crewInfo';
+import { isInstructorFlight } from '../domain/payEstimate';
 import type { PositionedToken } from '../parsing/pdf/extractText';
 import type { ParsedDuty } from '../domain/types';
 
@@ -278,5 +279,57 @@ describe('sortCrew', () => {
       { login: 'd', surname: 'MIKE', role: 'PU' },
     ]);
     expect(sorted.map((c) => c.role)).toEqual(['CP', 'FO', 'PU', 'ST']);
+  });
+});
+
+// A real November roster (names replaced): an overnight AGP stay, then the return AGP→LIS flown by
+// the same two pilots, then LIS–MAD–LIS with a first officer in line training (printed without a
+// rank, "CLTC" beside the flight) and the overnight FO as FO_SAFETY. The crew section lists only
+// the first leg of each crew: Sun22 TP9691 and Mon23 TP9020.
+describe('crew carried forward, line training given (CLTC) and FO_SAFETY', () => {
+  const leg = (date: string, fn: string, a: string, z: string, off: string, on: string, obs: string | null = null): ParsedDuty => ({
+    date, dutyCode: 'FLT', dutyType: 'Flight Duty', reportingTime: null, departureTime: off, arrivalTime: on,
+    flightNumber: fn, departureAirport: a, arrivalAirport: z, aircraftType: 'E90', observations: obs,
+  });
+  const cp = { login: 'PCAPT', surname: 'CAPT', role: 'CP' };
+  const fo = { login: 'PFIRST', surname: 'FIRST', role: 'FO' };
+  const trainee = { login: 'PTRAIN', surname: 'TRAIN', role: 'FO' };
+  const pu = { login: 'PPURS', surname: 'PURS', role: 'PU' };
+  const duties = () => [
+    leg('2026-11-22', 'TP9691', 'LIS', 'FNC', '15:20', '17:10'),
+    leg('2026-11-22', 'TP9692', 'FNC', 'LIS', '18:10', '19:55'),
+    leg('2026-11-22', 'TP9138', 'LIS', 'AGP', '21:00', '22:15'),
+    leg('2026-11-23', 'TP9137', 'AGP', 'LIS', '14:00', '15:25', 'FO_SAFETY'),
+    leg('2026-11-23', 'TP9020', 'LIS', 'MAD', '18:00', '19:20', 'CLTC'),
+    leg('2026-11-23', 'TP9021', 'MAD', 'LIS', '20:10', '21:35', 'CLTC'),
+  ];
+  const legs: CrewLeg[] = [
+    { dow: 'Sun22', flightNumber: 'TP9691', dep: 'LIS', arr: 'FNC', crew: [cp, fo, pu] },
+    { dow: 'Mon23', flightNumber: 'TP9020', dep: 'LIS', arr: 'MAD', crew: [cp, trainee, fo, pu] },
+  ];
+
+  it('an unlisted leg is flown by the crew that came before it, not by a later entry', () => {
+    const d = duties();
+    attachCrewToDuties(d, legs);
+    const logins = (fn: string) => d.find((x) => x.flightNumber === fn)!.crew!.map((c) => c.login);
+    expect(logins('TP9137')).not.toContain('PTRAIN');
+    expect(logins('TP9137')).toContain('PFIRST');
+    expect(logins('TP9021')).toContain('PTRAIN');
+  });
+
+  it('FO_SAFETY moves to the legs flown with two first officers', () => {
+    const d = duties();
+    attachCrewToDuties(d, legs);
+    placeSafetyMarks(d);
+    const obs = (fn: string) => d.find((x) => x.flightNumber === fn)!.observations;
+    expect(obs('TP9137')).toBeNull();
+    expect(obs('TP9020')).toBe('CLTC, FO_SAFETY');
+    expect(obs('TP9021')).toBe('CLTC, FO_SAFETY');
+  });
+
+  it('CLTC / CTRI is line training given: the day pays as one', () => {
+    expect(isInstructorFlight(leg('2026-11-23', 'TP9020', 'LIS', 'MAD', '18:00', '19:20', 'CLTC, FO_SAFETY'))).toBe(true);
+    expect(isInstructorFlight(leg('2026-11-23', 'TP9020', 'LIS', 'MAD', '18:00', '19:20', 'CTRI'))).toBe(true);
+    expect(isInstructorFlight(leg('2026-11-23', 'TP9137', 'AGP', 'LIS', '14:00', '15:25', 'FO_SAFETY'))).toBe(false);
   });
 });

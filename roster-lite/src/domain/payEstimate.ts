@@ -142,8 +142,10 @@ export const SS_RATE = 0.11; // Segurança Social, the worker's share
 // A flight flown as the instructor, from its roster mark: line training (LIFUS_INS) or
 // familiarisation (FAM_INS). Payslips pay "Line Training" once per such day — a real September
 // with one FAM_INS day (two legs) paid one.
+// CLTC / CTRI beside a flight (with the trainee's login) is line training given too, though the
+// roster prints no LIFUS for it (user, Nov 2026).
 export const isInstructorFlight = (d: ParsedDuty) =>
-  (d.dutyType === 'Flight Duty' || d.dutyType === 'Positioning') && /\b(?:LIFUS|FAM)_INS\b/.test(d.observations ?? '');
+  (d.dutyType === 'Flight Duty' || d.dutyType === 'Positioning') && /\b(?:(?:LIFUS|FAM)_INS|CLTC|CTRI)\b/.test(d.observations ?? '');
 
 // A flight on a line check given as the examiner: marked W_INS on each sector (user, Nov 2026,
 // from a CrewLine roster: a W_PNT day with W_INS on both legs). One line check per such day.

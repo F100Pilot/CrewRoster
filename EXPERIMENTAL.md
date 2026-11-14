@@ -25,7 +25,11 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(nada — tudo promovido em `0.9.3.10`)_
+- **0.9.3.11** — escala real de novembro (dia 23): `CLTC` / `CTRI` ao lado do voo (token "LOGIN CLTC") = line training dado
+  (`isInstructorFlight`, MARK_LABEL); `FO_SAFETY` (sub-coluna antes do voo) vai para os voos com 2 FO
+  (`placeSafetyMarks`); a tripulação de um voo sem entrada passa a vir do voo ANTERIOR (antes vinha de um voo
+  seguinte do mesmo dia — o regresso AGP→LIS levava o formando); piloto sem posto entre o PU e o cockpit = FO.
+  PARSE_VERSION 19. Verificado com o PDF real (não guardado).
 
 ---
 

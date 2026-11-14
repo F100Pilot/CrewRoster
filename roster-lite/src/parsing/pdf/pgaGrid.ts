@@ -285,6 +285,10 @@ export function parseSubColumn(
       pendingDH = false;
       pendingHotel = undefined;
       segments.push(cur);
+    } else if (/\b(CLTC|CTRI)\b/.test(w)) {
+      // Printed after the aircraft, in one piece with the trainee's login ("LOGIN CLTC"): the
+      // flight is given as the line-training instructor — a LIFUS the roster doesn't call one (user).
+      if (cur) cur.notes.push(w.match(/\b(CLTC|CTRI)\b/)![1]);
     } else if (isAnnotation(w) || isCrewName(w)) {
       if (cur && /_INS$/.test(w)) cur.notes.push(w);
     } else if (cur) {
@@ -579,6 +583,10 @@ const CHECK_MARK = /^(?:OPC|LPC)(?:_INS)?(?:,\s*(?:OPC|LPC)(?:_INS)?)*$/;
 // A flight flown as the instructor — line training (LIFUS_INS) or familiarisation (FAM_INS). The
 // mark sits in its own sub-column just LEFT of its flight's, one per leg.
 const FLIGHT_INS_MARK = /^(?!OPC_|LPC_)[A-Z][A-Z0-9]*_INS$/;
+// FO_SAFETY — one of the first officers on board is the extra (safety) pilot — sits in its own
+// sub-column just BEFORE the flight it opens (larger x; a real November roster): it goes to the
+// next flight; the crew attach then moves it to the legs that really carry two first officers.
+const SAFETY_MARK = /^FO_SAFETY$/;
 
 // The days a band's header shows, and which day each of its sub-columns belongs to.
 function bandDays(b: CollectedBand, calendar: CalDay[]): { dates: string[]; dateAt: (x: number) => string | undefined } {
@@ -654,6 +662,7 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
   // Flight sub-columns and flight instructor marks, per date, matched up once the band is read.
   const flightSubs: { date: string; x: number; duties: ParsedDuty[] }[] = [];
   const flightMarks: { date: string; x: number; mark: string }[] = [];
+  const safetyMarks: { date: string; x: number; mark: string }[] = [];
   for (const b of bands) {
     if (b.offset === undefined) continue;
     const { dateAt } = bandDays(b, calendar);
@@ -666,6 +675,7 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
       if (mark && !checkByDate.has(date)) checkByDate.set(date, mark.text.trim());
       const lone = s.tokens.length === 1 ? s.tokens[0].text.trim() : '';
       if (FLIGHT_INS_MARK.test(lone)) flightMarks.push({ date, x: s.x, mark: lone });
+      if (SAFETY_MARK.test(lone)) safetyMarks.push({ date, x: s.x, mark: lone });
       const entries = parseSubColumn(s.tokens, date, hotels);
       if (!byDate.has(date)) byDate.set(date, []);
       const arr = byDate.get(date)!;
@@ -689,6 +699,15 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
     const target = flightSubs
       .filter((f) => f.date === m.date && f.x > m.x && f.x - m.x <= 40)
       .sort((a, b) => a.x - b.x)[0];
+    for (const d of target?.duties ?? []) {
+      if (!(d.observations ?? '').includes(m.mark)) d.observations = d.observations ? `${d.observations}, ${m.mark}` : m.mark;
+    }
+  }
+
+  for (const m of safetyMarks) {
+    const target = flightSubs
+      .filter((f) => f.date === m.date && f.x < m.x && m.x - f.x <= 40)
+      .sort((a, b) => b.x - a.x)[0];
     for (const d of target?.duties ?? []) {
       if (!(d.observations ?? '').includes(m.mark)) d.observations = d.observations ? `${d.observations}, ${m.mark}` : m.mark;
     }
