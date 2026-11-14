@@ -43,6 +43,8 @@ produção, em vez de promover uma a uma.
   desligar = paga) e na janela do calendário ("Está certo"); **ícones das refeições a bordo** nos cartões da Lista
   (`MealIcon.tsx`, legenda nos Códigos). "Folga e repouso" com **interruptores** (desligar sobre a marca da escala:
   `offDayPay: 'none'`, `restCutMin: -1`). Chip da turbulência legível (cor no `background`, não no `bgcolor`).
+- **0.9.3.37** — **Agradecimento aos colegas** (utilizador): primeiro ponto das Novidades desta edição + secção fixa
+  "Agradecimentos" em Definições → Ajuda. Sem nomes.
 
 ---
 

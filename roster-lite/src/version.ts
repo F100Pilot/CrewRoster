@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.3.36';
+export const APP_VERSION = '0.9.3.37';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,14 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.9.3.37',
+    date: '2026-11-14',
+    highlights: [
+      '💙 Obrigado aos colegas que têm ajudado. Esta versão deve muito a quem tem ajudado a interpretar as cláusulas do AE e do ROV, a quem envia escalas, extratos e recibos para comparar, e a quem testa cada versão e diz o que não bate certo. Esse contributo tem sido essencial. Obrigado!',
+      'Definições → Ajuda tem agora uma secção de Agradecimentos.',
+    ],
+  },
   {
     version: '0.9.3.36',
     date: '2026-11-14',
