@@ -26,6 +26,7 @@ export const RELEASE_NOTES: ReleaseNote[] = [
     highlights: [
       'Vencimento (AE, experimental): a majoração dos feriados soma-se às outras alíneas da cl. 12.2 — um posicionamento num feriado conta 150% (50% + 100%); no block-pay só conta o tempo de voo entre as 00:00 e as 23:59 (hora de Lisboa) do feriado.',
       'Refeições: "Ceia · ligado = paga" numa linha própria.',
+      'Vencimento: a explicação do cálculo fica fechada ("Como se calcula") e foi atualizada.',
     ],
   },
   {
