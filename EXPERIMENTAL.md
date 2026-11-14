@@ -7,7 +7,7 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.9.2.2`
+- **Produção (`master`) está em:** `0.9.3.3`
 - **Próxima versão ao promover:** a da experimental (cada atualização sobe a 4.ª casa)
 
 ## Como promover tudo para produção (quando estiver pronto)
@@ -25,16 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **0.9.3** — Histórico de PDFs em abas ano → mês pela data de download (`SavedPdfsPage.tsx`), cada PDF
-  identificado por dia/hora do download, "Mais recente", confirmação ao apagar (os PDFs reconstroem planeado vs
-  voado e o prevenir). `dutyLabel()` em `dutyLabels.ts`: S.EXT. = "Serviço externo" (continua Office Duty para
-  contas — não é dia GAB), IO = "Irregularidade operacional".
-- **0.9.3.1** — bug "o dia de IO não aparece": o parser lê o IO na grelha (teste com o layout real), mas os PDFs
-  importados à mão nunca ficavam no histórico, logo o re-parse automático não os relia. `keepImportedPdf()` guarda-os
-  (`source: 'import'`, dedupe por `sha256`). Para os dias já afetados: importar/descarregar o PDF uma vez.
-- **0.9.3.2** — botão "Recarregar escala" no Histórico de PDFs: `reloadFromPdfs()` (RosterProvider) corre o re-parse
-  forçado (`reparseStoredRoster(…, force)`), qualquer que seja a versão/origem da escala, e diz quantos PDFs leu.
-- **0.9.3.3** — datas do Descarregar escala / Importar uma por baixo da outra no telemóvel (cortavam).
+_(nada — tudo promovido em `0.9.3.3`)_
 
 ---
 
