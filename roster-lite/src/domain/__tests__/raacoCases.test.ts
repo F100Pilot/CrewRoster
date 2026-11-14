@@ -173,6 +173,23 @@ const CASES: Case[] = [
     ],
     days: { '2026-09-21': [0, 0, 0, 0] },
   },
+  {
+    id: 'C11-outubro-FO-plano-original',
+    since: '0.9.3.24',
+    reported: 'Extrato de outubro de um FO, conferido com a escala ORIGINAL (impressa a 15/09, antes dos voos): 08/10 LPA, 14/10 RAK, 15/10 PXO e 16/10 DUS sem refeições pagas. A app instalada pagava 14 e 15/10 (versão antiga e horas voadas: o PXO→LIS voou 1h29).',
+    rule: 'Com as horas planeadas a app bate: 14/10 pela regra das épocas IATA (C10); 15/10 porque o bloco PLANEADO do PXO→LIS é 1h35 (> 1h30, embarca — 4.5.11.4, "Block Time do planeamento"). Os dias 02, 09 e 10/10 ficam em aberto (ABONOS-CASOS.md).',
+    duties: [
+      leg('2026-10-08', 'TP9111', 'LIS', 'LPA', '09:20', '11:45', '08:20'),
+      leg('2026-10-08', 'TP9112', 'LPA', 'LIS', '12:35', '14:50'),
+      leg('2026-10-14', 'TP9113', 'LIS', 'RAK', '07:50', '09:30', '06:50'),
+      leg('2026-10-14', 'TP9114', 'RAK', 'LIS', '10:45', '12:25'),
+      leg('2026-10-15', 'TP9115', 'LIS', 'PXO', '08:15', '10:10', '07:15'),
+      leg('2026-10-15', 'TP9116', 'PXO', 'LIS', '11:00', '12:35'),
+      leg('2026-10-16', 'TP9117', 'LIS', 'DUS', '07:30', '10:25', '06:30'),
+      leg('2026-10-16', 'TP9118', 'DUS', 'LIS', '11:15', '14:25'),
+    ],
+    days: { '2026-10-08': [0, 0, 0, 0], '2026-10-14': [0, 0, 0, 0], '2026-10-15': [0, 0, 0, 0], '2026-10-16': [0, 0, 0, 0] },
+  },
 ];
 
 describe('RAACO casebook (real cases — none may regress)', () => {
