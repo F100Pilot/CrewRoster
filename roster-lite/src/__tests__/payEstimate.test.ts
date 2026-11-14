@@ -114,6 +114,26 @@ describe('payEstimate', () => {
     expect(r.block.credited).toBeCloseTo(60 * 0.5 + 60, 5);
   });
 
+  // Colleagues, Nov 2026: the base's municipal holiday counts — 13 June from Lisbon, 24 June from Porto ("se for porto e
+  // apanhar o dia 24 paga, se não for não; em Lisboa igual") — and a standby on a holiday too ("se for de 10 horas, são
+  // 2.5 (25%), como é a dobrar são 5 horas").
+  it('adds the base\'s municipal holiday: 13 June from Lisbon, 24 June from Porto', () => {
+    const lis13 = payEstimate([leg('2026-06-13', 'LIS', 'OPO', '07:00', '08:00', '06:00')], '2026-06', S, '2026-06-30', 'LIS');
+    expect(lis13.block.credited).toBe(120);
+    const opo13 = payEstimate([leg('2026-06-13', 'OPO', 'LIS', '07:00', '08:00', '06:00')], '2026-06', S, '2026-06-30', 'OPO');
+    expect(opo13.block.credited).toBe(60);
+    const opo24 = payEstimate([leg('2026-06-24', 'OPO', 'LIS', '07:00', '08:00', '06:00')], '2026-06', S, '2026-06-30', 'OPO');
+    expect(opo24.block.credited).toBe(120);
+  });
+
+  it('doubles a home standby on a holiday: 10 h at 25% = 2h30, on a holiday 5 h', () => {
+    // 1 Dec (winter: Lisbon = UTC), standby at home 08:00–18:00.
+    const sby = duty('2026-12-01', 'Standby Home', { dutyCode: 'H7+', departureAirport: 'LIS', departureTime: '08:00', arrivalTime: '18:00' });
+    expect(payEstimate([sby], '2026-12', S, '2026-12-31').duty.credited).toBe(300);
+    const plain = duty('2026-12-02', 'Standby Home', { dutyCode: 'H7+', departureAirport: 'LIS', departureTime: '08:00', arrivalTime: '18:00' });
+    expect(payEstimate([plain], '2026-12', S, '2026-12-31').duty.credited).toBe(150);
+  });
+
   it('adds the holiday 100% only to the flight time between 00:00 and 23:59 of the holiday (Lisbon)', () => {
     // 14 Aug 22:30–23:50z = 23:30–00:50 in Lisbon (summer): 50 min fall on 15 Aug (holiday).
     const r = payEstimate([leg('2026-08-14', 'FNC', 'LIS', '22:30', '23:50', '21:30')], '2026-08', S, '2026-08-31');

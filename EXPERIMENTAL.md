@@ -25,7 +25,9 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(vazio — tudo promovido em 0.9.3.42)_
+- **0.9.3.43** — Majoração de feriados (colegas): **feriado municipal da base** (13/06 LIS, 24/06 OPO — `baseHolidays()`
+  em `holidaysPT.ts`, pela base do perfil) e **assistência num feriado a dobrar** (a parte da assistência no feriado, fora
+  da janela de trabalho, × a sua percentagem × 100%). Em aberto: Carnaval (a confirmar com os colegas).
 
 ---
 

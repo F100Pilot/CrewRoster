@@ -1,8 +1,8 @@
-import { dutyDays, workWindow, PGA_PILOT_RULES } from './dutyTime';
+import { dutyDays, isStandby, standbyInterval, workWindow, PGA_PILOT_RULES } from './dutyTime';
 import { isPrevenirIO } from './irregularity';
 import { diffMinutes } from '../utils/duration';
 import { lisbonMidnightUtc } from './standbyWindows';
-import { nationalHolidays } from './holidaysPT';
+import { baseHolidays, nationalHolidays } from './holidaysPT';
 import { planVsFlown } from './planVsFlown';
 import { HOME_BASE } from './dutyStats';
 import { irsRetention, type IrsTable } from './irsWithholding';
@@ -337,8 +337,8 @@ export function payEstimate(
   const days = byDate(duties);
   const inMonth = (iso: string) => iso.startsWith(month);
   const holidays = new Set([
-    ...nationalHolidays(Number(month.slice(0, 4))),
-    ...nationalHolidays(Number(month.slice(0, 4)) - 1), // a 31 Dec duty can run into 1 Jan
+    ...baseHolidays(Number(month.slice(0, 4)), base), // national + the base's municipal one (13/06 LIS, 24/06 OPO)
+    ...baseHolidays(Number(month.slice(0, 4)) - 1, base), // a 31 Dec duty can run into 1 Jan
   ]);
 
   // ── Duty-pay credit (cl. 12.2) ──
@@ -371,6 +371,22 @@ export function payEstimate(
         if (holidays.has(iso)) holiday += overlap(a, b, midnight, nextMidnight);
       }
       credit += (night / MIN) * NIGHT_SHARE + (holiday / MIN) * HOLIDAY_SHARE;
+    }
+    // A standby on a holiday is doubled too (colleagues: "se for de 10 horas, são 2.5 (25%), como é a dobrar são 5 horas"):
+    // its counted share again for the part on the holiday, outside the work window (that part is counted as work above).
+    for (const x of day.filter(isStandby)) {
+      const iv = standbyInterval(x);
+      if (!iv) continue;
+      const a = iv.start.getTime();
+      const b = iv.end.getTime();
+      let holiday = 0;
+      for (const iso of [nextDate(d.date, -1), d.date, nextDate(d.date)]) {
+        if (!holidays.has(iso)) continue;
+        const h0 = lisbonMidnightUtc(iso);
+        const h1 = lisbonMidnightUtc(nextDate(iso));
+        holiday += overlap(a, b, h0, h1) - (w ? overlap(Math.max(a, h0), Math.min(b, h1), w.start.getTime(), w.end.getTime()) : 0);
+      }
+      credit += (Math.max(0, holiday) / MIN) * PGA_PILOT_RULES.standbyShare(x) * HOLIDAY_SHARE;
     }
     dutyCredited += credit;
   }

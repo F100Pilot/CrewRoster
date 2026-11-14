@@ -40,3 +40,13 @@ export function nationalHolidays(year: number): Set<string> {
     shift(easter, 60), // Corpo de Deus
   ]);
 }
+
+// The base's municipal holiday counts too for the RRRGS cl. 12.2.d premium (colleagues, Nov 2026: "se for porto e apanhar
+// o dia 24 paga, se não for não; em Lisboa igual"): Santo António in Lisbon, São João in Porto. Carnival: still open.
+const MUNICIPAL: Record<string, string> = { LIS: '06-13', OPO: '06-24' };
+export function baseHolidays(year: number, base: string): Set<string> {
+  const out = nationalHolidays(year);
+  const md = MUNICIPAL[base.toUpperCase()];
+  if (md) out.add(`${year}-${md}`);
+  return out;
+}
