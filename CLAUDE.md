@@ -352,7 +352,6 @@ Things learned over this collaboration that should persist across sessions:
   the roster as it is; `asPlanned()` gives each leg's plan for loading and the block): a delay into a period the plan
   didn't cover pays that meal ("quer dizer que originalmente não embarcava, e teve de ser pago", 4.5.11.5).
   0.9.3.26–28 tried other readings on exp (Lisbon clock alone; any later sector) — replaced, never in production.
-  (0.9.3.26 tried the Lisbon clock instead — replaced, never in production.)
 - **RAACO casebook — every real case is kept forever** (user: "estes exemplos têm de servir para corrigir futuros
   problemas"): each crew feedback / checked statement line becomes an entry in
   `src/domain/__tests__/raacoCases.test.ts` (synthetic TP9xxx flight numbers, real airports/times, the columns
