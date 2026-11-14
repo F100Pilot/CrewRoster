@@ -104,6 +104,22 @@ describe('payEstimate', () => {
     expect(hol.block.credited).toBe(120);
   });
 
+  // RRRGS cl. 12.2 counts "o somatório das percentagens previstas nas seguintes alíneas" and cl. 12.3 only keeps the
+  // highest WITHIN an alínea (a colleague, Nov 2026: "as alíneas devem ser somadas, o que está dentro delas não"). So a
+  // positioning on a holiday is 50% (a.iv) + 100% (d) = 150% — not 50% of 200%.
+  it('adds the holiday 100% to a positioning\'s 50% (alíneas are summed)', () => {
+    const dh = { ...leg('2026-12-01', 'LIS', 'OPO', '07:00', '08:00', '06:15'), dutyType: 'Positioning' } as ParsedDuty;
+    const r = payEstimate([dh], '2026-12', S, '2026-12-31');
+    expect(Math.abs(r.duty.credited - (105 * 0.5 + 105))).toBeLessThanOrEqual(0.5); // credits are whole minutes
+    expect(r.block.credited).toBeCloseTo(60 * 0.5 + 60, 5);
+  });
+
+  it('adds the holiday 100% only to the flight time between 00:00 and 23:59 of the holiday (Lisbon)', () => {
+    // 14 Aug 22:30–23:50z = 23:30–00:50 in Lisbon (summer): 50 min fall on 15 Aug (holiday).
+    const r = payEstimate([leg('2026-08-14', 'FNC', 'LIS', '22:30', '23:50', '21:30')], '2026-08', S, '2026-08-31');
+    expect(r.block.credited).toBe(80 + 50);
+  });
+
   it('cuts the plafonds by the holidays taken and picks the more favourable credit', () => {
     const duties = [duty('2026-11-20', 'Vacation'), duty('2026-11-21', 'Vacation')];
     const r = payEstimate(duties, '2026-11', S, '2026-11-30');

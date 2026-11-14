@@ -25,7 +25,11 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(vazio — tudo promovido em 0.9.3.40)_
+- **(próxima versão, sem número ainda — pedido do utilizador)** — Cartão de refeições: "Ceia · ligado = paga" numa
+  linha própria. **Majoração em feriados (RRRGS cl. 12.2)**: as alíneas SOMAM-SE (um colega: "as alíneas devem ser
+  somadas, o que está dentro delas não") — posicionamento 50% + feriado 100% = 150% (antes 50% × 2); noturno + feriado já
+  somavam (confirmado). Block-pay: +100% só do tempo de voo entre 00:00 e 23:59 (Lisboa) do feriado (antes o setor
+  inteiro pela data UTC).
 
 ---
 
