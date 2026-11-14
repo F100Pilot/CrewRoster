@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.3.41';
+export const APP_VERSION = '0.9.3.42';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -21,12 +21,18 @@ export interface ReleaseNote {
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.9.3.42',
+    date: '2026-11-14',
+    highlights: [
+      'Vencimento: a explicação do cálculo fica fechada ("Como se calcula") e foi atualizada — voos em dia de folga e reduções de repouso já contam quando marcados no dia.',
+    ],
+  },
+  {
     version: '0.9.3.41',
     date: '2026-11-14',
     highlights: [
       'Vencimento (AE, experimental): a majoração dos feriados soma-se às outras alíneas da cl. 12.2 — um posicionamento num feriado conta 150% (50% + 100%); no block-pay só conta o tempo de voo entre as 00:00 e as 23:59 (hora de Lisboa) do feriado.',
       'Refeições: "Ceia · ligado = paga" numa linha própria.',
-      'Vencimento: a explicação do cálculo fica fechada ("Como se calcula") e foi atualizada.',
     ],
   },
   {

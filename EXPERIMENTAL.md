@@ -7,7 +7,7 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.9.3.40`
+- **Produção (`master`) está em:** `0.9.3.42`
 - **Próxima versão ao promover:** a da experimental (cada atualização sobe a 4.ª casa)
 
 ## Como promover tudo para produção (quando estiver pronto)
@@ -25,11 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **0.9.3.41** — Cartão de refeições: "Ceia · ligado = paga" numa
-  linha própria. **Majoração em feriados (RRRGS cl. 12.2)**: as alíneas SOMAM-SE (um colega: "as alíneas devem ser
-  somadas, o que está dentro delas não") — posicionamento 50% + feriado 100% = 150% (antes 50% × 2); noturno + feriado já
-  somavam (confirmado). Block-pay: +100% só do tempo de voo entre 00:00 e 23:59 (Lisboa) do feriado (antes o setor
-  inteiro pela data UTC). Vencimento: a nota do cálculo fica colapsada ("Como se calcula"), texto atualizado.
+_(vazio — tudo promovido em 0.9.3.42)_
 
 ---
 
