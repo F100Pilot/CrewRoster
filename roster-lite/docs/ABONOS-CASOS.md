@@ -42,25 +42,21 @@ nos testes de regra em `src/domain/__tests__/raaco.test.ts`.
 | C08-IO-normal-MAN | 0.9.2.2 | IO normal: LIS→MAN, MAN→MAN, IO em MAN 11:00–15:08 UTC, estadia em Manchester, DH no dia seguinte — "teria de assumir as ajudas de lá" | (já dava o mesmo total; o IO ficava fora do PSV) | O IO faz parte do PSV do dia: refeições pelas regras normais com o período do IO, estadia com a Tabela 34 do sítio onde acaba. Só o prevenir é especial. *Sem extrato — regra do colega* |
 | C09-FNC-10-09-pernoita-nao-planeada | 0.9.3.22 | Extrato de setembro de um CP: 10/09 FNC→LIS pago p.-alm. 25 € + almoço 18 €; na véspera o FNC→LIS voltou ao Funchal (FNC→FNC), dia que na escala original acabava em Lisboa. O colega confirma o extrato | A app dava 0: tratava a estadia como planeada (pequeno-almoço embarcado à saída de Lisboa) e o almoço como embarcado no voo seguinte | **Pernoita não planeada** (último setor de volta ao aeroporto de onde saiu): pequeno-almoço do hotel pago pela Tabela 34 local (sem *double catering*, Tabela 35 nota 1 / 4.5.8.2); o voo de recuperação não leva refeição → refeições principais pela Tabela 33. **Mudou o C08** (MAN→MAN): p.-alm. de 09/04 passa a 29 € — **confirmado pelo colega: a empresa pagou-o** |
 | C10-RAK-21-09-plano-da-epoca | 0.9.3.23 | Extrato de setembro de um CP: 21/09 LIS→RAK→LIS (planeado 08:00–09:35 e 10:45–12:25 UTC) sem almoço pago. O colega confirma que havia almoço de tripulação a bordo ("No meu RAK não tenho a receber") | Com Marrocos em UTC+0 (desde 20/09/2026) o RAK→LIS sai às 10:45 locais e não atravessa o almoço → a app pagava 18 € | O **Meal Plan é feito por época IATA** (4.5.10.2–3): o embarque segue a hora do aeroporto em vigor no **início da época** (verão: último domingo de março; inverno: último domingo de outubro; geral para todos os anos desde 0.9.3.24) — em Marrocos, UTC+1 até 25/10/2026. Só a verificação do embarque usa essa hora; o direito à refeição e as horas mostradas seguem a hora real |
+| C11-outubro-FO-plano-original | 0.9.3.24 | Extrato de outubro de um FO conferido com a escala ORIGINAL (impressa a 15/09): 08/10 LPA, 14/10 RAK, 15/10 PXO, 16/10 DUS sem refeições | A app instalada pagava 14 e 15/10: versão antiga (RAK) e horas voadas (PXO→LIS voou 1h29) | Já resolvido pelas regras atuais com as horas planeadas: 14/10 pelo C10; 15/10 pelo bloco **planeado** de 1h35 (> 1h30 embarca, 4.5.11.4). Sem o PDF de antes dos voos a app não sabe o bloco planeado |
+| C12-IBZ-09-10-almoco-embarcado | 0.9.3.27 | Extrato de outubro de um FO: 09/10 LIS→IBZ→LIS (regresso 12:05–14:05 UTC) sem almoço pago; o utilizador confirma o almoço a bordo ("bem dentro da refeição embarcada") | A app via cada voo isolado: o IBZ→LIS sai de Ibiza às 14:05, cinco minutos depois do fim do almoço (14:00) → pagava 18 € | **O Meal Plan vê o PSV como um todo** (4.5.10.1; utilizador: "o pequeno-almoço é em relação ao primeiro voo, o almoço o segundo ou terceiro, seja o que for"): o pequeno-almoço só no 1.º setor; cada refeição seguinte no setor da anterior ou num posterior com lugar (> 1h30), atravesse ou não o horário — de preferência o que o atravessa na hora local de partida (4.5.10.5). Todos os casos anteriores passam. (Na 0.9.3.26, só na experimental, tinha-se tentado a hora de Lisboa — substituído.) |
 
 ## Em aberto (registar aqui até haver dados)
 
-- **Extrato de outubro 2026 de um FO (0.9.3.13) — 3/8 dias certos.** Oito voltas de ida e volta a LIS; o extrato
-  paga só o almoço de **02/10** (LIS–NCE–LIS, regresso NCE 10:37–13:11 UTC) e de **10/10** (LIS–PMI–LIS, regresso
-  10:59–12:59), 18 € cada. A app dá esses dois como embarcados e paga em vez deles **09/10** (LIS–IBZ–LIS, regresso
-  12:09–13:53: no relógio de IBZ parte às 14:09, depois do horário), **14/10** (LIS–RAK–LIS, setores de 1h30 e 1h23)
-  e **15/10** (LIS–PXO–LIS, regresso de 1h29). Bem: 08/10 LPA, 16/10 DUS, 31/10 TLS (zero). 14 e 15/10 eram dias
-  `W_PNC_ST` (verificação de cabina de outro tripulante — não implica nada).
-  **Lido o texto do ROV (4.5.4–4.5.15, enviado pelo utilizador, não guardado): as regras da app estão como o texto**
-  — direito pelas alíneas a/b/c do 4.5.5.1 com os relógios do 4.5.5.4; embarque pela hora local de partida
-  (4.5.10.5); até 1h30 não embarca (4.5.11.4) e o *Block Time* é o do planeamento ("consoante o Block Time em cada
-  período IATA"); menos de 5 h, uma refeição principal por voo (4.5.11.2 — por voo, não por PSV: o C04 tem duas).
-  As diferenças vêm do que a escala de 14/11 não traz: **horas e blocos planeados** (09/10 com 9 min de atraso
-  passa a atravessar o almoço; 14 e 15/10 com bloco planeado acima de 1h30 levam a refeição) e **irregularidades**
-  (4.5.11.5: refeição não embarcada por atraso, registada no Flight Report / SCCR — 02 e 10/10?). Testado e
-  rejeitado: embarcar fora do horário (4.5.4.5) acerta 5/8 mas parte o pequeno-almoço de maio; uma refeição por
-  PSV (4.5.11.3) parte C04, C08 e o DHC de maio. **Falta:** um PDF de outubro descarregado antes dos voos, e saber se
-  houve atraso / Flight Report em 02 e 10/10.
+- **Extrato de outubro 2026 de um FO — com a escala original (15/09) a app bate 6 de 8 dias** (08, 09, 14, 15, 16 e
+  31/10: casos C11 e C12). Faltam dois, que **se contradizem com o C10** (RAK, almoço a bordo confirmado):
+  - **02/10 LIS–NCE–LIS** (regresso planeado 10:30–13:15 UTC = 12:30–15:15 em Nice) e **10/10 LIS–PMI–LIS** (regresso
+    10:50–12:50 UTC = 12:50–14:50 em Palma): a empresa paga o almoço (18 €); pela regra da app o regresso atravessa a
+    janela do almoço (12:30–14:00) e leva-o embarcado.
+  - **09/10 LIS–IBZ–LIS**: resolvido — caso **C12** (0.9.3.29, embarque na escala planeada, hora de Lisboa).
+  - Planeado e voado, os regressos de NCE (11:30–14:15 em Lisboa) e PMI (11:50–13:50) caem no período do almoço → a app
+    dá-o embarcado; a empresa pagou-o. **Pergunta ao colega:** havia almoço de tripulação a
+    bordo nos regressos de NCE (02/10) e PMI (10/10)? Se não havia (falha de catering / irregularidade, 4.5.11.5), a
+    empresa pagou bem e a app só não o pode saber.
 - **Setembro 2026 de um CP — extrato 732 €, app (0.9.3.14) 725 €.** Com o PDF ORIGINAL (impresso a 15/08) e a escala depois
   do regresso: 13–15/09 (MRS, FNC), 22–23/09 (BIO, BCN), 26–28/09 (DUB) e 07–09/09 batem.
   - **20/09 LIS–ALC–LIS**: o almoço que a app pagava era um **fuso em falta** (ALC lido na hora de Lisboa) — corrigido em
