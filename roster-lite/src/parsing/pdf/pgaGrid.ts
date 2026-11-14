@@ -594,6 +594,10 @@ const FLIGHT_INS_MARK = /^(?!OPC_|LPC_)[A-Z][A-Z0-9]*_INS$/;
 // sub-column just BEFORE the flight it opens (larger x; a real November roster): it goes to the
 // next flight; the crew attach then moves it to the legs that really carry two first officers.
 const SAFETY_MARK = /^FO_SAFETY$/;
+// W_PNC_ST — a cabin line check of a crew member who isn't the purser, printed by the day's code on
+// the whole crew's roster (user, Nov 2026). Information only: it changes nothing in pay, duty or
+// RAACO; it goes to every flight of that day.
+const DAY_FLIGHT_MARK = /^W_PNC_ST$/;
 
 // The days a band's header shows, and which day each of its sub-columns belongs to.
 function bandDays(b: CollectedBand, calendar: CalDay[]): { dates: string[]; dateAt: (x: number) => string | undefined } {
@@ -670,6 +674,7 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
   const flightSubs: { date: string; x: number; duties: ParsedDuty[] }[] = [];
   const flightMarks: { date: string; x: number; mark: string }[] = [];
   const safetyMarks: { date: string; x: number; mark: string }[] = [];
+  const dayMarks = new Map<string, string>();
   for (const b of bands) {
     if (b.offset === undefined) continue;
     const { dateAt } = bandDays(b, calendar);
@@ -683,6 +688,8 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
       const lone = s.tokens.length === 1 ? s.tokens[0].text.trim() : '';
       if (FLIGHT_INS_MARK.test(lone)) flightMarks.push({ date, x: s.x, mark: lone });
       if (SAFETY_MARK.test(lone)) safetyMarks.push({ date, x: s.x, mark: lone });
+      const dayMark = s.tokens.map((t) => t.text.trim()).find((t) => DAY_FLIGHT_MARK.test(t));
+      if (dayMark) dayMarks.set(date, dayMark);
       const entries = parseSubColumn(s.tokens, date, hotels);
       if (!byDate.has(date)) byDate.set(date, []);
       const arr = byDate.get(date)!;
@@ -717,6 +724,13 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
       .sort((a, b) => b.x - a.x)[0];
     for (const d of target?.duties ?? []) {
       if (!(d.observations ?? '').includes(m.mark)) d.observations = d.observations ? `${d.observations}, ${m.mark}` : m.mark;
+    }
+  }
+
+  for (const [date, mark] of dayMarks) {
+    for (const d of byDate.get(date) ?? []) {
+      if (d.dutyType !== 'Flight Duty' && d.dutyType !== 'Positioning') continue;
+      if (!(d.observations ?? '').includes(mark)) d.observations = d.observations ? `${d.observations}, ${mark}` : mark;
     }
   }
 

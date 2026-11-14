@@ -123,6 +123,18 @@ describe('interpretPgaGrid — line training given (CLTC / CTRI)', () => {
   });
 });
 
+describe('interpretPgaGrid — W_PNC_ST (cabin line check)', () => {
+  it('marks every flight of the day, and nothing else', () => {
+    const withMark = (tokens as PositionedToken[]).map((t) =>
+      t.page === 1 && t.x === 434 && t.y === 596 ? { ...t, text: 'W_PNC_ST' } : t);
+    const parsed = interpretPgaGrid(withMark);
+    const flights = parsed.filter((d) => d.date === '2026-06-20' && d.dutyType === 'Flight Duty');
+    expect(flights.length).toBeGreaterThan(0);
+    for (const f of flights) expect(f.observations!.split(', ')).toContain('W_PNC_ST');
+    expect(parsed.filter((d) => d.date !== '2026-06-20' && (d.observations ?? '').includes('W_PNC_ST'))).toEqual([]);
+  });
+});
+
 describe('pgaBlankDates', () => {
   it('finds no blank day in a fully printed roster', async () => {
     const { pgaBlankDates } = await import('../parsing/pdf/pgaGrid');

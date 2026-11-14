@@ -37,6 +37,9 @@ produção, em vez de promover uma a uma.
 - **0.9.3.13** — `CrewMember.seat` ('trainee' / 'safety'): nos voos com FO_SAFETY e formando conhecido, o outro FO é o
   safety pilot (utilizador: dia 23 — o FO do 1.º voo fica como FO_SAFETY quando entra o formando). Mostrado na lista da
   tripulação (FlightInfo). PARSE_VERSION 21. Verificado com o PDF real (não guardado).
+- **0.9.3.14** — `W_PNC_ST` (verificação em voo de cabina de um tripulante não chefe de cabina; utilizador) lido
+  como marca do dia (`DAY_FLIGHT_MARK` em `pgaGrid.ts`) e posto nos voos desse dia; só informação (MARK_LABEL).
+  PARSE_VERSION 22.
 
 ---
 

@@ -52,7 +52,8 @@ nos testes de regra em `src/domain/__tests__/raaco.test.ts`.
   nada (4/8); "a janela abre até 15–30 min depois da descolagem, relógio da base" acerta 02 e 10 (5/8) mas parte o
   C06 e o caso de maio do pequeno-almoço; tirar a regra (c) parte 5 casos. **Não aplicado.** Falta saber: as horas
   PLANEADAS desses voos (a escala de 14/11 já traz as voadas; o Meal Plan é feito sobre o planeado) e o texto do
-  4.5.10.5 / 4.5.11 (quando é que a refeição é embarcada). 14 e 15/10 eram dias `W_PNC_ST`.
+  4.5.10.5 / 4.5.11 (quando é que a refeição é embarcada). 14 e 15/10 eram dias `W_PNC_ST` — verificação em voo de
+  cabina de outro tripulante; o utilizador confirmou que **não implica nada** nos abonos.
 - **LYS 18/06 — ceia em falta**: mesmo padrão do C06, deve dar ceia 40 € + pernoita 10 €. Falta a
   escala do dia para o transformar em caso (C08).
 - **Almoço pago num DH LIS→FRA** com apresentação 8 min depois do fim do horário (hora local):
