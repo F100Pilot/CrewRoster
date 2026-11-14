@@ -59,6 +59,9 @@ nos testes de regra em `src/domain/__tests__/raaco.test.ts`.
   rejeitado: embarcar fora do horário (4.5.4.5) acerta 5/8 mas parte o pequeno-almoço de maio; uma refeição por
   PSV (4.5.11.3) parte C04, C08 e o DHC de maio. **Falta:** um PDF de outubro descarregado antes dos voos, e saber se
   houve atraso / Flight Report em 02 e 10/10.
+- **Setembro 2026 de um CP (app 0.9.3.14: 725 €) — à espera do extrato.** Escala com VLC/AGP/FNC/MRS/DUB; a ver:
+  09/09 com um setor FNC→FNC (19:34–20:09 UTC, regresso à placa/ar) antes da estadia no FNC, e 10/09 TP9261 FNC→LIS
+  09:55–11:35 (número de voo de ferry/especial), a que a app dá 0 €.
 - **LYS 18/06 — ceia em falta**: mesmo padrão do C06, deve dar ceia 40 € + pernoita 10 €. Falta a
   escala do dia para o transformar em caso (C08).
 - **Almoço pago num DH LIS→FRA** com apresentação 8 min depois do fim do horário (hora local):
