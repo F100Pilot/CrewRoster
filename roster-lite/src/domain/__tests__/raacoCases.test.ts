@@ -162,6 +162,17 @@ const CASES: Case[] = [
     ],
     days: { '2026-09-10': [25, 18, 0, 0] },
   },
+  {
+    id: 'C10-RAK-21-09-plano-da-epoca',
+    since: '0.9.3.23',
+    reported: 'Extrato de setembro de um CP: 21/09 LIS→RAK→LIS (planeado 08:00–09:35 e 10:45–12:25 UTC) sem almoço pago. O colega confirma: havia almoço de tripulação a bordo ("No meu RAK não tenho a receber").',
+    rule: 'Marrocos passou a UTC+0 a 20/09/2026, mas o Meal Plan é feito por época IATA (4.5.10.2–3): até ao fim da época de verão (25/10/2026) o embarque segue a hora antiga (UTC+1) — o RAK→LIS sai às 11:45 e atravessa o almoço. O direito à refeição e as horas mostradas seguem a hora real.',
+    duties: [
+      leg('2026-09-21', 'TP9101', 'LIS', 'RAK', '08:00', '09:35', '07:00'),
+      leg('2026-09-21', 'TP9102', 'RAK', 'LIS', '10:45', '12:25'),
+    ],
+    days: { '2026-09-21': [0, 0, 0, 0] },
+  },
 ];
 
 describe('RAACO casebook (real cases — none may regress)', () => {

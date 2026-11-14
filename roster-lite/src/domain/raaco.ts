@@ -85,6 +85,15 @@ export function rateAt(airport: string): CountryRate | null {
 // window is just day × 1440 + its minutes.
 const tzOf = (airport: string | null | undefined, base: string) => airportTz(airport) ?? airportTz(base) ?? 'Europe/Lisbon';
 const localMin = (d: Date, tz: string) => Math.floor(d.getTime() / 60000) + tzOffsetMinutes(d, tz);
+// The Meal Plan is drawn per IATA season (4.5.10.2–3), so a clock change mid-season doesn't move the
+// catering: Morocco went to UTC+0 on 20 Sep 2026 but the summer plan, to 25 Oct, still loads on the
+// old UTC+1 clock (casebook C10: a RAK→LIS leaving 10:45 UTC carried the crew lunch). Only the
+// loading check uses it — what is due and the times shown follow the real clock.
+const MOROCCO_PLAN_UTC1 = [Date.UTC(2026, 8, 20, 1, 0), Date.UTC(2026, 9, 25, 1, 0)];
+const planLocalMin = (d: Date, tz: string) =>
+  tz === 'Africa/Casablanca' && d.getTime() >= MOROCCO_PLAN_UTC1[0] && d.getTime() < MOROCCO_PLAN_UTC1[1]
+    ? Math.floor(d.getTime() / 60000) + 60
+    : localMin(d, tz);
 const dayISO = (day: number) => new Date(day * 86_400_000).toISOString().slice(0, 10);
 
 interface Occurrence { meal: Meal; day: string; ws: number; we: number; key: string }
@@ -228,7 +237,7 @@ function psvMeals(p: Psv, base: string, nextIsStay: boolean, paidInStay: Set<str
     const tz = tzOf(l.duty.departureAirport, base);
     const day = Math.round(Date.parse(`${a.day}T00:00:00Z`) / 86_400_000);
     const [ws, we] = a.meal === 'supper' && (l.duty.departureAirport ?? base).toUpperCase() !== base ? SUPPER_AWAY : WINDOW[a.meal];
-    return localMin(l.off, tz) <= day * 1440 + we && localMin(l.on, tz) >= day * 1440 + ws;
+    return planLocalMin(l.off, tz) <= day * 1440 + we && planLocalMin(l.on, tz) >= day * 1440 + ws;
   };
   const out: MealLine[] = [];
   for (const a of due) {

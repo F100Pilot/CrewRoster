@@ -339,6 +339,9 @@ Things learned over this collaboration that should persist across sessions:
   (an air/ramp return, X→X) the night away wasn't planned — no double catering — so the hotel breakfast is paid at
   Tabela 34 and the next duty (the recovery flight) loads no crew meal: its main meals pay Tabela 33. **Morocco is UTC+0
   from 20 Sep 2026** (user confirmed): fixed in `localTime.ts` (`fixedOffset`) because devices with older tz data say +1.
+  But the **Meal Plan is per IATA season** (4.5.10.2–3; C10, 0.9.3.23, colleague confirmed the RAK lunch on board): until
+  25 Oct 2026 the LOADING check in Morocco runs on the old UTC+1 clock (`planLocalMin` in `raaco.ts`); what is due and
+  the times shown stay on the real clock.
 - **RAACO casebook — every real case is kept forever** (user: "estes exemplos têm de servir para corrigir futuros
   problemas"): each crew feedback / checked statement line becomes an entry in
   `src/domain/__tests__/raacoCases.test.ts` (synthetic TP9xxx flight numbers, real airports/times, the columns

@@ -54,6 +54,9 @@ produção, em vez de promover uma a uma.
   não depender dos dados de fuso do telemóvel. **Pernoita não planeada** (C09, aprovado pelo utilizador): último setor de
   volta ao aeroporto de partida → p.-alm. do hotel pago (Tabela 34) e o PSV seguinte sem catering (Tabela 33). Mudou o C08
   (p.-alm. 29 € a 09/04) — o utilizador vai rever.
+- **0.9.3.23** — **Meal Plan por época IATA** (C10): de 20/09 a 25/10/2026 o embarque das refeições em Marrocos segue
+  a hora antiga (UTC+1) — o almoço a bordo do RAK→LIS de 21/09 deixa de ser pago (confirmado pelo colega). O direito
+  à refeição e as horas mostradas seguem a hora real (UTC+0).
 
 ---
 
