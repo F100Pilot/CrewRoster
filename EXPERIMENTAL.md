@@ -25,7 +25,8 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(vazio — 0.9.3.11 a 0.9.3.14 promovidas para produção em 14/11/2026)_
+- **0.9.3.15** — EBT-2: debriefing de **30 min** (utilizador, pela sua escala; era 1 h desde a 0.8.40.1). EBT-2 =
+  briefing 1 h + sessão + 30 min (`simSession.ts`); CodesPage e testes acertados.
 
 ---
 

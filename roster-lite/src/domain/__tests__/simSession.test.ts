@@ -7,7 +7,7 @@ import type { ParsedDuty } from '../types';
 describe('ebtBriefing', () => {
   it('day 1: 30-min briefing, 1-hour debriefing; day 2 the other way round', () => {
     expect(ebtBriefing({ dutyType: 'Simulator', dutyCode: 'LIS-EBT-1' })).toEqual({ day: 1, briefMin: 30, debriefMin: 60 });
-    expect(ebtBriefing({ dutyType: 'Simulator', dutyCode: 'LIS-EBT-2' })).toEqual({ day: 2, briefMin: 60, debriefMin: 60 });
+    expect(ebtBriefing({ dutyType: 'Simulator', dutyCode: 'LIS-EBT-2' })).toEqual({ day: 2, briefMin: 60, debriefMin: 30 });
     expect(ebtBriefingText(ebtBriefing({ dutyType: 'Simulator', dutyCode: 'LIS-EBT-1' })!)).toBe('briefing 30 min · debriefing 1 h');
   });
 
@@ -31,9 +31,9 @@ describe('EBT duty = briefing + session + debriefing', () => {
     expect(asWorked(sim('2026-11-12', 'LIS-OTHER', '09:00', '13:00')).departureTime).toBe('09:00');
   });
 
-  it('counts 5h30 for a 4h EBT-1 session and 7h00 for a 5h EBT-2 one (4h EBT-2 = the roster\'s DT 06:00)', () => {
+  it('counts 5h30 for a 4h EBT-1 session and 6h30 for a 5h EBT-2 one', () => {
     const days = dutyDays([sim('2026-11-12', 'LIS-EBT-1', '09:00', '13:00'), sim('2026-11-13', 'LIS-EBT-2', '09:00', '14:00')], PGA_PILOT_RULES);
-    expect(days.map((x) => x.minutes)).toEqual([330, 420]);
+    expect(days.map((x) => x.minutes)).toEqual([330, 390]);
     const w = workWindow('2026-11-12', [sim('2026-11-12', 'LIS-EBT-1', '09:00', '13:00')], PGA_PILOT_RULES)!;
     expect([w.start.toISOString(), w.end.toISOString()]).toEqual(['2026-11-12T08:30:00.000Z', '2026-11-12T14:00:00.000Z']);
   });
