@@ -136,7 +136,7 @@ export function dutyWindow(date: string, duties: ParsedDuty[]): DutyWindow | nul
 // window, extended by the debriefing when it ends on an operated sector. Used for the duty
 // limits and for the rest that follows the day.
 export function workWindow(date: string, duties: ParsedDuty[], rules: DutyRules): DutyWindow | null {
-  const work = duties.filter((d) => !FREE.has(d.dutyType) && !STANDBY.has(d.dutyType));
+  const work = countedWork(duties);
   const w = dutyWindow(date, work);
   if (!w || rules.debriefMin === 0) return w;
   const at = (t: string) => (toMinutes(t) - w.open + 1440) % 1440;
@@ -178,6 +178,14 @@ export function standbyInterval(d: ParsedDuty): { start: Date; end: Date } | nul
 // the first start to the last end. A day that includes flying keeps the span: the ground time
 // between sectors is part of the flight duty. Null when no session on the day has both times.
 const FLYING = new Set(['Flight Duty', 'Positioning']);
+
+// The day's work as the duty maths counts it. The VIM printed after an IM is part of the IM's block:
+// the roster's [DT] for IM 08:00–12:00 + VIM 12:00–12:30 is 4h00, not 4h30 (a colleague: "IM/VIM,
+// que é as duas com 4 horas"; the MED done on another day is its own 3h00). Shown as printed.
+function countedWork(duties: ParsedDuty[]): ParsedDuty[] {
+  const work = duties.filter((d) => !FREE.has(d.dutyType) && !STANDBY.has(d.dutyType));
+  return work.some((d) => d.dutyCode === 'IM') ? work.filter((d) => d.dutyCode !== 'VIM') : work;
+}
 function groundSessionsMinutes(work: ParsedDuty[], w: DutyWindow): number | null {
   if (work.some((d) => FLYING.has(d.dutyType))) return null;
   const at = (t: string) => (toMinutes(t) - w.open + 1440) % 1440;
@@ -201,7 +209,7 @@ function groundSessionsMinutes(work: ParsedDuty[], w: DutyWindow): number | null
 
 function dutyDay(date: string, duties: ParsedDuty[], rules: DutyRules): DutyDay | null {
   const w = workWindow(date, duties, rules);
-  const work = duties.filter((d) => !FREE.has(d.dutyType) && !STANDBY.has(d.dutyType)).map(asWorked);
+  const work = countedWork(duties).map(asWorked);
   let span = w ? groundSessionsMinutes(work, w) ?? w.span : 0;
   let minutes = span;
   let anyStandby = false;

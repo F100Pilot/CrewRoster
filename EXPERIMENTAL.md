@@ -27,6 +27,9 @@ produção, em vez de promover uma a uma.
 
 - **0.9.3.15** — EBT-2: debriefing de **30 min** (utilizador, pela sua escala; era 1 h desde a 0.8.40.1). EBT-2 =
   briefing 1 h + sessão + 30 min (`simSession.ts`); CodesPage e testes acertados.
+- **0.9.3.16** — exames médicos em separado (áudio de uma colega): IM + VIM no mesmo dia = o bloco do IM (DT 4h00 com
+  IM 08:00–12:00 + VIM 12:00–12:30); o VIM sai da conta de serviço (`countedWork()` em `dutyTime.ts`), continua visível.
+  MED noutro dia conta o seu tempo (3h00). O "R" antes do aeroporto (IM, voos) já era ignorado sem problemas.
 
 ---
 

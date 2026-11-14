@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.3.15';
+export const APP_VERSION = '0.9.3.16';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,13 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.9.3.16',
+    date: '2026-11-14',
+    highlights: [
+      'Exames médicos feitos em separado: o dia com IM + VIM conta 4h00 de serviço (o VIM faz parte do bloco do IM, como no DT da escala) e o dia do MED conta as suas horas (ex.: 3h00). Antes o VIM somava meia hora a mais.',
+    ],
+  },
   {
     version: '0.9.3.15',
     date: '2026-11-14',

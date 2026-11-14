@@ -341,6 +341,10 @@ Things learned over this collaboration that should persist across sessions:
   user confirmed). The duty stays on this rule, NOT on the roster's printed [DT] (user: "mantém como estava"); found while
   checking: the roster's DT also adds 30 min after a day-ending DHC (the app follows AE cl. 17: DHC ends at arrival) and
   counts the lunch hour on GAB days — both left as they are, open questions to the user.
+- **Medical exams** (IM / VIM / MED, `Medical`, timed): done apart (a colleague, 0.9.3.16) the roster has MED on one day
+  ([DT] 3h00) and IM + VIM on another ([DT] 4h00 for IM 08:00–12:00 + VIM 12:00–12:30): the VIM is inside the IM's
+  block, so `countedWork()` (`dutyTime.ts`) leaves a VIM out of the duty maths when the day has an IM; display unchanged.
+  An "R" printed before the airport (on IM and flights) is ignored by the parser — meaning unknown.
 - **Settings are tabbed** (since 0.8.24): Perfil · Vencimento (pilots only) · App · Dados · Ajuda in
   `SettingsDialog.tsx`; last tab in localStorage `crewroster.settingsTab`. Guardar only on Perfil/App
   (the rest saves on change). New settings go in the tab for their subject, not at the bottom.

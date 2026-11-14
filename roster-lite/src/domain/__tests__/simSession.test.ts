@@ -44,3 +44,24 @@ describe('EBT duty = briefing + session + debriefing', () => {
     expect(r.block.credited).toBe(240);
   });
 });
+
+describe('medical exams: IM + VIM count as the IM block', () => {
+  const med = (date: string, code: string, a: string, z: string) => ({
+    date, dutyCode: code, dutyType: 'Medical', flightNumber: null, departureAirport: 'LIS', arrivalAirport: null,
+    departureTime: a, arrivalTime: z, reportingTime: a, aircraftType: null, observations: null,
+  } as ParsedDuty);
+
+  it('IM 08:00–12:00 + VIM 12:00–12:30 = 4h00 (the roster DT); MED apart = 3h00', () => {
+    const days = dutyDays([
+      med('2026-06-02', 'MED', '08:00', '11:00'),
+      med('2026-06-19', 'IM', '08:00', '12:00'), med('2026-06-19', 'VIM', '12:00', '12:30'),
+    ], PGA_PILOT_RULES);
+    expect(days.map((x) => [x.date, x.minutes])).toEqual([['2026-06-02', 180], ['2026-06-19', 240]]);
+    expect(workWindow('2026-06-19', [med('2026-06-19', 'IM', '08:00', '12:00'), med('2026-06-19', 'VIM', '12:00', '12:30')], PGA_PILOT_RULES)!.end.toISOString())
+      .toBe('2026-06-19T12:00:00.000Z');
+  });
+
+  it('a VIM on its own still counts', () => {
+    expect(dutyDays([med('2026-06-20', 'VIM', '12:00', '12:30')], PGA_PILOT_RULES)[0].minutes).toBe(30);
+  });
+});
