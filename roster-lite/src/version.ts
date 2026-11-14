@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.3.24';
+export const APP_VERSION = '0.9.3.25';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,13 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.9.3.25',
+    date: '2026-11-14',
+    highlights: [
+      'EBT-2: o debriefing de 30 min é só informação ao piloto — o duty volta a contar 1 h de debriefing, como antes da 0.9.3.15 (limites, descanso e duty-pay).',
+    ],
+  },
   {
     version: '0.9.3.24',
     date: '2026-11-14',

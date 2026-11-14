@@ -6,13 +6,17 @@ import type { ParsedDuty } from './types';
 // roster: "tem de ser 30 minutos" — 0.8.40.1 had made it 1 h after a colleague's November duty-pay). The roster's times stay as
 // printed (the session); the DUTY — limits, rest, duty-pay — runs from the briefing to the end of the
 // debriefing (user, Nov 2026: "o tempo de simulador conta o simulador mais o briefing e debriefing").
-export interface EbtBriefing { day: 1 | 2; briefMin: number; debriefMin: number }
+// The 30-min day-2 debriefing is the pilot's information only (user, 0.9.3.25: "não é para mudar no duty, só na
+// informação ao piloto"): the duty keeps a 1-hour debriefing on both days, as since 0.8.40.1 (`dutyDebriefMin`).
+export interface EbtBriefing { day: 1 | 2; briefMin: number; debriefMin: number; dutyDebriefMin: number }
 
 export function ebtBriefing(d: Pick<ParsedDuty, 'dutyType' | 'dutyCode'>): EbtBriefing | null {
   if (d.dutyType !== 'Simulator') return null;
   const m = /EBT-([12])$/.exec(d.dutyCode ?? '');
   if (!m) return null;
-  return m[1] === '1' ? { day: 1, briefMin: 30, debriefMin: 60 } : { day: 2, briefMin: 60, debriefMin: 30 };
+  return m[1] === '1'
+    ? { day: 1, briefMin: 30, debriefMin: 60, dutyDebriefMin: 60 }
+    : { day: 2, briefMin: 60, debriefMin: 30, dutyDebriefMin: 60 };
 }
 
 export const briefLabel = (min: number) => (min < 60 ? `${min} min` : `${min / 60} h`);
@@ -31,5 +35,5 @@ export function asWorked(d: ParsedDuty): ParsedDuty {
   const b = ebtBriefing(d);
   if (!b || !d.departureTime || !d.arrivalTime) return d;
   const start = shift(d.departureTime, -b.briefMin);
-  return { ...d, reportingTime: start, departureTime: start, arrivalTime: shift(d.arrivalTime, b.debriefMin) };
+  return { ...d, reportingTime: start, departureTime: start, arrivalTime: shift(d.arrivalTime, b.dutyDebriefMin) };
 }
