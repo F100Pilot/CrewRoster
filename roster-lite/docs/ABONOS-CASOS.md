@@ -43,6 +43,16 @@ nos testes de regra em `src/domain/__tests__/raaco.test.ts`.
 
 ## Em aberto (registar aqui até haver dados)
 
+- **Extrato de outubro 2026 de um FO (0.9.3.13) — 3/8 dias certos.** Oito voltas de ida e volta a LIS; o extrato
+  paga só o almoço de **02/10** (LIS–NCE–LIS, regresso NCE 10:37–13:11 UTC) e de **10/10** (LIS–PMI–LIS, regresso
+  10:59–12:59), 18 € cada. A app dá esses dois como embarcados (o regresso atravessa o almoço no relógio de partida) e
+  paga em vez deles **09/10** (LIS–IBZ–LIS, regresso 12:09–13:53: no relógio de IBZ parte depois das 14:00), **14/10**
+  (LIS–RAK–LIS, setores ≤ 1h30, serviço acaba 13:40 local) e **15/10** (LIS–PXO–LIS, regresso 1h29, acaba 14:00).
+  Bem: 08/10 LPA, 16/10 DUS, 31/10 TLS (zero). Testado: ler o horário no relógio da base corrige o 09/10 sem partir
+  nada (4/8); "a janela abre até 15–30 min depois da descolagem, relógio da base" acerta 02 e 10 (5/8) mas parte o
+  C06 e o caso de maio do pequeno-almoço; tirar a regra (c) parte 5 casos. **Não aplicado.** Falta saber: as horas
+  PLANEADAS desses voos (a escala de 14/11 já traz as voadas; o Meal Plan é feito sobre o planeado) e o texto do
+  4.5.10.5 / 4.5.11 (quando é que a refeição é embarcada). 14 e 15/10 eram dias `W_PNC_ST`.
 - **LYS 18/06 — ceia em falta**: mesmo padrão do C06, deve dar ceia 40 € + pernoita 10 €. Falta a
   escala do dia para o transformar em caso (C08).
 - **Almoço pago num DH LIS→FRA** com apresentação 8 min depois do fim do horário (hora local):
