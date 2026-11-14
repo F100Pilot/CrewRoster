@@ -7,7 +7,7 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.9.3.25`
+- **Produção (`master`) está em:** `0.9.3.29`
 - **Próxima versão ao promover:** a da experimental (cada atualização sobe a 4.ª casa)
 
 ## Como promover tudo para produção (quando estiver pronto)
@@ -25,10 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **0.9.3.29** — Abonos (C12 e regra do utilizador): a refeição **só embarca num voo que, na escala PLANEADA, cai no
-  seu período** (PA, AL, JA), na hora de Lisboa; o **direito** segue as horas reais — um atraso para dentro de um período
-  que a escala não previa paga essa refeição (4.5.11.5). IBZ→LIS de 09/10 com almoço a bordo. Todos os casos passam.
-  (0.9.3.26–28 testaram outras leituras na experimental — substituídas.)
+_(vazio — tudo promovido em 0.9.3.29)_
 
 ---
 
