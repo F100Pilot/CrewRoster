@@ -32,6 +32,8 @@ produção, em vez de promover uma a uma.
   (`crewroster.payHistory.<user>`, `savePayVersion` / `getPaySettingsFor` em `settings.ts`): "a partir do recibo de …"
   (omissão: o próximo), "Todos os meses" para corrigir enganos. `enabled` / `holidayPay` / `lineChecks` ficam globais
   (`patchPayGlobal`). O cartão usa os valores de cada mês.
+- **0.9.3.9** — "Recuperar valores de uma cópia de segurança" no Vencimento: `payFiguresFromBackup()` lê só
+  `crewroster.pay.<user>` do ficheiro e põe-nos no rascunho (o restauro completo voltaria as escalas à data da cópia).
 
 ---
 

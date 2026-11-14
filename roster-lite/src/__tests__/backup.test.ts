@@ -128,3 +128,13 @@ describe('restore validation (audit Wave 1)', () => {
     expect(summary.users).toBeGreaterThanOrEqual(1);
   });
 });
+
+describe('payFiguresFromBackup', () => {
+  it('takes only the pay figures — the active profile\'s, else the one with a VB', async () => {
+    const { payFiguresFromBackup } = await import('../storage/backup');
+    const file = (ls: Record<string, string>) => ({ format: 'x', version: 1, appVersion: '', createdAt: '2026-10-01T00:00:00Z', stores: {}, localStorage: ls });
+    expect(payFiguresFromBackup(file({ 'crewroster.pay.u1': '{"vb":7413.47}', 'crewroster.pay.u2': '{"vb":5000}' }), 'u2')).toEqual({ vb: 5000 });
+    expect(payFiguresFromBackup(file({ 'crewroster.pay.old': '{"vb":0}', 'crewroster.pay.x': '{"vb":7413.47}' }), 'new')).toEqual({ vb: 7413.47 });
+    expect(payFiguresFromBackup(file({ 'crewroster.colorMode': 'dark' }), 'u1')).toBeNull();
+  });
+});

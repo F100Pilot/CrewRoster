@@ -228,3 +228,25 @@ export async function restoreBackup(backup: BackupFile, replace: boolean): Promi
   await importAllStores(stores, replace);
   restoreLocalStorage(backup.localStorage);
 }
+
+// Only the pay figures out of a backup (user: changed his values and lost the originals). A full
+// restore would also take the rosters and the logbook back to the backup's date, so this reads just
+// `crewroster.pay.<user>` — the active profile's, else the only / the first one with a VB — and leaves
+// the rest alone. The figures land in Settings as unsaved changes: the crew member checks them and
+// chooses from which payslip they apply.
+export function payFiguresFromBackup(backup: BackupFile, userId: string): Record<string, unknown> | null {
+  const ls = backup.localStorage ?? {};
+  const keys = Object.keys(ls).filter((k) => k.startsWith('crewroster.pay.'));
+  const parse = (k: string) => {
+    try {
+      const v = JSON.parse(ls[k]);
+      return v && typeof v === 'object' ? (v as Record<string, unknown>) : null;
+    } catch {
+      return null;
+    }
+  };
+  const own = parse('crewroster.pay.' + userId);
+  if (own) return own;
+  const all = keys.map(parse).filter((v): v is Record<string, unknown> => !!v);
+  return all.find((v) => typeof v.vb === 'number' && v.vb > 0) ?? all[0] ?? null;
+}

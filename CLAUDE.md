@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (485 tests) — keep green
+npm test           # vitest run (486 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -217,6 +217,8 @@ Things learned over this collaboration that should persist across sessions:
   `storage/settings.ts`; `crewroster.pay.<user>` stays the current set. NEVER let a change rewrite earlier months (user:
   "nunca pode alterar os valores anteriores"). The on/off switch and the card's per-month notes (`holidayPay`, `lineChecks`)
   are global, written with `patchPayGlobal()`. Leaving Settings / switching tab with unsaved figures asks first.
+  Lost figures can be read back from a backup file without a full restore ("Recuperar valores de uma cópia de segurança",
+  `payFiguresFromBackup()`, since 0.9.3.9): they land in the draft, the crew member checks and saves.
 - **Settings' "Fixo por mês" = the sum of the typed fields only** (VB + VE + VS + extras; since 0.9.3.7): it used to
   add the automatic PGA pension 6,5% too, so crew read the VB as "majorado" (1 € → 1,07 €). The pension has its own lines.
 - **Calculator in the money fields** (since 0.8.38, user request): every money field in Settings → Vencimento has a

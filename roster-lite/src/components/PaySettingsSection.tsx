@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Accordion, AccordionDetails, AccordionSummary, Alert, Box, Button, IconButton, InputAdornment, MenuItem, Paper, Stack, Switch, TextField,
   ToggleButton, ToggleButtonGroup, Typography,
@@ -7,6 +7,8 @@ import { Calculate, ExpandMore } from '@mui/icons-material';
 import CalculatorDialog from './CalculatorDialog';
 import { evalExpression, isExpression } from '../utils/calc';
 import { getPayHistory, getPaySettings, patchPayGlobal, savePayVersion } from '../storage/settings';
+import { payFiguresFromBackup, readBackupFile } from '../storage/backup';
+import { DEFAULT_PAY_SETTINGS } from '../domain/payEstimate';
 import { PAY_CATEGORIES, pensionLines, perDiemDefaults, unionBaseAuto, unionFee, type PayCategory, type PaySettings } from '../domain/payEstimate';
 import { IRS_TABLES, type IrsTable } from '../domain/irsWithholding';
 
@@ -60,6 +62,25 @@ export default function PaySettingsSection({ userId, onDirtyChange }: { userId: 
     savePayVersion(userId, from, s);
     setDirty(false);
     setSavedNote(from ? `Guardado: vale a partir do ${payslipOf(from)}. Os recibos anteriores ficam como estavam.` : 'Guardado para todos os meses.');
+  };
+  // Recover figures lost to an overwrite from a backup file — into the draft, never saved by itself.
+  const backupInput = useRef<HTMLInputElement>(null);
+  const [recoverMsg, setRecoverMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const recover = async (file: File | undefined) => {
+    if (!file) return;
+    try {
+      const { backup } = await readBackupFile(file);
+      const figures = payFiguresFromBackup(backup, userId);
+      if (!figures) { setRecoverMsg({ ok: false, text: 'Esta cópia de segurança não tem valores do vencimento.' }); return; }
+      const next: PaySettings = { ...DEFAULT_PAY_SETTINGS, ...(figures as Partial<PaySettings>), enabled: s.enabled, holidayPay: s.holidayPay, lineChecks: s.lineChecks };
+      setS(next);
+      setText(toText(next));
+      setDirty(true);
+      setSavedNote(null);
+      setRecoverMsg({ ok: true, text: `Valores recuperados da cópia de ${backup.createdAt ? new Date(backup.createdAt).toLocaleDateString('pt-PT') : 'segurança'} (VB ${EUR2.format(next.vb)}). Confere e carrega em Guardar, escolhendo a partir de que recibo valem.` });
+    } catch (e) {
+      setRecoverMsg({ ok: false, text: e instanceof Error ? e.message : 'Não foi possível ler o ficheiro.' });
+    }
   };
   const history = getPayHistory(userId);
   const inForce = [...history].reverse().find((v) => v.from <= thisMonth) ?? history[0];
@@ -206,6 +227,14 @@ export default function PaySettingsSection({ userId, onDirtyChange }: { userId: 
             {' '}Alterações só contam depois de Guardar.
           </Typography>
           {savedNote && <Alert severity="success" onClose={() => setSavedNote(null)}>{savedNote}</Alert>}
+          {recoverMsg && <Alert severity={recoverMsg.ok ? 'info' : 'warning'} onClose={() => setRecoverMsg(null)}>{recoverMsg.text}</Alert>}
+          <Box>
+            <Button size="small" variant="text" onClick={() => backupInput.current?.click()} sx={{ px: 0.5 }}>
+              Recuperar valores de uma cópia de segurança
+            </Button>
+            <input ref={backupInput} type="file" accept=".json,application/json" hidden
+              onChange={(e) => { void recover(e.target.files?.[0]); e.target.value = ''; }} />
+          </Box>
           <ToggleButtonGroup
             exclusive fullWidth size="small" color="primary" value={part}
             onChange={(_, v: 'valores' | 'descontos' | null) => v && setPart(v)}
