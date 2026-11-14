@@ -16,6 +16,8 @@ export interface ParsedDuty {
   hotel?: { name: string; phone: string | null } | null;
   /** Crew rostered on this flight (from the PDF's "Crew Information on Leg" section). */
   crew?: CrewMember[];
+  /** Login printed beside a CLTC/CTRI mark: the first officer in line training on this leg. */
+  trainee?: string;
   /**
    * A discreet advisory set when the parsed day disagrees with the PDF's right-side
    * "Individual duty plan" summary (e.g. the day's end time is later than the last leg we
@@ -55,6 +57,8 @@ export interface CrewMember {
   surname: string;
   role: string; // CP (captain), FO (first officer), PU (purser), ST (cabin)
   firstName?: string;
+  /** On a line-training leg: the FO in instruction (beside CLTC/CTRI) or the extra FO (FO_SAFETY). */
+  seat?: 'trainee' | 'safety';
 }
 
 export type SourceType = 'pdf' | 'csv' | 'ics';

@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.3.10';
+export const APP_VERSION = '0.9.3.14';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,37 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.9.3.14',
+    date: '2026-11-14',
+    highlights: [
+      'W_PNC_ST passa a ser lido: aparece nos voos do dia como "Verificação em voo de cabina" (de um tripulante que não é o chefe de cabina). É só informação — não muda abonos, vencimento nem limites.',
+    ],
+  },
+  {
+    version: '0.9.3.13',
+    date: '2026-11-14',
+    highlights: [
+      'Tripulação por voo (em testes): nos voos de line training, a lista da tripulação diz qual dos dois copilotos está em instrução (o do CLTC / CTRI) e qual é o safety pilot (o que já vinha dos voos anteriores).',
+    ],
+  },
+  {
+    version: '0.9.3.12',
+    date: '2026-11-14',
+    highlights: [
+      'Tripulação por voo (em testes): o copiloto que aparece ao lado do CLTC / CTRI é o que se junta à tripulação — fica nos voos com essa marca e sai dos voos anteriores do mesmo dia, mesmo que a lista da escala o ponha lá. O FO_SAFETY fica nos voos a partir de onde aparece. Confirma sempre na escala oficial.',
+      'A escala é relida automaticamente para aplicar esta regra.',
+    ],
+  },
+  {
+    version: '0.9.3.11',
+    date: '2026-11-14',
+    highlights: [
+      'Line training: um voo com CLTC ou CTRI ao lado (com o login do formando) passa a contar como LIFUS dado — aparece no dia e conta no vencimento como dia de line training.',
+      'Tripulação por voo (em testes): um voo sem entrada própria fica com a tripulação do voo anterior (ex.: o regresso de uma noite fora), e não com a de um voo seguinte do mesmo dia. Um piloto sem posto na lista (o formando) conta como copiloto.',
+      'FO_SAFETY: assinalado nos voos com dois copilotos (o copiloto extra).',
+    ],
+  },
   {
     version: '0.9.3.10',
     date: '2026-11-14',

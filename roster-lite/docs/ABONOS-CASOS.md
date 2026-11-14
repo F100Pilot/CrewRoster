@@ -43,6 +43,22 @@ nos testes de regra em `src/domain/__tests__/raaco.test.ts`.
 
 ## Em aberto (registar aqui até haver dados)
 
+- **Extrato de outubro 2026 de um FO (0.9.3.13) — 3/8 dias certos.** Oito voltas de ida e volta a LIS; o extrato
+  paga só o almoço de **02/10** (LIS–NCE–LIS, regresso NCE 10:37–13:11 UTC) e de **10/10** (LIS–PMI–LIS, regresso
+  10:59–12:59), 18 € cada. A app dá esses dois como embarcados e paga em vez deles **09/10** (LIS–IBZ–LIS, regresso
+  12:09–13:53: no relógio de IBZ parte às 14:09, depois do horário), **14/10** (LIS–RAK–LIS, setores de 1h30 e 1h23)
+  e **15/10** (LIS–PXO–LIS, regresso de 1h29). Bem: 08/10 LPA, 16/10 DUS, 31/10 TLS (zero). 14 e 15/10 eram dias
+  `W_PNC_ST` (verificação de cabina de outro tripulante — não implica nada).
+  **Lido o texto do ROV (4.5.4–4.5.15, enviado pelo utilizador, não guardado): as regras da app estão como o texto**
+  — direito pelas alíneas a/b/c do 4.5.5.1 com os relógios do 4.5.5.4; embarque pela hora local de partida
+  (4.5.10.5); até 1h30 não embarca (4.5.11.4) e o *Block Time* é o do planeamento ("consoante o Block Time em cada
+  período IATA"); menos de 5 h, uma refeição principal por voo (4.5.11.2 — por voo, não por PSV: o C04 tem duas).
+  As diferenças vêm do que a escala de 14/11 não traz: **horas e blocos planeados** (09/10 com 9 min de atraso
+  passa a atravessar o almoço; 14 e 15/10 com bloco planeado acima de 1h30 levam a refeição) e **irregularidades**
+  (4.5.11.5: refeição não embarcada por atraso, registada no Flight Report / SCCR — 02 e 10/10?). Testado e
+  rejeitado: embarcar fora do horário (4.5.4.5) acerta 5/8 mas parte o pequeno-almoço de maio; uma refeição por
+  PSV (4.5.11.3) parte C04, C08 e o DHC de maio. **Falta:** um PDF de outubro descarregado antes dos voos, e saber se
+  houve atraso / Flight Report em 02 e 10/10.
 - **LYS 18/06 — ceia em falta**: mesmo padrão do C06, deve dar ceia 40 € + pernoita 10 €. Falta a
   escala do dia para o transformar em caso (C08).
 - **Almoço pago num DH LIS→FRA** com apresentação 8 min depois do fim do horário (hora local):

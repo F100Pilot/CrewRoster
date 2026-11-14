@@ -5,13 +5,13 @@ import { extractPdf } from './pdf/extractText';
 import { reconstructLines } from './pdf/reconstructLines';
 import { interpret } from './pdf/interpret';
 import { interpretPgaGrid, pgaBlankDates, pgaDutyTimes } from './pdf/pgaGrid';
-import { parseCrewInfo, parseGroundCrewInfo, attachCrewToDuties, attachGroundCrewToDuties } from './pdf/crewInfo';
+import { parseCrewInfo, parseGroundCrewInfo, attachCrewToDuties, attachGroundCrewToDuties, placeSafetyMarks, placeTrainees } from './pdf/crewInfo';
 
 // Bumped whenever the PDF parsing (duties, crew, times, routes…) changes in a way that should
 // re-apply to ALREADY-imported rosters. On app load a stored PDF roster whose parseVersion is
 // behind this is re-parsed from its saved PDF(s) — see RosterProvider — so improvements reach
 // the user without re-downloading. Bump this with any meaningful parser change.
-export const PARSE_VERSION = 18; // 18: each day's printed [DT] kept on its duties (rosterDt — the IO prevenir compares it); 17: IO (irregularidade operacional) is read, timed, with the planned report kept (rosterMerge); 16: blank grid days clear the stored day (merge); 15: a delayed day keeps the planned report (rosterMerge); 14: LIFUS_INS / FAM_INS marks
+export const PARSE_VERSION = 22; // 22: W_PNC_ST (cabin line check) on the day's flights; 21: the trainee / safety FO marked on the crew (CrewMember.seat); 20: the FO beside CLTC/CTRI joins at his first marked leg (not on the day's earlier legs); 19: CLTC/CTRI = line training given, FO_SAFETY mark, crew carried forward (not from a later leg), rank-less extra pilot = FO; 18: each day's printed [DT] kept on its duties (rosterDt — the IO prevenir compares it); 17: IO (irregularidade operacional) is read, timed, with the planned report kept (rosterMerge); 16: blank grid days clear the stored day (merge); 15: a delayed day keeps the planned report (rosterMerge); 14: LIFUS_INS / FAM_INS marks
 
 function sortByDate(duties: ParseResult['duties']): ParseResult['duties'] {
   return [...duties].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
@@ -33,6 +33,8 @@ export async function parseRosterFile(file: File): Promise<ParseResult> {
       // and the simulator/ground crew (from "Crew Information on Ground Activity") to those duties.
       attachCrewToDuties(pgaDuties, parseCrewInfo(extracted.tokens));
       attachGroundCrewToDuties(pgaDuties, parseGroundCrewInfo(extracted.tokens));
+      placeTrainees(pgaDuties);
+      placeSafetyMarks(pgaDuties);
       const dutyTimes = pgaDutyTimes(extracted.tokens);
       for (const d of pgaDuties) if (dutyTimes.has(d.date)) d.rosterDt = dutyTimes.get(d.date);
       const parsed = new Set(pgaDuties.map((d) => d.date));

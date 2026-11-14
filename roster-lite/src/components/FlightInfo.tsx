@@ -15,6 +15,7 @@ import type { AircraftReg, ParsedDuty } from '../domain/types';
 const AircraftTracker = lazy(() => import('./AircraftTracker'));
 
 // Friendly labels for the crew roles printed in the PDF.
+const SEAT_LABEL = { trainee: 'em instrução', safety: 'safety pilot' } as const;
 const ROLE_LABEL: Record<string, string> = { CP: 'Comandante', FO: 'Oficial Piloto', PU: 'Chefe de Cabine', ST: 'Tripulante' };
 const ROLE_SHORT: Record<string, string> = { CP: 'CMD', FO: 'OPL', PU: 'CC', ST: 'TC' };
 
@@ -207,7 +208,7 @@ export default function FlightInfo({ duty, date }: { duty: ParsedDuty; date: str
               <ListItemButton sx={{ py: 0.1 }} onClick={() => { setCrewAnchor(null); navigate(`/crew/${c.login}`); }}>
                 <ListItemText
                   primary={c.login}
-                  secondary={`${ROLE_LABEL[c.role] ?? c.role}${c.surname ? ' · ' + c.surname : ''}`}
+                  secondary={`${ROLE_LABEL[c.role] ?? c.role}${c.seat ? ` (${SEAT_LABEL[c.seat]})` : ''}${c.surname ? ' · ' + c.surname : ''}`}
                   primaryTypographyProps={{ variant: 'body2', fontWeight: 700, sx: { fontFamily: 'monospace' } }}
                   secondaryTypographyProps={{ variant: 'caption' }}
                 />
