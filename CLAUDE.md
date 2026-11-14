@@ -380,6 +380,13 @@ Things learned over this collaboration that should persist across sessions:
   on a `RED_REP` day, and a typed figure (to the minute) wins. Stored per user
   (`crewroster.offDayPay.*`, `crewroster.restCut.*`), applied in RosterProvider; `domain/offDayWork.ts`. Not yet checked
   against a real PDF carrying the remarks.
+- **Report time** (since 0.9.3.30, a user's audios: "um 13:55 para descolar às 15:10 — a app assume 14:10", and the
+  13:55 is what gives the 18 € lunch): the parser takes it from the printed [DT] — report = last arrival + 30 min − DT
+  (`parsing/pdf/reportTime.ts`, PARSE_VERSION 26) on a day of flights / DHCs alone and a lead of 15 min–3 h, else the
+  old departure − 1 h. The day page has "A apresentação foi outra?" — typed in local time (`localToUtcHHMM`), stored
+  per user (`crewroster.report.<user>`, UTC HH:MM), applied by RosterProvider to the day's first flight/DHC
+  (`ParsedDuty.reportTyped`): duty, FDP, rest and RAACO follow it. Not pilots-only. RAACO loading NOT changed: a meal
+  due by the report stays loaded on the first sector (C04 DUB: report 13:57, take-off 14:57 — the lunch wasn't paid).
 - **Medical exams** (IM / VIM / MED, `Medical`, timed): done apart (a colleague, 0.9.3.16) the roster has MED on one day
   ([DT] 3h00) and IM + VIM on another ([DT] 4h00 for IM 08:00–12:00 + VIM 12:00–12:30): the VIM is inside the IM's
   block, so `countedWork()` (`dutyTime.ts`) leaves a VIM out of the duty maths when the day has an IM; display unchanged.

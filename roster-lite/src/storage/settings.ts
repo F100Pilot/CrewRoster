@@ -306,6 +306,11 @@ export const getOffDayMarks = offDayMarks.get;
 export const setOffDayMark = offDayMarks.set;
 export const getRestCutMarks = restCutMarks.get;
 export const setRestCutMark = restCutMarks.set;
+// The report time typed on the day page (UTC HH:MM), when the real one isn't what the roster gives (user's audio,
+// Nov 2026: "se houver alguma alteração da apresentação, para que o sistema assuma").
+const reportMarks = dayMarks<string>('crewroster.report.');
+export const getReportMarks = reportMarks.get;
+export const setReportMark = reportMarks.set;
 
 // IO days the crew member marked as the "prevenir" (true) or as not (false), by date — over what
 // the roster alone suggests (domain/irregularity.ts). Per profile; carried by backups.

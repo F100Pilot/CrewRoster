@@ -153,3 +153,14 @@ export function localClock(d: Date, airport: string | null | undefined): string 
   const iso = d.toISOString();
   return toLocalTime(iso.slice(0, 10), iso.slice(11, 16), airport) ?? d.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
 }
+
+/** A local clock time at an airport on a date, as UTC HH:MM — what a crew member types (the report shown "LT") back into
+ *  the roster's clock. The offset is the one in force that day (the airport's, else Lisbon's). */
+export function localToUtcHHMM(dateISO: string, localHHMM: string, airport: string | null | undefined): string | null {
+  if (!/^\d{2}:\d{2}$/.test(localHHMM)) return null;
+  const tz = airportTz(airport) ?? 'Europe/Lisbon';
+  const local = Number(localHHMM.slice(0, 2)) * 60 + Number(localHHMM.slice(3, 5));
+  const off = tzOffsetMinutes(new Date(`${dateISO}T${localHHMM}:00Z`), tz);
+  const t = (((local - off) % 1440) + 1440) % 1440;
+  return `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
+}

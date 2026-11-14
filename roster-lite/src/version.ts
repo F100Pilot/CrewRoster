@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.3.29';
+export const APP_VERSION = '0.9.3.30';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,14 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.9.3.30',
+    date: '2026-11-14',
+    highlights: [
+      'Hora de apresentação: deixa de ser sempre uma hora antes do primeiro voo — vem do tempo de serviço [DT] impresso na escala (por exemplo 1h15 antes). A escala é relida sozinha.',
+      'No dia, "A apresentação foi outra?" deixa escrever a hora real (hora local): o serviço, o FDP, o descanso e os abonos passam a usá-la. "Usar a da escala" volta atrás.',
+    ],
+  },
   {
     version: '0.9.3.29',
     date: '2026-11-14',

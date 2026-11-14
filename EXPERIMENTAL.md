@@ -25,7 +25,9 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(vazio — tudo promovido em 0.9.3.29)_
+- **0.9.3.30** — **Hora de apresentação** (áudios de um utilizador): vem do [DT] impresso (última chegada + 30 min − DT,
+  `reportTime.ts`, PARSE_VERSION 26) em vez de "partida − 1 h"; e pode ser escrita à mão no dia ("A apresentação foi
+  outra?", hora local → UTC, `crewroster.report.<user>`), contando para serviço, FDP, descanso e abonos.
 
 ---
 

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import type { CrewBase, CrewRole, Roster, UserProfile } from '../domain/types';
+import type { CrewBase, CrewRole, ParsedDuty, Roster, UserProfile } from '../domain/types';
 import { parseRosterFile, PARSE_VERSION } from '../parsing';
 import { diffRosters } from '../domain/rosterDiff';
 import { todayISO } from '../domain/rosterWindow';
@@ -11,7 +11,7 @@ import {
 } from '../storage/rosterStore';
 import { mergeLogbook } from '../domain/logbook';
 import { regMap } from '../domain/aircraftRegs';
-import { getOffDayMarks, getPrevenirMarks, getRestCutMarks, setCredentials, setOffDayMark, setPrevenirMark, setRestCutMark } from '../storage/settings';
+import { getOffDayMarks, getPrevenirMarks, getReportMarks, getRestCutMarks, setCredentials, setOffDayMark, setPrevenirMark, setReportMark, setRestCutMark } from '../storage/settings';
 import { RosterContext, type RosterState, type RosterImportPreview } from './useRoster';
 
 // Re-parse a stored PDF roster from its saved PDF(s) with the current parser, so improvements
@@ -350,9 +350,14 @@ export function RosterProvider({ children }: { children: ReactNode }) {
   // Same for a flight on a day off (paid / kept) and the minutes of a reduced rest (offDayWork.ts).
   const [offDayMarks, setOffDayMarks] = useState<Record<string, 'paid' | 'kept'>>({});
   const [restCutMarks, setRestCutMarks] = useState<Record<string, number>>({});
+  const [reportMarks, setReportMarks] = useState<Record<string, string>>({});
   useEffect(() => {
     setOffDayMarks(activeUser ? getOffDayMarks(activeUser.id) : {});
     setRestCutMarks(activeUser ? getRestCutMarks(activeUser.id) : {});
+    setReportMarks(activeUser ? getReportMarks(activeUser.id) : {});
+  }, [activeUser]);
+  const setReportTime = useCallback((date: string, utc: string | null) => {
+    if (activeUser) setReportMarks(setReportMark(activeUser.id, date, utc));
   }, [activeUser]);
   const setOffDayPay = useCallback((date: string, value: 'paid' | 'kept' | null) => {
     if (activeUser) setOffDayMarks(setOffDayMark(activeUser.id, date, value));
@@ -361,18 +366,26 @@ export function RosterProvider({ children }: { children: ReactNode }) {
     if (activeUser) setRestCutMarks(setRestCutMark(activeUser.id, date, minutes));
   }, [activeUser]);
   const shownRoster = useMemo<Roster | null>(() => {
-    if (!roster || !(Object.keys(prevenirMarks).length || Object.keys(offDayMarks).length || Object.keys(restCutMarks).length)) return roster;
+    if (!roster || !(Object.keys(prevenirMarks).length || Object.keys(offDayMarks).length || Object.keys(restCutMarks).length || Object.keys(reportMarks).length)) return roster;
+    // A typed report goes on the day's first flight / DHC — where the roster's report sits.
+    const firstOf = new Map<string, ParsedDuty>();
+    for (const d of roster.duties) {
+      if (!(d.date in reportMarks) || !(d.dutyType === 'Flight Duty' || d.dutyType === 'Positioning') || !d.departureTime) continue;
+      const f = firstOf.get(d.date);
+      if (!f || d.departureTime < f.departureTime!) firstOf.set(d.date, d);
+    }
     return {
       ...roster,
       duties: roster.duties.map((d) => {
         let x = d;
+        if (firstOf.get(d.date) === d) x = { ...x, reportingTime: reportMarks[d.date], reportTyped: true };
         if (d.dutyCode === 'IO' && d.date in prevenirMarks) x = { ...x, prevenir: prevenirMarks[d.date] };
         if (d.date in offDayMarks) x = { ...x, offDayPay: offDayMarks[d.date] };
         if (d.date in restCutMarks) x = { ...x, restCutMin: restCutMarks[d.date] };
         return x;
       }),
     };
-  }, [roster, prevenirMarks, offDayMarks, restCutMarks]);
+  }, [roster, prevenirMarks, offDayMarks, restCutMarks, reportMarks]);
 
   // Rebuild the roster from every PDF in the history, oldest first (user request). Resolves to how
   // many PDFs could be read (0: none was a readable roster), or null when the history is empty.
@@ -401,12 +414,12 @@ export function RosterProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<RosterState>(
     () => ({
-      roster: shownRoster, setPrevenir, setOffDayPay, setRestCut, reloadFromPdfs, loading, importing, error, loadError, warnings, sessionToken,
+      roster: shownRoster, setPrevenir, setOffDayPay, setRestCut, setReportTime, reloadFromPdfs, loading, importing, error, loadError, warnings, sessionToken,
       importFile, previewImport, applyImport, clear, dismissChanges, setSessionToken,
       users, activeUser,
       switchUser, createUser, renameUser, setUserBase, deleteUser: deleteUserFn,
     }),
-    [shownRoster, setPrevenir, setOffDayPay, setRestCut, reloadFromPdfs, loading, importing, error, loadError, warnings, sessionToken, setSessionToken,
+    [shownRoster, setPrevenir, setOffDayPay, setRestCut, setReportTime, reloadFromPdfs, loading, importing, error, loadError, warnings, sessionToken, setSessionToken,
      importFile, previewImport, applyImport, clear, dismissChanges, users, activeUser, switchUser, createUser, renameUser, setUserBase, deleteUserFn]
   );
 
