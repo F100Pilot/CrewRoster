@@ -388,7 +388,8 @@ Things learned over this collaboration that should persist across sessions:
   An IO that is NOT the prevenir ("IO normal"): part of the day's PSV for everything — duty (the roster's DT runs to
   the IO's end) and the RAACO meals by the usual rules, the stay where it ends paying its Tabela 34 rates (casebook
   C08, MAN: "teria de assumir as ajudas de lá"; "aquele do prevenir é especial"). Open: per diem for an IO normal
-  alone at base. Without a report, the roster shows APT / assistência / PLS instead of IO (APT not parsed yet).
+  alone at base. Without a report, the roster shows APT / assistência / PLS instead of IO. **APT = assistência no aeroporto**
+  (user, 0.9.3.18): parsed as `Standby Airport` / code APT, timed like the IO — 50% duty (pilots), per diem A, RAACO 4.5.5.5.
 - **PDF history** (since 0.9.3, user request): `/pdfs` groups the saved PDFs in tabs by year → month of the DOWNLOAD
   (local time), newest first, each named by its download day/time; deleting asks first (the PDFs replay planned vs
   flown and the IO prevenir).

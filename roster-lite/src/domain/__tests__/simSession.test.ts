@@ -65,3 +65,12 @@ describe('medical exams: IM + VIM count as the IM block', () => {
     expect(dutyDays([med('2026-06-20', 'VIM', '12:00', '12:30')], PGA_PILOT_RULES)[0].minutes).toBe(30);
   });
 });
+
+describe('APT (assistência no aeroporto)', () => {
+  it('counts at the airport-standby share for pilots (50%)', () => {
+    const apt = { date: '2026-09-09', dutyCode: 'APT', dutyType: 'Standby Airport', flightNumber: null, departureAirport: 'LIS', arrivalAirport: null,
+      departureTime: '06:00', arrivalTime: '12:00', reportingTime: '06:00', aircraftType: null, observations: null } as ParsedDuty;
+    expect(dutyDays([apt], PGA_PILOT_RULES)[0].minutes).toBe(180);
+  });
+});
+

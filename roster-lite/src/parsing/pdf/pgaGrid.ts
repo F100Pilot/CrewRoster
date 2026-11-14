@@ -162,6 +162,8 @@ function classifyDuty(name: string): { dutyType: string; dutyCode: string } | nu
   if (/^S\.?EXT\.?$/.test(n)) return { dutyType: 'Office Duty', dutyCode: 'S.EXT.' };
   if (/^SIM/.test(n)) return { dutyType: 'Simulator', dutyCode: 'SIM' };
   if (/^(SBY|STBY)/.test(n)) return { dutyType: 'Standby Airport', dutyCode: 'SBY' };
+  // APT = assistência no aeroporto (user, Nov 2026), printed with its start and end like an IO.
+  if (n === 'APT') return { dutyType: 'Standby Airport', dutyCode: 'APT' };
   // Assistances (standby/reserve with a time window), for BOTH pilots and cabin crew.
   // H-codes/R24: H7+, H9+, H12+, H14+, H23+, H509, H616, R24. A-codes: A1, A2, A2+, A3,
   // A3++, A4, A4+, A5, A5+, A6, A8 (used across ranks, not cabin-only). The "+"/3-digit
@@ -360,7 +362,7 @@ export function parseSubColumn(
       // 08:30–12:00, S.EXT. 08:00–16:00); show it as Início/Fim. Without the end, the duty-time
       // limits had nothing to measure and those days never counted.
       const isTimed = named.dutyType === 'Training' || named.dutyType === 'Simulator' ||
-        named.dutyType === 'Medical' || named.dutyType === 'Office Duty' || named.dutyCode === 'IO';
+        named.dutyType === 'Medical' || named.dutyType === 'Office Duty' || named.dutyCode === 'IO' || named.dutyCode === 'APT';
       const times = words.map(toTime).filter((t): t is string => !!t);
       duties.push({
         date,

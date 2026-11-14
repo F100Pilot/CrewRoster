@@ -33,6 +33,8 @@ produção, em vez de promover uma a uma.
 - **0.9.3.17** — o "R" = *requested* (utilizador): pedido pelo tripulante (folga W_OFF pedida, exames médicos na clínica
   que escolheu, voo). Token isolado entre o código e o aeroporto (confirmado no PDF real de novembro, nos W_OFF) → marca
   `REQ` nas observações ("Pedido"); só informação. PARSE_VERSION 23.
+- **0.9.3.18** — **APT = assistência no aeroporto** (utilizador): `Standby Airport`, código APT, com início/fim (como o
+  IO). Conta 50% (pilotos), per diem A, RAACO 4.5.5.5. PARSE_VERSION 24.
 
 ---
 
@@ -42,7 +44,7 @@ produção, em vez de promover uma a uma.
 - **Google Calendar (0.9.1) está no código mas escondido** até existir o secret `VITE_GOOGLE_CLIENT_ID` (cliente
   OAuth "Web application", origem `https://f100pilot.github.io`, Calendar API ativa, âmbito
   `calendar.app.created`). Com o secret, o próximo deploy mostra o botão — juntar então uma nota de versão.
-- **IO:** ajuda de custo de um IO normal sozinho na base; código **APT** (sem apresentação) ainda não lido.
+- **IO:** ajuda de custo de um IO normal sozinho na base.
 
 - **Duty vs DT da escala (perguntas em aberto ao utilizador):** a escala soma 30 min depois de um DHC que fecha o dia
   (a app segue o AE cl. 17: acaba à chegada) e conta a hora de almoço nos dias GAB (8:00 vs 7:00 na app). Mudar só se

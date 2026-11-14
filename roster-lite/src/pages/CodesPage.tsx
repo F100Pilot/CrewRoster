@@ -18,7 +18,7 @@ const CODES: { code: string; dutyType: string; label: string }[] = [
   { code: 'SIM / E90-…', dutyType: 'Simulator', label: 'Simulador' },
   { code: 'LIS-EBT-1 / LIS-EBT-2', dutyType: 'Simulator', label: 'Sessão de simulador EBT — dia 1: briefing 30 min, debriefing 1 h; dia 2: briefing 1 h, debriefing 30 min' },
   { code: 'LIS-OTHER', dutyType: 'Simulator', label: 'Sessão de simulador fora do âmbito EBT' },
-  { code: 'SBY / STBY', dutyType: 'Standby Airport', label: 'Assistência no aeroporto' },
+  { code: 'SBY / STBY / APT', dutyType: 'Standby Airport', label: 'Assistência no aeroporto' },
   { code: 'A1 / A2+ / A3++ / A4… A8', dutyType: 'Standby Home', label: 'Assistência em casa (cabina) — janela horária fixa' },
   { code: 'H509 / H616 / H7+ / H9+ / H12+ / H14+ / H23+', dutyType: 'Standby Home', label: 'Assistência em casa (pilotos) — janela horária fixa' },
   { code: 'R24', dutyType: 'Standby Home', label: 'Reserva de 24 horas (pilotos)' },

@@ -61,4 +61,14 @@ describe('pgaGrid — medical exam codes', () => {
       ['IM', 'LIS', '08:00', '12:00', 'REQ'], ['VIM', 'LIS', '12:00', '12:30', null],
     ]);
   });
+
+  it('reads APT as a timed airport standby (assistência no aeroporto)', () => {
+    const apt = interpretPgaGrid([
+      tok('01Sep26 -', 562, 745), tok('date', 496, 544), tok('Wed09', 203, 544), tok('Tue08', 232, 544),
+      tok('APT', 203, 502), tok('LIS', 203, 440), tok('0600', 203, 419), tok('1200', 203, 398),
+    ]).filter((d) => d.date === '2026-09-09');
+    expect(apt.map((d) => [d.dutyCode, d.dutyType, d.departureAirport, d.departureTime, d.arrivalTime])).toEqual([
+      ['APT', 'Standby Airport', 'LIS', '06:00', '12:00'],
+    ]);
+  });
 });
