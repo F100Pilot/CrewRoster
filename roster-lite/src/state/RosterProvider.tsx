@@ -359,7 +359,7 @@ export function RosterProvider({ children }: { children: ReactNode }) {
     if (activeUser) setPrevenirMarks(setPrevenirMark(activeUser.id, date, value));
   }, [activeUser]);
   // Same for a flight on a day off (paid / kept) and the minutes of a reduced rest (offDayWork.ts).
-  const [offDayMarks, setOffDayMarks] = useState<Record<string, 'paid' | 'kept'>>({});
+  const [offDayMarks, setOffDayMarks] = useState<Record<string, 'paid' | 'kept' | 'none'>>({});
   const [restCutMarks, setRestCutMarks] = useState<Record<string, number>>({});
   const [mealMarks, setMealMarks] = useState<Record<string, boolean>>({});
   useEffect(() => {
@@ -370,7 +370,7 @@ export function RosterProvider({ children }: { children: ReactNode }) {
   const setMealOnboard = useCallback((key: string, value: boolean | null) => {
     if (activeUser) setMealMarks(setMealOnboardMark(activeUser.id, key, value));
   }, [activeUser]);
-  const setOffDayPay = useCallback((date: string, value: 'paid' | 'kept' | null) => {
+  const setOffDayPay = useCallback((date: string, value: 'paid' | 'kept' | 'none' | null) => {
     if (activeUser) setOffDayMarks(setOffDayMark(activeUser.id, date, value));
   }, [activeUser]);
   const setRestCut = useCallback((date: string, minutes: number | null) => {

@@ -1,5 +1,7 @@
 import { Box, Tooltip } from '@mui/material';
 import { PassBadge, PassCard, type PassCell } from './PassCard';
+import { MealIcons } from './MealIcon';
+import type { Meal } from '../domain/raaco';
 import { dutyColor } from '../theme';
 import { legsOf } from '../domain/dayPhase';
 import { dayItems } from '../domain/dayItems';
@@ -30,8 +32,9 @@ function mainDuty(duties: ParsedDuty[]): ParsedDuty {
   return duties.find((d) => FLIGHT.has(d.dutyType)) ?? duties.find((d) => d.dutyType !== 'Day Off') ?? duties[0];
 }
 
-export default function DayPass({ date, duties, change, isToday, base, onOpen }: {
+export default function DayPass({ date, duties, change, isToday, base, onOpen, onboard = [] }: {
   date: string; duties: ParsedDuty[]; change?: ChangeType; isToday?: boolean; base: string; onOpen: () => void;
+  onboard?: Meal[]; // the meals the Meal Plan loads on the day's flights (RAACO) — shown as icons
 }) {
   const main = mainDuty(duties);
   const legs = legsOf(date, duties);
@@ -86,6 +89,7 @@ export default function DayPass({ date, duties, change, isToday, base, onOpen }:
       {warning && (
         <Tooltip title={warning}><span><PassBadge color="#C2410C" filled>⚠ VERIFICAR</PassBadge></span></Tooltip>
       )}
+      <MealIcons meals={onboard} />
     </>
   );
 

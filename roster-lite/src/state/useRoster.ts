@@ -29,7 +29,7 @@ export interface RosterState {
   // Mark an IO day as the "prevenir" (true), as not (false), or back to what the roster says (null).
   setPrevenir: (date: string, value: boolean | null) => void;
   // A flight on a day off: paid under RRRGS cl. 13, or the day kept for later; null = as the roster says.
-  setOffDayPay: (date: string, value: 'paid' | 'kept' | null) => void;
+  setOffDayPay: (date: string, value: 'paid' | 'kept' | 'none' | null) => void;
   // Minutes of a reduced rest before the day (RRRGS cl. 2.8), or null to clear.
   setRestCut: (date: string, minutes: number | null) => void;
   /** A meal the crew member marked on board (true) or not (false) — by meal key — or null to clear it. */

@@ -368,7 +368,10 @@ Things learned over this collaboration that should persist across sessions:
   as `ParsedDuty.mealOnboard` by RosterProvider; `psvMeals` follows it (true → on board 0; false → paid like a meal not
   loaded, Tabela 33 / local rate when ending away). UI: `components/MealConfirm.tsx` — 🍽 on flown calendar days with
   meals still to confirm, the "Refeições a bordo" card under the calendar (dialog per day), the same list in
-  `RaacoDayCard`. All crew (RAACO is not AE).
+  `RaacoDayCard`. All crew (RAACO is not AE). Since 0.9.3.36 (user): a SWITCH per askable meal (on = on board, the
+  plan's default; off = paid, "em caso de irregularidades") in `RaacoDayCard` and the calendar dialog ("Está certo"
+  confirms the plan); the Lista cards show icons of the meals on board (`components/MealIcon.tsx`: PA FreeBreakfast, AL
+  LunchDining, JA DinnerDining; legend on `/codes`).
 - **RAACO casebook — every real case is kept forever** (user: "estes exemplos têm de servir para corrigir futuros
   problemas"): each crew feedback / checked statement line becomes an entry in
   `src/domain/__tests__/raacoCases.test.ts` (synthetic TP9xxx flight numbers, real airports/times, the columns
@@ -397,7 +400,9 @@ Things learned over this collaboration that should persist across sessions:
   out to the minute from the roster itself** (user: no earlier roster needed): `autoRestCut()` = the AE minimum
   (`restPeriods`) − the rest taken (release = last on-blocks + 30 min → report), capped at 2 h at base; it counts by itself
   on a `RED_REP` day, and a typed figure (to the minute) wins. Stored per user
-  (`crewroster.offDayPay.*`, `crewroster.restCut.*`), applied in RosterProvider; `domain/offDayWork.ts`. Not yet checked
+  (`crewroster.offDayPay.*`, `crewroster.restCut.*`), applied in RosterProvider; `domain/offDayWork.ts`. Since 0.9.3.36
+  both are SWITCHES (user: "sendo possível voltar atrás"): switched off over a roster mark = `offDayPay: 'none'` /
+  `restCutMin: -1` (no cut). Not yet checked
   against a real PDF carrying the remarks.
 - **Report time = first departure − 1 h, always** (user rule, 0.9.3.31: "a apresentação vai ser sempre 1 hora antes.
   Mais tarde tratamos dos casos especiais que vão aparecendo"). 0.9.3.30 tried it from the printed [DT] (last arrival +

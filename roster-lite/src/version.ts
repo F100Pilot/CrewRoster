@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.3.35';
+export const APP_VERSION = '0.9.3.36';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,15 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.9.3.36',
+    date: '2026-11-14',
+    highlights: [
+      'Abonos (em testes): no dia, cada refeição prevista tem um botão — ligado = a bordo (como no plano de refeições), desligado = não houve (irregularidade) e passa a ser paga. Na Lista, os voos mostram ícones das refeições a bordo (legenda nos Códigos).',
+      'Folga e repouso: "Voo em dia de folga" e "Redução de repouso" passam a ser interruptores — ligam-se e desligam-se, mesmo quando vêm marcados na escala.',
+      'Meteo da rota: o texto da turbulência volta a ler-se (estava a branco).',
+    ],
+  },
   {
     version: '0.9.3.35',
     date: '2026-11-14',

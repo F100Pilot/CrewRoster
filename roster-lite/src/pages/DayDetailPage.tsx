@@ -2,7 +2,7 @@ import { Alert, Box, Button, Card, CardContent, Chip, Divider, FormControlLabel,
 import { ChevronLeft, ChevronRight, FlightLand, FlightTakeoff, Groups, Hotel, IosShare, Phone, WbSunny, Bedtime, Brightness4 } from '@mui/icons-material';
 import { Link } from '@mui/material';
 import { addDays, format, parseISO } from 'date-fns';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import { dutyColor } from '../theme';
@@ -537,64 +537,73 @@ function OffDayWork({ date, duties, rest }: { date: string; duties: ParsedDuty[]
   const offMarked = markedOffDay(duties);
   const choice = offDayChoice(duties);
   const cutMarked = markedRestCut(duties);
+  const rawCut = duties.find((d) => d.restCutMin != null)?.restCutMin ?? null;
   const typed = typedRestCut(duties);
   const auto = autoRestCut(rest);
-  const [shown, setShown] = useState(false);
-  const open = cutMarked || typed !== null || shown;
-  if (!flies && !open) return null;
+  // Each one is a switch (user, Nov 2026: "um botão … para os acionar, sendo possível voltar atrás"): on by itself when
+  // the roster marks it ("Voo em Off" / "Reducao Repouso"), and it can always be switched off again.
+  const cutOn = rawCut !== null ? rawCut >= 0 : cutMarked;
+  if (!flies && !cutOn && !cutMarked) return null;
   const cut = typed ?? auto;
   return (
     <Card>
       <CardContent>
         <Typography sx={passOverline}>Folga e repouso · AE (experimental)</Typography>
-        {flies && (choice || offMarked ? (
+        {flies && (
           <Box mt={1}>
-            <Typography variant="body2" fontWeight={700}>Voo em dia de folga{offMarked ? ' (escala: "Voo em Off")' : ''}</Typography>
-            <ToggleButtonGroup exclusive size="small" value={choice ?? 'paid'} sx={{ mt: 0.75 }}
-              onChange={(_, v: 'paid' | 'kept' | null) => v && setOffDayPay(date, v)}>
-              <ToggleButton value="paid">Recebo</ToggleButton>
-              <ToggleButton value="kept">Gozo a folga</ToggleButton>
-            </ToggleButtonGroup>
-            <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
-              {choice === 'kept'
-                ? 'A folga fica para gozar depois (RUPT cl. 15.9 / 15.19): o dia conta como serviço normal.'
-                : 'RRRGS cl. 13: 3% do VB por hora de serviço de voo + 15% do VB pelo dia, no mês seguinte, fora dos plafonds.'}
-            </Typography>
-            {!offMarked && <Button size="small" onClick={() => setOffDayPay(date, null)}>Não era folga</Button>}
-          </Box>
-        ) : (
-          <Button size="small" sx={{ mt: 0.5 }} onClick={() => setOffDayPay(date, 'paid')}>Este voo foi num dia de folga?</Button>
-        ))}
-        {open ? (
-          <Box mt={1.5}>
-            <Typography variant="body2" fontWeight={700}>Redução de repouso{cutMarked ? ' (escala: "Redução Repouso")' : ''}</Typography>
-            {rest && rest.restMinutes !== null && (
-              <Typography variant="caption" color="text.secondary" display="block">
-                Descanso antes deste serviço: {formatDuration(rest.restMinutes)} (do fim do serviço anterior, chegada + 30 min,
-                à apresentação) · mínimo {formatDuration(rest.requiredMinutes)}{rest.away ? ' (fora da base)' : ''} →
-                {' '}calculado <strong>{auto ?? 0} min</strong>.
-              </Typography>
+            <FormControlLabel
+              control={<Switch checked={!!choice} onChange={(e) => setOffDayPay(date, e.target.checked ? 'paid' : offMarked ? 'none' : null)} />}
+              label={<Typography variant="body2" fontWeight={700}>Voo em dia de folga{offMarked ? ' (escala: "Voo em Off")' : ''}</Typography>}
+            />
+            {choice && (
+              <>
+                <ToggleButtonGroup exclusive size="small" value={choice} sx={{ mt: 0.25, display: 'flex' }}
+                  onChange={(_, v: 'paid' | 'kept' | null) => v && setOffDayPay(date, v)}>
+                  <ToggleButton value="paid">Recebo</ToggleButton>
+                  <ToggleButton value="kept">Gozo a folga</ToggleButton>
+                </ToggleButtonGroup>
+                <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+                  {choice === 'kept'
+                    ? 'A folga fica para gozar depois (RUPT cl. 15.9 / 15.19): o dia conta como serviço normal.'
+                    : 'RRRGS cl. 13: 3% do VB por hora de serviço de voo + 15% do VB pelo dia, no mês seguinte, fora dos plafonds.'}
+                </Typography>
+              </>
             )}
-            <Box display="flex" alignItems="center" gap={1} mt={1} flexWrap="wrap">
-              <TextField id={`rest-cut-${date}`} size="small" label="Minutos reduzidos" type="number"
-                value={cut ?? ''} sx={{ width: 170 }}
-                slotProps={{ htmlInput: { min: 0, step: 1, inputMode: 'numeric' } }}
-                onChange={(e) => {
-                  const v = e.target.value === '' ? null : Math.max(0, Math.round(Number(e.target.value)));
-                  setRestCut(date, v === null || Number.isNaN(v) ? null : v);
-                }} />
-              {typed !== null && auto !== null && typed !== auto && (
-                <Button size="small" onClick={() => setRestCut(date, null)}>Usar o calculado ({auto} min)</Button>
-              )}
-            </Box>
-            <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
-              {typed !== null ? 'Valor escrito por ti. ' : auto !== null ? 'Calculado pela escala, ao minuto. ' : 'Sem horas para calcular: escreve os minutos. '}
-              Na base, até 2 h (RUPT cl. 34.3). Pago em duty-pay, fora dos plafonds (RRRGS cl. 2.8).
-            </Typography>
           </Box>
-        ) : (
-          <Button size="small" sx={{ mt: 0.5, display: 'block' }} onClick={() => { setShown(true); setRestCut(date, auto ?? 0); }}>Houve redução de repouso?</Button>
         )}
+        <Box mt={1}>
+          <FormControlLabel
+            control={<Switch checked={cutOn} onChange={(e) => setRestCut(date, e.target.checked ? auto ?? 0 : cutMarked ? -1 : null)} />}
+            label={<Typography variant="body2" fontWeight={700}>Redução de repouso{cutMarked ? ' (escala: "Redução Repouso")' : ''}</Typography>}
+          />
+          {cutOn && (
+            <>
+              {rest && rest.restMinutes !== null && (
+                <Typography variant="caption" color="text.secondary" display="block">
+                  Descanso antes deste serviço: {formatDuration(rest.restMinutes)} (do fim do serviço anterior, chegada + 30 min,
+                  à apresentação) · mínimo {formatDuration(rest.requiredMinutes)}{rest.away ? ' (fora da base)' : ''} →
+                  {' '}calculado <strong>{auto ?? 0} min</strong>.
+                </Typography>
+              )}
+              <Box display="flex" alignItems="center" gap={1} mt={1} flexWrap="wrap">
+                <TextField id={`rest-cut-${date}`} size="small" label="Minutos reduzidos" type="number"
+                  value={cut ?? ''} sx={{ width: 170 }}
+                  slotProps={{ htmlInput: { min: 0, step: 1, inputMode: 'numeric' } }}
+                  onChange={(e) => {
+                    const v = e.target.value === '' ? 0 : Math.max(0, Math.round(Number(e.target.value)));
+                    setRestCut(date, Number.isNaN(v) ? 0 : v);
+                  }} />
+                {typed !== null && auto !== null && typed !== auto && (
+                  <Button size="small" onClick={() => setRestCut(date, cutMarked ? null : auto)}>Usar o calculado ({auto} min)</Button>
+                )}
+              </Box>
+              <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+                {typed !== null && rawCut !== auto ? 'Valor escrito por ti. ' : auto !== null ? 'Calculado pela escala, ao minuto. ' : 'Sem horas para calcular: escreve os minutos. '}
+                Na base, até 2 h (RUPT cl. 34.3). Pago em duty-pay, fora dos plafonds (RRRGS cl. 2.8).
+              </Typography>
+            </>
+          )}
+        </Box>
         <Typography variant="caption" color="text.secondary" display="block" mt={1}>{AE_DISCLAIMER}</Typography>
       </CardContent>
     </Card>

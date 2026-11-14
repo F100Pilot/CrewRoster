@@ -46,7 +46,8 @@ export default function RaacoDayCard({ date }: { date: string }) {
           </Alert>
         )}
         <Stack spacing={0.75}>
-          {day.meals.map((m, i) => (
+          {/* Meals the crew can switch (on board / not) are in the list below, once. */}
+          {day.meals.filter((m) => !m.askable).map((m, i) => (
             <TimelineRow key={i} wrapSub color={HOW[m.how].color} title={MEAL_LABEL[m.meal]}
               sub={m.why} right={m.value ? euro(m.value) : m.value === null ? 'sem valor' : HOW[m.how].label}
               rightSub={m.value ? HOW[m.how].label : m.where} />
@@ -56,10 +57,14 @@ export default function RaacoDayCard({ date }: { date: string }) {
               right={n.value !== null ? euro(n.value) : 'sem valor'} />
           ))}
         </Stack>
-        {day.meals.some((m) => m.askable) && day.date <= new Date().toISOString().slice(0, 10) && (
-          <Box mt={1.5} pt={1.25} sx={{ borderTop: 1, borderColor: 'divider' }}>
-            <Typography sx={{ ...passOverline, mb: 1 }}>🍽 ESTAVA A BORDO?</Typography>
-            <MealConfirmList day={day} />
+        {day.meals.some((m) => m.askable) && (
+          <Box mt={day.meals.some((m) => !m.askable) || day.nights.length ? 1.5 : 0} pt={day.meals.some((m) => !m.askable) || day.nights.length ? 1.25 : 0}
+            sx={{ borderTop: day.meals.some((m) => !m.askable) || day.nights.length ? 1 : 0, borderColor: 'divider' }}>
+            <Typography sx={{ ...passOverline, mb: 0.5 }}>A BORDO · LIGADO = EMBARCADA</Typography>
+            <MealConfirmList day={day} why />
+            <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+              Por defeito, como no plano de refeições. Desliga se não houve (irregularidade): passa a ser paga.
+            </Typography>
           </Box>
         )}
         <Typography variant="caption" color="text.secondary" display="block" mt={1}>

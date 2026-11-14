@@ -1,6 +1,8 @@
 import { Box, Card, CardContent, Divider, Stack, Typography } from '@mui/material';
 import { dutyColor } from '../theme';
 import PageHero from '../components/PageHero';
+import { MEAL_ICON, MEAL_SHORT } from '../components/MealIcon';
+import { MEAL_LABEL, type Meal } from '../domain/raaco';
 
 // Reference sheet for the duty codes the parser recognises. Helps confirm a parse and
 // documents what each chip means. Extend as new codes are clarified.
@@ -63,6 +65,26 @@ export default function CodesPage() {
               </Box>
             </Box>
           ))}
+        </CardContent>
+      </Card>
+      {/* The meal icons of the Lista cards and the day's RAACO card (user, Nov 2026: "a legenda … na legenda de códigos"). */}
+      <Card variant="outlined">
+        <CardContent sx={{ py: 1 }}>
+          <Typography variant="subtitle2" sx={{ pt: 0.75 }}>Refeições a bordo (abonos)</Typography>
+          <Typography variant="caption" color="text.secondary" display="block">
+            Nos cartões da Lista: as refeições que o plano de refeições põe a bordo dos voos desse dia. No dia, cada uma tem um
+            botão para a desligar se não houve (irregularidade) — os abonos passam a pagá-la.
+          </Typography>
+          {(['breakfast', 'lunch', 'dinner'] as Meal[]).map((m) => {
+            const Icon = MEAL_ICON[m];
+            return (
+              <Box key={m} display="flex" alignItems="center" gap={1.5} py={1}>
+                <Icon sx={{ fontSize: 20, color: '#0F766E', flexShrink: 0 }} />
+                <Typography variant="subtitle2" sx={{ minWidth: 104 - 6 }}>{MEAL_SHORT[m]}</Typography>
+                <Typography variant="body2" color="text.secondary">{MEAL_LABEL[m]} a bordo</Typography>
+              </Box>
+            );
+          })}
         </CardContent>
       </Card>
       <Typography variant="caption" color="text.secondary">

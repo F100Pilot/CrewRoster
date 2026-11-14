@@ -24,6 +24,7 @@ import { monthLabel } from '../utils/dates';
 import PageHero from '../components/PageHero';
 import DayPass, { CHANGE_STYLE } from '../components/DayPass';
 import { baseOf } from '../domain/dutyStats';
+import { raacoDays, type Meal } from '../domain/raaco';
 
 
 
@@ -115,6 +116,17 @@ export default function RosterPage() {
       .catch(() => {})
       .finally(() => autoRegInFlight.delete(userId));
   }, [activeUser, roster, today]);
+
+  // The meals the Meal Plan puts on board, per day (icons on the cards; crew marks included).
+  const onboardByDate = useMemo(() => {
+    const out = new Map<string, Meal[]>();
+    if (!roster) return out;
+    for (const d of raacoDays(roster.duties, baseOf(activeUser)).values()) {
+      const meals = d.meals.filter((m) => m.how === 'onboard').map((m) => m.meal);
+      if (meals.length) out.set(d.date, meals);
+    }
+    return out;
+  }, [roster, activeUser]);
 
   const dutiesByDay = useMemo(() => {
     const map = new Map<string, ParsedDuty[]>();
@@ -277,7 +289,7 @@ export default function RosterPage() {
 
       {view === 'cards' && [...dutiesByDay.entries()].map(([date, duties]) => (
         <DayPass key={date} date={date} duties={duties} change={changeByDate.get(date)} isToday={date === today}
-          base={baseOf(activeUser)} onOpen={() => navigate(`/day/${date}`)} />
+          base={baseOf(activeUser)} onOpen={() => navigate(`/day/${date}`)} onboard={onboardByDate.get(date)} />
       ))}
     </Stack>
   );

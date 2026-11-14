@@ -39,6 +39,10 @@ produção, em vez de promover uma a uma.
   `crewroster.mealOnboard.<user>`, `MealLine.askable` / `crew`.
 - **0.9.3.35** — EBT: **mostra o serviço contado** (briefing + sessão + 1 h, `ebtDutyMinutes`) no dia, na Lista e em
   "Hoje" — um utilizador somava as células (debriefing 30 min) e lia 30 min a menos. A conta já estava certa desde 0.9.3.25.
+- **0.9.3.36** — Refeições: **interruptor por refeição** no cartão do dia (ligado = a bordo por defeito quando previsto;
+  desligar = paga) e na janela do calendário ("Está certo"); **ícones das refeições a bordo** nos cartões da Lista
+  (`MealIcon.tsx`, legenda nos Códigos). "Folga e repouso" com **interruptores** (desligar sobre a marca da escala:
+  `offDayPay: 'none'`, `restCutMin: -1`). Chip da turbulência legível (cor no `background`, não no `bgcolor`).
 
 ---
 

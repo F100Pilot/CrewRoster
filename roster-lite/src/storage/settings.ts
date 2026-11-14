@@ -300,7 +300,7 @@ function dayMarks<T>(prefix: string) {
   };
   return { get, set };
 }
-const offDayMarks = dayMarks<'paid' | 'kept'>('crewroster.offDayPay.');
+const offDayMarks = dayMarks<'paid' | 'kept' | 'none'>('crewroster.offDayPay.');
 const restCutMarks = dayMarks<number>('crewroster.restCut.');
 export const getOffDayMarks = offDayMarks.get;
 export const setOffDayMark = offDayMarks.set;

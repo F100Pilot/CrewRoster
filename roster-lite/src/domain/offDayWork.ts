@@ -27,11 +27,13 @@ export const markedRestCut = (day: ParsedDuty[]) => day.some((d) => marks(d).inc
 export function offDayChoice(day: ParsedDuty[]): OffDayChoice | null {
   if (!day.some(flying)) return null;
   const own = day.find((d) => d.offDayPay)?.offDayPay;
+  if (own === 'none') return null; // switched off on the day page (user: "sendo possível voltar atrás")
   if (own) return own;
   return markedOffDay(day) ? 'paid' : null;
 }
 
 // The minutes the pilot typed for the rest cut before this day, or null.
+// A negative figure is the pilot's "off" over the roster's "Reducao Repouso" (the day page's switch) — no cut.
 export function typedRestCut(day: ParsedDuty[]): number | null {
   const v = day.find((d) => d.restCutMin != null)?.restCutMin;
   return v == null ? null : Math.max(0, Math.round(v));
