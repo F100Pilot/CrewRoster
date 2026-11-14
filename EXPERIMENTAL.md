@@ -25,8 +25,9 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **0.9.3.4** — prevenir reconhecido com margem de 15 min entre o início do IO e a apresentação planeada
-  (`PREVENIR_TOLERANCE_MIN`, `autoPrevenir`); caso C07c. Um colega tinha de o marcar à mão.
+- **0.9.3.4 / 0.9.3.5** — prevenir = **DT impresso igual** antes e depois do IO (regra do utilizador; Manchester não
+  foi prevenir). `pgaDutyTimes()` lê o [DT] de cada dia (`rosterDt`, PARSE_VERSION 18); `mergeDuties` guarda o do dia
+  planeado em `planned.dutyMinutes`. Sem [DT]: o IO tem de cobrir apresentação e fim planeados (±15 min). Caso C07c.
 
 ---
 

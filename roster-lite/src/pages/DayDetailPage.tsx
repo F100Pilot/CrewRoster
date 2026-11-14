@@ -539,9 +539,13 @@ function IoPrevenir({ duty }: { duty: ParsedDuty }) {
       <Alert severity={on ? 'success' : 'info'} sx={{ mt: 1.5 }}>
         <strong>{on ? 'Prevenir' : 'IO normal'}</strong>
         {' — '}
-        {on
-          ? `começou à hora da apresentação do serviço planeado (${at(plan)}).`
-          : `o serviço planeado apresentava às ${at(plan)}${start ? `; o IO começou às ${at(start)}` : ''}.`}
+        {duty.planned?.dutyMinutes != null && duty.rosterDt !== undefined
+          ? on
+            ? `o mesmo duty do serviço planeado (DT ${formatDuration(duty.rosterDt)}).`
+            : `o serviço planeado tinha DT ${formatDuration(duty.planned.dutyMinutes)}; com o IO, DT ${formatDuration(duty.rosterDt)}.`
+          : on
+            ? `cobre o serviço planeado (apresentação ${at(plan)}).`
+            : `o serviço planeado apresentava às ${at(plan)}${start ? `; o IO começou às ${at(start)}` : ''}.`}
         {' '}{counts}
       </Alert>
     );

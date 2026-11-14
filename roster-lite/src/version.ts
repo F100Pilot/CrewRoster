@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.3.4';
+export const APP_VERSION = '0.9.3.5';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -19,10 +19,18 @@ export interface ReleaseNote {
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.9.3.5',
+    date: '2026-11-14',
+    highlights: [
+      'IO / prevenir: passa a ser reconhecido quando o duty é exatamente o mesmo antes e depois do IO — a app lê o DT que a escala imprime em cada dia e compara a versão sem IO com a versão com IO. O ecrã do dia mostra os dois DT.',
+      'Para isto, a app volta a ler os PDFs guardados uma vez, ao abrir.',
+    ],
+  },
+  {
     version: '0.9.3.4',
     date: '2026-11-14',
     highlights: [
-      'IO / prevenir: a app passa a reconhecê-lo sozinha mesmo quando a apresentação real difere uns minutos da que calcula (1 h antes da partida — a escala não traz a hora de apresentação). Basta o IO começar até 15 min da apresentação do serviço planeado.',
+      'IO / prevenir: ajuste interno na comparação com o serviço planeado (substituído pela 0.9.3.5).',
     ],
   },
   {

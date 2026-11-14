@@ -616,6 +616,31 @@ export function pgaBlankDates(tokens: PositionedToken[]): string[] {
   return [...shown].filter((d) => !used.has(d)).sort();
 }
 
+// The day's duty time as the roster prints it ("[DT 06:25]" in the day's totals box), in minutes.
+// The IO "prevenir" is read from it (domain/irregularity.ts): the duty is exactly the same before
+// and after the IO — the user's rule — and the PDF has no report time to compare otherwise.
+export function pgaDutyTimes(tokens: PositionedToken[]): Map<string, number> {
+  const { calendar, bands } = prepareBands(tokens);
+  const out = new Map<string, number>();
+  for (const b of bands) {
+    if (b.offset === undefined) continue;
+    const { dateAt } = bandDays(b, calendar);
+    for (const s of b.subs) {
+      for (const label of s.tokens.filter((t) => t.text.trim() === '[DT')) {
+        // Its value sits just below it in the same column: "06:25]".
+        const value = s.tokens
+          .filter((t) => t.page === label.page && t.y < label.y && Math.abs(t.x - label.x) <= 3 && /^\d{2}:\d{2}\]$/.test(t.text.trim()))
+          .sort((x, y) => y.y - x.y)[0];
+        const d = dateAt(label.x);
+        if (!value || !d) continue;
+        const [h, m] = value.text.trim().slice(0, 5).split(':').map(Number);
+        out.set(d, h * 60 + m);
+      }
+    }
+  }
+  return out;
+}
+
 export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
   const { calendar, bands } = prepareBands(tokens);
   const hotels = parseHotels(tokens); // "Hn" marker -> { name, phone }

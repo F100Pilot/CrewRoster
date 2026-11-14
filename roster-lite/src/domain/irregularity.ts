@@ -6,8 +6,8 @@ import type { ParsedDuty } from './types';
 // The "prevenir" case (a colleague's report, confirmed by the user): called at the report for the
 // alcohol test, the crew member can't fly the planned duty. It isn't their absence, so the day
 // counts in full — duty, per diem A (national, at base: no tax exemption) and the RAACO meal
-// allowances of the IO's period (Tabela 33). It shows on the roster as an IO that starts exactly at
-// the planned PSV's report (`planned.reportingTime`, kept by mergeDuties from the earlier download).
+// allowances of the IO's period (Tabela 33). It shows on the roster as an IO with exactly the duty
+// that was planned (`planned`, kept by mergeDuties from the earlier download — see autoPrevenir).
 // Only without an earlier download to compare with does the crew member say it (`prevenir`) — when the
 // roster can tell, it decides (user: the button only when there's no way to compare).
 // Any other IO: shown and counted as duty time; per diem and allowances pending the user's check.
@@ -16,24 +16,32 @@ export const isIO = (d: ParsedDuty): boolean => d.dutyCode === 'IO';
 
 const ioStart = (d: ParsedDuty) => d.reportingTime ?? d.departureTime;
 
-// How far the IO's start may be from the planned report and still be "at the report". The PDF has
-// no report time: the app takes the first departure − 1 h, while the real one is a few minutes off
-// (MAN case: departure 06:12, the roster's FDP puts the report at 05:15). A colleague's prevenir
-// wasn't recognised for that; an IO normal starts after about an hour of duty, well beyond this.
+// The prevenir is the SAME duty before and after the IO (user rule): the roster's printed duty time
+// ([DT]) of the day as planned equals the IO day's. That's the comparison when both PDFs had it; an
+// IO normal (Manchester: flights, then the IO) has a different duty. Older stored days without a
+// [DT] fall back to the IO covering the planned duty — report to last arrival + the 30-min
+// post-flight — within PREVENIR_TOLERANCE_MIN, since the app's report is the departure − 1 h and the
+// real one is a few minutes off.
 export const PREVENIR_TOLERANCE_MIN = 15;
+const POST_FLIGHT_MIN = 30;
 
 const minutesOf = (hhmm: string) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5));
-
-// Read from the roster alone: the IO opens at the planned report (give or take the tolerance).
-export function autoPrevenir(d: ParsedDuty): boolean {
-  const start = ioStart(d);
-  const plan = d.planned?.reportingTime;
-  if (!isIO(d) || !start || !plan) return false;
-  const diff = Math.abs(minutesOf(start) - minutesOf(plan));
+const near = (a: number, b: number) => {
+  const diff = Math.abs(a - b) % 1440;
   return Math.min(diff, 1440 - diff) <= PREVENIR_TOLERANCE_MIN;
+};
+
+export function autoPrevenir(d: ParsedDuty): boolean {
+  const plan = d.planned;
+  if (!isIO(d) || !plan) return false;
+  if (plan.dutyMinutes != null && d.rosterDt !== undefined) return plan.dutyMinutes === d.rosterDt;
+  const start = ioStart(d);
+  if (!start || !d.arrivalTime || !plan.reportingTime || !plan.arrivalTime) return false;
+  return near(minutesOf(start), minutesOf(plan.reportingTime))
+    && near(minutesOf(d.arrivalTime), minutesOf(plan.arrivalTime) + POST_FLIGHT_MIN);
 }
 
-// The roster can tell: there is a planned report to compare the IO's start with.
+// The roster can tell: there is a planned version of the day to compare the IO with.
 export const canCompareIO = (d: ParsedDuty): boolean => isIO(d) && !!d.planned?.reportingTime;
 
 export function isPrevenirIO(d: ParsedDuty): boolean {

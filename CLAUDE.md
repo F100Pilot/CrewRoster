@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (481 tests) — keep green
+npm test           # vitest run (483 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -337,9 +337,11 @@ Things learned over this collaboration that should persist across sessions:
   10:15–16:40) in place of the planned duty; parsed as `Other` / code `IO`. The **"prevenir"** (called at the report
   for the alcohol test, can't fly) counts the day in full (user: "se for prevenir conta tudo"): duty, per diem **A,
   national** (at base, no exempt part — "mete nacional o perdiem"), and the RAACO meals of the IO's period as a PSV at
-  base (Tabela 33 — casebook C07). Detected when the IO starts at the planned PSV's report — within
-  `PREVENIR_TOLERANCE_MIN` (15 min, since 0.9.3.4: the planned report is the app's departure − 1 h, the real one a few
-  minutes off, so a colleague's prevenir went unrecognised) — (`mergeDuties` keeps the
+  base (Tabela 33 — casebook C07). **Prevenir = exactly the same duty before and after the IO** (user rule, 0.9.3.5:
+  "só quando o duty é exatamente igual"; Manchester was NOT one): the roster's printed day [DT] (`pgaDutyTimes`,
+  `ParsedDuty.rosterDt`, PARSE_VERSION 18) of the planned day (`planned.dutyMinutes`) equals the IO day's. Without a
+  stored [DT] (older days) the fallback is the IO covering the planned duty — report and last arrival + 30 min within
+  `PREVENIR_TOLERANCE_MIN` (15 min; the app's report is departure − 1 h, the real one a few minutes off). (`mergeDuties` keeps the
   replaced day's earliest report on the IO as `planned`); ONLY when there is no such comparison (`canCompareIO`
   false) does the day page offer the "Foi o prevenir" switch (user rule, 0.9.2.1) — the mark is ignored otherwise
   (`ParsedDuty.prevenir`, stored in `crewroster.prevenir.<userId>`, applied by RosterProvider). `domain/irregularity.ts`.
