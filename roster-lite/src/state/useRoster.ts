@@ -32,8 +32,6 @@ export interface RosterState {
   setOffDayPay: (date: string, value: 'paid' | 'kept' | null) => void;
   // Minutes of a reduced rest before the day (RRRGS cl. 2.8), or null to clear.
   setRestCut: (date: string, minutes: number | null) => void;
-  /** The day's report time typed by the crew member (UTC HH:MM), or null to go back to the roster's. */
-  setReportTime: (date: string, utc: string | null) => void;
   // Re-read every PDF in the history (oldest first) into the roster; the count read, or null if none.
   reloadFromPdfs: () => Promise<number | null>;
   setSessionToken: (token: string | null) => void;

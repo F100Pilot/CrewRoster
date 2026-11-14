@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import { dutyColor } from '../theme';
-import { toLocalTime, checkInTimeLabel, localToUtcHHMM } from '../utils/localTime';
+import { toLocalTime, checkInTimeLabel } from '../utils/localTime';
 import { diffMinutes, formatDuration } from '../utils/duration';
 import { baseOf, dayStats } from '../domain/dutyStats';
 import { restBefore } from '../domain/restPeriods';
@@ -171,11 +171,10 @@ export default function DayDetailPage() {
               </Typography>
               {duty.reportingTime && duty.flightNumber && (
                 <Typography sx={{ ...passOverline, color: 'primary.main' }}>
-                  APRES. {checkInTimeLabel(date, duty.reportingTime, duty.departureAirport)}{duty.reportTyped ? ' ✎' : ''}
+                  APRES. {checkInTimeLabel(date, duty.reportingTime, duty.departureAirport)}
                 </Typography>
               )}
             </Box>
-            {duty.reportingTime && duty.flightNumber && date && <ReportEdit date={date} duty={duty} />}
             {!duty.flightNumber && (
               <Typography sx={{ fontFamily: PASS_MONO, fontSize: '1.7rem', fontWeight: 800, lineHeight: 1.2, mb: 1.5, wordBreak: 'break-word' }}>
                 {duty.dutyCode}
@@ -532,45 +531,6 @@ function daySummary(duties: ParsedDuty[]): string | undefined {
 // Pilots (AE): a flight on a planned day off — paid under RRRGS cl. 13 or the day kept for later —
 // and the minutes of a reduced rest (RRRGS cl. 2.8). Both read from the roster's remarks ("Voo em
 // Off", "Reducao Repouso") and settled by the pilot (colleagues' request); domain/offDayWork.ts.
-// The report time, when the real one isn't what the roster gives (user's audio, Nov 2026: a 13:55 report for a 15:10
-// take-off, the app assumed 14:10 — and the 13:55 is what gives the lunch; "se houver alguma alteração da apresentação,
-// para que o sistema assuma"). Typed in local time; duty, FDP, rest and the abonos follow it.
-function ReportEdit({ date, duty }: { date: string; duty: ParsedDuty }) {
-  const { setReportTime } = useRoster();
-  const [editing, setEditing] = useState(false);
-  const shown = toLocalTime(date, duty.reportingTime, duty.departureAirport) ?? duty.reportingTime ?? '';
-  const [value, setValue] = useState(shown);
-  if (!editing) {
-    return (
-      <Box display="flex" alignItems="center" gap={1} mt={-1} mb={1} flexWrap="wrap">
-        <Button size="small" sx={{ px: 0.5, minWidth: 0 }} onClick={() => { setValue(shown); setEditing(true); }}>
-          {duty.reportTyped ? 'Alterar a apresentação' : 'A apresentação foi outra?'}
-        </Button>
-        {duty.reportTyped && (
-          <Button size="small" color="inherit" sx={{ px: 0.5, minWidth: 0 }} onClick={() => setReportTime(date, null)}>Usar a da escala</Button>
-        )}
-      </Box>
-    );
-  }
-  const save = () => {
-    const utc = localToUtcHHMM(date, value, duty.departureAirport);
-    if (utc) setReportTime(date, utc);
-    setEditing(false);
-  };
-  return (
-    <Box display="flex" alignItems="center" gap={1} mt={-0.5} mb={1.5} flexWrap="wrap">
-      <TextField id={`report-${date}`} size="small" type="time" label={`Apresentação (hora local${duty.departureAirport ? ` ${duty.departureAirport}` : ''})`}
-        value={value} onChange={(e) => setValue(e.target.value)} sx={{ width: 220 }}
-        slotProps={{ inputLabel: { shrink: true }, htmlInput: { step: 60 } }} />
-      <Button size="small" variant="contained" onClick={save}>Guardar</Button>
-      <Button size="small" onClick={() => setEditing(false)}>Cancelar</Button>
-      <Typography variant="caption" color="text.secondary" display="block" width="100%">
-        Conta para o serviço, o FDP, o descanso e os abonos deste dia.
-      </Typography>
-    </Box>
-  );
-}
-
 function OffDayWork({ date, duties, rest }: { date: string; duties: ParsedDuty[]; rest: RestInfo | null }) {
   const { setOffDayPay, setRestCut } = useRoster();
   const flies = duties.some((d) => d.dutyType === 'Flight Duty' || d.dutyType === 'Positioning');

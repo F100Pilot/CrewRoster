@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { airportTz, iataSeasonStart, localToUtcHHMM, seasonPlanOffsetMinutes, toLocalTime, tzOffsetMinutes } from '../localTime';
+import { airportTz, iataSeasonStart, seasonPlanOffsetMinutes, toLocalTime, tzOffsetMinutes } from '../localTime';
 import { AIRPORT_COORD } from '../../domain/airports';
 
 // Without a timezone an airport is read on the base's clock — an hour off for Spain, France, Italy…
@@ -54,14 +54,5 @@ describe('IATA seasons', () => {
         expect(seasonPlanOffsetMinutes(d, tz)).toBe(tzOffsetMinutes(d, tz));
       }
     }
-  });
-});
-
-describe('local report time back to UTC', () => {
-  it('converts a Lisbon summer / winter time and a Porto one', () => {
-    expect(localToUtcHHMM('2026-10-20', '13:55', 'LIS')).toBe('12:55');
-    expect(localToUtcHHMM('2026-11-20', '13:55', 'OPO')).toBe('13:55');
-    expect(localToUtcHHMM('2026-10-20', '00:30', 'LIS')).toBe('23:30');
-    expect(localToUtcHHMM('2026-10-20', '9:5', 'LIS')).toBeNull();
   });
 });

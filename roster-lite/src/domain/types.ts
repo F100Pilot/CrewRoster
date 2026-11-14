@@ -42,8 +42,6 @@ export interface ParsedDuty {
   offDayPay?: 'paid' | 'kept';
   /** Minutes of rest cut before this day, typed by the pilot (RRRGS cl. 2.8, max 120). */
   restCutMin?: number;
-  /** The report time (UTC HH:MM) was typed by the crew member on the day page, over the roster's. */
-  reportTyped?: boolean;
   /** Imported after its day had passed: the times are the flown ones, not a plan. */
   settled?: boolean;
 }

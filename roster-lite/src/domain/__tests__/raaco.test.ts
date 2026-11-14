@@ -147,13 +147,4 @@ describe('Meal Plan over the whole PSV', () => {
     const onTime = raacoDays([out, leg('2026-10-22', 'TP9222', 'FNC', 'LIS', '09:15', '10:50')], 'LIS').get('2026-10-22')!;
     expect(onTime.meals.find((m) => m.meal === 'lunch')).toBeUndefined();
   });
-
-  it('gives the lunch from a 13:55 report, not from an assumed 14:10 one (user, take-off 15:10)', () => {
-    // Report 12:55 UTC = 13:55 in Lisbon (October): the duty starts in the lunch period (4.5.5.1 a) — with the hour-before
-    // report (14:10) it wouldn't. Sectors up to 1h30 carry no main meal: 18 €.
-    const legs = [leg('2026-10-20', 'TP9231', 'LIS', 'OPO', '14:10', '15:05', '12:55'), leg('2026-10-20', 'TP9232', 'OPO', 'LIS', '15:50', '16:45')];
-    expect(raacoDays(legs, 'LIS').get('2026-10-20')!.lunch).toBe(18);
-    const assumed = [{ ...legs[0], reportingTime: '13:10' }, legs[1]];
-    expect(raacoDays(assumed, 'LIS').get('2026-10-20')?.lunch ?? 0).toBe(0);
-  });
 });
