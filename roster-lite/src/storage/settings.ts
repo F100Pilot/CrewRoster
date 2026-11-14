@@ -206,6 +206,67 @@ export function setPaySettings(userId: string, s: PaySettings): void {
   }
 }
 
+// ── Pay values by version (user: changing a value must never change the months before) ──────
+// Each Guardar in Settings → Vencimento stores the figures as a version that applies from a WORK
+// month on (the pay card's "Trabalho de …", paid on the next month's payslip); a month uses the
+// latest version from on or before it. `crewroster.pay.<user>` stays the current set — what the
+// settings show, plus the per-month notes the pay card keeps (holidayPay, lineChecks) and the
+// on/off switch, which are not versioned. The first time, the saved set becomes the version for
+// every month ("" = since always), so nothing that was already shown changes.
+export interface PayVersion { from: string; s: PaySettings }
+const PAY_HISTORY_PREFIX = 'crewroster.payHistory.';
+// Card notes and the switch: one value for all months, never part of a version.
+const PAY_GLOBAL = ['enabled', 'holidayPay', 'lineChecks'] as const;
+
+export function getPayHistory(userId: string): PayVersion[] {
+  try {
+    const raw = localStorage.getItem(PAY_HISTORY_PREFIX + userId);
+    const list = raw ? (JSON.parse(raw) as PayVersion[]) : null;
+    if (Array.isArray(list) && list.length) {
+      return list
+        .filter((v) => v && typeof v.from === 'string' && v.s && typeof v.s === 'object')
+        .map((v) => ({ from: v.from, s: { ...DEFAULT_PAY_SETTINGS, ...v.s } }))
+        .sort((a, b) => a.from.localeCompare(b.from));
+    }
+  } catch { /* fall through */ }
+  return [{ from: '', s: getPaySettings(userId) }];
+}
+
+// The figures in force for a work month, with the card's notes and the switch from the current set.
+export function getPaySettingsFor(userId: string, month: string): PaySettings {
+  const current = getPaySettings(userId);
+  const versions = getPayHistory(userId);
+  const v = [...versions].reverse().find((x) => x.from <= month) ?? versions[0];
+  const out: PaySettings = { ...v.s };
+  for (const k of PAY_GLOBAL) (out as unknown as Record<string, unknown>)[k] = current[k];
+  if (out.exemptNationalSs === 51.9) out.exemptNationalSs = DEFAULT_PAY_SETTINGS.exemptNationalSs;
+  return out;
+}
+
+// Guardar: the figures apply from `from` (a work month, "" = every month) until the next version.
+// Versions already saved for later months are kept — they were saved for those months.
+export function savePayVersion(userId: string, from: string, s: PaySettings): void {
+  const values = { ...s };
+  for (const k of PAY_GLOBAL) delete (values as unknown as Record<string, unknown>)[k];
+  const list = getPayHistory(userId).filter((v) => v.from !== from);
+  list.push({ from, s: values as PaySettings });
+  list.sort((a, b) => a.from.localeCompare(b.from));
+  try {
+    localStorage.setItem(PAY_HISTORY_PREFIX + userId, JSON.stringify(list));
+  } catch { /* ignore */ }
+  // The current set follows the latest version; the global fields stay as they are.
+  const current = getPaySettings(userId);
+  const latest = list[list.length - 1].s;
+  const next: PaySettings = { ...latest } as PaySettings;
+  for (const k of PAY_GLOBAL) (next as unknown as Record<string, unknown>)[k] = current[k];
+  setPaySettings(userId, next);
+}
+
+// The pay card's notes and the switch: changed in the current set only, never in a version.
+export function patchPayGlobal(userId: string, patch: Partial<Pick<PaySettings, (typeof PAY_GLOBAL)[number]>>): void {
+  setPaySettings(userId, { ...getPaySettings(userId), ...patch });
+}
+
 // IO days the crew member marked as the "prevenir" (true) or as not (false), by date — over what
 // the roster alone suggests (domain/irregularity.ts). Per profile; carried by backups.
 const PREVENIR_PREFIX = 'crewroster.prevenir.';

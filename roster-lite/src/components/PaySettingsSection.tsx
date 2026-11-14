@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import {
-  Accordion, AccordionDetails, AccordionSummary, Box, IconButton, InputAdornment, MenuItem, Stack, Switch, TextField,
+  Accordion, AccordionDetails, AccordionSummary, Alert, Box, Button, IconButton, InputAdornment, MenuItem, Paper, Stack, Switch, TextField,
   ToggleButton, ToggleButtonGroup, Typography,
 } from '@mui/material';
 import { Calculate, ExpandMore } from '@mui/icons-material';
 import CalculatorDialog from './CalculatorDialog';
 import { evalExpression, isExpression } from '../utils/calc';
-import { getPaySettings, setPaySettings } from '../storage/settings';
+import { getPayHistory, getPaySettings, patchPayGlobal, savePayVersion } from '../storage/settings';
 import { PAY_CATEGORIES, pensionLines, perDiemDefaults, unionBaseAuto, unionFee, type PayCategory, type PaySettings } from '../domain/payEstimate';
 import { IRS_TABLES, type IrsTable } from '../domain/irsWithholding';
 
@@ -20,19 +20,49 @@ type MoneyField = 'vb' | 'veTech' | 'veCommand' | 'vs' | 'extrasOther' | 'chiefB
   | 'nonTaxableFixed' | 'fixedDeductions' | 'exemptNationalIrs' | 'exemptNationalSs' | 'exemptAbroadIrs' | 'exemptAbroadSs'
   | 'unionPct' | 'unionBase';
 
+const MONTHS_PT = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+const shiftMonth = (key: string, by: number) => {
+  const idx = Number(key.slice(0, 4)) * 12 + Number(key.slice(5, 7)) - 1 + by;
+  return `${Math.floor(idx / 12)}-${String((idx % 12) + 1).padStart(2, '0')}`;
+};
+// A version is keyed by the WORK month (the pay card's "Trabalho de …"); the crew think in payslips,
+// so it's named by the payslip that work is paid on — the month after.
+const payslipOf = (workMonth: string) => {
+  const p = shiftMonth(workMonth, 1);
+  return `recibo de ${MONTHS_PT[Number(p.slice(5, 7)) - 1]} ${p.slice(0, 4)}`;
+};
+
 // Settings for the experimental pay estimate: off by default; once on, the pilot's own figures
-// from the payslip. Saved as typed, on this device only.
-export default function PaySettingsSection({ userId }: { userId: string }) {
+// from the payslip, on this device only. Edits are a draft until Guardar (user: "tem de existir um
+// botão de salvar"), and each Guardar is a version from a chosen payslip on — the months before keep
+// the figures they had (user: "nunca pode alterar os valores anteriores").
+export default function PaySettingsSection({ userId, onDirtyChange }: { userId: string; onDirtyChange?: (dirty: boolean) => void }) {
   const [s, setS] = useState<PaySettings>(() => getPaySettings(userId));
   // The text of each money field as typed, so "1234," doesn't jump while editing.
   const [text, setText] = useState<Record<MoneyField, string>>(() => toText(getPaySettings(userId)));
-  useEffect(() => {
+  const [dirty, setDirty] = useState(false);
+  const thisMonth = new Date().toISOString().slice(0, 7);
+  const [from, setFrom] = useState(thisMonth);
+  const [savedNote, setSavedNote] = useState<string | null>(null);
+  const reset = () => {
     const next = getPaySettings(userId);
     setS(next);
     setText(toText(next));
-  }, [userId]);
+    setDirty(false);
+    setFrom(thisMonth);
+  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(reset, [userId]);
+  useEffect(() => { onDirtyChange?.(dirty); }, [dirty, onDirtyChange]);
 
-  const save = (next: PaySettings) => { setS(next); setPaySettings(userId, next); };
+  const save = (next: PaySettings) => { setS(next); setDirty(true); setSavedNote(null); };
+  const commit = () => {
+    savePayVersion(userId, from, s);
+    setDirty(false);
+    setSavedNote(from ? `Guardado: vale a partir do ${payslipOf(from)}. Os recibos anteriores ficam como estavam.` : 'Guardado para todos os meses.');
+  };
+  const history = getPayHistory(userId);
+  const inForce = [...history].reverse().find((v) => v.from <= thisMonth) ?? history[0];
   // The two halves of the section: what is paid, and what the payslip takes off.
   const [part, setPart] = useState<'valores' | 'descontos'>('valores');
 
@@ -157,13 +187,25 @@ export default function PaySettingsSection({ userId }: { userId: string }) {
         </Box>
         <Switch
           checked={s.enabled}
-          onChange={(e) => save({ ...s, enabled: e.target.checked, pensionAuto: s.pensionAuto || (e.target.checked && !s.vb) })}
+          onChange={(e) => {
+            // The switch isn't a figure: it applies at once, to every month.
+            const on = e.target.checked;
+            patchPayGlobal(userId, { enabled: on });
+            setS((x) => ({ ...x, enabled: on, pensionAuto: x.pensionAuto || (on && !x.vb) }));
+            if (on && !s.vb && !s.pensionAuto) savePayVersion(userId, '', { ...s, enabled: on, pensionAuto: true });
+          }}
           inputProps={{ 'aria-label': 'Mostrar a estimativa de vencimento' }}
         />
       </Box>
 
       {s.enabled && (
         <>
+          <Typography variant="caption" color="text.secondary">
+            {inForce.from ? `Valores em vigor desde o ${payslipOf(inForce.from)}` : 'Valores em vigor para todos os meses'}
+            {history.length > 1 ? ` · ${history.length - 1} ${history.length === 2 ? 'versão anterior guardada' : 'versões anteriores guardadas'} (os recibos antigos usam-nas)` : ''}.
+            {' '}Alterações só contam depois de Guardar.
+          </Typography>
+          {savedNote && <Alert severity="success" onClose={() => setSavedNote(null)}>{savedNote}</Alert>}
           <ToggleButtonGroup
             exclusive fullWidth size="small" color="primary" value={part}
             onChange={(_, v: 'valores' | 'descontos' | null) => v && setPart(v)}
@@ -317,6 +359,23 @@ export default function PaySettingsSection({ userId }: { userId: string }) {
                 </AccordionDetails>
               </Accordion>
             </Stack>
+          )}
+
+          {/* Nothing is saved until here. The version applies from the chosen payslip on; the payslips
+              before keep their own figures. "Todos os meses" is there to fix a typo everywhere. */}
+          {dirty && (
+            <Paper elevation={0} sx={{ position: 'sticky', bottom: 0, zIndex: 2, p: 1.5, borderRadius: '16px', boxShadow: '0 -8px 20px -8px rgba(0,0,0,.35)' }}>
+              <TextField select size="small" fullWidth label="Aplicar a partir do" value={from} onChange={(e) => setFrom(e.target.value)}>
+                {Array.from({ length: 16 }, (_, i) => shiftMonth(thisMonth, 3 - i)).map((m) => (
+                  <MenuItem key={m} value={m}>{payslipOf(m)}{m === thisMonth ? ' (o próximo)' : ''}</MenuItem>
+                ))}
+                <MenuItem value="">Todos os meses (corrigir um engano)</MenuItem>
+              </TextField>
+              <Box display="flex" gap={1} mt={1.25} justifyContent="flex-end">
+                <Button color="inherit" onClick={reset}>Descartar</Button>
+                <Button variant="contained" onClick={commit}>Guardar</Button>
+              </Box>
+            </Paper>
           )}
         </>
       )}

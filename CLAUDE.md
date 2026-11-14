@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (483 tests) — keep green
+npm test           # vitest run (485 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -210,6 +210,13 @@ Things learned over this collaboration that should persist across sessions:
 - **Pay figures are shown to the cent** (since 0.8.37.2, user: "não quero que faças arredondamentos"): no whole-euro
   formatting and no "≈" on the pay card; the maths was already in cents. The one rounding kept is the payroll's own:
   IRS withheld floored to the euro (the payslip shows 6 950,00 for 40,08 % × 17 341,22).
+- **Pay figures are versioned and saved only on Guardar** (since 0.9.3.8, a serious bug: every keystroke saved at once and
+  for ALL months — a colleague's test with 1 € wiped his figures). Settings → Vencimento edits a draft; Guardar stores a
+  version from a chosen WORK month on ("a partir do recibo de …", default the next payslip; "" = all months, to fix a typo):
+  `crewroster.payHistory.<user>`, `savePayVersion()` / `getPaySettingsFor(user, month)` / `getPayHistory()` in
+  `storage/settings.ts`; `crewroster.pay.<user>` stays the current set. NEVER let a change rewrite earlier months (user:
+  "nunca pode alterar os valores anteriores"). The on/off switch and the card's per-month notes (`holidayPay`, `lineChecks`)
+  are global, written with `patchPayGlobal()`. Leaving Settings / switching tab with unsaved figures asks first.
 - **Settings' "Fixo por mês" = the sum of the typed fields only** (VB + VE + VS + extras; since 0.9.3.7): it used to
   add the automatic PGA pension 6,5% too, so crew read the VB as "majorado" (1 € → 1,07 €). The pension has its own lines.
 - **Calculator in the money fields** (since 0.8.38, user request): every money field in Settings → Vencimento has a
