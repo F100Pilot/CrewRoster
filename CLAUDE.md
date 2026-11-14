@@ -289,6 +289,11 @@ Things learned over this collaboration that should persist across sessions:
   is automatic: `unionBaseAuto()` = all fixed pay minus the command lines "Anuid. técnica Comando"
   (`veCommand`, part of VE) and "Prémio de chefia" (`chiefBonus`, part of extras) — matched a real
   payslip to the cent (user wants it automatic); a typed `unionBase` still overrides, under Avançado.
+- **Night / holiday premiums — the alíneas of RRRGS cl. 12.2 are SUMMED** (a colleague, Nov 2026: "as alíneas devem ser
+  somadas, o que está dentro delas não"; cl. 12.3 keeps only the highest WITHIN one alínea): a positioning's 50% (a.iv)
+  + night 25% (c) + holiday 100% (d), never a share of them. Block-pay adds 100% of the flight time between 00:00 and 23:59
+  Lisbon of the holiday only (a sector crossing midnight counts its part). Still open: municipal holidays / Carnival, and
+  airport/home standby on a holiday (alínea e) — checklist item `feriados-majoracao`.
 - **Holiday / Christmas subsidies** (since 0.8.27; base fixed in 0.8.28 from a real July payslip, to the
   cent): on ALL fixed lines (VB+VE+VS+chief bonus+complements, not the pension contribution); holiday =
   fixed ÷ 30 × 42 (`HOLIDAY_ENTITLEMENT_DAYS`), Christmas = one month's fixed pay (to confirm on a November

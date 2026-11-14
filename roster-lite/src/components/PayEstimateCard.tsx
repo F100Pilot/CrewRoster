@@ -1,3 +1,4 @@
+import InfoCollapse from './InfoCollapse';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Alert, Box, Card, CardContent, Checkbox, FormControlLabel, IconButton, Stack, Typography } from '@mui/material';
 import { Add, ChevronLeft, ChevronRight, ExpandLess, ExpandMore, Payments, Remove } from '@mui/icons-material';
@@ -218,12 +219,19 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
               </Stack>
             )}
 
-            <Typography variant="caption" color="text.disabled" display="block" mt={0.75} lineHeight={1.35}>
-              O variável (per diem incluído) é pago no mês seguinte. IRS pelas tabelas de retenção de 2026 (continente); não prevê acertos de meses anteriores. Noturno 23h–06h e feriados nacionais em hora de Lisboa. Subsídios sobre todos os fixos: férias = 42 dias (fixos ÷ 30 × 42), Natal = um mês
-              (cl. 7 e 8), com IRS retido à parte, SS e fundo de pensões. Line checks: um por dia com voos W_INS —
-              corrige com − / + se não bater. Não inclui folgas trabalhadas, split-duty, nem o acerto anual dos plafonds (março).
-              Confirma sempre no recibo.
-            </Typography>
+            {/* Help text, closed (user, Nov 2026: "este último texto devia estar colapsado"). */}
+            <Box mt={0.75}>
+              <InfoCollapse card={false} title="Como se calcula">
+                <Typography variant="caption" color="text.secondary" display="block" lineHeight={1.35}>
+                  O variável (per diem incluído) é pago no mês seguinte. IRS pelas tabelas de retenção de 2026 (continente); não
+                  prevê acertos de meses anteriores. Noturno 23h–06h e feriados nacionais em hora de Lisboa, somados às outras
+                  alíneas da cl. 12.2. Subsídios sobre todos os fixos: férias = 42 dias (fixos ÷ 30 × 42), Natal = um mês (cl. 7 e
+                  8), com IRS retido à parte, SS e fundo de pensões. Line checks: um por dia com voos W_INS — corrige com − / + se
+                  não bater. Voos em dia de folga (cl. 13) e reduções de repouso (cl. 2.8) contam quando marcados no dia. Não
+                  inclui split-duty nem o acerto anual dos plafonds (março). Confirma sempre no recibo.
+                </Typography>
+              </InfoCollapse>
+            </Box>
           </>
         )}
       </CardContent>

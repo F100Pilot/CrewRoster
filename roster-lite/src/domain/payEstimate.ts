@@ -345,7 +345,9 @@ export function payEstimate(
   // The day's counted duty as the limits count it — standby already at 25% at home / 50% at
   // the airport — a positioning-only day at 50% (cl. 12.2.a.iv), plus 25% of the work between
   // 23:00 and 06:00 Lisbon and 100% of the work on a holiday. Night and holiday are separate
-  // alíneas, so both apply where they meet (cl. 12.3 only stops cumulating within one alínea).
+  // alíneas, so both apply where they meet (cl. 12.3 only stops cumulating within one alínea). The alíneas are SUMMED
+  // (cl. 12.2: "o somatório das percentagens"; a colleague, Nov 2026: "as alíneas devem ser somadas, o que está dentro
+  // delas não"): a positioning's 50% (a.iv) + the night's 25% (c) + the holiday's 100% (d) — not a share of them.
   // Flights on a day off paid under cl. 13 stay out of the plafonds (cl. 13.5): paid on their own.
   const offDayDates = new Set([...days].filter(([date, day]) => inMonth(date) && offDayChoice(day) === 'paid').map(([date]) => date));
   let dutyCredited = 0;
@@ -368,16 +370,16 @@ export function payEstimate(
         night += overlap(a, b, nextMidnight - 60 * MIN, nextMidnight + 6 * 60 * MIN);
         if (holidays.has(iso)) holiday += overlap(a, b, midnight, nextMidnight);
       }
-      const share = positioningOnly ? 0.5 : 1;
-      credit += (night / MIN) * NIGHT_SHARE * share + (holiday / MIN) * HOLIDAY_SHARE * share;
+      credit += (night / MIN) * NIGHT_SHARE + (holiday / MIN) * HOLIDAY_SHARE;
     }
     dutyCredited += credit;
   }
 
   // ── Block-pay credit ──
   // Operated sectors and simulator in full; a positioning sector in full when the same day has
-  // an operated one (extra-crew next to a working sector, cl. 12.2.a.iii), else at 50%; a sector
-  // on a holiday counts twice.
+  // an operated one (extra-crew next to a working sector, cl. 12.2.a.iii), else at 50%; plus 100% of the flight time
+  // between 00:00 and 23:59 (Lisbon) of a holiday (cl. 12.2.d) — summed with alínea a, and only that part of a sector
+  // that crosses midnight (it used to double the whole sector by its UTC date).
   let blockCredited = 0;
   for (const [date, day] of days) {
     if (!inMonth(date) || offDayDates.has(date)) continue;
@@ -385,9 +387,14 @@ export function payEstimate(
     for (const x of day) {
       if (!FLYING.has(x.dutyType) || !x.departureTime || !x.arrivalTime) continue;
       let min = diffMinutes(x.departureTime, x.arrivalTime);
+      const off = Date.parse(`${date}T${x.departureTime}:00Z`);
+      const on = off + min * MIN;
       if (x.dutyType === 'Positioning' && !operatedDay) min *= 0.5;
-      if (holidays.has(date)) min *= 1 + HOLIDAY_SHARE;
-      blockCredited += min;
+      let holiday = 0;
+      for (const iso of [nextDate(date, -1), date, nextDate(date)]) {
+        if (holidays.has(iso)) holiday += overlap(off, on, lisbonMidnightUtc(iso), lisbonMidnightUtc(nextDate(iso)));
+      }
+      blockCredited += min + (holiday / MIN) * HOLIDAY_SHARE;
     }
   }
 

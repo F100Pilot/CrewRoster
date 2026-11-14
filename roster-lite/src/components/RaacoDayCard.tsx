@@ -61,7 +61,10 @@ export default function RaacoDayCard({ date }: { date: string }) {
         {day.meals.some((m) => m.askable) && (
           <Box mt={day.meals.some((m) => !m.askable) || day.nights.length ? 1.5 : 0} pt={day.meals.some((m) => !m.askable) || day.nights.length ? 1.25 : 0}
             sx={{ borderTop: day.meals.some((m) => !m.askable) || day.nights.length ? 1 : 0, borderColor: 'divider' }}>
-            <Typography sx={{ ...passOverline, mb: 0.5 }}>A BORDO · LIGADO = EMBARCADA · CEIA: LIGADO = PAGA</Typography>
+            <Typography sx={passOverline}>A BORDO · LIGADO = EMBARCADA</Typography>
+            {day.meals.some((m) => m.askable && m.meal === 'supper') && (
+              <Typography sx={{ ...passOverline, mb: 0.5 }}>CEIA · LIGADO = PAGA</Typography>
+            )}
             <MealConfirmList day={day} why />
 
           </Box>
