@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { airportTz, toLocalTime, tzOffsetMinutes } from '../localTime';
+import { airportTz, iataSeasonStart, seasonPlanOffsetMinutes, toLocalTime, tzOffsetMinutes } from '../localTime';
 import { AIRPORT_COORD } from '../../domain/airports';
 
 // Without a timezone an airport is read on the base's clock — an hour off for Spain, France, Italy…
@@ -18,5 +18,34 @@ describe('airport timezones', () => {
     expect(tzOffsetMinutes(new Date('2026-09-21T10:45:00Z'), 'Africa/Casablanca')).toBe(0);
     expect(toLocalTime('2026-09-21', '10:45', 'RAK')).toBe('10:45');
     expect(tzOffsetMinutes(new Date('2026-08-15T12:00:00Z'), 'Africa/Casablanca')).toBe(60);
+  });
+});
+
+// The Meal Plan is drawn per IATA season (ROV 4.5.10.2–3): a clock change mid-season doesn't move it.
+describe('IATA seasons', () => {
+  const at = (iso: string) => new Date(iataSeasonStart(new Date(iso))).toISOString();
+
+  it('starts on the last Sunday of March and of October', () => {
+    expect(at('2026-09-21T10:45:00Z')).toBe('2026-03-29T01:00:00.000Z');
+    expect(at('2026-10-25T01:00:00Z')).toBe('2026-10-25T01:00:00.000Z');
+    expect(at('2026-10-25T00:59:00Z')).toBe('2026-03-29T01:00:00.000Z');
+    expect(at('2027-01-10T12:00:00Z')).toBe('2026-10-25T01:00:00.000Z');
+    expect(at('2027-03-28T02:00:00Z')).toBe('2027-03-28T01:00:00.000Z');
+    expect(at('2028-10-29T12:00:00Z')).toBe('2028-10-29T01:00:00.000Z');
+  });
+
+  it('keeps the season start clock: Morocco plans on UTC+1 until 25 Oct 2026, UTC+0 after', () => {
+    expect(seasonPlanOffsetMinutes(new Date('2026-09-21T10:45:00Z'), 'Africa/Casablanca')).toBe(60);
+    expect(seasonPlanOffsetMinutes(new Date('2026-11-02T10:45:00Z'), 'Africa/Casablanca')).toBe(0);
+    expect(seasonPlanOffsetMinutes(new Date('2027-07-01T10:45:00Z'), 'Africa/Casablanca')).toBe(0);
+  });
+
+  it('matches the real clock where clocks change with the seasons', () => {
+    for (const iso of ['2026-04-01T12:00:00Z', '2026-10-24T12:00:00Z', '2026-10-26T12:00:00Z', '2027-03-27T12:00:00Z']) {
+      for (const tz of ['Europe/Lisbon', 'Europe/Madrid', 'Europe/London', 'Atlantic/Azores', 'Atlantic/Cape_Verde']) {
+        const d = new Date(iso);
+        expect(seasonPlanOffsetMinutes(d, tz)).toBe(tzOffsetMinutes(d, tz));
+      }
+    }
   });
 });

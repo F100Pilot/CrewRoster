@@ -66,6 +66,28 @@ const MOROCCO_UTC0_FROM = Date.UTC(2026, 8, 20, 1, 0);
 const fixedOffset = (d: Date, tz: string): number | null =>
   tz === 'Africa/Casablanca' && d.getTime() >= MOROCCO_UTC0_FROM ? 0 : null;
 
+// ── IATA scheduling seasons ──
+// Summer runs from the last Sunday of March to the Saturday before the last Sunday of October;
+// winter from there to the next summer. Taken as starting at 01:00 UTC that Sunday — the instant
+// Europe changes its clocks — so a European airport's clock is the same all through a season.
+const lastSunday = (year: number, month: number) => {
+  const last = new Date(Date.UTC(year, month + 1, 0));
+  return Date.UTC(year, month, last.getUTCDate() - last.getUTCDay(), 1, 0);
+};
+/** Start (UTC ms) of the IATA season the instant falls in. */
+export function iataSeasonStart(d: Date): number {
+  const t = d.getTime();
+  const y = d.getUTCFullYear();
+  const starts = [lastSunday(y - 1, 9), lastSunday(y, 2), lastSunday(y, 9)];
+  return starts.filter((s) => s <= t).pop()!;
+}
+/** The airport clock a season's plan (timetable, Meal Plan) was drawn on: the offset in force when
+ *  the season began. Equal to the real clock unless the country changed its clocks mid-season
+ *  (Morocco, 20 Sep 2026: the summer plan kept UTC+1 until 25 Oct — RAACO casebook C10). */
+export function seasonPlanOffsetMinutes(d: Date, tz: string): number {
+  return tzOffsetMinutes(new Date(iataSeasonStart(d)), tz);
+}
+
 // Minutes the timezone's clock is ahead of UTC at an instant (DST-aware).
 const offsetFmt = new Map<string, Intl.DateTimeFormat>();
 export function tzOffsetMinutes(d: Date, tz: string): number {

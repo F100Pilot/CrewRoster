@@ -57,6 +57,9 @@ produção, em vez de promover uma a uma.
 - **0.9.3.23** — **Meal Plan por época IATA** (C10): de 20/09 a 25/10/2026 o embarque das refeições em Marrocos segue
   a hora antiga (UTC+1) — o almoço a bordo do RAK→LIS de 21/09 deixa de ser pago (confirmado pelo colega). O direito
   à refeição e as horas mostradas seguem a hora real (UTC+0).
+- **0.9.3.24** — **Épocas IATA gerais** (utilizador: "para correr bem no futuro"): `iataSeasonStart()` /
+  `seasonPlanOffsetMinutes()` em `localTime.ts` — o embarque segue a hora em vigor no início da época, para qualquer
+  aeroporto e ano. Na Europa é igual à hora real; em aberto: Ramadão 2026 em Marrocos (passa a seguir UTC+1).
 
 ---
 
