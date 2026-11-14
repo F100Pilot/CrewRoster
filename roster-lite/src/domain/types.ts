@@ -47,6 +47,9 @@ export interface ParsedDuty {
   /** A settled sector whose plan the app saw (from a roster printed before the day) — `planned` is only kept when it
    *  differs, so this tells "flown as planned" from "no plan known" (the abonos warn on the latter). */
   planKnown?: boolean;
+  /** Meals the crew member marked on the calendar's 🍽 banner, by meal key ("lunch:2026-10-02"): true = on board,
+   *  false = not. Put on the flights / DHCs by RosterProvider; raaco.ts follows it. */
+  mealOnboard?: Record<string, boolean>;
 }
 
 export interface PlannedTimes {

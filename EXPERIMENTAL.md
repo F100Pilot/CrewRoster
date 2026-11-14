@@ -33,6 +33,10 @@ produção, em vez de promover uma a uma.
   um dia que a app já tem; a releitura ordena os PDFs pela data de impressão.
 - **0.9.3.33** — **Aviso nos abonos sem escala original** (utilizador): setor voado sem plano visto (`planKnown`, gravado
   no merge; PARSE_VERSION 28) → `RaacoDay.noPlan`: alerta + ⚠ na página Abonos e alerta no cartão do dia.
+- **0.9.3.34** — **Refeições a bordo marcadas pela tripulação** (utilizador): 🍽 no calendário só nos dias voados com
+  refeições em jogo (embarcadas ou pagas; nunca a ceia, DHC ou estadia); cartão "Refeições a bordo" + janela por dia e
+  a mesma lista no cartão do dia; "Havia a bordo" → 0, "Não havia" → Tabela 33 (4.5.11.5/6). `components/MealConfirm.tsx`,
+  `crewroster.mealOnboard.<user>`, `MealLine.askable` / `crew`.
 
 ---
 

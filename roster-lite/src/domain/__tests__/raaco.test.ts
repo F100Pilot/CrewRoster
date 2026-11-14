@@ -165,4 +165,25 @@ describe('Meal Plan over the whole PSV', () => {
     expect(raacoDays([{ ...flown, planKnown: true }], 'LIS').get('2026-10-15')!.noPlan).toBe(false);
     expect(raacoDays([{ ...flown, settled: false }], 'LIS').get('2026-10-15')!.noPlan).toBe(false);
   });
+
+  it('follows the crew\'s word on a meal: on board → 0, not on board → paid (calendar 🍽)', () => {
+    // NCE turnaround: the plan has the lunch on the NCE→LIS (a colleague's 02/10 — the company paid it).
+    const legs = [leg('2026-10-02', 'TP9261', 'LIS', 'NCE', '07:15', '09:45', '06:15'), leg('2026-10-02', 'TP9262', 'NCE', 'LIS', '10:30', '13:15')];
+    const app = raacoDays(legs, 'LIS').get('2026-10-02')!;
+    const lunch = app.meals.find((m) => m.meal === 'lunch')!;
+    expect(lunch).toMatchObject({ how: 'onboard', askable: true });
+    const marked = legs.map((d) => ({ ...d, mealOnboard: { [lunch.key]: false } }));
+    expect(raacoDays(marked, 'LIS').get('2026-10-02')!.lunch).toBe(18);
+    // A meal the app pays (short sectors) marked on board → 0.
+    const short = [leg('2026-10-20', 'TP9263', 'LIS', 'OPO', '11:00', '11:55', '10:00'), leg('2026-10-20', 'TP9264', 'OPO', 'LIS', '12:40', '13:35')];
+    const paid = raacoDays(short, 'LIS').get('2026-10-20')!;
+    expect(paid.lunch).toBe(18);
+    const key = paid.meals.find((m) => m.meal === 'lunch')!.key;
+    expect(raacoDays(short.map((d) => ({ ...d, mealOnboard: { [key]: true } })), 'LIS').get('2026-10-20')!.lunch).toBe(0);
+  });
+
+  it('never asks about the supper, a DHC meal or a stay', () => {
+    const d = raacoDays([leg('2026-10-03', 'TP9271', 'LIS', 'DUB', '20:00', '22:40', '19:00')], 'LIS');
+    for (const day of d.values()) for (const m of day.meals) if (m.meal === 'supper' || m.how === 'stay' || m.how === 'dhc') expect(m.askable).toBeFalsy();
+  });
 });

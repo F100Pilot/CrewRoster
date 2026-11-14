@@ -6,6 +6,7 @@ import { useRoster } from '../state/useRoster';
 import { baseOf } from '../domain/dutyStats';
 import { MEAL_LABEL, raacoDays, type MealHow } from '../domain/raaco';
 import { TimelineRow, passOverline } from './PassCard';
+import { MealConfirmList } from './MealConfirm';
 
 // The day's meals under the RAACO (ROV-PGA 4.5): which are due, how each is met — loaded on a
 // flight, on ground, as an allowance or in the stay — and what goes on the Abonos statement.
@@ -55,6 +56,12 @@ export default function RaacoDayCard({ date }: { date: string }) {
               right={n.value !== null ? euro(n.value) : 'sem valor'} />
           ))}
         </Stack>
+        {day.meals.some((m) => m.askable) && day.date <= new Date().toISOString().slice(0, 10) && (
+          <Box mt={1.5} pt={1.25} sx={{ borderTop: 1, borderColor: 'divider' }}>
+            <Typography sx={{ ...passOverline, mb: 1 }}>🍽 ESTAVA A BORDO?</Typography>
+            <MealConfirmList day={day} />
+          </Box>
+        )}
         <Typography variant="caption" color="text.secondary" display="block" mt={1}>
           Em fase experimental: estimativa pela escala (o Meal Plan e as irregularidades não estão nela). Confirma no extrato e envia feedback na página Abonos.
         </Typography>

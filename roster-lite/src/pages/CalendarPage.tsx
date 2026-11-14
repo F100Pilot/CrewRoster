@@ -15,6 +15,7 @@ import { depth, dutyColor } from '../theme';
 import type { ParsedDuty } from '../domain/types';
 import { monthLabel } from '../utils/dates';
 import PageHero from '../components/PageHero';
+import { MealConfirmBanner, useMealsToConfirm } from '../components/MealConfirm';
 
 const WEEKDAYS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 
@@ -41,6 +42,7 @@ export default function CalendarPage() {
   const d3 = depth(theme.palette.mode);
   const navigate = useNavigate();
   const [month, setMonth] = useViewedMonth();
+  const mealDays = useMealsToConfirm();
 
   const dutiesByDay = useMemo(() => {
     const map = new Map<string, ParsedDuty[]>();
@@ -145,7 +147,7 @@ export default function CalendarPage() {
                 sx={{
                   minHeight: 54, minWidth: 0, p: 0.4, border: 0, cursor: 'pointer', borderRadius: '12px', mb: '3px',
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1px',
-                  font: 'inherit', color: off ? 'text.primary' : '#fff',
+                  position: 'relative', font: 'inherit', color: off ? 'text.primary' : '#fff',
                   opacity: inMonth ? 1 : 0.35,
                   background: keyBg,
                   boxShadow: today
@@ -155,6 +157,9 @@ export default function CalendarPage() {
                 }}
               >
                 <Box component="span" sx={{ fontWeight: 800, fontSize: '0.9rem', lineHeight: 1.1 }}>{format(day, 'd')}</Box>
+                {mealDays.get(key)?.meals.some((m) => m.askable && m.crew === undefined) && (
+                  <Box component="span" aria-label="refeições a confirmar" sx={{ position: 'absolute', top: 1, right: 3, fontSize: '0.6rem', lineHeight: 1 }}>🍽</Box>
+                )}
                 {label && (
                   <Box component="span" sx={{ fontFamily: 'ui-monospace, Menlo, monospace', fontSize: '0.56rem', fontWeight: 700, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', opacity: off ? 0.75 : 0.95 }}>
                     {label}{dayDuties.length > 1 ? ` +${dayDuties.length - 1}` : ''}
@@ -165,6 +170,8 @@ export default function CalendarPage() {
           })}
         </Box>
       </Box>
+
+      <MealConfirmBanner month={month} />
 
       <MonthStatsCard duties={monthDuties} />
 

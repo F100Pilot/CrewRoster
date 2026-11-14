@@ -11,7 +11,7 @@ import {
 } from '../storage/rosterStore';
 import { mergeLogbook } from '../domain/logbook';
 import { regMap } from '../domain/aircraftRegs';
-import { getOffDayMarks, getPrevenirMarks, getRestCutMarks, setCredentials, setOffDayMark, setPrevenirMark, setRestCutMark } from '../storage/settings';
+import { getMealOnboardMarks, getOffDayMarks, getPrevenirMarks, getRestCutMarks, setCredentials, setMealOnboardMark, setOffDayMark, setPrevenirMark, setRestCutMark } from '../storage/settings';
 import { RosterContext, type RosterState, type RosterImportPreview } from './useRoster';
 
 // Re-parse a stored PDF roster from its saved PDF(s) with the current parser, so improvements
@@ -361,9 +361,14 @@ export function RosterProvider({ children }: { children: ReactNode }) {
   // Same for a flight on a day off (paid / kept) and the minutes of a reduced rest (offDayWork.ts).
   const [offDayMarks, setOffDayMarks] = useState<Record<string, 'paid' | 'kept'>>({});
   const [restCutMarks, setRestCutMarks] = useState<Record<string, number>>({});
+  const [mealMarks, setMealMarks] = useState<Record<string, boolean>>({});
   useEffect(() => {
     setOffDayMarks(activeUser ? getOffDayMarks(activeUser.id) : {});
     setRestCutMarks(activeUser ? getRestCutMarks(activeUser.id) : {});
+    setMealMarks(activeUser ? getMealOnboardMarks(activeUser.id) : {});
+  }, [activeUser]);
+  const setMealOnboard = useCallback((key: string, value: boolean | null) => {
+    if (activeUser) setMealMarks(setMealOnboardMark(activeUser.id, key, value));
   }, [activeUser]);
   const setOffDayPay = useCallback((date: string, value: 'paid' | 'kept' | null) => {
     if (activeUser) setOffDayMarks(setOffDayMark(activeUser.id, date, value));
@@ -372,7 +377,8 @@ export function RosterProvider({ children }: { children: ReactNode }) {
     if (activeUser) setRestCutMarks(setRestCutMark(activeUser.id, date, minutes));
   }, [activeUser]);
   const shownRoster = useMemo<Roster | null>(() => {
-    if (!roster || !(Object.keys(prevenirMarks).length || Object.keys(offDayMarks).length || Object.keys(restCutMarks).length)) return roster;
+    const meals = Object.keys(mealMarks).length > 0;
+    if (!roster || !(Object.keys(prevenirMarks).length || Object.keys(offDayMarks).length || Object.keys(restCutMarks).length || meals)) return roster;
     return {
       ...roster,
       duties: roster.duties.map((d) => {
@@ -380,10 +386,11 @@ export function RosterProvider({ children }: { children: ReactNode }) {
         if (d.dutyCode === 'IO' && d.date in prevenirMarks) x = { ...x, prevenir: prevenirMarks[d.date] };
         if (d.date in offDayMarks) x = { ...x, offDayPay: offDayMarks[d.date] };
         if (d.date in restCutMarks) x = { ...x, restCutMin: restCutMarks[d.date] };
+        if (meals && (d.dutyType === 'Flight Duty' || d.dutyType === 'Positioning')) x = { ...x, mealOnboard: mealMarks };
         return x;
       }),
     };
-  }, [roster, prevenirMarks, offDayMarks, restCutMarks]);
+  }, [roster, prevenirMarks, offDayMarks, restCutMarks, mealMarks]);
 
   // Rebuild the roster from every PDF in the history, oldest first (user request). Resolves to how
   // many PDFs could be read (0: none was a readable roster), or null when the history is empty.
@@ -412,12 +419,12 @@ export function RosterProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<RosterState>(
     () => ({
-      roster: shownRoster, setPrevenir, setOffDayPay, setRestCut, reloadFromPdfs, loading, importing, error, loadError, warnings, sessionToken,
+      roster: shownRoster, setPrevenir, setOffDayPay, setRestCut, setMealOnboard, reloadFromPdfs, loading, importing, error, loadError, warnings, sessionToken,
       importFile, previewImport, applyImport, clear, dismissChanges, setSessionToken,
       users, activeUser,
       switchUser, createUser, renameUser, setUserBase, deleteUser: deleteUserFn,
     }),
-    [shownRoster, setPrevenir, setOffDayPay, setRestCut, reloadFromPdfs, loading, importing, error, loadError, warnings, sessionToken, setSessionToken,
+    [shownRoster, setPrevenir, setOffDayPay, setRestCut, setMealOnboard, reloadFromPdfs, loading, importing, error, loadError, warnings, sessionToken, setSessionToken,
      importFile, previewImport, applyImport, clear, dismissChanges, users, activeUser, switchUser, createUser, renameUser, setUserBase, deleteUserFn]
   );
 

@@ -362,6 +362,13 @@ Things learned over this collaboration that should persist across sessions:
   the roster as it is; `asPlanned()` gives each leg's plan for loading and the block): a delay into a period the plan
   didn't cover pays that meal ("quer dizer que originalmente não embarcava, e teve de ser pago", 4.5.11.5).
   0.9.3.26–28 tried other readings on exp (Lisbon clock alone; any later sector) — replaced, never in production.
+- **Crew's meal marks** (since 0.9.3.34, user: a banner "só nas potenciais refeições", "Previstas + pagas", and it
+  changes the value): `MealLine.askable` = a meal of a flight PSV loaded / paid / on ground (never the supper, a DHC or a
+  stay); the crew's answer by meal key ("lunch:2026-10-02") in `crewroster.mealOnboard.<user>`, put on every flight / DHC
+  as `ParsedDuty.mealOnboard` by RosterProvider; `psvMeals` follows it (true → on board 0; false → paid like a meal not
+  loaded, Tabela 33 / local rate when ending away). UI: `components/MealConfirm.tsx` — 🍽 on flown calendar days with
+  meals still to confirm, the "Refeições a bordo" card under the calendar (dialog per day), the same list in
+  `RaacoDayCard`. All crew (RAACO is not AE).
 - **RAACO casebook — every real case is kept forever** (user: "estes exemplos têm de servir para corrigir futuros
   problemas"): each crew feedback / checked statement line becomes an entry in
   `src/domain/__tests__/raacoCases.test.ts` (synthetic TP9xxx flight numbers, real airports/times, the columns
