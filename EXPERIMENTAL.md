@@ -7,7 +7,7 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.9.3.24`
+- **Produção (`master`) está em:** `0.9.3.25`
 - **Próxima versão ao promover:** a da experimental (cada atualização sobe a 4.ª casa)
 
 ## Como promover tudo para produção (quando estiver pronto)
@@ -25,8 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **0.9.3.25** — EBT-2: os 30 min de debriefing são **só informação ao piloto** (utilizador: "não é para mudar no duty");
-  o duty volta a contar briefing 1 h + sessão + **1 h** (`dutyDebriefMin` em `simSession.ts`), como antes da 0.9.3.15.
+_(vazio — tudo promovido em 0.9.3.25)_
 
 ---
 
