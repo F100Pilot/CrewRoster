@@ -7,7 +7,7 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.9.3.3`
+- **Produção (`master`) está em:** `0.9.3.6`
 - **Próxima versão ao promover:** a da experimental (cada atualização sobe a 4.ª casa)
 
 ## Como promover tudo para produção (quando estiver pronto)
@@ -25,15 +25,14 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **0.9.3.4 / 0.9.3.5** — prevenir = **DT impresso igual** antes e depois do IO (regra do utilizador; Manchester não
-  foi prevenir). `pgaDutyTimes()` lê o [DT] de cada dia (`rosterDt`, PARSE_VERSION 18); `mergeDuties` guarda o do dia
-  planeado em `planned.dutyMinutes`. Sem [DT]: o IO tem de cobrir apresentação e fim planeados (±15 min). Caso C07c.
-- **0.9.3.6** — campos de dinheiro: um número simples passa pelo `evalExpression` ("7.413,47" = 7413,47; antes
-  `Number()` lia "7.413" como 7,413 e recusava "7.413,47"). Relato "está a majorar o VB" ainda por esclarecer.
+_(nada — tudo promovido em `0.9.3.6`)_
 
 ---
 
 ## TODO / Backlog (decidir mais tarde)
+
+- **Vencimento "majorado"** (relato de utilizadores, nov 2026): por confirmar com captura do cartão — hipótese: o subsídio de
+  Natal no cartão de outubro (recibo de novembro). Se for, talvez uma caixa "Subsídio de Natal neste recibo".
 
 - **Google Calendar (0.9.1) está no código mas escondido** até existir o secret `VITE_GOOGLE_CLIENT_ID` (cliente
   OAuth "Web application", origem `https://f100pilot.github.io`, Calendar API ativa, âmbito
