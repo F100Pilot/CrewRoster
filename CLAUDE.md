@@ -175,7 +175,9 @@ Things learned over this collaboration that should persist across sessions:
   AE lives in the owner's Google Drive** (user: "é necessário que fique"), five PDFs: "AE SIPLA - Clausulado Geral",
   "AE SIPLA - RUPT", "AE SIPLA - RRRGS", "AE SIPLA - RAAA", "AE SIPLA - RBO" — read them with the Google Drive
   connector (`search_files` title contains 'AE SIPLA', then `read_file_content`; the RUPT is too long for one read,
-  slice it). Quote clauses from there before implementing an AE rule; never commit the text.
+  slice it). Quote clauses from there before implementing an AE rule; never commit the text. The **ROV-PGA cap. 4.5**
+  (RAACO, pp. 80–86) is there too since 0.9.3.15: "ROV-PGA - 4.5 Alimentação e ajudas de custo (texto)" (a Google Doc
+  transcription) and "(capturas).pdf" (the user's screenshots); the Anexo 7.6 tables are not (values are in `raaco.ts`).
   Standby code windows (H509, H7+… pilots; A1…A8 cabin) come from the DOV notice of Feb 2025
   (`src/domain/standbyWindows.ts`). A/H codes are home standby (H = pilots, A = cabin).
 - **Every AE calculation is pilots-only (SIPLA)** — user rule. Limits/compliance/rest minima/FDP/
@@ -319,7 +321,7 @@ Things learned over this collaboration that should persist across sessions:
   and one on a 1h37 sector. Always labelled **experimental** with a big banner + "Enviar feedback" (mailto,
   prefilled) on `/abonos` and "EM TESTES" on the day card (user request) — keep it. **Windows are read in LOCAL time** (4.5.5.4; user decision): a UTC reading was
   tested on the same month and rejected — it fixes that DH lunch but invents a supper on an early report and
-  loses the stay lunches on the days back, 9/11 vs 7–9/11. The ROV PDF, the roster and the statement are not in the repo.
+  loses the stay lunches on the days back, 9/11 vs 7–9/11. The ROV, the roster and the statement are not in the repo (the ROV 4.5 text is in the owner's Drive, see above).
 - **RAACO casebook — every real case is kept forever** (user: "estes exemplos têm de servir para corrigir futuros
   problemas"): each crew feedback / checked statement line becomes an entry in
   `src/domain/__tests__/raacoCases.test.ts` (synthetic TP9xxx flight numbers, real airports/times, the columns
