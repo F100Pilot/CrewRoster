@@ -7,7 +7,7 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.9.3.6`
+- **Produção (`master`) está em:** `0.9.3.10`
 - **Próxima versão ao promover:** a da experimental (cada atualização sobe a 4.ª casa)
 
 ## Como promover tudo para produção (quando estiver pronto)
@@ -25,18 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **0.9.3.7** — "Fixo por mês" nas Definições = soma dos campos (sem a contribuição PGA 6,5%): era o "majorado"
-  dos utilizadores (1 € → 1,07 €). O cartão do Vencimento estava certo.
-- **0.9.3.8 — bug grave do vencimento**: cada tecla gravava logo e para todos os meses (um teste com 1 € apagou os valores
-  de um utilizador). Agora: rascunho + **Guardar** (com aviso ao sair/trocar de aba) e **versões por mês de trabalho**
-  (`crewroster.payHistory.<user>`, `savePayVersion` / `getPaySettingsFor` em `settings.ts`): "a partir do recibo de …"
-  (omissão: o próximo), "Todos os meses" para corrigir enganos. `enabled` / `holidayPay` / `lineChecks` ficam globais
-  (`patchPayGlobal`). O cartão usa os valores de cada mês.
-- **0.9.3.9** — "Recuperar valores de uma cópia de segurança" no Vencimento: `payFiguresFromBackup()` lê só
-  `crewroster.pay.<user>` do ficheiro e põe-nos no rascunho (o restauro completo voltaria as escalas à data da cópia).
-- **0.9.3.10** — bug da 0.9.3.8: guardar "a partir de M" deixava versões posteriores (a zero) por cima → "não está a
-  assumir… está a zero". `savePayVersion` agora substitui as versões ≥ M ("" = todas). E se a app antiga (produção)
-  escrever o conjunto atual, esse passa a ser a última versão (`getPayHistory`), porque as duas partilham os dados.
+_(nada — tudo promovido em `0.9.3.10`)_
 
 ---
 
