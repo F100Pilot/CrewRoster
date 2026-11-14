@@ -144,7 +144,9 @@ Things learned over this collaboration that should persist across sessions:
   ("CrewRoster · Pendentes"), its items in the artifact's `db` collection `items` (`title`, `area`, `version`, `status`:
   `todo` | `waiting` | `exp` | `prod`, `waitingFor`, `detail`, `order`). Keep it current with the `ArtifactData` tool in every
   session: add what the user asks for, move items to `exp` when pushed to the experimental branch and to `prod` on promotion.
-  Never put crew names or pay figures in it.
+  Never put crew names or pay figures in it. Each item (and the whole open list) has an "Enviar ao Claude" button
+  (`comments` capability → `sendToClaude`, a comment that wakes the session watching the page; "Copiar para o chat" when
+  that isn't available) — a comment from it is the user's request about that item.
 - **Promotion is gated on an explicit user request.** Build on exp, validate with the
   user, only then "passa para o main". The user says when.
 - **Production has real PGA crew using it.** Be conservative; prefer batching exp
