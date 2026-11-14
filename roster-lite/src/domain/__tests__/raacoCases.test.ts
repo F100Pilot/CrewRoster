@@ -144,8 +144,8 @@ const CASES: Case[] = [
       base('2026-04-09', { dutyType: 'Positioning', flightNumber: 'TP9313', departureAirport: 'MAN', arrivalAirport: 'LIS', departureTime: '17:07', arrivalTime: '19:40', reportingTime: '16:07' }),
     ],
     // 0.9.3.22: the 09/04 breakfast became 29 € (the UK rate) with C09's rule — the night after a
-    // MAN→MAN return was unplanned, so no double catering. Was 0 by the colleague's word (no statement);
-    // the user approved the rule and will review this case.
+    // MAN→MAN return was unplanned, so no double catering. Was 0 at first (no statement); the colleague
+    // then confirmed the company paid it.
     days: { '2026-04-08': [0, 35, 35, 45], '2026-04-09': [29, 35, 18, 0] },
   },
   {
