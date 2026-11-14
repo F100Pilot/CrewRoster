@@ -86,7 +86,9 @@ cross-origin. Endpoints: `POST /api/login`, `/api/roster`, `/api/flightinfo`,
   `FO_SAFETY` (its own sub-column before the flight) is moved to the legs with two FOs (`placeSafetyMarks`).
   Since 0.9.3.12 (user rule: "a tripulação não tem de ser obrigatoriamente herdada do voo anterior"): the login in the
   CLTC/CTRI token is the FO who JOINS — `ParsedDuty.trainee`; `placeTrainees()` drops him from that day's legs before
-  his first marked leg and adds him (FO) to the marked ones, before `placeSafetyMarks`.
+  his first marked leg and adds him (FO) to the marked ones, before `placeSafetyMarks`. Since 0.9.3.13 the crew list
+  says who is who (`CrewMember.seat`): the trainee "em instrução", and the OTHER FO on those legs is the safety pilot —
+  the one who came from the earlier legs (user, day 23 of a real roster: the morning FO is the FO_SAFETY).
 - **Blank grid days** (since 0.8.37.1, PARSE_VERSION 16): `pgaBlankDates()` lists header days with nothing printed
   under them; `mergeDuties(…, blankDates)` clears the stored day there (otherwise silent days are kept, to survive
   partial parses). Real case: a flight removed from 29/09 left the day blank and the stale flight kept paying a

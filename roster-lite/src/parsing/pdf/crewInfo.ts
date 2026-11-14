@@ -373,7 +373,15 @@ export function placeSafetyMarks(duties: ParsedDuty[]): void {
     const legs = day.filter((d) => (d.dutyType === 'Flight Duty' || d.dutyType === 'Positioning') && fos(d) >= 2);
     if (!legs.length) continue; // crew unknown: keep the mark where the roster put it
     for (const d of day) strip(d);
-    for (const d of legs) d.observations = d.observations ? `${d.observations}, FO_SAFETY` : 'FO_SAFETY';
+    for (const d of legs) {
+      d.observations = d.observations ? `${d.observations}, FO_SAFETY` : 'FO_SAFETY';
+      // With the trainee known (CLTC/CTRI), the other first officer is the safety pilot (user: day 23,
+      // the FO of the morning leg stays on as FO_SAFETY when the trainee joins).
+      const others = d.crew!.filter((c) => c.role === 'FO' && c.seat !== 'trainee');
+      if (d.trainee && others.length === 1 && others.length < fos(d)) {
+        d.crew = d.crew!.map((c) => (c === others[0] ? { ...c, seat: 'safety' } : c));
+      }
+    }
   }
 }
 
@@ -400,11 +408,11 @@ export function placeTrainees(duties: ParsedDuty[]): void {
         if (d.trainee !== login || !d.crew?.length) continue;
         if (d.crew.some((c) => c.login === login)) {
           // On his marked legs he is a first officer, whatever rank the column lost.
-          d.crew = sortCrew(d.crew.map((c) => (c.login === login ? { ...c, role: 'FO' } : c)));
+          d.crew = sortCrew(d.crew.map((c) => (c.login === login ? { ...c, role: 'FO', seat: 'trainee' } : c)));
           continue;
         }
         const who = known.get(login);
-        d.crew = sortCrew([...d.crew, { login, surname: who?.surname ?? login, firstName: who?.firstName, role: 'FO' }]);
+        d.crew = sortCrew([...d.crew, { login, surname: who?.surname ?? login, firstName: who?.firstName, role: 'FO', seat: 'trainee' }]);
       }
     }
   }

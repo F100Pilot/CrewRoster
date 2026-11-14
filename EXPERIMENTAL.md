@@ -34,6 +34,9 @@ produção, em vez de promover uma a uma.
   `CLTC` / `CTRI` é o que se junta. O login do token fica em `ParsedDuty.trainee`; `placeTrainees()` (depois do
   attach, antes do `placeSafetyMarks`) tira-o dos voos do dia antes do primeiro voo marcado e põe-no (FO) nos
   marcados. PARSE_VERSION 20. Verificado com o PDF real (não guardado).
+- **0.9.3.13** — `CrewMember.seat` ('trainee' / 'safety'): nos voos com FO_SAFETY e formando conhecido, o outro FO é o
+  safety pilot (utilizador: dia 23 — o FO do 1.º voo fica como FO_SAFETY quando entra o formando). Mostrado na lista da
+  tripulação (FlightInfo). PARSE_VERSION 21. Verificado com o PDF real (não guardado).
 
 ---
 

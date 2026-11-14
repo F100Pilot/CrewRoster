@@ -57,6 +57,8 @@ export interface CrewMember {
   surname: string;
   role: string; // CP (captain), FO (first officer), PU (purser), ST (cabin)
   firstName?: string;
+  /** On a line-training leg: the FO in instruction (beside CLTC/CTRI) or the extra FO (FO_SAFETY). */
+  seat?: 'trainee' | 'safety';
 }
 
 export type SourceType = 'pdf' | 'csv' | 'ics';

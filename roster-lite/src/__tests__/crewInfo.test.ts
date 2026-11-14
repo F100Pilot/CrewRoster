@@ -343,6 +343,11 @@ describe('crew carried forward, line training given (CLTC) and FO_SAFETY', () =>
     expect(logins('TP9021')).toContain('PTRAIN');
     expect(d.find((x) => x.flightNumber === 'TP9137')!.observations).toBeNull();
     expect(d.find((x) => x.flightNumber === 'TP9021')!.observations).toBe('CLTC, FO_SAFETY');
+    // The FO who came from the morning leg is the safety pilot; the one who joined, the trainee.
+    const seat = (fn: string, login: string) => d.find((x) => x.flightNumber === fn)!.crew!.find((c) => c.login === login)!.seat;
+    expect(seat('TP9020', 'PTRAIN')).toBe('trainee');
+    expect(seat('TP9020', 'PFIRST')).toBe('safety');
+    expect(seat('TP9137', 'PFIRST')).toBeUndefined();
   });
 
   it('a marked leg whose crew lacks the trainee gets him, as an FO', () => {
