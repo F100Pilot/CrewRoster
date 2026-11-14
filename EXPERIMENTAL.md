@@ -28,6 +28,8 @@ produção, em vez de promover uma a uma.
 - **0.9.3.27** — Abonos: o **Meal Plan vê o PSV como um todo** (ROV 4.5.10.1; utilizador): pequeno-almoço só no 1.º
   voo; cada refeição seguinte no voo da anterior ou num posterior com lugar, atravesse ou não o horário (caso C12:
   IBZ→LIS com almoço a bordo). Todos os casos anteriores passam. (A 0.9.3.26 — hora de Lisboa — foi substituída.)
+- **0.9.3.28** — Abonos: um voo que cai em cima da hora de uma refeição leva ESSA refeição (utilizador: "o jantar
+  embarca, mesmo que os voos anteriores tenham começado de manhã"); uma refeição sem voo próprio não o ocupa — é paga.
 
 ---
 

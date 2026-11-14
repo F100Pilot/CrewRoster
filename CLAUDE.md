@@ -349,6 +349,9 @@ Things learned over this collaboration that should persist across sessions:
   relação ao primeiro voo, o almoço o segundo ou terceiro, seja o que for"): the breakfast is loaded on the FIRST sector
   only; each later main meal on the sector of the meal before or a later one with room (> 1h30, one per sector < 5 h),
   whether or not it flies through the window — preferring the one that does on its departure clock (season clock).
+  A sector flying through a meal's window is KEPT for that meal (0.9.3.28, user: "se um dos voos cair em cima do período
+  do jantar, o jantar embarca, mesmo que os voos anteriores tenham começado de manhã"): an earlier meal with no sector
+  of its own doesn't take it — it is paid.
   (0.9.3.26 tried the Lisbon clock instead — replaced, never in production.)
 - **RAACO casebook — every real case is kept forever** (user: "estes exemplos têm de servir para corrigir futuros
   problemas"): each crew feedback / checked statement line becomes an entry in

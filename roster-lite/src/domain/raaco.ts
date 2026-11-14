@@ -226,7 +226,8 @@ function psvMeals(p: Psv, base: string, nextIsStay: boolean, paidInStay: Set<str
   // Load each meal on a sector that can carry it: none on sectors up to 1h30 (4.5.11.4), one main
   // meal on sectors under 5 h (4.5.11.2), two on longer ones. The Meal Plan sees the PSV as a whole
   // (4.5.10.1), not each flight alone (user, 0.9.3.26: "o pequeno-almoço é em relação ao primeiro voo, o
-  // almoço o segundo ou terceiro, seja o que for"): the breakfast goes on the FIRST sector only — as paid in
+  // almoço o segundo ou terceiro, seja o que for"; 0.9.3.28: "se um dos voos cair em cima do período do jantar, o jantar
+  // embarca"): the breakfast goes on the FIRST sector only — as paid in
   // May 2026, a breakfast due at a 07:56 report on a 59-min first sector is not carried by a later one —
   // and each later meal on the sector of the meal before or a later one, whether or not it flies through
   // the window (C12: an IBZ→LIS leaving at 14:05 in Ibiza carried the lunch). Among those, the sector flying
@@ -244,9 +245,14 @@ function psvMeals(p: Psv, base: string, nextIsStay: boolean, paidInStay: Set<str
     // The supper is never loaded (colleagues' statements: LYS 18/06, BCN 12/07, DUB, MRS, VLC — it is
     // always paid, even on a sector flying through its window), so it goes straight to the allowance.
     // After an unplanned stay the flight home is a recovery: no crew meal was planned for it (C09).
-    const leg = a.meal === 'supper' || (noCatering && p.legs.every((l) => l.duty.dutyType !== 'Positioning')) ? undefined : p.legs
-      .filter((l, i) => (room.get(l) ?? 0) > 0 && (a.meal === 'breakfast' ? i === 0 : i >= after))
-      .sort((x, y) => Number(flies(y, a)) - Number(flies(x, a)) || gapDistance(x, a) - gapDistance(y, a))[0];
+    const open = a.meal === 'supper' || (noCatering && p.legs.every((l) => l.duty.dutyType !== 'Positioning')) ? [] : p.legs
+      .filter((l, i) => (room.get(l) ?? 0) > 0 && (a.meal === 'breakfast' ? i === 0 : i >= after));
+    // A sector flying through a LATER meal's window is kept for that meal ("se um dos voos cair em cima do
+    // período do jantar, o jantar embarca") — a lunch with no sector of its own is paid, not loaded on it.
+    const later = due.slice(due.indexOf(a) + 1).filter((b) => b.meal !== 'supper');
+    const own = open.filter((l) => flies(l, a));
+    const leg = (own.length ? own : open.filter((l) => !later.some((b) => flies(l, b))))
+      .sort((x, y) => gapDistance(x, a) - gapDistance(y, a))[0];
     if (leg) after = p.legs.indexOf(leg);
     const why = `${BASIS[a.basis]} (4.5.5.1 ${a.basis})`;
     if (leg && leg.duty.dutyType === 'Positioning') {

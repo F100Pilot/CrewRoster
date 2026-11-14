@@ -118,3 +118,29 @@ describe('raacoDays', () => {
     expect(cols(airport.get('2026-05-15'))).toEqual([0, 18, 0, 0]);
   });
 });
+
+// The Meal Plan sees the PSV as a whole (4.5.10.1; user, 0.9.3.27–28): breakfast on the first sector, each
+// later meal on a later sector — and a sector flying through a meal's window carries THAT meal, however early
+// the duty began ("se um dos voos cair em cima do período do jantar, o jantar embarca").
+describe('Meal Plan over the whole PSV', () => {
+  it('loads the dinner on the evening sector of a duty that began in the morning', () => {
+    const d = raacoDays([
+      leg('2026-10-20', 'TP9201', 'LIS', 'FNC', '07:00', '08:45', '06:00'),
+      leg('2026-10-20', 'TP9202', 'FNC', 'LIS', '09:30', '11:05'),
+      leg('2026-10-20', 'TP9203', 'LIS', 'BCN', '15:30', '17:20'),
+      leg('2026-10-20', 'TP9204', 'BCN', 'LIS', '19:00', '21:00'),
+    ], 'LIS').get('2026-10-20')!;
+    const where = Object.fromEntries(d.meals.map((m) => [m.meal, `${m.how} ${m.where}`]));
+    expect(where).toMatchObject({ breakfast: 'onboard TP9201', lunch: 'onboard TP9202', dinner: 'onboard TP9204' });
+  });
+
+  it('keeps the dinner sector for the dinner: a lunch with no sector of its own is paid', () => {
+    const d = raacoDays([
+      leg('2026-10-21', 'TP9211', 'LIS', 'OPO', '12:15', '13:00', '11:15'),
+      leg('2026-10-21', 'TP9212', 'OPO', 'LIS', '17:00', '17:50'),
+      leg('2026-10-21', 'TP9213', 'LIS', 'FNC', '19:30', '21:15'),
+    ], 'LIS').get('2026-10-21')!;
+    expect(d.meals.find((m) => m.meal === 'lunch')).toMatchObject({ how: 'allowance' });
+    expect(d.meals.find((m) => m.meal === 'dinner')).toMatchObject({ how: 'onboard', where: 'TP9213' });
+  });
+});
