@@ -3,7 +3,7 @@ import { Alert, Box, Card, CardContent, Checkbox, FormControlLabel, IconButton, 
 import { Add, ChevronLeft, ChevronRight, ExpandLess, ExpandMore, Payments, Remove } from '@mui/icons-material';
 import { netEstimate, payEstimate, type Credit } from '../domain/payEstimate';
 import { depth } from '../theme';
-import { getPaySettings, setPaySettings } from '../storage/settings';
+import { getPaySettingsFor, patchPayGlobal } from '../storage/settings';
 import { ExperimentalChip } from './AeDisclaimer';
 import { formatDuration } from '../utils/duration';
 import type { ParsedDuty } from '../domain/types';
@@ -26,15 +26,16 @@ const monthName = (key: string) => MONTHS_LONG[Number(key.slice(5, 7)) - 1];
 // diem, extensions, reduced rests), which the RRRGS pays a month later. Shown only once the pilot
 // turned it on in Settings; their figures never leave the device.
 export default function PayEstimateCard({ duties, base, userId }: { duties: ParsedDuty[]; base: string; userId: string }) {
-  const [settings, setSettings] = useState(() => getPaySettings(userId));
+  const today = todayISO();
+  const [month, setMonth] = useState(today.slice(0, 7));
+  // Each month with the figures saved for it (a later raise never changes the months before).
+  const [settings, setSettings] = useState(() => getPaySettingsFor(userId, month));
   useEffect(() => {
-    const reload = () => setSettings(getPaySettings(userId));
+    const reload = () => setSettings(getPaySettingsFor(userId, month));
     reload();
     window.addEventListener('pay-settings-updated', reload);
     return () => window.removeEventListener('pay-settings-updated', reload);
-  }, [userId]);
-  const today = todayISO();
-  const [month, setMonth] = useState(today.slice(0, 7));
+  }, [userId, month]);
   const [showDays, setShowDays] = useState(false);
   const r = useMemo(() => payEstimate(duties, month, settings, today, base), [duties, month, settings, today, base]);
   const n = useMemo(() => netEstimate(r, settings), [r, settings]);
@@ -46,14 +47,14 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
     const m = Number(shiftMonth(month, 1).slice(5, 7));
     const auto = payEstimate(duties, month, { ...settings, holidayPay: null }, today, base).holidayPayMonth;
     const holidayPay = on ? { year, month: m } : auto && auto !== m ? null : { year, month: 0 };
-    setPaySettings(userId, { ...settings, holidayPay });
+    patchPayGlobal(userId, { holidayPay });
   };
   // Line checks come from the roster (W_INS days); − / + corrects the month's count, and going back
   // to the roster's number drops the correction.
   const setLineChecks = (n: number) => {
     const lineChecks = { ...(settings.lineChecks ?? {}) };
     if (n === r.lineChecksAuto) delete lineChecks[month]; else lineChecks[month] = Math.max(0, n);
-    setPaySettings(userId, { ...settings, lineChecks });
+    patchPayGlobal(userId, { lineChecks });
   };
   if (!settings.enabled) return null;
   const subsidyCount = (r.holidaySubsidy > 0 ? 1 : 0) + (r.christmasSubsidy > 0 ? 1 : 0);

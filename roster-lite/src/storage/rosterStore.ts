@@ -87,7 +87,7 @@ export function clearUserLocalData(userId: string): void {
     localStorage.removeItem(`crewroster.pay.${userId}`);
     localStorage.removeItem(`crewroster.logbookFn.${userId}`);
     localStorage.removeItem(`crewroster.cred.${userId}`);
-    for (const k of ['gcal', 'gcalSync', 'prevenir']) localStorage.removeItem(`crewroster.${k}.${userId}`);
+    for (const k of ['gcal', 'gcalSync', 'prevenir', 'payHistory']) localStorage.removeItem(`crewroster.${k}.${userId}`);
     for (const k of ['client_id', 'token', 'expires', 'calendar_id']) localStorage.removeItem(`gcal_${k}_${userId}`);
   } catch {
     // ignore (storage disabled)

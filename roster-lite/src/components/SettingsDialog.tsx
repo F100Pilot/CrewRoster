@@ -59,7 +59,12 @@ const fmtDay = (iso: string) =>
 // In-app settings: lets the user paste their own AeroDataBox (RapidAPI) key so the day
 // view can show aircraft registration, gate/terminal and status. The key is stored on
 // this device only and forwarded to the proxy per request — never committed or shared.
-export default function SettingsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+export default function SettingsDialog({ open, onClose: close }: { open: boolean; onClose: () => void }) {
+  // Pay figures wait for their own Guardar: leaving with some typed and not saved asks first.
+  const [payDirty, setPayDirty] = useState(false);
+  const [leave, setLeave] = useState<null | (() => void)>(null);
+  const guard = (then: () => void) => { if (payDirty) setLeave(() => then); else then(); };
+  const onClose = () => guard(close);
   const { roster, clear, activeUser, setUserBase } = useRoster();
   const { mode, setMode } = useColorMode();
   const navigate = useNavigate();
@@ -95,6 +100,7 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
   const isPilot = activeUser?.role !== 'cabin';
 
   function chooseTab(t: SettingsTab) {
+    if (payDirty && t !== 'vencimento') { guard(() => chooseTab(t)); return; }
     setTab(t);
     try { localStorage.setItem(TAB_KEY, t); } catch { /* not persisted — harmless */ }
   }
@@ -398,7 +404,7 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
           </Stack>
         )}
 
-        {shownTab === 'vencimento' && activeUser && <PaySettingsSection userId={activeUser.id} />}
+        {shownTab === 'vencimento' && activeUser && <PaySettingsSection userId={activeUser.id} onDirtyChange={setPayDirty} />}
 
         {shownTab === 'app' && (
           <Stack spacing={2}>
@@ -664,6 +670,17 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
           <Button onClick={handleSave} variant="contained" disabled={invalid}>Guardar</Button>
         )}
       </DialogActions>
+
+      <Dialog open={!!leave} onClose={() => setLeave(null)} maxWidth="xs" fullWidth>
+        <DialogTitle>Valores por guardar</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2">Alteraste valores do vencimento e não carregaste em Guardar. Se saíres agora, ficam como estavam.</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setLeave(null)}>Voltar</Button>
+          <Button color="error" onClick={() => { const then = leave; setLeave(null); setPayDirty(false); setTimeout(() => then?.(), 0); }}>Sair sem guardar</Button>
+        </DialogActions>
+      </Dialog>
 
       {/* README viewer */}
       <Dialog open={readmeOpen} onClose={() => setReadmeOpen(false)} maxWidth="md" fullWidth>
