@@ -7,6 +7,7 @@ import { baseOf } from '../domain/dutyStats';
 import { MEAL_LABEL, raacoDays, type MealHow } from '../domain/raaco';
 import { TimelineRow, passOverline } from './PassCard';
 import { MealConfirmList } from './MealConfirm';
+import InfoCollapse from './InfoCollapse';
 
 // The day's meals under the RAACO (ROV-PGA 4.5): which are due, how each is met — loaded on a
 // flight, on ground, as an allowance or in the stay — and what goes on the Abonos statement.
@@ -60,16 +61,24 @@ export default function RaacoDayCard({ date }: { date: string }) {
         {day.meals.some((m) => m.askable) && (
           <Box mt={day.meals.some((m) => !m.askable) || day.nights.length ? 1.5 : 0} pt={day.meals.some((m) => !m.askable) || day.nights.length ? 1.25 : 0}
             sx={{ borderTop: day.meals.some((m) => !m.askable) || day.nights.length ? 1 : 0, borderColor: 'divider' }}>
-            <Typography sx={{ ...passOverline, mb: 0.5 }}>A BORDO · LIGADO = EMBARCADA</Typography>
+            <Typography sx={{ ...passOverline, mb: 0.5 }}>A BORDO · LIGADO = EMBARCADA · CEIA: LIGADO = PAGA</Typography>
             <MealConfirmList day={day} why />
-            <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
-              Por defeito, como no plano de refeições. Desliga se não houve (irregularidade): passa a ser paga.
-            </Typography>
+
           </Box>
         )}
-        <Typography variant="caption" color="text.secondary" display="block" mt={1}>
-          Em fase experimental: estimativa pela escala (o Meal Plan e as irregularidades não estão nela). Confirma no extrato e envia feedback na página Abonos.
-        </Typography>
+        {/* Help text, closed (user, Nov 2026: "este último texto também pode ser colapsado"); the EM TESTES badge stays. */}
+        <Box mt={1}>
+          <InfoCollapse card={false} title="Como funciona">
+            <Typography variant="caption" color="text.secondary" display="block">
+              Os botões começam como no plano de refeições. Desliga uma refeição se não houve a bordo (irregularidade): passa a
+              ser paga. A ceia nunca é embarcada — o botão diz se é paga (em pernoita, com a pernoita).
+            </Typography>
+            <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+              Em fase experimental: estimativa pela escala (o Meal Plan e as irregularidades não estão nela). Confirma no extrato
+              e envia feedback na página Abonos.
+            </Typography>
+          </InfoCollapse>
+        </Box>
       </CardContent>
     </Card>
   );

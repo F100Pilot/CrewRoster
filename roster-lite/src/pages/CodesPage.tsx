@@ -73,16 +73,19 @@ export default function CodesPage() {
         <CardContent sx={{ py: 1 }}>
           <Typography variant="subtitle2" sx={{ pt: 0.75 }}>Refeições a bordo (abonos)</Typography>
           <Typography variant="caption" color="text.secondary" display="block">
-            Nos cartões da Lista: as refeições que o plano de refeições põe a bordo dos voos desse dia. No dia, cada uma tem um
-            botão para a desligar se não houve (irregularidade) — os abonos passam a pagá-la.
+            Nos cartões da Lista: as refeições que o plano de refeições põe a bordo dos voos desse dia, e a ceia quando é paga.
+            No dia, cada uma tem um botão: desligar uma refeição = não houve a bordo (passa a paga); desligar a ceia = retirá-la
+            do abono.
           </Typography>
-          {(['breakfast', 'lunch', 'dinner'] as Meal[]).map((m) => {
+          {(['breakfast', 'lunch', 'dinner', 'supper'] as Meal[]).map((m) => {
             const Icon = MEAL_ICON[m];
             return (
               <Box key={m} display="flex" alignItems="center" gap={1.5} py={1}>
                 <Icon sx={{ fontSize: 20, color: '#0F766E', flexShrink: 0 }} />
                 <Typography variant="subtitle2" sx={{ minWidth: 104 - 6 }}>{MEAL_SHORT[m]}</Typography>
-                <Typography variant="body2" color="text.secondary">{MEAL_LABEL[m]} a bordo</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {m === 'supper' ? 'Ceia paga (nunca é embarcada; em pernoita, com a pernoita)' : `${MEAL_LABEL[m]} a bordo`}
+                </Typography>
               </Box>
             );
           })}

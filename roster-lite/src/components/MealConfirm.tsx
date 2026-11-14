@@ -31,7 +31,9 @@ export function useMealsToConfirm(): Map<string, RaacoDay> {
 }
 
 const appSays = (m: MealLine) =>
-  m.how === 'onboard'
+  m.meal === 'supper'
+    ? m.crew === true ? 'retirada do abono (marcado por ti)' : `paga ${m.value !== null ? euro(m.value) : '—'}${m.how === 'stay' ? ' (pernoita)' : ''}`
+    : m.how === 'onboard'
     ? `a bordo${m.where && m.where !== 'a bordo' ? ` · ${m.where}` : ''}${m.crew === true ? ' (marcado por ti)' : ' (previsto)'}`
     : `paga ${m.value !== null ? euro(m.value) : '—'}${m.how === 'ground' ? ' (em terra)' : ''}${m.crew === false ? ' (marcado por ti)' : ''}`;
 
@@ -46,15 +48,21 @@ export function MealConfirmList({ day, why = false }: { day: RaacoDay; why?: boo
         const Icon = MEAL_ICON[m.meal];
         return (
           <Box key={m.key} display="flex" alignItems="center" gap={1}>
-            <Icon sx={{ fontSize: 20, color: m.how === 'onboard' ? '#0F766E' : 'text.disabled', flexShrink: 0 }} />
+            <Icon sx={{ fontSize: 20, color: (m.meal === 'supper' ? m.crew !== true : m.how === 'onboard') ? '#0F766E' : 'text.disabled', flexShrink: 0 }} />
             <Box flexGrow={1} minWidth={0}>
               <Typography variant="body2" fontWeight={800} lineHeight={1.2}>{MEAL_LABEL[m.meal]}</Typography>
               <Typography variant="caption" color="text.secondary" display="block">{appSays(m)}</Typography>
               {why && <Typography variant="caption" color="text.secondary" display="block" sx={{ opacity: 0.8 }}>{m.why}</Typography>}
             </Box>
             {m.crew !== undefined && <Button size="small" onClick={() => setMealOnboard(m.key, null)}>Repor</Button>}
-            <Switch checked={m.how === 'onboard'} onChange={(e) => setMealOnboard(m.key, e.target.checked)}
-              slotProps={{ input: { 'aria-label': `${MEAL_LABEL[m.meal]} a bordo` } }} />
+            {m.meal === 'supper' ? (
+              // The supper's switch = paid (never loaded): on by default, off takes it off the statement.
+              <Switch checked={m.crew !== true} onChange={(e) => setMealOnboard(m.key, !e.target.checked)}
+                slotProps={{ input: { 'aria-label': 'Ceia paga' } }} />
+            ) : (
+              <Switch checked={m.how === 'onboard'} onChange={(e) => setMealOnboard(m.key, e.target.checked)}
+                slotProps={{ input: { 'aria-label': `${MEAL_LABEL[m.meal]} a bordo` } }} />
+            )}
           </Box>
         );
       })}
@@ -97,7 +105,7 @@ export function MealConfirmBanner({ month }: { month: Date }) {
         <DialogContent>{day && <MealConfirmList day={day} />}</DialogContent>
         <DialogActions>
           {day && day.meals.some((m) => m.askable && m.crew === undefined) && (
-            <Button onClick={() => { for (const m of day.meals) if (m.askable && m.crew === undefined) setMealOnboard(m.key, m.how === 'onboard'); setOpen(null); }}>
+            <Button onClick={() => { for (const m of day.meals) if (m.askable && m.crew === undefined) setMealOnboard(m.key, m.meal !== 'supper' && m.how === 'onboard'); setOpen(null); }}>
               Está certo
             </Button>
           )}

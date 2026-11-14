@@ -22,7 +22,8 @@ const FEEDBACK_TO = 'pflm.bet@gmail.com';
 
 export const euro = (v: number) => v.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 // In rem, so the header (smaller type) and the rows share the same column widths.
-const COLS = '2.8rem minmax(0, 1fr) 2.2rem repeat(4, 2.9rem)';
+// Início and the night stop share a column (user, Nov 2026: the flight number didn't fit with a large font size).
+const COLS = '2.8rem minmax(0, 1fr) repeat(4, 2.9rem)';
 
 export default function AbonosPage() {
   const { roster, activeUser } = useRoster();
@@ -81,22 +82,24 @@ export default function AbonosPage() {
           <CardContent sx={{ px: 1.25, py: 1, '&:last-child': { pb: 1 } }}>
             {/* The statement's columns: Data · Início · Pernoita · Peq. almoço · Almoço · Jantar · Ceia/+Pernoita. */}
             <Box display="grid" gridTemplateColumns={COLS} gap={0.5} sx={{ ...passOverline, fontSize: '0.58rem', letterSpacing: 0, whiteSpace: 'nowrap', pb: 0.75, borderBottom: 1, borderColor: 'divider' }}>
-              <span>DATA</span><span>INÍCIO</span><span>PERN.</span>
+              <span>DATA</span><span>INÍCIO · PERN.</span>
               <Box textAlign="right">P. ALM.</Box><Box textAlign="right">ALMOÇO</Box><Box textAlign="right">JANTAR</Box><Box textAlign="right" title="Ceia + pernoita">CEIA+P</Box>
             </Box>
             {days.map((d) => (
               <ButtonBase key={d.date} onClick={() => navigate(`/day/${d.date}`)}
                 sx={{ display: 'grid', gridTemplateColumns: COLS, gap: 0.5, width: '100%', textAlign: 'left', py: 0.9, borderBottom: 1, borderColor: 'divider', fontSize: '0.8rem', fontVariantNumeric: 'tabular-nums', alignItems: 'center' }}>
                 <Box fontWeight={700}>{format(parseISO(d.date), 'dd/MM')}{d.noPlan && <Box component="span" title="Sem a escala original" sx={{ color: '#B45309', ml: 0.25, fontSize: '0.7rem' }}>⚠</Box>}</Box>
-                <Box sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'ui-monospace, Menlo, monospace', fontWeight: 600 }}>{d.start ?? '—'}</Box>
-                <Box sx={{ fontWeight: 700, color: 'primary.main' }}>{d.stay ?? ''}</Box>
+                <Box minWidth={0}>
+                  <Box sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'ui-monospace, Menlo, monospace', fontWeight: 600 }}>{d.start ?? '—'}</Box>
+                  {d.stay && <Box sx={{ fontWeight: 700, color: 'primary.main', fontSize: '0.72rem', lineHeight: 1.1 }}>{d.stay}</Box>}
+                </Box>
                 {[d.breakfast, d.lunch, d.dinner, d.supperNight].map((v, i) => (
                   <Box key={i} textAlign="right" sx={{ color: v ? 'text.primary' : 'text.disabled', fontWeight: v ? 700 : 400 }}>{v ? v.toFixed(2).replace('.', ',') : '0,00'}</Box>
                 ))}
               </ButtonBase>
             ))}
             <Box display="grid" gridTemplateColumns={COLS} gap={0.5} sx={{ pt: 1, fontSize: '0.8rem', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>
-              <Box gridColumn="1 / 4">Total {euro(total)}</Box>
+              <Box gridColumn="1 / 3">Total {euro(total)}</Box>
               {[sum('breakfast'), sum('lunch'), sum('dinner'), sum('supperNight')].map((v, i) => (
                 <Box key={i} textAlign="right">{v.toFixed(2).replace('.', ',')}</Box>
               ))}

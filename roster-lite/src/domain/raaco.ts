@@ -419,6 +419,18 @@ export function raacoDays(roster: ParsedDuty[], base: string): Map<string, Raaco
     const d = day(p.date);
     d.start = d.start ?? (p.legs[0] ? flightLabel(p.legs[0]) : p.io ? 'IO' : 'SBY');
   }
+  // The supper is never loaded — always paid (in a stay, with the night) — so its switch reads the other way (user,
+  // Nov 2026: "Ligado = ceia paga", on by default whenever it is due, a night stop included): the crew can take it off
+  // the statement. A mark `true` (the same key as "on board") = not paid.
+  const marks = roster.find((x) => x.mealOnboard)?.mealOnboard;
+  for (const m of lines) {
+    if (m.meal !== 'supper') continue;
+    m.askable = true;
+    const c = marks?.[m.key];
+    if (c === undefined) continue;
+    m.crew = c;
+    if (c === true && m.value) { m.value = 0; m.why = `${m.why}; retirada pela tripulação`; }
+  }
   for (const m of lines) {
     const d = day(m.date);
     d.meals.push(m);

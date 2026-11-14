@@ -122,7 +122,8 @@ export default function RosterPage() {
     const out = new Map<string, Meal[]>();
     if (!roster) return out;
     for (const d of raacoDays(roster.duties, baseOf(activeUser)).values()) {
-      const meals = d.meals.filter((m) => m.how === 'onboard').map((m) => m.meal);
+      // On board, plus the supper when it is paid (never loaded; user: its icon too — on a night stop it is on).
+      const meals = d.meals.filter((m) => m.how === 'onboard' || (m.meal === 'supper' && m.crew !== true && !!m.value)).map((m) => m.meal);
       if (meals.length) out.set(d.date, meals);
     }
     return out;

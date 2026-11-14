@@ -17,10 +17,10 @@ export const MEAL_SHORT: Record<Meal, string> = { breakfast: 'PA', lunch: 'AL', 
 export function MealIcons({ meals, color = '#0F766E' }: { meals: Meal[]; color?: string }) {
   if (!meals.length) return null;
   return (
-    <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25, color }} aria-label={`A bordo: ${meals.map((m) => MEAL_LABEL[m]).join(', ')}`}>
+    <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25, color }} aria-label={`Refeições: ${meals.map((m) => (m === 'supper' ? 'ceia paga' : `${MEAL_LABEL[m]} a bordo`)).join(', ')}`}>
       {meals.map((m) => {
         const Icon = MEAL_ICON[m];
-        return <Tooltip key={m} title={`${MEAL_LABEL[m]} a bordo`}><Icon sx={{ fontSize: 18 }} /></Tooltip>;
+        return <Tooltip key={m} title={m === 'supper' ? 'Ceia paga' : `${MEAL_LABEL[m]} a bordo`}><Icon sx={{ fontSize: 18 }} /></Tooltip>;
       })}
     </Box>
   );

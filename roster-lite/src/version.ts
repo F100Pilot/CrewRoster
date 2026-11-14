@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.3.39';
+export const APP_VERSION = '0.9.3.40';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -20,6 +20,14 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.9.3.40',
+    date: '2026-11-14',
+    highlights: [
+      'Abonos: a ceia também tem símbolo e botão — ligado = paga (por defeito, também na pernoita); desligar retira-a do abono.',
+      'Abonos: o número do voo volta a ver-se na tabela (Início e pernoita na mesma coluna); o texto de ajuda do cartão de refeições fica fechado.',
+    ],
+  },
   {
     version: '0.9.3.39',
     date: '2026-11-14',

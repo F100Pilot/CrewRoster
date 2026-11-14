@@ -7,7 +7,7 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.9.3.29`
+- **Produção (`master`) está em:** `0.9.3.40`
 - **Próxima versão ao promover:** a da experimental (cada atualização sobe a 4.ª casa)
 
 ## Como promover tudo para produção (quando estiver pronto)
@@ -25,31 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **0.9.3.31** — A apresentação fica **sempre 1 h antes** (utilizador: "mais tarde tratamos dos casos especiais"): a
-  0.9.3.30 (apresentação pelo [DT] e escrita à mão) foi retirada; PARSE_VERSION 27 relê a escala de quem a abriu.
-- **0.9.3.32** — **Escala original importada depois** (colega FO, outubro: a app só tinha as horas voadas, e os blocos
-  voados de 1h23 / 1h29 davam almoço pago a 14 e 15/10): a data de impressão do PDF (`pgaPrintedAt`, `ParseResult` /
-  `Roster.printedAt`) é a referência do merge; um PDF mais antigo empresta o plano aos dias já voados e nunca substitui
-  um dia que a app já tem; a releitura ordena os PDFs pela data de impressão.
-- **0.9.3.33** — **Aviso nos abonos sem escala original** (utilizador): setor voado sem plano visto (`planKnown`, gravado
-  no merge; PARSE_VERSION 28) → `RaacoDay.noPlan`: alerta + ⚠ na página Abonos e alerta no cartão do dia.
-- **0.9.3.34** — **Refeições a bordo marcadas pela tripulação** (utilizador): 🍽 no calendário só nos dias voados com
-  refeições em jogo (embarcadas ou pagas; nunca a ceia, DHC ou estadia); cartão "Refeições a bordo" + janela por dia e
-  a mesma lista no cartão do dia; "Havia a bordo" → 0, "Não havia" → Tabela 33 (4.5.11.5/6). `components/MealConfirm.tsx`,
-  `crewroster.mealOnboard.<user>`, `MealLine.askable` / `crew`.
-- **0.9.3.35** — EBT: **mostra o serviço contado** (briefing + sessão + 1 h, `ebtDutyMinutes`) no dia, na Lista e em
-  "Hoje" — um utilizador somava as células (debriefing 30 min) e lia 30 min a menos. A conta já estava certa desde 0.9.3.25.
-- **0.9.3.36** — Refeições: **interruptor por refeição** no cartão do dia (ligado = a bordo por defeito quando previsto;
-  desligar = paga) e na janela do calendário ("Está certo"); **ícones das refeições a bordo** nos cartões da Lista
-  (`MealIcon.tsx`, legenda nos Códigos). "Folga e repouso" com **interruptores** (desligar sobre a marca da escala:
-  `offDayPay: 'none'`, `restCutMin: -1`). Chip da turbulência legível (cor no `background`, não no `bgcolor`).
-- **0.9.3.37** — **Agradecimento aos colegas** (utilizador): primeiro ponto das Novidades desta edição + secção fixa
-  "Agradecimentos" em Definições → Ajuda. Sem nomes.
-- **0.9.3.38** — **Explicações colapsadas** (utilizador): `components/InfoCollapse.tsx` (fechado por defeito) em Abonos
-  ("Como a app calcula"), Códigos (UTC e hora local), AE (Planeado vs voado: "Como se conta") e Ajuda ("Instalar como
-  app"). Avisos e "em testes" continuam abertos.
-- **0.9.3.39** — **Agradecimentos sempre visíveis e a negrito** (utilizador): fora do colapso em Ajuda; nas Novidades num
-  campo próprio `ReleaseNote.thanks`, a negrito, acima das notas.
+_(vazio — tudo promovido em 0.9.3.40)_
 
 ---
 

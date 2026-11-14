@@ -376,7 +376,9 @@ Things learned over this collaboration that should persist across sessions:
   `RaacoDayCard`. All crew (RAACO is not AE). Since 0.9.3.36 (user): a SWITCH per askable meal (on = on board, the
   plan's default; off = paid, "em caso de irregularidades") in `RaacoDayCard` and the calendar dialog ("Está certo"
   confirms the plan); the Lista cards show icons of the meals on board (`components/MealIcon.tsx`: PA FreeBreakfast, AL
-  LunchDining, JA DinnerDining; legend on `/codes`).
+  LunchDining, JA DinnerDining; legend on `/codes`). The SUPPER's switch reads the other way (user, 0.9.3.40: "Ligado = ceia
+  paga"): on by default whenever it is due (a night stop included), off = taken off the statement (`mealOnboard[key] =
+  true`, applied in `raacoDays` to flight and stay suppers); its icon (NightsStay) shows on the Lista when it is paid.
 - **RAACO casebook — every real case is kept forever** (user: "estes exemplos têm de servir para corrigir futuros
   problemas"): each crew feedback / checked statement line becomes an entry in
   `src/domain/__tests__/raacoCases.test.ts` (synthetic TP9xxx flight numbers, real airports/times, the columns

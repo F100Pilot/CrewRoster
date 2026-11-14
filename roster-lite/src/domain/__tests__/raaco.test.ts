@@ -182,8 +182,15 @@ describe('Meal Plan over the whole PSV', () => {
     expect(raacoDays(short.map((d) => ({ ...d, mealOnboard: { [key]: true } })), 'LIS').get('2026-10-20')!.lunch).toBe(0);
   });
 
-  it('never asks about the supper, a DHC meal or a stay', () => {
-    const d = raacoDays([leg('2026-10-03', 'TP9271', 'LIS', 'DUB', '20:00', '22:40', '19:00')], 'LIS');
-    for (const day of d.values()) for (const m of day.meals) if (m.meal === 'supper' || m.how === 'stay' || m.how === 'dhc') expect(m.askable).toBeFalsy();
+  it('asks about the supper as "paid" (on by default, off takes it off), never about a DHC meal or a stay lunch', () => {
+    const legs = [leg('2026-10-03', 'TP9271', 'LIS', 'DUB', '20:00', '22:40', '19:00')];
+    const d = raacoDays(legs, 'LIS');
+    const meals = [...d.values()].flatMap((x) => x.meals);
+    for (const m of meals) if (m.how === 'dhc' || (m.how === 'stay' && m.meal !== 'supper')) expect(m.askable).toBeFalsy();
+    const supper = meals.find((m) => m.meal === 'supper')!;
+    expect(supper).toMatchObject({ askable: true });
+    expect(supper.value).toBeGreaterThan(0);
+    const off = raacoDays(legs.map((x) => ({ ...x, mealOnboard: { [supper.key]: true } })), 'LIS');
+    expect([...off.values()].flatMap((x) => x.meals).find((m) => m.key === supper.key)!.value).toBe(0);
   });
 });
