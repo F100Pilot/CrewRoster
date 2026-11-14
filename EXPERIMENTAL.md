@@ -27,6 +27,10 @@ produção, em vez de promover uma a uma.
 
 - **0.9.3.31** — A apresentação fica **sempre 1 h antes** (utilizador: "mais tarde tratamos dos casos especiais"): a
   0.9.3.30 (apresentação pelo [DT] e escrita à mão) foi retirada; PARSE_VERSION 27 relê a escala de quem a abriu.
+- **0.9.3.32** — **Escala original importada depois** (colega FO, outubro: a app só tinha as horas voadas, e os blocos
+  voados de 1h23 / 1h29 davam almoço pago a 14 e 15/10): a data de impressão do PDF (`pgaPrintedAt`, `ParseResult` /
+  `Roster.printedAt`) é a referência do merge; um PDF mais antigo empresta o plano aos dias já voados e nunca substitui
+  um dia que a app já tem; a releitura ordena os PDFs pela data de impressão.
 
 ---
 

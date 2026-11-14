@@ -147,4 +147,15 @@ describe('Meal Plan over the whole PSV', () => {
     const onTime = raacoDays([out, leg('2026-10-22', 'TP9222', 'FNC', 'LIS', '09:15', '10:50')], 'LIS').get('2026-10-22')!;
     expect(onTime.meals.find((m) => m.meal === 'lunch')).toBeUndefined();
   });
+
+  it('loads by the planned block once the plan is known (a colleague\'s October: RAK→LIS planned 1h40, flown 1h23)', () => {
+    const out = leg('2026-10-14', 'TP9241', 'LIS', 'RAK', '07:52', '09:22', '06:50');
+    const back = leg('2026-10-14', 'TP9242', 'RAK', 'LIS', '10:52', '12:15');
+    expect(raacoDays([out, back], 'LIS').get('2026-10-14')!.lunch).toBe(18); // flown only: sectors ≤ 1h30, nothing loaded
+    const planned = [
+      { ...out, planned: { reportingTime: '06:50', departureTime: '07:50', arrivalTime: '09:30' } },
+      { ...back, planned: { reportingTime: null, departureTime: '10:45', arrivalTime: '12:25' } },
+    ] as ParsedDuty[];
+    expect(raacoDays(planned, 'LIS').get('2026-10-14')?.lunch ?? 0).toBe(0);
+  });
 });

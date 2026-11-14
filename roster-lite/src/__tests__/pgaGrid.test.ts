@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import tokens from './fixtures/pga-tokens.json';
-import { interpretPgaGrid } from '../parsing/pdf/pgaGrid';
+import { interpretPgaGrid, pgaPrintedAt } from '../parsing/pdf/pgaGrid';
 import type { PositionedToken } from '../parsing/pdf/extractText';
 
 // Real tokens captured from a Portugália NetLine "Individual duty plan" PDF
@@ -139,5 +139,14 @@ describe('pgaBlankDates', () => {
   it('finds no blank day in a fully printed roster', async () => {
     const { pgaBlankDates } = await import('../parsing/pdf/pgaGrid');
     expect(pgaBlankDates(tokens as PositionedToken[])).toEqual([]);
+  });
+});
+
+describe('pgaPrintedAt', () => {
+  const tok = (text: string) => ({ text, x: 0, y: 0, width: 0, height: 0, page: 1 });
+  it('reads the day CrewLink printed the roster', () => {
+    expect(pgaPrintedAt([tok('NetLine/Crew(PGA)'), tok(' '), tok('printed by CREWLINK'), tok(' '), tok('15Sep26 22:34 Page 1')])).toBe('2026-09-15');
+    expect(pgaPrintedAt([tok('printed by CREWLINK 03Nov26 07:10')])).toBe('2026-11-03');
+    expect(pgaPrintedAt([tok('Individual duty plan')])).toBeNull();
   });
 });

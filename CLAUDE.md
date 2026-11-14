@@ -216,6 +216,12 @@ Things learned over this collaboration that should persist across sessions:
   follow the actual departure. Since 0.8.32.2 a settled sector with a plan keeps the PLANNED report as its
   `reportingTime` (user rule: the report is always the one before the post-flight update).
   `domain/planVsFlown.ts` derives delays, extra FDP, commander's extensions and reduced rests.
+  **The print day is the reference** (since 0.9.3.32, a colleague's October: only flown times, so the Meal Plan read
+  flown blocks): `pgaPrintedAt()` reads "printed by CREWLINK 15Sep26 22:34" → `ParseResult.printedAt`; imports and the
+  replay merge with `asOf` = that day (else the download day), the replay sorts the PDFs by it, and `Roster.printedAt`
+  keeps the newest. In `mergeDuties`, a day the incoming roster still saw ahead while the app holds it flown
+  (`settled`) keeps the flown times and takes the incoming ones as `planned`; a roster printed before the newest one
+  (`older`) never replaces a day the app has — it only lends plans and fills missing days.
 - **Pay estimate** (since 0.8.22; in production since 0.8.26): `domain/payEstimate.ts` applies the RRRGS (RB, plafonds
   table 2.1 cut per holiday day, 3%/6% VB/h, per diem A/B cl. 9, complement cl. 10, cl. 2.6/2.8
   from planVsFlown, night 25% and national holidays 100% via `holidaysPT.ts`). **Personal figures

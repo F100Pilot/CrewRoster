@@ -4,7 +4,7 @@ import { parseIcs } from './ics/parseIcs';
 import { extractPdf } from './pdf/extractText';
 import { reconstructLines } from './pdf/reconstructLines';
 import { interpret } from './pdf/interpret';
-import { interpretPgaGrid, pgaBlankDates, pgaDutyTimes } from './pdf/pgaGrid';
+import { interpretPgaGrid, pgaBlankDates, pgaDutyTimes, pgaPrintedAt } from './pdf/pgaGrid';
 import { parseCrewInfo, parseGroundCrewInfo, attachCrewToDuties, attachGroundCrewToDuties, placeSafetyMarks, placeTrainees } from './pdf/crewInfo';
 
 // Bumped whenever the PDF parsing (duties, crew, times, routes…) changes in a way that should
@@ -39,7 +39,8 @@ export async function parseRosterFile(file: File): Promise<ParseResult> {
       for (const d of pgaDuties) if (dutyTimes.has(d.date)) d.rosterDt = dutyTimes.get(d.date);
       const parsed = new Set(pgaDuties.map((d) => d.date));
       const blankDates = pgaBlankDates(extracted.tokens).filter((d) => !parsed.has(d));
-      return { sourceType: 'pdf', duties: sortByDate(pgaDuties), rawText: extracted.rawText, warnings: [], blankDates };
+      const printedAt = pgaPrintedAt(extracted.tokens) ?? undefined;
+      return { sourceType: 'pdf', duties: sortByDate(pgaDuties), rawText: extracted.rawText, warnings: [], blankDates, printedAt };
     }
 
     // Fallback: generic line-based interpreter (other/unknown PDF layouts).

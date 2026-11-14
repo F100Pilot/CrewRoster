@@ -28,33 +28,42 @@ async function reparseStoredRoster(roster: Roster, userId: string, force = false
   try {
     const pdfs = await listPdfs(userId);
     if (pdfs.length === 0) return roster; // no source PDF kept → can't re-parse (re-import path)
-    const ordered = [...pdfs].sort((a, b) => a.downloadedAt.localeCompare(b.downloadedAt));
-    let duties = roster.duties;
-    let rawText = roster.rawText;
-    let reparsed = false;
-    for (const p of ordered) {
+    // Read them all, then replay oldest→newest by the day CrewLink PRINTED each (else its download): an original roster
+    // imported late still comes before the syncs that followed it.
+    const results: { at: string; result: Awaited<ReturnType<typeof parseRosterFile>> }[] = [];
+    for (const p of pdfs) {
       try {
         const file = new File([p.blob], p.fileName, { type: 'application/pdf' });
         const result = await parseRosterFile(file);
         if (result.duties.length === 0) continue;
-        // Per-day override: re-parsed dates win. Replaying the PDFs in download order also
-        // rebuilds the planned-vs-flown record from the history.
-        duties = mergeDuties(duties, result.duties, p.downloadedAt.slice(0, 10), result.blankDates);
-        rawText = result.rawText;
-        reparsed = true;
-        if (stats) stats.read++;
+        results.push({ at: result.printedAt ?? p.downloadedAt.slice(0, 10), result });
       } catch {
         // A single unreadable/non-roster PDF must not abort the refresh — skip it.
       }
     }
-    if (!reparsed) return roster;
-    const updated: Roster = { ...roster, sourceType: 'pdf', duties, rawText, parseVersion: PARSE_VERSION };
+    results.sort((a, b) => a.at.localeCompare(b.at));
+    let duties = roster.duties;
+    let rawText = roster.rawText;
+    let printedAt = roster.printedAt;
+    for (const { at, result } of results) {
+      // Per-day override: re-parsed dates win. Replaying the PDFs in order also rebuilds the planned-vs-flown record.
+      duties = mergeDuties(duties, result.duties, at, result.blankDates);
+      rawText = result.rawText;
+      if (!printedAt || at > printedAt) printedAt = at;
+      if (stats) stats.read++;
+    }
+    if (!results.length) return roster;
+    const updated: Roster = { ...roster, sourceType: 'pdf', duties, rawText, parseVersion: PARSE_VERSION, printedAt };
     await saveRoster(userId, updated);
     return updated;
   } catch {
     return roster;
   }
 }
+
+// A roster printed before the newest one already merged only lends plans and fills gaps (rosterMerge).
+const isOlder = (incoming?: string, stored?: string) => !!incoming && !!stored && incoming < stored;
+const newest = (a?: string, b?: string) => (a && b ? (a > b ? a : b) : a ?? b);
 
 export function RosterProvider({ children }: { children: ReactNode }) {
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -261,7 +270,7 @@ export function RosterProvider({ children }: { children: ReactNode }) {
         // diff old-vs-merged to highlight what changed (only dates inside the new
         // download's window can differ, since the rest is kept verbatim).
         const previous = await loadRoster(userId);
-        const mergedDuties = mergeDuties(previous?.duties ?? [], result.duties, todayISO(), result.blankDates);
+        const mergedDuties = mergeDuties(previous?.duties ?? [], result.duties, result.printedAt ?? todayISO(), result.blankDates, isOlder(result.printedAt, previous?.printedAt));
         const changes = previous ? diffRosters(previous.duties, mergedDuties, todayISO()) : [];
         const next: Roster = {
           id: userId,
@@ -272,6 +281,7 @@ export function RosterProvider({ children }: { children: ReactNode }) {
           rawText: result.rawText,
           changes,
           parseVersion: PARSE_VERSION,
+          printedAt: newest(result.printedAt, previous?.printedAt),
         };
         await saveRoster(userId, next);
         if (activeUserRef.current?.id === userId) {
@@ -294,7 +304,7 @@ export function RosterProvider({ children }: { children: ReactNode }) {
     const userId = activeUser.id;
     const result = await parseRosterFile(file);
     const previous = await loadRoster(userId);
-    const mergedDuties = mergeDuties(previous?.duties ?? [], result.duties, todayISO(), result.blankDates);
+    const mergedDuties = mergeDuties(previous?.duties ?? [], result.duties, result.printedAt ?? todayISO(), result.blankDates, isOlder(result.printedAt, previous?.printedAt));
     const changes = previous ? diffRosters(previous.duties, mergedDuties, todayISO()) : [];
     const next: Roster = {
       id: userId,
@@ -305,6 +315,7 @@ export function RosterProvider({ children }: { children: ReactNode }) {
       rawText: result.rawText,
       changes,
       parseVersion: PARSE_VERSION,
+      printedAt: newest(result.printedAt, previous?.printedAt),
     };
     return { next, changes, warnings: result.warnings };
   }, [activeUser]);

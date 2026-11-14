@@ -104,6 +104,8 @@ export interface Roster {
   // Version of the overall PDF parser that produced this roster. When behind PARSE_VERSION the
   // app re-parses the stored PDF(s) on load so all parsing improvements apply without re-import.
   parseVersion?: number;
+  // The newest print day of the rosters merged in (ParseResult.printedAt): a roster printed before it is older news.
+  printedAt?: string;
 }
 
 // Result of running a file through the parsing pipeline (before persistence).
@@ -114,6 +116,9 @@ export interface ParseResult {
   warnings: string[];
   // Days the file shows with nothing on them (PDF grid only): the merge clears what was stored there.
   blankDates?: string[];
+  // The day CrewLink printed it ("printed by CREWLINK 15Sep26 22:34"), YYYY-MM-DD — what the roster knew, not when it
+  // reached the app: an old roster imported later is a plan, not the flown times (rosterMerge).
+  printedAt?: string;
 }
 
 // A flown aircraft registration, recorded per crew member + day + flight. Kept apart
