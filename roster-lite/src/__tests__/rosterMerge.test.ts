@@ -112,3 +112,50 @@ describe('mergeDuties — planned vs flown', () => {
     expect(mergeDuties(a, [leg('2026-10-10', '09:00', '10:00')], '2026-10-05')[0].planned).toBeUndefined();
   });
 });
+
+// Nov 2026, a colleague's October: the app had only the flown times (synced after the days), so the Meal Plan read the
+// flown blocks (RAK→LIS 1h23, PXO→LIS 1h29: "no meal") instead of the planned ones (1h40, 1h35). Importing the
+// original roster, printed on 15/09, must lend those plans — not replace the flown days.
+describe('mergeDuties — an older roster imported later', () => {
+  const leg = (date: string, off: string, on: string, extra: Partial<ParsedDuty> = {}): ParsedDuty => ({
+    ...duty(date, 'FLT', 'TP1453'),
+    departureAirport: 'RAK', arrivalAirport: 'LIS', departureTime: off, arrivalTime: on, reportingTime: null,
+    ...extra,
+  });
+
+  it('keeps the flown day and takes the old times as its plan', () => {
+    const flown = mergeDuties([], [leg('2026-10-14', '10:52', '12:15')], '2026-11-14');
+    expect(flown[0].settled).toBe(true);
+    const withPlan = mergeDuties(flown, [leg('2026-10-14', '10:45', '12:25')], '2026-09-15');
+    expect(withPlan).toHaveLength(1);
+    expect(withPlan[0]).toMatchObject({ departureTime: '10:52', arrivalTime: '12:15', settled: true });
+    expect(withPlan[0].planned).toMatchObject({ departureTime: '10:45', arrivalTime: '12:25' });
+  });
+
+  it('never replaces a newer plan of a day still ahead, and fills days it lacked', () => {
+    const now = mergeDuties([], [leg('2026-11-20', '09:00', '10:30')], '2026-11-14');
+    const old = mergeDuties(now, [leg('2026-11-20', '08:00', '09:30'), leg('2026-11-21', '08:00', '09:30')], '2026-09-15', [], true);
+    expect(old.find((d) => d.date === '2026-11-20')).toMatchObject({ departureTime: '09:00' });
+    expect(old.find((d) => d.date === '2026-11-20')!.planned).toBeUndefined();
+    expect(old.find((d) => d.date === '2026-11-21')).toMatchObject({ departureTime: '08:00' });
+  });
+});
+
+// The abonos warn on a flown day whose plan the app never saw (user, Nov 2026). `planned` is kept only when it differs,
+// so `planKnown` tells "flown as planned" from "no plan".
+describe('mergeDuties — was the plan seen?', () => {
+  const leg = (date: string, off: string, on: string): ParsedDuty => ({
+    ...duty(date, 'FLT', 'TP1940'), departureAirport: 'LIS', arrivalAirport: 'OPO', departureTime: off, arrivalTime: on,
+  });
+  it('knows the plan of a day flown as planned, and of a delayed one', () => {
+    const plan = mergeDuties([], [leg('2026-10-10', '07:00', '08:00'), leg('2026-10-11', '07:00', '08:00')], '2026-10-01');
+    const flown = mergeDuties(plan, [leg('2026-10-10', '07:00', '08:00'), leg('2026-10-11', '07:30', '08:30')], '2026-10-12');
+    expect(flown.map((d) => [d.settled, d.planKnown, !!d.planned])).toEqual([[true, true, false], [true, true, true]]);
+  });
+  it('does not know it when the first roster seen came after the day — until the original is imported', () => {
+    const flown = mergeDuties([], [leg('2026-10-10', '07:00', '08:00')], '2026-10-12');
+    expect(flown[0].planKnown).toBeUndefined();
+    const original = mergeDuties(flown, [leg('2026-10-10', '07:00', '08:00')], '2026-09-15');
+    expect(original[0].planKnown).toBe(true);
+  });
+});

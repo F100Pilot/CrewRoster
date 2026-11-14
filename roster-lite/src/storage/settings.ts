@@ -300,12 +300,16 @@ function dayMarks<T>(prefix: string) {
   };
   return { get, set };
 }
-const offDayMarks = dayMarks<'paid' | 'kept'>('crewroster.offDayPay.');
+const offDayMarks = dayMarks<'paid' | 'kept' | 'none'>('crewroster.offDayPay.');
 const restCutMarks = dayMarks<number>('crewroster.restCut.');
 export const getOffDayMarks = offDayMarks.get;
 export const setOffDayMark = offDayMarks.set;
 export const getRestCutMarks = restCutMarks.get;
 export const setRestCutMark = restCutMarks.set;
+// Meals the crew member marked on board or not (calendar 🍽 banner), by meal key ("lunch:2026-10-02").
+const mealMarks = dayMarks<boolean>('crewroster.mealOnboard.');
+export const getMealOnboardMarks = mealMarks.get;
+export const setMealOnboardMark = mealMarks.set;
 
 // IO days the crew member marked as the "prevenir" (true) or as not (false), by date — over what
 // the roster alone suggests (domain/irregularity.ts). Per profile; carried by backups.

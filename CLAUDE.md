@@ -166,6 +166,11 @@ Things learned over this collaboration that should persist across sessions:
   minimal (🅿 + number). Verified the parser against real DEP and ARR board captures.
 - **Layout/UX taste:** the user wants things **graphical, modern and vertically
   compact** on mobile; align related cards on one row rather than stacking.
+- **Explanations are collapsed** (user, 0.9.3.38: "estas informações que são só explicações devem estar colapsadas …
+  em todas as outras páginas"): help text — how the app counts, what a note means — goes in `components/InfoCollapse.tsx`
+  (closed by default; `card={false}` inside a card or dialog). Warnings, "em testes" banners and missing-data alerts stay
+  open. New explanatory text uses it. EXCEPT the thanks to colleagues (user: "têm de estar sempre visíveis e a bold"):
+  Ajuda → Agradecimentos open and bold, and `ReleaseNote.thanks` shown in bold in the Novidades. Never names.
 - **Labels/chips must line up vertically across repeated cards** (user: "alinha sempre"): give the
   leading text (e.g. the day's date) a fixed-width column so the chips after it start at the same x.
 - **When a fix "doesn't appear,"** suspect a stale stored roster (crew is baked at
@@ -216,6 +221,16 @@ Things learned over this collaboration that should persist across sessions:
   follow the actual departure. Since 0.8.32.2 a settled sector with a plan keeps the PLANNED report as its
   `reportingTime` (user rule: the report is always the one before the post-flight update).
   `domain/planVsFlown.ts` derives delays, extra FDP, commander's extensions and reduced rests.
+  **The print day is the reference** (since 0.9.3.32, a colleague's October: only flown times, so the Meal Plan read
+  flown blocks): `pgaPrintedAt()` reads "printed by CREWLINK 15Sep26 22:34" → `ParseResult.printedAt`; imports and the
+  replay merge with `asOf` = that day (else the download day), the replay sorts the PDFs by it, and `Roster.printedAt`
+  keeps the newest. In `mergeDuties`, a day the incoming roster still saw ahead while the app holds it flown
+  (`settled`) keeps the flown times and takes the incoming ones as `planned`; a roster printed before the newest one
+  (`older`) never replaces a day the app has — it only lends plans and fills missing days.
+  **No plan → warn** (since 0.9.3.33, user: "deve existir uma mensagem nos abonos a informar que podem estar errados"):
+  `planned` is only stored when it differs, so the merge also sets `ParsedDuty.planKnown` on a settled sector whose plan
+  it saw (PARSE_VERSION 28); `RaacoDay.noPlan` = a flown flight/DHC with neither → warning + ⚠ on `/abonos`, warning on
+  `RaacoDayCard`, asking for the PDF printed before the flights.
 - **Pay estimate** (since 0.8.22; in production since 0.8.26): `domain/payEstimate.ts` applies the RRRGS (RB, plafonds
   table 2.1 cut per holiday day, 3%/6% VB/h, per diem A/B cl. 9, complement cl. 10, cl. 2.6/2.8
   from planVsFlown, night 25% and national holidays 100% via `holidaysPT.ts`). **Personal figures
@@ -352,7 +367,18 @@ Things learned over this collaboration that should persist across sessions:
   the roster as it is; `asPlanned()` gives each leg's plan for loading and the block): a delay into a period the plan
   didn't cover pays that meal ("quer dizer que originalmente não embarcava, e teve de ser pago", 4.5.11.5).
   0.9.3.26–28 tried other readings on exp (Lisbon clock alone; any later sector) — replaced, never in production.
-  (0.9.3.26 tried the Lisbon clock instead — replaced, never in production.)
+- **Crew's meal marks** (since 0.9.3.34, user: a banner "só nas potenciais refeições", "Previstas + pagas", and it
+  changes the value): `MealLine.askable` = a meal of a flight PSV loaded / paid / on ground (never the supper, a DHC or a
+  stay); the crew's answer by meal key ("lunch:2026-10-02") in `crewroster.mealOnboard.<user>`, put on every flight / DHC
+  as `ParsedDuty.mealOnboard` by RosterProvider; `psvMeals` follows it (true → on board 0; false → paid like a meal not
+  loaded, Tabela 33 / local rate when ending away). UI: `components/MealConfirm.tsx` — 🍽 on flown calendar days with
+  meals still to confirm, the "Refeições a bordo" card under the calendar (dialog per day), the same list in
+  `RaacoDayCard`. All crew (RAACO is not AE). Since 0.9.3.36 (user): a SWITCH per askable meal (on = on board, the
+  plan's default; off = paid, "em caso de irregularidades") in `RaacoDayCard` and the calendar dialog ("Está certo"
+  confirms the plan); the Lista cards show icons of the meals on board (`components/MealIcon.tsx`: PA FreeBreakfast, AL
+  LunchDining, JA DinnerDining; legend on `/codes`). The SUPPER's switch reads the other way (user, 0.9.3.40: "Ligado = ceia
+  paga"): on by default whenever it is due (a night stop included), off = taken off the statement (`mealOnboard[key] =
+  true`, applied in `raacoDays` to flight and stay suppers); its icon (NightsStay) shows on the Lista when it is paid.
 - **RAACO casebook — every real case is kept forever** (user: "estes exemplos têm de servir para corrigir futuros
   problemas"): each crew feedback / checked statement line becomes an entry in
   `src/domain/__tests__/raacoCases.test.ts` (synthetic TP9xxx flight numbers, real airports/times, the columns
@@ -362,7 +388,9 @@ Things learned over this collaboration that should persist across sessions:
 - **EBT simulator briefing** (since 0.8.35, user rule): LIS-EBT-1 = briefing 30 min + debriefing 1 h, LIS-EBT-2 = briefing
   1 h + debriefing **30 min** (user, 0.9.3.15, from his own roster: "tem de ser 30 minutos" — 0.8.40.1 had made it 1 h
   after a colleague's November duty-pay) — but that 30 min is **information to the pilot only** (user, 0.9.3.25: "não é
-  para mudar no duty"): the DUTY keeps a 1-hour debriefing on both days (`dutyDebriefMin`, used by `asWorked`); the roster only prints the session (4h00/5h00). `domain/simSession.ts`; shown as
+  para mudar no duty"): the DUTY keeps a 1-hour debriefing on both days (`dutyDebriefMin`, used by `asWorked`); the roster only prints the session (4h00/5h00).
+  Since 0.9.3.35 the counted duty is SHOWN (`ebtDutyMinutes`, "serviço 7h00" on the day card, Lista and "Hoje") — a user
+  added up the cells (briefing 1 h · sessão · debriefing 30 min) and reported the duty as 30 min short. `domain/simSession.ts`; shown as
   information on the day, Lista card and "Hoje". The roster's times are the session only (user confirmed); since 0.8.37
   the DUTY counts briefing + session + debriefing (user: "o tempo de simulador conta o simulador mais o briefing e
   debriefing"): `asWorked()` widens EBT sessions inside `dutyWindow` / `dutyDay`, so duty-pay, limits, rest and the
@@ -379,8 +407,14 @@ Things learned over this collaboration that should persist across sessions:
   out to the minute from the roster itself** (user: no earlier roster needed): `autoRestCut()` = the AE minimum
   (`restPeriods`) − the rest taken (release = last on-blocks + 30 min → report), capped at 2 h at base; it counts by itself
   on a `RED_REP` day, and a typed figure (to the minute) wins. Stored per user
-  (`crewroster.offDayPay.*`, `crewroster.restCut.*`), applied in RosterProvider; `domain/offDayWork.ts`. Not yet checked
+  (`crewroster.offDayPay.*`, `crewroster.restCut.*`), applied in RosterProvider; `domain/offDayWork.ts`. Since 0.9.3.36
+  both are SWITCHES (user: "sendo possível voltar atrás"): switched off over a roster mark = `offDayPay: 'none'` /
+  `restCutMin: -1` (no cut). Not yet checked
   against a real PDF carrying the remarks.
+- **Report time = first departure − 1 h, always** (user rule, 0.9.3.31: "a apresentação vai ser sempre 1 hora antes.
+  Mais tarde tratamos dos casos especiais que vão aparecendo"). 0.9.3.30 tried it from the printed [DT] (last arrival +
+  30 min − DT) plus a typed override on the day page — withdrawn (reverted; PARSE_VERSION 27 re-reads). A user's audio
+  had a 13:55 report for a 15:10 take-off: keep such cases for when the user brings them back.
 - **Medical exams** (IM / VIM / MED, `Medical`, timed): done apart (a colleague, 0.9.3.16) the roster has MED on one day
   ([DT] 3h00) and IM + VIM on another ([DT] 4h00 for IM 08:00–12:00 + VIM 12:00–12:30): the VIM is inside the IM's
   block, so `countedWork()` (`dutyTime.ts`) leaves a VIM out of the duty maths when the day has an IM; display unchanged.

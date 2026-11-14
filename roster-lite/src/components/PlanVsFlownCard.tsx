@@ -1,3 +1,4 @@
+import InfoCollapse from './InfoCollapse';
 import { useMemo, useState, type ReactNode } from 'react';
 import { Box, Card, CardActionArea, CardContent, IconButton, Stack, Typography } from '@mui/material';
 import { ChevronLeft, ChevronRight, CompareArrows } from '@mui/icons-material';
@@ -84,10 +85,14 @@ export default function PlanVsFlownCard({ duties, base }: { duties: ParsedDuty[]
                 </Line>
               ))}
             </Stack>
-            <Typography variant="caption" color="text.disabled" display="block" mt={0.75}>
+            <Box mt={0.5}>
+              <InfoCollapse card={false} title="Como se conta">
+                <Typography variant="caption" color="text.secondary" display="block">
               Atraso = chegada {LATE_MINUTES} min ou mais depois do planeado. Serviço = FDP voado menos o
               planeado. Só contam os voos cujo planeado a app viu antes do dia. Pagos no mês seguinte.
-            </Typography>
+                </Typography>
+              </InfoCollapse>
+            </Box>
           </>
         )}
       </CardContent>

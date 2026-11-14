@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.3.29';
+export const APP_VERSION = '0.9.3.40';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -14,10 +14,86 @@ export interface ReleaseNote {
   version: string;
   date: string; // YYYY-MM-DD
   highlights: string[];
+  // A thank-you shown first, in bold, above the highlights (user, Nov 2026: always visible and in bold).
+  thanks?: string;
 }
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.9.3.40',
+    date: '2026-11-14',
+    highlights: [
+      'Abonos: a ceia também tem símbolo e botão — ligado = paga (por defeito, também na pernoita); desligar retira-a do abono.',
+      'Abonos: o número do voo volta a ver-se na tabela (Início e pernoita na mesma coluna); o texto de ajuda do cartão de refeições fica fechado.',
+    ],
+  },
+  {
+    version: '0.9.3.39',
+    date: '2026-11-14',
+    highlights: [
+      'Agradecimentos sempre visíveis e a negrito (Definições → Ajuda e Novidades).',
+    ],
+  },
+  {
+    version: '0.9.3.38',
+    date: '2026-11-14',
+    highlights: [
+      'Páginas mais limpas: as explicações (como a app calcula os abonos, UTC e hora local nos Códigos, como se contam atrasos no AE, e Ajuda) ficam fechadas — toca no título para as abrir.',
+    ],
+  },
+  {
+    version: '0.9.3.37',
+    date: '2026-11-14',
+    thanks: '💙 Obrigado aos colegas que têm ajudado. Esta versão deve muito a quem tem ajudado a interpretar as cláusulas do AE e do ROV, a quem envia escalas, extratos e recibos para comparar, e a quem testa cada versão e diz o que não bate certo. Esse contributo tem sido essencial. Obrigado!',
+    highlights: [
+      'Definições → Ajuda tem agora uma secção de Agradecimentos.',
+    ],
+  },
+  {
+    version: '0.9.3.36',
+    date: '2026-11-14',
+    highlights: [
+      'Abonos (em testes): no dia, cada refeição prevista tem um botão — ligado = a bordo (como no plano de refeições), desligado = não houve (irregularidade) e passa a ser paga. Na Lista, os voos mostram ícones das refeições a bordo (legenda nos Códigos).',
+      'Folga e repouso: "Voo em dia de folga" e "Redução de repouso" passam a ser interruptores — ligam-se e desligam-se, mesmo quando vêm marcados na escala.',
+      'Meteo da rota: o texto da turbulência volta a ler-se (estava a branco).',
+    ],
+  },
+  {
+    version: '0.9.3.35',
+    date: '2026-11-14',
+    highlights: [
+      'EBT: o dia de simulador mostra o serviço contado — briefing + sessão + 1 h de debriefing (por exemplo EBT-2 de 5 h = 7h00), no dia, na lista e em "Hoje". O debriefing de 30 min do EBT-2 continua a ser só informação.',
+    ],
+  },
+  {
+    version: '0.9.3.34',
+    date: '2026-11-14',
+    highlights: [
+      'Abonos (em testes): no calendário, os dias já voados com refeições em jogo levam 🍽, e o cartão "Refeições a bordo" por baixo deixa marcar cada uma — "Havia a bordo" ou "Não havia". Os abonos passam a seguir o que marcares (também no cartão de refeições do dia).',
+    ],
+  },
+  {
+    version: '0.9.3.33',
+    date: '2026-11-14',
+    highlights: [
+      'Abonos: os dias voados de que a app não tem a escala original (planeada) ficam marcados com ⚠ e um aviso — as refeições embarcadas seguem o planeamento, por isso esses abonos podem estar errados. Importar o PDF impresso antes dos voos corrige-os.',
+    ],
+  },
+  {
+    version: '0.9.3.32',
+    date: '2026-11-14',
+    highlights: [
+      'Escala original: um PDF antigo (por exemplo o do mês, impresso antes dos voos) pode ser importado depois — a app vê a data em que foi impresso e usa-o como o PLANO desses dias, sem apagar as horas voadas. Os abonos passam a seguir o plano de refeições (blocos planeados), como a empresa.',
+    ],
+  },
+  {
+    version: '0.9.3.31',
+    date: '2026-11-14',
+    highlights: [
+      'A escala é relida uma vez ao abrir (sem mudanças visíveis). A apresentação continua a ser uma hora antes do primeiro voo.',
+    ],
+  },
   {
     version: '0.9.3.29',
     date: '2026-11-14',

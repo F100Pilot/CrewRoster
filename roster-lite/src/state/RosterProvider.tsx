@@ -11,7 +11,7 @@ import {
 } from '../storage/rosterStore';
 import { mergeLogbook } from '../domain/logbook';
 import { regMap } from '../domain/aircraftRegs';
-import { getOffDayMarks, getPrevenirMarks, getRestCutMarks, setCredentials, setOffDayMark, setPrevenirMark, setRestCutMark } from '../storage/settings';
+import { getMealOnboardMarks, getOffDayMarks, getPrevenirMarks, getRestCutMarks, setCredentials, setMealOnboardMark, setOffDayMark, setPrevenirMark, setRestCutMark } from '../storage/settings';
 import { RosterContext, type RosterState, type RosterImportPreview } from './useRoster';
 
 // Re-parse a stored PDF roster from its saved PDF(s) with the current parser, so improvements
@@ -28,33 +28,42 @@ async function reparseStoredRoster(roster: Roster, userId: string, force = false
   try {
     const pdfs = await listPdfs(userId);
     if (pdfs.length === 0) return roster; // no source PDF kept → can't re-parse (re-import path)
-    const ordered = [...pdfs].sort((a, b) => a.downloadedAt.localeCompare(b.downloadedAt));
-    let duties = roster.duties;
-    let rawText = roster.rawText;
-    let reparsed = false;
-    for (const p of ordered) {
+    // Read them all, then replay oldest→newest by the day CrewLink PRINTED each (else its download): an original roster
+    // imported late still comes before the syncs that followed it.
+    const results: { at: string; result: Awaited<ReturnType<typeof parseRosterFile>> }[] = [];
+    for (const p of pdfs) {
       try {
         const file = new File([p.blob], p.fileName, { type: 'application/pdf' });
         const result = await parseRosterFile(file);
         if (result.duties.length === 0) continue;
-        // Per-day override: re-parsed dates win. Replaying the PDFs in download order also
-        // rebuilds the planned-vs-flown record from the history.
-        duties = mergeDuties(duties, result.duties, p.downloadedAt.slice(0, 10), result.blankDates);
-        rawText = result.rawText;
-        reparsed = true;
-        if (stats) stats.read++;
+        results.push({ at: result.printedAt ?? p.downloadedAt.slice(0, 10), result });
       } catch {
         // A single unreadable/non-roster PDF must not abort the refresh — skip it.
       }
     }
-    if (!reparsed) return roster;
-    const updated: Roster = { ...roster, sourceType: 'pdf', duties, rawText, parseVersion: PARSE_VERSION };
+    results.sort((a, b) => a.at.localeCompare(b.at));
+    let duties = roster.duties;
+    let rawText = roster.rawText;
+    let printedAt = roster.printedAt;
+    for (const { at, result } of results) {
+      // Per-day override: re-parsed dates win. Replaying the PDFs in order also rebuilds the planned-vs-flown record.
+      duties = mergeDuties(duties, result.duties, at, result.blankDates);
+      rawText = result.rawText;
+      if (!printedAt || at > printedAt) printedAt = at;
+      if (stats) stats.read++;
+    }
+    if (!results.length) return roster;
+    const updated: Roster = { ...roster, sourceType: 'pdf', duties, rawText, parseVersion: PARSE_VERSION, printedAt };
     await saveRoster(userId, updated);
     return updated;
   } catch {
     return roster;
   }
 }
+
+// A roster printed before the newest one already merged only lends plans and fills gaps (rosterMerge).
+const isOlder = (incoming?: string, stored?: string) => !!incoming && !!stored && incoming < stored;
+const newest = (a?: string, b?: string) => (a && b ? (a > b ? a : b) : a ?? b);
 
 export function RosterProvider({ children }: { children: ReactNode }) {
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -261,7 +270,7 @@ export function RosterProvider({ children }: { children: ReactNode }) {
         // diff old-vs-merged to highlight what changed (only dates inside the new
         // download's window can differ, since the rest is kept verbatim).
         const previous = await loadRoster(userId);
-        const mergedDuties = mergeDuties(previous?.duties ?? [], result.duties, todayISO(), result.blankDates);
+        const mergedDuties = mergeDuties(previous?.duties ?? [], result.duties, result.printedAt ?? todayISO(), result.blankDates, isOlder(result.printedAt, previous?.printedAt));
         const changes = previous ? diffRosters(previous.duties, mergedDuties, todayISO()) : [];
         const next: Roster = {
           id: userId,
@@ -272,6 +281,7 @@ export function RosterProvider({ children }: { children: ReactNode }) {
           rawText: result.rawText,
           changes,
           parseVersion: PARSE_VERSION,
+          printedAt: newest(result.printedAt, previous?.printedAt),
         };
         await saveRoster(userId, next);
         if (activeUserRef.current?.id === userId) {
@@ -294,7 +304,7 @@ export function RosterProvider({ children }: { children: ReactNode }) {
     const userId = activeUser.id;
     const result = await parseRosterFile(file);
     const previous = await loadRoster(userId);
-    const mergedDuties = mergeDuties(previous?.duties ?? [], result.duties, todayISO(), result.blankDates);
+    const mergedDuties = mergeDuties(previous?.duties ?? [], result.duties, result.printedAt ?? todayISO(), result.blankDates, isOlder(result.printedAt, previous?.printedAt));
     const changes = previous ? diffRosters(previous.duties, mergedDuties, todayISO()) : [];
     const next: Roster = {
       id: userId,
@@ -305,6 +315,7 @@ export function RosterProvider({ children }: { children: ReactNode }) {
       rawText: result.rawText,
       changes,
       parseVersion: PARSE_VERSION,
+      printedAt: newest(result.printedAt, previous?.printedAt),
     };
     return { next, changes, warnings: result.warnings };
   }, [activeUser]);
@@ -348,20 +359,26 @@ export function RosterProvider({ children }: { children: ReactNode }) {
     if (activeUser) setPrevenirMarks(setPrevenirMark(activeUser.id, date, value));
   }, [activeUser]);
   // Same for a flight on a day off (paid / kept) and the minutes of a reduced rest (offDayWork.ts).
-  const [offDayMarks, setOffDayMarks] = useState<Record<string, 'paid' | 'kept'>>({});
+  const [offDayMarks, setOffDayMarks] = useState<Record<string, 'paid' | 'kept' | 'none'>>({});
   const [restCutMarks, setRestCutMarks] = useState<Record<string, number>>({});
+  const [mealMarks, setMealMarks] = useState<Record<string, boolean>>({});
   useEffect(() => {
     setOffDayMarks(activeUser ? getOffDayMarks(activeUser.id) : {});
     setRestCutMarks(activeUser ? getRestCutMarks(activeUser.id) : {});
+    setMealMarks(activeUser ? getMealOnboardMarks(activeUser.id) : {});
   }, [activeUser]);
-  const setOffDayPay = useCallback((date: string, value: 'paid' | 'kept' | null) => {
+  const setMealOnboard = useCallback((key: string, value: boolean | null) => {
+    if (activeUser) setMealMarks(setMealOnboardMark(activeUser.id, key, value));
+  }, [activeUser]);
+  const setOffDayPay = useCallback((date: string, value: 'paid' | 'kept' | 'none' | null) => {
     if (activeUser) setOffDayMarks(setOffDayMark(activeUser.id, date, value));
   }, [activeUser]);
   const setRestCut = useCallback((date: string, minutes: number | null) => {
     if (activeUser) setRestCutMarks(setRestCutMark(activeUser.id, date, minutes));
   }, [activeUser]);
   const shownRoster = useMemo<Roster | null>(() => {
-    if (!roster || !(Object.keys(prevenirMarks).length || Object.keys(offDayMarks).length || Object.keys(restCutMarks).length)) return roster;
+    const meals = Object.keys(mealMarks).length > 0;
+    if (!roster || !(Object.keys(prevenirMarks).length || Object.keys(offDayMarks).length || Object.keys(restCutMarks).length || meals)) return roster;
     return {
       ...roster,
       duties: roster.duties.map((d) => {
@@ -369,10 +386,11 @@ export function RosterProvider({ children }: { children: ReactNode }) {
         if (d.dutyCode === 'IO' && d.date in prevenirMarks) x = { ...x, prevenir: prevenirMarks[d.date] };
         if (d.date in offDayMarks) x = { ...x, offDayPay: offDayMarks[d.date] };
         if (d.date in restCutMarks) x = { ...x, restCutMin: restCutMarks[d.date] };
+        if (meals && (d.dutyType === 'Flight Duty' || d.dutyType === 'Positioning')) x = { ...x, mealOnboard: mealMarks };
         return x;
       }),
     };
-  }, [roster, prevenirMarks, offDayMarks, restCutMarks]);
+  }, [roster, prevenirMarks, offDayMarks, restCutMarks, mealMarks]);
 
   // Rebuild the roster from every PDF in the history, oldest first (user request). Resolves to how
   // many PDFs could be read (0: none was a readable roster), or null when the history is empty.
@@ -401,12 +419,12 @@ export function RosterProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<RosterState>(
     () => ({
-      roster: shownRoster, setPrevenir, setOffDayPay, setRestCut, reloadFromPdfs, loading, importing, error, loadError, warnings, sessionToken,
+      roster: shownRoster, setPrevenir, setOffDayPay, setRestCut, setMealOnboard, reloadFromPdfs, loading, importing, error, loadError, warnings, sessionToken,
       importFile, previewImport, applyImport, clear, dismissChanges, setSessionToken,
       users, activeUser,
       switchUser, createUser, renameUser, setUserBase, deleteUser: deleteUserFn,
     }),
-    [shownRoster, setPrevenir, setOffDayPay, setRestCut, reloadFromPdfs, loading, importing, error, loadError, warnings, sessionToken, setSessionToken,
+    [shownRoster, setPrevenir, setOffDayPay, setRestCut, setMealOnboard, reloadFromPdfs, loading, importing, error, loadError, warnings, sessionToken, setSessionToken,
      importFile, previewImport, applyImport, clear, dismissChanges, users, activeUser, switchUser, createUser, renameUser, setUserBase, deleteUserFn]
   );
 

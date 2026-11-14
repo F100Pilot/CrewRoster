@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { darken, lighten } from '@mui/material/styles';
 import {
   Box, Button, Chip, CircularProgress, Dialog, DialogContent, DialogTitle,
   IconButton, Typography, useMediaQuery, useTheme,
@@ -14,6 +15,12 @@ const LEVEL: Record<TurbulenceLevel, { label: string; color: string }> = {
   moderate: { label: 'Turbulência moderada', color: '#ed6c02' },
   high: { label: 'Turbulência elevada', color: '#c62828' },
 };
+// The 3D chip style paints its own light key over `bgcolor` (theme.ts), which left the white label unreadable
+// (user, Nov 2026): the level's colour has to go on `background`, as a key of that colour.
+const levelSx = (c: string) => ({
+  background: `linear-gradient(180deg, ${lighten(c, 0.18)}, ${c})`, color: '#fff', fontWeight: 700,
+  boxShadow: `0 2px 0 ${darken(c, 0.3)}, inset 0 1px 0 rgba(255,255,255,.35)`,
+});
 
 // Route weather for a single flight: a compact trigger chip in the day view that opens a
 // modal with the full content (per-airport forecast, a large Windy map at ~FL340, and a
@@ -42,7 +49,7 @@ export default function FlightWeather({ duty, date }: { duty: ParsedDuty; date: 
   const levelChip = loading ? (
     <CircularProgress size={14} />
   ) : fc ? (
-    <Chip size="small" label={LEVEL[fc.level].label} sx={{ bgcolor: LEVEL[fc.level].color, color: '#fff', fontWeight: 600 }} />
+    <Chip size="small" label={LEVEL[fc.level].label} sx={levelSx(LEVEL[fc.level].color)} />
   ) : (
     <Chip size="small" variant="outlined" label="Estimativa indisponível" />
   );
@@ -67,7 +74,7 @@ export default function FlightWeather({ duty, date }: { duty: ParsedDuty; date: 
             Meteo {duty.departureAirport}–{duty.arrivalAirport}
           </Box>
           {!loading && fc && (
-            <Chip size="small" label={LEVEL[fc.level].label} sx={{ bgcolor: LEVEL[fc.level].color, color: '#fff', fontWeight: 600 }} />
+            <Chip size="small" label={LEVEL[fc.level].label} sx={levelSx(LEVEL[fc.level].color)} />
           )}
           <IconButton onClick={() => setOpen(false)} size="small" aria-label="Fechar"><Close fontSize="small" /></IconButton>
         </DialogTitle>

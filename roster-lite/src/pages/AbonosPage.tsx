@@ -8,6 +8,7 @@ import { useViewedMonth } from '../state/viewedMonth';
 import { baseOf } from '../domain/dutyStats';
 import { raacoDays, type RaacoDay } from '../domain/raaco';
 import PageHero from '../components/PageHero';
+import InfoCollapse from '../components/InfoCollapse';
 import { passOverline } from '../components/PassCard';
 import { monthLabel } from '../utils/dates';
 import { APP_VERSION } from '../version';
@@ -21,7 +22,8 @@ const FEEDBACK_TO = 'pflm.bet@gmail.com';
 
 export const euro = (v: number) => v.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 // In rem, so the header (smaller type) and the rows share the same column widths.
-const COLS = '2.4rem minmax(0, 1fr) 2.2rem repeat(4, 2.9rem)';
+// Início and the night stop share a column (user, Nov 2026: the flight number didn't fit with a large font size).
+const COLS = '2.8rem minmax(0, 1fr) repeat(4, 2.9rem)';
 
 export default function AbonosPage() {
   const { roster, activeUser } = useRoster();
@@ -40,6 +42,7 @@ export default function AbonosPage() {
   const nights = days.reduce((s, d) => s + d.nights.length, 0);
   const onboard = days.reduce((s, d) => s + d.meals.filter((m) => m.how === 'onboard').length, 0);
   const unknown = days.some((d) => d.unknownRate);
+  const noPlan = days.filter((d) => d.noPlan);
 
   if (!roster) return <Typography color="text.secondary">Importa uma escala primeiro.</Typography>;
 
@@ -63,6 +66,15 @@ export default function AbonosPage() {
 
       <ExperimentalBanner month={monthLabel(month)} total={euro(total)} />
 
+      {noPlan.length > 0 && (
+        <Alert severity="warning">
+          <strong>Sem a escala original {noPlan.length === 1 ? 'de 1 dia' : `de ${noPlan.length} dias`}</strong>{' '}
+          ({noPlan.map((d) => format(parseISO(d.date), 'dd/MM')).join(', ')}, marcados com ⚠): a app só tem as horas voadas.
+          As refeições embarcadas seguem o planeamento (horas e blocos planeados), por isso os abonos destes dias podem estar
+          errados. Importa o PDF da escala impresso antes destes voos para os corrigir.
+        </Alert>
+      )}
+
       {days.length === 0 ? (
         <Alert severity="info">Sem abonos previstos para este mês.</Alert>
       ) : (
@@ -70,22 +82,24 @@ export default function AbonosPage() {
           <CardContent sx={{ px: 1.25, py: 1, '&:last-child': { pb: 1 } }}>
             {/* The statement's columns: Data · Início · Pernoita · Peq. almoço · Almoço · Jantar · Ceia/+Pernoita. */}
             <Box display="grid" gridTemplateColumns={COLS} gap={0.5} sx={{ ...passOverline, fontSize: '0.58rem', letterSpacing: 0, whiteSpace: 'nowrap', pb: 0.75, borderBottom: 1, borderColor: 'divider' }}>
-              <span>DATA</span><span>INÍCIO</span><span>PERN.</span>
+              <span>DATA</span><span>INÍCIO · PERN.</span>
               <Box textAlign="right">P. ALM.</Box><Box textAlign="right">ALMOÇO</Box><Box textAlign="right">JANTAR</Box><Box textAlign="right" title="Ceia + pernoita">CEIA+P</Box>
             </Box>
             {days.map((d) => (
               <ButtonBase key={d.date} onClick={() => navigate(`/day/${d.date}`)}
                 sx={{ display: 'grid', gridTemplateColumns: COLS, gap: 0.5, width: '100%', textAlign: 'left', py: 0.9, borderBottom: 1, borderColor: 'divider', fontSize: '0.8rem', fontVariantNumeric: 'tabular-nums', alignItems: 'center' }}>
-                <Box fontWeight={700}>{format(parseISO(d.date), 'dd/MM')}</Box>
-                <Box sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'ui-monospace, Menlo, monospace', fontWeight: 600 }}>{d.start ?? '—'}</Box>
-                <Box sx={{ fontWeight: 700, color: 'primary.main' }}>{d.stay ?? ''}</Box>
+                <Box fontWeight={700}>{format(parseISO(d.date), 'dd/MM')}{d.noPlan && <Box component="span" title="Sem a escala original" sx={{ color: '#B45309', ml: 0.25, fontSize: '0.7rem' }}>⚠</Box>}</Box>
+                <Box minWidth={0}>
+                  <Box sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'ui-monospace, Menlo, monospace', fontWeight: 600 }}>{d.start ?? '—'}</Box>
+                  {d.stay && <Box sx={{ fontWeight: 700, color: 'primary.main', fontSize: '0.72rem', lineHeight: 1.1 }}>{d.stay}</Box>}
+                </Box>
                 {[d.breakfast, d.lunch, d.dinner, d.supperNight].map((v, i) => (
                   <Box key={i} textAlign="right" sx={{ color: v ? 'text.primary' : 'text.disabled', fontWeight: v ? 700 : 400 }}>{v ? v.toFixed(2).replace('.', ',') : '0,00'}</Box>
                 ))}
               </ButtonBase>
             ))}
             <Box display="grid" gridTemplateColumns={COLS} gap={0.5} sx={{ pt: 1, fontSize: '0.8rem', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>
-              <Box gridColumn="1 / 4">Total {euro(total)}</Box>
+              <Box gridColumn="1 / 3">Total {euro(total)}</Box>
               {[sum('breakfast'), sum('lunch'), sum('dinner'), sum('supperNight')].map((v, i) => (
                 <Box key={i} textAlign="right">{v.toFixed(2).replace('.', ',')}</Box>
               ))}
@@ -98,18 +112,15 @@ export default function AbonosPage() {
         <Alert severity="info">Há estadias num país que não está na Tabela 34 (por exemplo Marrocos): esses valores não entram no total.</Alert>
       )}
 
-      <Card variant="outlined">
-        <CardContent>
-          <Typography sx={passOverline}>COMO A APP CALCULA</Typography>
-          <Typography component="ul" variant="body2" color="text.secondary" sx={{ pl: 2, mt: 0.5, mb: 0, '& li': { mb: 0.5 } }}>
+      <InfoCollapse title="Como a app calcula">
+          <Typography component="ul" variant="body2" color="text.secondary" sx={{ pl: 2, mt: 0, mb: 0, '& li': { mb: 0.5 } }}>
             <li>Refeição devida (Tabela 32, hora local): o serviço começa no horário, abrange-o ou acaba depois de ele começar; serviço até 3h00 dá uma refeição. Contam as horas planeadas, quando a app as viu antes do dia.</li>
             <li>Embarcada num setor com mais de 1h30 que voe dentro do horário dela (ou no primeiro setor, se o serviço começa no horário); uma por setor abaixo de 5h. A ceia nunca é embarcada. Se não houver, Tabela 33: 5 € o pequeno-almoço, 18 € as principais — ao valor local quando o serviço acaba fora da base.</li>
             <li>Refeição em DHC: paga — ao valor local da Tabela 34 se o DHC acaba fora da base, Tabela 33 se regressa à base.</li>
             <li>Estadia fora da base: almoço, jantar e ceia ao valor da Tabela 34, mais a pernoita; o pequeno-almoço do hotel não é pago (como no extrato).</li>
             <li>Assistência em casa e serviço em terra na base não entram nestes abonos. Toca num dia para ver o porquê de cada refeição.</li>
           </Typography>
-        </CardContent>
-      </Card>
+      </InfoCollapse>
     </Stack>
   );
 }

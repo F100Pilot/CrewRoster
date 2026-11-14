@@ -39,11 +39,17 @@ export interface ParsedDuty {
    */
   prevenir?: boolean;
   /** Flight on a planned day off: the pilot's choice — paid (RRRGS cl. 13) or the day kept for later. */
-  offDayPay?: 'paid' | 'kept';
+  offDayPay?: 'paid' | 'kept' | 'none'; // 'none': the pilot switched it off, over the roster's "Voo em Off"
   /** Minutes of rest cut before this day, typed by the pilot (RRRGS cl. 2.8, max 120). */
   restCutMin?: number;
   /** Imported after its day had passed: the times are the flown ones, not a plan. */
   settled?: boolean;
+  /** A settled sector whose plan the app saw (from a roster printed before the day) — `planned` is only kept when it
+   *  differs, so this tells "flown as planned" from "no plan known" (the abonos warn on the latter). */
+  planKnown?: boolean;
+  /** Meals the crew member marked on the calendar's 🍽 banner, by meal key ("lunch:2026-10-02"): true = on board,
+   *  false = not. Put on the flights / DHCs by RosterProvider; raaco.ts follows it. */
+  mealOnboard?: Record<string, boolean>;
 }
 
 export interface PlannedTimes {
@@ -104,6 +110,8 @@ export interface Roster {
   // Version of the overall PDF parser that produced this roster. When behind PARSE_VERSION the
   // app re-parses the stored PDF(s) on load so all parsing improvements apply without re-import.
   parseVersion?: number;
+  // The newest print day of the rosters merged in (ParseResult.printedAt): a roster printed before it is older news.
+  printedAt?: string;
 }
 
 // Result of running a file through the parsing pipeline (before persistence).
@@ -114,6 +122,9 @@ export interface ParseResult {
   warnings: string[];
   // Days the file shows with nothing on them (PDF grid only): the merge clears what was stored there.
   blankDates?: string[];
+  // The day CrewLink printed it ("printed by CREWLINK 15Sep26 22:34"), YYYY-MM-DD — what the roster knew, not when it
+  // reached the app: an old roster imported later is a plan, not the flown times (rosterMerge).
+  printedAt?: string;
 }
 
 // A flown aircraft registration, recorded per crew member + day + flight. Kept apart

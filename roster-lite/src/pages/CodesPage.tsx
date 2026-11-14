@@ -1,6 +1,9 @@
 import { Box, Card, CardContent, Divider, Stack, Typography } from '@mui/material';
 import { dutyColor } from '../theme';
 import PageHero from '../components/PageHero';
+import InfoCollapse from '../components/InfoCollapse';
+import { MEAL_ICON, MEAL_SHORT } from '../components/MealIcon';
+import { MEAL_LABEL, type Meal } from '../domain/raaco';
 
 // Reference sheet for the duty codes the parser recognises. Helps confirm a parse and
 // documents what each chip means. Extend as new codes are clarified.
@@ -65,12 +68,37 @@ export default function CodesPage() {
           ))}
         </CardContent>
       </Card>
-      <Typography variant="caption" color="text.secondary">
+      {/* The meal icons of the Lista cards and the day's RAACO card (user, Nov 2026: "a legenda … na legenda de códigos"). */}
+      <Card variant="outlined">
+        <CardContent sx={{ py: 1 }}>
+          <Typography variant="subtitle2" sx={{ pt: 0.75 }}>Refeições a bordo (abonos)</Typography>
+          <Typography variant="caption" color="text.secondary" display="block">
+            Nos cartões da Lista: as refeições que o plano de refeições põe a bordo dos voos desse dia, e a ceia quando é paga.
+            No dia, cada uma tem um botão: desligar uma refeição = não houve a bordo (passa a paga); desligar a ceia = retirá-la
+            do abono.
+          </Typography>
+          {(['breakfast', 'lunch', 'dinner', 'supper'] as Meal[]).map((m) => {
+            const Icon = MEAL_ICON[m];
+            return (
+              <Box key={m} display="flex" alignItems="center" gap={1.5} py={1}>
+                <Icon sx={{ fontSize: 20, color: '#0F766E', flexShrink: 0 }} />
+                <Typography variant="subtitle2" sx={{ minWidth: 104 - 6 }}>{MEAL_SHORT[m]}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {m === 'supper' ? 'Ceia paga (nunca é embarcada; em pernoita, com a pernoita)' : `${MEAL_LABEL[m]} a bordo`}
+                </Typography>
+              </Box>
+            );
+          })}
+        </CardContent>
+      </Card>
+      <InfoCollapse title="Horas: UTC e hora local">
+      <Typography variant="body2" color="text.secondary">
         A escala vem em UTC (Zulu, "z"), mas a app mostra as horas em <strong>hora local (LT)</strong>
         do aeroporto: no detalhe do voo a partida e a chegada aparecem em LT, com o UTC entre
         parênteses por baixo, e a <strong>apresentação (check-in)</strong> é sempre em hora local.
         Só se recorre a UTC quando o fuso do aeroporto é desconhecido.
       </Typography>
+      </InfoCollapse>
     </Stack>
   );
 }

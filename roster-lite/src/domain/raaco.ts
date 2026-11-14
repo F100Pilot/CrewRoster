@@ -186,6 +186,10 @@ export interface MealLine {
   value: number | null; // € paid on the statement (0 when loaded on board), null when no rate is known
   where: string; // the flight it's loaded on, or the airport
   why: string; // the clause, in a line
+  // A meal of a flight duty whose being on board the crew can tell (calendar 🍽, user Nov 2026): loaded or paid,
+  // not the supper (never loaded), a DHC or a stay. `crew` = what the crew member marked: true on board, false not.
+  askable?: boolean;
+  crew?: boolean;
 }
 export interface NightLine { date: string; where: string; value: number | null }
 
@@ -202,6 +206,9 @@ export interface RaacoDay {
   supperNight: number;
   total: number;
   unknownRate: boolean;
+  // A flown day the app never saw planned (only rosters printed after it): the Meal Plan goes by the planned times and
+  // blocks, so these abonos may be wrong (user, Nov 2026: say so, and ask for the original roster).
+  noPlan: boolean;
 }
 
 const BASIS: Record<Basis, string> = {
@@ -268,6 +275,23 @@ function psvMeals(p: Psv, base: string, nextIsStay: boolean, paidInStay: Set<str
       .filter((l) => (room.get(l) ?? 0) > 0 && (flies(l, a) || (a.basis === 'a' && l === p.legs[0])))
       .sort((x, y) => gapDistance(asPlanned(x), a) - gapDistance(asPlanned(y), a))[0];
     const why = `${BASIS[a.basis]} (4.5.5.1 ${a.basis})`;
+    // What the crew marked (the calendar's 🍽 banner; user: "Previstas + pagas", and it changes the value): on board → 0;
+    // not on board → paid as a meal not loaded (4.5.11.5 / 4.5.11.6), Tabela 33 — at the local rate when the duty ends
+    // away, like any meal not loaded.
+    const askable = p.legs.length > 0 && !p.io && a.meal !== 'supper' && !(leg && leg.duty.dutyType === 'Positioning')
+      && p.legs.some((l) => l.duty.dutyType === 'Flight Duty');
+    const crew = askable ? p.legs[0].duty.mealOnboard?.[a.key] : undefined;
+    if (crew === true) {
+      if (leg) room.set(leg, room.get(leg)! - 1);
+      out.push({ date: p.date, key: a.key, meal: a.meal, how: 'onboard', value: 0, where: leg ? flightLabel(leg) : 'a bordo', why: `${why}; a bordo — confirmado pela tripulação`, askable, crew });
+      continue;
+    }
+    if (crew === false) {
+      const local = nextIsStay ? rateAt(p.to) : null;
+      const value = a.meal === 'breakfast' ? T33_BREAKFAST : nextIsStay ? local?.main ?? null : T33_MAIN;
+      out.push({ date: p.date, key: a.key, meal: a.meal, how: 'allowance', value, where: p.to, why: `${why}; não havia a bordo — marcado pela tripulação (4.5.11.5 / 4.5.11.6)`, askable, crew });
+      continue;
+    }
     if (leg && leg.duty.dutyType === 'Positioning') {
       // DHC: paid, not counted as a passenger meal (May 2026: the breakfast on a DH to Frankfurt at
       // the German rate, a dinner on a DH home at 18 €) — the local Tabela 34 rate when the DHC ends
@@ -283,7 +307,7 @@ function psvMeals(p: Psv, base: string, nextIsStay: boolean, paidInStay: Set<str
     }
     if (leg) {
       room.set(leg, room.get(leg)! - 1);
-      out.push({ date: p.date, key: a.key, meal: a.meal, how: 'onboard', value: 0, where: flightLabel(leg), why });
+      out.push({ date: p.date, key: a.key, meal: a.meal, how: 'onboard', value: 0, where: flightLabel(leg), why, askable });
       continue;
     }
     // Not loadable: on ground if a stop of more than 1h30 covers the window (4.5.6), else the
@@ -306,7 +330,7 @@ function psvMeals(p: Psv, base: string, nextIsStay: boolean, paidInStay: Set<str
       : p.legs.every((l) => blockMin(l) <= 90) ? 'setores até 1h30 não levam refeição principal (4.5.11.4)'
       : 'sem setor para a embarcar (4.5.11.2 / 4.5.11.6)';
     out.push({
-      date: p.date, key: a.key, meal: a.meal, how: stop ? 'ground' : 'allowance', value,
+      date: p.date, key: a.key, meal: a.meal, how: stop ? 'ground' : 'allowance', value, askable,
       where: stop ? stop.duty.departureAirport ?? '' : p.to,
       why: `${why}; ${stop ? 'em terra (O/G, 4.5.6), até ao valor da Tabela 33' : reason}${nextIsStay && a.meal !== 'breakfast' ? '; Tabela 33, valor local (início de pernoita)' : ''}`,
     });
@@ -386,7 +410,7 @@ export function raacoDays(roster: ParsedDuty[], base: string): Map<string, Raaco
   const day = (date: string) => {
     let d = days.get(date);
     if (!d) {
-      d = { date, start: null, stay: null, meals: [], nights: [], breakfast: 0, lunch: 0, dinner: 0, supperNight: 0, total: 0, unknownRate: false };
+      d = { date, start: null, stay: null, meals: [], nights: [], breakfast: 0, lunch: 0, dinner: 0, supperNight: 0, total: 0, unknownRate: false, noPlan: false };
       days.set(date, d);
     }
     return d;
@@ -394,6 +418,18 @@ export function raacoDays(roster: ParsedDuty[], base: string): Map<string, Raaco
   for (const p of psvs) {
     const d = day(p.date);
     d.start = d.start ?? (p.legs[0] ? flightLabel(p.legs[0]) : p.io ? 'IO' : 'SBY');
+  }
+  // The supper is never loaded — always paid (in a stay, with the night) — so its switch reads the other way (user,
+  // Nov 2026: "Ligado = ceia paga", on by default whenever it is due, a night stop included): the crew can take it off
+  // the statement. A mark `true` (the same key as "on board") = not paid.
+  const marks = roster.find((x) => x.mealOnboard)?.mealOnboard;
+  for (const m of lines) {
+    if (m.meal !== 'supper') continue;
+    m.askable = true;
+    const c = marks?.[m.key];
+    if (c === undefined) continue;
+    m.crew = c;
+    if (c === true && m.value) { m.value = 0; m.why = `${m.why}; retirada pela tripulação`; }
   }
   for (const m of lines) {
     const d = day(m.date);
@@ -417,6 +453,12 @@ export function raacoDays(roster: ParsedDuty[], base: string): Map<string, Raaco
     if (d.start) continue;
     const own = roster.find((x) => x.date === d.date && x.dutyType !== 'Day Off');
     d.start = own?.dutyCode ?? null;
+  }
+  for (const x of roster) {
+    if ((x.dutyType === 'Flight Duty' || x.dutyType === 'Positioning') && x.flightNumber && x.settled && !x.planned && !x.planKnown) {
+      const d = days.get(x.date);
+      if (d) d.noPlan = true;
+    }
   }
   for (const d of days.values()) {
     d.meals.sort((x, y) => MEALS.indexOf(x.meal) - MEALS.indexOf(y.meal));

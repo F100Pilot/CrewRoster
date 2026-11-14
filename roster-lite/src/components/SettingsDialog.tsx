@@ -1,3 +1,4 @@
+import InfoCollapse from './InfoCollapse';
 import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import {
   Alert, Avatar, Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle,
@@ -632,8 +633,7 @@ export default function SettingsDialog({ open, onClose: close }: { open: boolean
             </List>
 
             {/* How to install it as an app — Safari on iPhone has no install prompt, so say where it is. */}
-            <Box>
-              <Typography variant="subtitle2" gutterBottom>Instalar como app</Typography>
+            <InfoCollapse card={false} title="Instalar como app">
               <Typography variant="body2" color="text.secondary">
                 <b>iPhone / iPad:</b> abre no <b>Safari</b> → botão Partilhar → “Adicionar ao ecrã principal”. Faz uma cópia
                 de segurança de vez em quando (Dados → Exportar): o iPhone pode apagar os dados de uma app web que fique
@@ -641,6 +641,17 @@ export default function SettingsDialog({ open, onClose: close }: { open: boolean
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                 <b>Android:</b> no Chrome, menu ⋮ → “Instalar app” (ou “Adicionar ao ecrã principal”).
+              </Typography>
+            </InfoCollapse>
+
+            {/* The owner's thanks (Nov 2026: "têm sido essenciais"). No names — crew names never go in the app or the repo. */}
+            {/* Always open and in bold (user, Nov 2026: "os agradecimentos têm de estar sempre visíveis e a bold"). */}
+            <Box>
+              <Typography variant="subtitle2" gutterBottom>💙 Agradecimentos</Typography>
+              <Typography variant="body2" fontWeight={700}>
+                A CrewRoster é feita por um piloto, mas não seria possível sem os colegas que ajudam a interpretar as cláusulas
+                do AE e do ROV, partilham escalas, extratos de abonos e recibos para conferir os cálculos, e testam cada nova
+                versão. Cada caso que enviam fica guardado e serve para corrigir os seguintes. Obrigado a todos.
               </Typography>
             </Box>
 

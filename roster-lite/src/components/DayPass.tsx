@@ -1,5 +1,7 @@
 import { Box, Tooltip } from '@mui/material';
 import { PassBadge, PassCard, type PassCell } from './PassCard';
+import { MealIcons } from './MealIcon';
+import type { Meal } from '../domain/raaco';
 import { dutyColor } from '../theme';
 import { legsOf } from '../domain/dayPhase';
 import { dayItems } from '../domain/dayItems';
@@ -9,7 +11,7 @@ import { formatDuration } from '../utils/duration';
 import { checkInTimeLabel, localClock } from '../utils/localTime';
 import { dayLabel } from '../utils/dates';
 import type { ChangeType, ParsedDuty } from '../domain/types';
-import { ebtBriefing, ebtBriefingText } from '../domain/simSession';
+import { ebtBriefing, ebtBriefingText, sessionMinutes } from '../domain/simSession';
 
 // One day of the roster as a "Hoje" pass: the main duty's colour on the strip, the date and what
 // the day is on the small line, the route (or the codes) as the title, and the day's figures.
@@ -30,8 +32,9 @@ function mainDuty(duties: ParsedDuty[]): ParsedDuty {
   return duties.find((d) => FLIGHT.has(d.dutyType)) ?? duties.find((d) => d.dutyType !== 'Day Off') ?? duties[0];
 }
 
-export default function DayPass({ date, duties, change, isToday, base, onOpen }: {
+export default function DayPass({ date, duties, change, isToday, base, onOpen, onboard = [] }: {
   date: string; duties: ParsedDuty[]; change?: ChangeType; isToday?: boolean; base: string; onOpen: () => void;
+  onboard?: Meal[]; // the meals the Meal Plan loads on the day's flights (RAACO) — shown as icons
 }) {
   const main = mainDuty(duties);
   const legs = legsOf(date, duties);
@@ -57,8 +60,9 @@ export default function DayPass({ date, duties, change, isToday, base, onOpen }:
   } else {
     title = duties.map((d) => d.dutyCode).join(' · ');
     // EBT: the briefing/debriefing around the session aren't in the roster (user rule).
-    const ebt = duties.map(ebtBriefing).find(Boolean);
-    sub = [ebt && `EBT dia ${ebt.day} · ${ebtBriefingText(ebt)}`, main.observations].filter(Boolean).join(' · ') || undefined;
+    const sim = duties.find((d) => ebtBriefing(d));
+    const ebt = sim ? ebtBriefing(sim) : null;
+    sub = [ebt && sim && `EBT dia ${ebt.day} · ${ebtBriefingText(ebt, sessionMinutes(sim))}`, main.observations].filter(Boolean).join(' · ') || undefined;
     // A timed day (simulator, course, standby…): its span, like the "Hoje" activity pass.
     const timed = dayItems(date, duties, base).filter((i) => i.start && i.end);
     if (timed.length) {
@@ -85,6 +89,7 @@ export default function DayPass({ date, duties, change, isToday, base, onOpen }:
       {warning && (
         <Tooltip title={warning}><span><PassBadge color="#C2410C" filled>⚠ VERIFICAR</PassBadge></span></Tooltip>
       )}
+      <MealIcons meals={onboard} />
     </>
   );
 

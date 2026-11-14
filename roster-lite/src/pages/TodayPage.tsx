@@ -26,7 +26,7 @@ import { HeroHills, heroPanel, pillKey } from '../components/PageHero';
 import { useCurrentWeather } from '../state/useCurrentWeather';
 import type { ParsedDuty } from '../domain/types';
 import { DUTY_TYPE_LABEL } from '../domain/dutyLabels';
-import { ebtBriefing, ebtBriefingText } from '../domain/simSession';
+import { ebtBriefing, ebtBriefingText, sessionMinutes } from '../domain/simSession';
 
 // The home screen that changes with the crew member's day (from the approved "layout dinâmico"
 // sketch). The header is the sky over the airport they're at — dawn, day, dusk or night from the
@@ -405,7 +405,7 @@ function Timeline({ ctx, items, p, onOpen }: { ctx: DayContext; items: Item[]; p
           const live = i === liveIdx;
           const label = it.leg ? `${d.departureAirport} → ${d.arrivalAirport}` : d.dutyCode;
           const ebt = ebtBriefing(d);
-          const sub = it.leg ? d.flightNumber ?? '' : `${TYPE_LABEL[d.dutyType] ?? d.dutyType}${ebt ? ` · ${ebtBriefingText(ebt)}` : ''}`;
+          const sub = it.leg ? d.flightNumber ?? '' : `${TYPE_LABEL[d.dutyType] ?? d.dutyType}${ebt ? ` · ${ebtBriefingText(ebt, sessionMinutes(d))}` : ''}`;
           const span = it.start && it.end ? Math.round((it.end.getTime() - it.start.getTime()) / 60000) : null;
           return (
             <TimelineRow key={i} color={dutyColor(d.dutyType)} live={live} done={done} title={label} wrapSub={!!ebt}

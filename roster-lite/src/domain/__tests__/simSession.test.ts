@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { asWorked, ebtBriefing, ebtBriefingText } from '../simSession';
+import { asWorked, ebtBriefing, ebtBriefingText, ebtDutyMinutes } from '../simSession';
 import { dutyDays, workWindow, PGA_PILOT_RULES } from '../dutyTime';
 import { DEFAULT_PAY_SETTINGS, payEstimate } from '../payEstimate';
 import type { ParsedDuty } from '../types';
@@ -71,6 +71,11 @@ describe('APT (assistência no aeroporto)', () => {
     const apt = { date: '2026-09-09', dutyCode: 'APT', dutyType: 'Standby Airport', flightNumber: null, departureAirport: 'LIS', arrivalAirport: null,
       departureTime: '06:00', arrivalTime: '12:00', reportingTime: '06:00', aircraftType: null, observations: null } as ParsedDuty;
     expect(dutyDays([apt], PGA_PILOT_RULES)[0].minutes).toBe(180);
+  });
+
+  it('says the duty it counts: EBT-2 of 5 h = 7h00 (1 h + 5 h + 1 h), though the debriefing shown is 30 min', () => {
+    const b = ebtBriefing({ dutyType: 'Simulator', dutyCode: 'LIS-EBT-2' })!;
+    expect(ebtDutyMinutes(b, 300)).toBe(420);
   });
 });
 

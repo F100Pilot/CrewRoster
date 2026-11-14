@@ -943,3 +943,14 @@ export function diagnosePgaGrid(tokens: PositionedToken[]): string {
   return out.join('\n');
 }
 
+// The day the roster was printed: "printed by CREWLINK" then "15Sep26 22:34 Page 1" (one token or two). YYYY-MM-DD.
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+export function pgaPrintedAt(tokens: PositionedToken[]): string | null {
+  const i = tokens.findIndex((t) => /printed by/i.test(t.text));
+  if (i < 0) return null;
+  const near = tokens.slice(i, i + 6).map((t) => t.text).join(' ');
+  const m = /printed by\s+\S+\s+(\d{2})([A-Z][a-z]{2})(\d{2})\b/i.exec(near);
+  const month = m ? MONTHS.indexOf(m[2][0].toUpperCase() + m[2].slice(1).toLowerCase()) : -1;
+  if (!m || month < 0) return null;
+  return `20${m[3]}-${String(month + 1).padStart(2, '0')}-${m[1]}`;
+}

@@ -95,3 +95,12 @@ describe('reduced rest worked out from the roster, to the minute', () => {
   });
 });
 
+
+describe('switched off on the day page (user: "sendo possível voltar atrás")', () => {
+  it('a roster "Voo em Off" switched off is no day off; a "Reducao Repouso" switched off cuts nothing', () => {
+    const f = { date: '2026-11-06', dutyCode: 'FLT', dutyType: 'Flight Duty', flightNumber: 'TP9000', departureAirport: 'LIS', arrivalAirport: 'TFS', departureTime: '11:05', arrivalTime: '13:40', reportingTime: '10:05', aircraftType: 'E95', observations: 'VOO_OFF, RED_REP' } as ParsedDuty;
+    expect(offDayChoice([f])).toBe('paid');
+    expect(offDayChoice([{ ...f, offDayPay: 'none' }])).toBeNull();
+    expect(restCutOf([{ ...f, restCutMin: -1 }], { restMinutes: 600, requiredMinutes: 720, away: false } as never)).toBe(0);
+  });
+});

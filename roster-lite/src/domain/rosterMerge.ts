@@ -24,8 +24,33 @@ import type { ParsedDuty, PlannedTimes } from './types';
 // `blankDates` are the exception to "silent days are kept": days the download SHOWS with nothing
 // printed under them (pgaBlankDates). There the day really is empty now, so what was stored goes —
 // a flight removed from the 29th must not keep paying a per diem.
-export function mergeDuties(previous: ParsedDuty[], incoming: ParsedDuty[], asOfISO?: string, blankDates: string[] = []): ParsedDuty[] {
+export function mergeDuties(previous: ParsedDuty[], incoming: ParsedDuty[], asOfISO?: string, blankDates: string[] = [], older = false): ParsedDuty[] {
   if (incoming.length === 0) return [...previous];
+
+  // An OLDER roster brought in later (the original, printed before the days, imported after a sync with the flown
+  // times — Nov 2026, a colleague's October): for a day it still saw ahead while the app already holds it flown
+  // (`settled`), it is the plan — the flown day stays, and its sectors take that plan if they had none. Without this
+  // the old times replaced the flown ones and the Meal Plan had no planned blocks to go by. `older` (printed before the
+  // newest roster already merged): it never replaces a day the app has at all — it only lends plans and fills gaps.
+  const flownKept = new Set<string>();
+  if (asOfISO || older) {
+    for (const date of new Set([...incoming.map((d) => d.date), ...blankDates])) {
+      const have = previous.filter((p) => p.date === date);
+      if (have.length && (older || (asOfISO && date > asOfISO && have.some((p) => p.settled)))) flownKept.add(date);
+    }
+  }
+  if (flownKept.size) {
+    const planOf = new Map(incoming.filter((d) => d.flightNumber && flownKept.has(d.date)).map((d) => [sectorKey(d), d]));
+    previous = previous.map((d) => {
+      const plan = flownKept.has(d.date) && d.flightNumber && !d.planned && d.settled ? planOf.get(sectorKey(d)) : undefined;
+      if (!plan) return d;
+      if (sameTimes(timesOf(plan), timesOf(d))) return { ...d, planKnown: true };
+      return { ...d, planned: timesOf(plan), reportingTime: plan.reportingTime ?? d.reportingTime, planKnown: true };
+    });
+    incoming = incoming.filter((d) => !flownKept.has(d.date));
+    blankDates = blankDates.filter((d) => !flownKept.has(d));
+    if (incoming.length === 0 && blankDates.length === 0) return previous;
+  }
 
   const incomingDates = new Set([...incoming.map((d) => d.date), ...blankDates]);
   const kept = previous.filter((d) => !incomingDates.has(d.date));
@@ -63,7 +88,10 @@ function carryPlans(previous: ParsedDuty[], incoming: ParsedDuty[], asOfISO: str
       // run from the real report.
       if (plan.reportingTime) out.reportingTime = plan.reportingTime;
     }
-    if (d.date < asOfISO) out.settled = true;
+    if (d.date < asOfISO) {
+      out.settled = true;
+      if (out.planned || (prev && (!prev.settled || prev.planKnown || prev.planned))) out.planKnown = true;
+    }
     return out;
   });
 }

@@ -1,11 +1,13 @@
 import { useMemo } from 'react';
-import { Box, ButtonBase, Card, CardContent, Stack, Typography } from '@mui/material';
+import { Alert, Box, ButtonBase, Card, CardContent, Stack, Typography } from '@mui/material';
 import { ChevronRight } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import { baseOf } from '../domain/dutyStats';
 import { MEAL_LABEL, raacoDays, type MealHow } from '../domain/raaco';
 import { TimelineRow, passOverline } from './PassCard';
+import { MealConfirmList } from './MealConfirm';
+import InfoCollapse from './InfoCollapse';
 
 // The day's meals under the RAACO (ROV-PGA 4.5): which are due, how each is met — loaded on a
 // flight, on ground, as an allowance or in the stay — and what goes on the Abonos statement.
@@ -38,8 +40,15 @@ export default function RaacoDayCard({ date }: { date: string }) {
             {day.total > 0 ? euro(day.total) : 'Abonos'} <ChevronRight sx={{ fontSize: 16 }} />
           </ButtonBase>
         </Box>
+        {day.noPlan && (
+          <Alert severity="warning" sx={{ mb: 1 }}>
+            Sem a escala original deste dia: a app só tem as horas voadas, e as refeições embarcadas seguem o planeamento —
+            estes abonos podem estar errados. Importa o PDF da escala impresso antes do voo.
+          </Alert>
+        )}
         <Stack spacing={0.75}>
-          {day.meals.map((m, i) => (
+          {/* Meals the crew can switch (on board / not) are in the list below, once. */}
+          {day.meals.filter((m) => !m.askable).map((m, i) => (
             <TimelineRow key={i} wrapSub color={HOW[m.how].color} title={MEAL_LABEL[m.meal]}
               sub={m.why} right={m.value ? euro(m.value) : m.value === null ? 'sem valor' : HOW[m.how].label}
               rightSub={m.value ? HOW[m.how].label : m.where} />
@@ -49,9 +58,27 @@ export default function RaacoDayCard({ date }: { date: string }) {
               right={n.value !== null ? euro(n.value) : 'sem valor'} />
           ))}
         </Stack>
-        <Typography variant="caption" color="text.secondary" display="block" mt={1}>
-          Em fase experimental: estimativa pela escala (o Meal Plan e as irregularidades não estão nela). Confirma no extrato e envia feedback na página Abonos.
-        </Typography>
+        {day.meals.some((m) => m.askable) && (
+          <Box mt={day.meals.some((m) => !m.askable) || day.nights.length ? 1.5 : 0} pt={day.meals.some((m) => !m.askable) || day.nights.length ? 1.25 : 0}
+            sx={{ borderTop: day.meals.some((m) => !m.askable) || day.nights.length ? 1 : 0, borderColor: 'divider' }}>
+            <Typography sx={{ ...passOverline, mb: 0.5 }}>A BORDO · LIGADO = EMBARCADA · CEIA: LIGADO = PAGA</Typography>
+            <MealConfirmList day={day} why />
+
+          </Box>
+        )}
+        {/* Help text, closed (user, Nov 2026: "este último texto também pode ser colapsado"); the EM TESTES badge stays. */}
+        <Box mt={1}>
+          <InfoCollapse card={false} title="Como funciona">
+            <Typography variant="caption" color="text.secondary" display="block">
+              Os botões começam como no plano de refeições. Desliga uma refeição se não houve a bordo (irregularidade): passa a
+              ser paga. A ceia nunca é embarcada — o botão diz se é paga (em pernoita, com a pernoita).
+            </Typography>
+            <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+              Em fase experimental: estimativa pela escala (o Meal Plan e as irregularidades não estão nela). Confirma no extrato
+              e envia feedback na página Abonos.
+            </Typography>
+          </InfoCollapse>
+        </Box>
       </CardContent>
     </Card>
   );
