@@ -7,7 +7,7 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.9.3.14`
+- **Produção (`master`) está em:** `0.9.3.24`
 - **Próxima versão ao promover:** a da experimental (cada atualização sobe a 4.ª casa)
 
 ## Como promover tudo para produção (quando estiver pronto)
@@ -25,41 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **0.9.3.15** — EBT-2: debriefing de **30 min** (utilizador, pela sua escala; era 1 h desde a 0.8.40.1). EBT-2 =
-  briefing 1 h + sessão + 30 min (`simSession.ts`); CodesPage e testes acertados.
-- **0.9.3.16** — exames médicos em separado (áudio de uma colega): IM + VIM no mesmo dia = o bloco do IM (DT 4h00 com
-  IM 08:00–12:00 + VIM 12:00–12:30); o VIM sai da conta de serviço (`countedWork()` em `dutyTime.ts`), continua visível.
-  MED noutro dia conta o seu tempo (3h00). O "R" antes do aeroporto (IM, voos) já era ignorado sem problemas.
-- **0.9.3.17** — o "R" = *requested* (utilizador): pedido pelo tripulante (folga W_OFF pedida, exames médicos na clínica
-  que escolheu, voo). Token isolado entre o código e o aeroporto (confirmado no PDF real de novembro, nos W_OFF) → marca
-  `REQ` nas observações ("Pedido"); só informação. PARSE_VERSION 23.
-- **0.9.3.18** — **APT = assistência no aeroporto** (utilizador): `Standby Airport`, código APT, com início/fim (como o
-  IO). Conta 50% (pilotos), per diem A, RAACO 4.5.5.5. PARSE_VERSION 24.
-- **0.9.3.19** — áudios de colegas: **voo em folga** (RRRGS cl. 13; RUPT cl. 15.18 / 15.9 b / 15.19) e **redução de
-  repouso** manual (RUPT 34.3 / 36, RRRGS 2.8). Lê "Voo em Off" → `VOO_OFF` e "Reducao Repouso" → `RED_REP` (inteiros ou
-  palavra a palavra; o "Off" já não apaga a sub-coluna pelo filtro do quadro de totais). Cartão "Folga e repouso" no dia
-  (pilotos): Recebo / Gozo a folga (pago por omissão com a marca) e minutos de redução (0–120, passos de 5). Escolhas em
-  `crewroster.offDayPay.<user>` / `crewroster.restCut.<user>`, aplicadas no RosterProvider (`ParsedDuty.offDayPay` /
-  `restCutMin`). Vencimento: dia pago = FDP × 3% VB/h + 15% VB, fora dos créditos duty/block; minutos escritos substituem a
-  redução do planeado-vs-voado nesse dia. `domain/offDayWork.ts`. PARSE_VERSION 25. **Falta confirmar com um PDF real** como
-  as duas anotações vêm no texto.
-- **0.9.3.20** — redução de repouso **calculada ao minuto** pela escala (utilizador: "ao minuto… em relação à chegada do dia
-  anterior e a saída do seguinte", mesmo sem a escala original): `autoRestCut(rest)` = mínimo AE − descanso real
-  (`restPeriods`), máx. 2 h na base (34.3), sem teto fora (36.1). Conta sozinho nos dias `RED_REP`; o valor escrito (campo
-  numérico ao minuto, sem passos de 5) ganha. Vencimento usa `restCutOf(day, rest)`.
-- **0.9.3.21** — fusos horários em falta (ALC e o resto da península, França, Itália, Alemanha, Reino Unido, Irlanda,
-  Marrocos…): eram lidos na hora de Lisboa. Encontrado ao conferir setembro de um colega com o PDF original (20/09 ALC).
-  Teste novo: todo o aeroporto com coordenadas tem fuso.
-- **0.9.3.22** — **Marrocos UTC+0 desde 20/09/2026** (utilizador; tz 2026e) fixado em `localTime.ts` (`fixedOffset`), para
-  não depender dos dados de fuso do telemóvel. **Pernoita não planeada** (C09, aprovado pelo utilizador): último setor de
-  volta ao aeroporto de partida → p.-alm. do hotel pago (Tabela 34) e o PSV seguinte sem catering (Tabela 33). Mudou o C08
-  (p.-alm. 29 € a 09/04) — o utilizador vai rever.
-- **0.9.3.23** — **Meal Plan por época IATA** (C10): de 20/09 a 25/10/2026 o embarque das refeições em Marrocos segue
-  a hora antiga (UTC+1) — o almoço a bordo do RAK→LIS de 21/09 deixa de ser pago (confirmado pelo colega). O direito
-  à refeição e as horas mostradas seguem a hora real (UTC+0).
-- **0.9.3.24** — **Épocas IATA gerais** (utilizador: "para correr bem no futuro"): `iataSeasonStart()` /
-  `seasonPlanOffsetMinutes()` em `localTime.ts` — o embarque segue a hora em vigor no início da época, para qualquer
-  aeroporto e ano. Na Europa é igual à hora real; em aberto: Ramadão 2026 em Marrocos (passa a seguir UTC+1).
+_(vazio — tudo promovido em 0.9.3.24)_
 
 ---
 
