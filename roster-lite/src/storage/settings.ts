@@ -280,6 +280,33 @@ export function patchPayGlobal(userId: string, patch: Partial<Pick<PaySettings, 
   setPaySettings(userId, { ...getPaySettings(userId), ...patch });
 }
 
+// Per-day choices the pilot makes on the day page (domain/offDayWork.ts): a flight on a day off paid
+// or kept, and the minutes of a reduced rest. Per profile; carried by backups, like the prevenir.
+function dayMarks<T>(prefix: string) {
+  const get = (userId: string): Record<string, T> => {
+    try {
+      const v = JSON.parse(localStorage.getItem(prefix + userId) ?? '{}');
+      return v && typeof v === 'object' ? v : {};
+    } catch {
+      return {};
+    }
+  };
+  const set = (userId: string, date: string, value: T | null): Record<string, T> => {
+    const all = { ...get(userId) };
+    if (value === null) delete all[date];
+    else all[date] = value;
+    try { localStorage.setItem(prefix + userId, JSON.stringify(all)); } catch { /* private mode */ }
+    return all;
+  };
+  return { get, set };
+}
+const offDayMarks = dayMarks<'paid' | 'kept'>('crewroster.offDayPay.');
+const restCutMarks = dayMarks<number>('crewroster.restCut.');
+export const getOffDayMarks = offDayMarks.get;
+export const setOffDayMark = offDayMarks.set;
+export const getRestCutMarks = restCutMarks.get;
+export const setRestCutMark = restCutMarks.set;
+
 // IO days the crew member marked as the "prevenir" (true) or as not (false), by date — over what
 // the roster alone suggests (domain/irregularity.ts). Per profile; carried by backups.
 const PREVENIR_PREFIX = 'crewroster.prevenir.';

@@ -2,7 +2,7 @@ import type { ParsedDuty } from './types';
 import { legsOf, type Leg } from './dayPhase';
 import { PGA_PILOT_RULES, standbyInterval, workWindow } from './dutyTime';
 import { ioInterval, isIO, isPrevenirIO } from './irregularity';
-import { airportTz, tzOffsetMinutes } from '../utils/localTime';
+import { airportTz, seasonPlanOffsetMinutes, tzOffsetMinutes } from '../utils/localTime';
 
 // RAACO — Regulamento de Alimentação e Ajudas de Custo Operacionais, absorbed into the ROV-PGA
 // (Revisão 01, cap. 4.5; values in Anexo 7.6, Tabelas 32–34). It covers every crew member — pilots
@@ -85,6 +85,11 @@ export function rateAt(airport: string): CountryRate | null {
 // window is just day × 1440 + its minutes.
 const tzOf = (airport: string | null | undefined, base: string) => airportTz(airport) ?? airportTz(base) ?? 'Europe/Lisbon';
 const localMin = (d: Date, tz: string) => Math.floor(d.getTime() / 60000) + tzOffsetMinutes(d, tz);
+// The Meal Plan is drawn per IATA season (4.5.10.2–3), so a clock change mid-season doesn't move the
+// catering: the loading check reads the airport's clock as it was when the season began (C10: Morocco
+// went to UTC+0 on 20 Sep 2026, and a RAK→LIS leaving 10:45 UTC still carried the summer plan's lunch).
+// What is due and the times shown follow the real clock.
+const planLocalMin = (d: Date, tz: string) => Math.floor(d.getTime() / 60000) + seasonPlanOffsetMinutes(d, tz);
 const dayISO = (day: number) => new Date(day * 86_400_000).toISOString().slice(0, 10);
 
 interface Occurrence { meal: Meal; day: string; ws: number; we: number; key: string }
@@ -210,7 +215,7 @@ const flightLabel = (l: Leg) => l.duty.flightNumber ?? `${l.duty.departureAirpor
 const gapDistance = (l: Leg, a: Acquired) =>
   Math.max(0, l.off.getTime() - a.to.getTime(), a.from.getTime() - l.on.getTime());
 
-function psvMeals(p: Psv, base: string, nextIsStay: boolean, paidInStay: Set<string>): MealLine[] {
+function psvMeals(p: Psv, base: string, nextIsStay: boolean, paidInStay: Set<string>, noCatering = false): MealLine[] {
   const fromTz = tzOf(p.from, base);
   const toTz = tzOf(p.to, base);
   // A meal the stay before already paid is not loaded again (one right per meal).
@@ -228,13 +233,14 @@ function psvMeals(p: Psv, base: string, nextIsStay: boolean, paidInStay: Set<str
     const tz = tzOf(l.duty.departureAirport, base);
     const day = Math.round(Date.parse(`${a.day}T00:00:00Z`) / 86_400_000);
     const [ws, we] = a.meal === 'supper' && (l.duty.departureAirport ?? base).toUpperCase() !== base ? SUPPER_AWAY : WINDOW[a.meal];
-    return localMin(l.off, tz) <= day * 1440 + we && localMin(l.on, tz) >= day * 1440 + ws;
+    return planLocalMin(l.off, tz) <= day * 1440 + we && planLocalMin(l.on, tz) >= day * 1440 + ws;
   };
   const out: MealLine[] = [];
   for (const a of due) {
     // The supper is never loaded (colleagues' statements: LYS 18/06, BCN 12/07, DUB, MRS, VLC — it is
     // always paid, even on a sector flying through its window), so it goes straight to the allowance.
-    const leg = a.meal === 'supper' ? undefined : p.legs
+    // After an unplanned stay the flight home is a recovery: no crew meal was planned for it (C09).
+    const leg = a.meal === 'supper' || (noCatering && p.legs.every((l) => l.duty.dutyType !== 'Positioning')) ? undefined : p.legs
       .filter((l) => (room.get(l) ?? 0) > 0 && (flies(l, a) || (a.basis === 'a' && l === p.legs[0])))
       .sort((x, y) => gapDistance(x, a) - gapDistance(y, a))[0];
     const why = `${BASIS[a.basis]} (4.5.5.1 ${a.basis})`;
@@ -272,6 +278,7 @@ function psvMeals(p: Psv, base: string, nextIsStay: boolean, paidInStay: Set<str
       : p.legs.length === 0
       ? 'assistência no aeroporto (4.5.5.5)'
       : a.meal === 'supper' ? 'a ceia não é embarcada'
+      : noCatering ? 'voo de recuperação depois de uma pernoita não planeada: sem refeição de tripulação (4.5.11.5 / 4.5.11.6)'
       : p.legs.every((l) => blockMin(l) <= 90) ? 'setores até 1h30 não levam refeição principal (4.5.11.4)'
       : 'sem setor para a embarcar (4.5.11.2 / 4.5.11.6)';
     out.push({
@@ -285,15 +292,19 @@ function psvMeals(p: Psv, base: string, nextIsStay: boolean, paidInStay: Set<str
 
 // The meals and nights of a stay away from base (4.5.5.3 / 4.5.8), paid at Tabela 34. As paid on
 // the May 2026 statement: lunch, dinner and supper (the "fora da base" window) are paid, breakfast
-// at the hotel is not, and a meal already due in the duty before or after isn't paid twice.
-function stayLines(where: string, from: Date, to: Date, base: string, taken: Set<string>): { meals: MealLine[]; nights: NightLine[] } {
+// at the hotel is not — the next morning's breakfast is loaded at Lisbon on the flight to the night
+// stop (double catering, Tabela 35 note 1; 4.5.8.2) — and a meal already due in the duty before or
+// after isn't paid twice. An UNPLANNED stay (the day's last sector came back to where it left, an
+// air or ramp return: the night wasn't in the plan) had no double catering, so its breakfast is paid
+// at the local rate too (casebook C09, a colleague's September statement: FNC, 25 €).
+function stayLines(where: string, from: Date, to: Date, base: string, taken: Set<string>, unplanned = false): { meals: MealLine[]; nights: NightLine[] } {
   const tz = tzOf(where, base);
   const rate = rateAt(where);
-  const meals = acquired(from, to, tz, tz, true, true, ['lunch', 'dinner', 'supper'])
+  const meals = acquired(from, to, tz, tz, true, true, unplanned ? ['breakfast', 'lunch', 'dinner', 'supper'] : ['lunch', 'dinner', 'supper'])
     .filter((a) => !taken.has(a.key))
     .map<MealLine>((a) => ({
-      date: a.day, key: a.key, meal: a.meal, how: 'stay', value: rate?.main ?? null, where,
-      why: `Na estadia em ${where} (4.5.5.3 / 4.5.8, Tabela 34)`,
+      date: a.day, key: a.key, meal: a.meal, how: 'stay', value: (a.meal === 'breakfast' ? rate?.breakfast : rate?.main) ?? null, where,
+      why: `Na estadia em ${where} (4.5.5.3 / 4.5.8, Tabela 34)${a.meal === 'breakfast' ? ' — pernoita não planeada, sem double catering' : ''}`,
     }));
   // A night stop per night the stay spends in — any part of 00:00–05:00 local — dated the evening
   // before. Counting midnights instead missed a stay that starts after one: a late arrival in Praia
@@ -330,15 +341,21 @@ export function raacoDays(roster: ParsedDuty[], base: string): Map<string, Raaco
   // in the duty that ends it is paid in the stay (May 2026: lunch at the Frankfurt rate on the day
   // back); one due in the duty before the stay is not paid again in it (4.5.8.2).
   let paidInStay = new Set<string>();
+  let afterUnplanned = false;
   psvs.forEach((p, i) => {
     const next = psvs[i + 1];
     const endsAway = p.to !== b;
-    const meals = psvMeals(p, b, endsAway, paidInStay);
+    const meals = psvMeals(p, b, endsAway, paidInStay, afterUnplanned);
     lines.push(...meals);
     paidInStay = new Set();
+    afterUnplanned = false;
     if (!endsAway) return;
+    // The night wasn't planned when the duty's last sector came back to where it left (C09).
+    const last = p.legs[p.legs.length - 1];
+    const unplanned = !!last && !!last.duty.departureAirport && last.duty.departureAirport.toUpperCase() === p.to;
+    afterUnplanned = unplanned;
     const until = next && next.start.getTime() - p.end.getTime() < MAX_STAY_MS ? next.start : new Date(p.end.getTime() + 12 * 3600_000);
-    const stay = stayLines(p.to, p.end, until, b, new Set(meals.map(key)));
+    const stay = stayLines(p.to, p.end, until, b, new Set(meals.map(key)), unplanned);
     lines.push(...stay.meals);
     nights.push(...stay.nights);
     for (const n of stay.nights) stayOf.set(n.date, p.to);

@@ -28,6 +28,10 @@ export interface RosterState {
   dismissChanges: () => Promise<void>;
   // Mark an IO day as the "prevenir" (true), as not (false), or back to what the roster says (null).
   setPrevenir: (date: string, value: boolean | null) => void;
+  // A flight on a day off: paid under RRRGS cl. 13, or the day kept for later; null = as the roster says.
+  setOffDayPay: (date: string, value: 'paid' | 'kept' | null) => void;
+  // Minutes of a reduced rest before the day (RRRGS cl. 2.8), or null to clear.
+  setRestCut: (date: string, minutes: number | null) => void;
   // Re-read every PDF in the history (oldest first) into the roster; the count read, or null if none.
   reloadFromPdfs: () => Promise<number | null>;
   setSessionToken: (token: string | null) => void;

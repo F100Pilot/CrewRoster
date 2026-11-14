@@ -143,7 +143,35 @@ const CASES: Case[] = [
       base('2026-04-08', { dutyType: 'Other', dutyCode: 'IO', departureAirport: 'MAN', reportingTime: '11:00', departureTime: '11:00', arrivalTime: '15:08' }),
       base('2026-04-09', { dutyType: 'Positioning', flightNumber: 'TP9313', departureAirport: 'MAN', arrivalAirport: 'LIS', departureTime: '17:07', arrivalTime: '19:40', reportingTime: '16:07' }),
     ],
-    days: { '2026-04-08': [0, 35, 35, 45], '2026-04-09': [0, 35, 18, 0] },
+    // 0.9.3.22: the 09/04 breakfast became 29 € (the UK rate) with C09's rule — the night after a
+    // MAN→MAN return was unplanned, so no double catering. Was 0 at first (no statement); the colleague
+    // then confirmed the company paid it.
+    days: { '2026-04-08': [0, 35, 35, 45], '2026-04-09': [29, 35, 18, 0] },
+  },
+  {
+    id: 'C09-FNC-10-09-pernoita-nao-planeada',
+    since: '0.9.3.22',
+    reported: 'Extrato de setembro de um CP: 10/09 TP9261 FNC→LIS pago p.-alm. 25 € + almoço 18 €. Na véspera o regresso FNC→LIS voltou ao Funchal (FNC→FNC) — na escala original o dia acabava em Lisboa. O colega confirma o extrato: "estava fora da base".',
+    rule: 'Pernoita não planeada (último setor de volta ao aeroporto de onde saiu): sem double catering, o pequeno-almoço do hotel é pago pela Tabela 34 local; o voo de recuperação seguinte não leva refeição de tripulação — as refeições principais devidas pagam a Tabela 33.',
+    duties: [
+      leg('2026-09-08', 'TP9091', 'LIS', 'AGP', '19:36', '20:38', '18:36'),
+      leg('2026-09-09', 'TP9092', 'AGP', 'LIS', '13:35', '14:40', '12:35'),
+      leg('2026-09-09', 'TP9093', 'LIS', 'FNC', '15:50', '17:23'),
+      leg('2026-09-09', 'TP9094', 'FNC', 'FNC', '19:34', '20:09'),
+      leg('2026-09-10', 'TP9095', 'FNC', 'LIS', '09:55', '11:35', '08:55'),
+    ],
+    days: { '2026-09-10': [25, 18, 0, 0] },
+  },
+  {
+    id: 'C10-RAK-21-09-plano-da-epoca',
+    since: '0.9.3.23',
+    reported: 'Extrato de setembro de um CP: 21/09 LIS→RAK→LIS (planeado 08:00–09:35 e 10:45–12:25 UTC) sem almoço pago. O colega confirma: havia almoço de tripulação a bordo ("No meu RAK não tenho a receber").',
+    rule: 'Marrocos passou a UTC+0 a 20/09/2026, mas o Meal Plan é feito por época IATA (4.5.10.2–3): até ao fim da época de verão (25/10/2026) o embarque segue a hora antiga (UTC+1) — o RAK→LIS sai às 11:45 e atravessa o almoço. O direito à refeição e as horas mostradas seguem a hora real.',
+    duties: [
+      leg('2026-09-21', 'TP9101', 'LIS', 'RAK', '08:00', '09:35', '07:00'),
+      leg('2026-09-21', 'TP9102', 'RAK', 'LIS', '10:45', '12:25'),
+    ],
+    days: { '2026-09-21': [0, 0, 0, 0] },
   },
 ];
 

@@ -1,8 +1,8 @@
-import { Alert, Box, Card, CardContent, Chip, Divider, FormControlLabel, IconButton, Stack, Switch, Tooltip, Typography } from '@mui/material';
+import { Alert, Box, Button, Card, CardContent, Chip, Divider, FormControlLabel, IconButton, Stack, Switch, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from '@mui/material';
 import { ChevronLeft, ChevronRight, FlightLand, FlightTakeoff, Groups, Hotel, IosShare, Phone, WbSunny, Bedtime, Brightness4 } from '@mui/icons-material';
 import { Link } from '@mui/material';
 import { addDays, format, parseISO } from 'date-fns';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import { dutyColor } from '../theme';
@@ -31,6 +31,8 @@ import { localClock } from '../utils/localTime';
 import { utcDateTime } from '../utils/duration';
 import { briefLabel, ebtBriefing } from '../domain/simSession';
 import { canCompareIO, isIO, isPrevenirIO } from '../domain/irregularity';
+import { autoRestCut, markedOffDay, markedRestCut, offDayChoice, typedRestCut } from '../domain/offDayWork';
+import type { RestInfo } from '../domain/restPeriods';
 
 export default function DayDetailPage() {
   const { date } = useParams<{ date: string }>();
@@ -263,6 +265,7 @@ export default function DayDetailPage() {
         </Card>
       ))}
 
+      {pilot && date && <OffDayWork date={date} duties={duties} rest={rest} />}
       {date && <RaacoDayCard date={date} />}
     </Stack>
   );
@@ -525,6 +528,79 @@ function daySummary(duties: ParsedDuty[]): string | undefined {
 // kept the planned report, the roster decides — the IO opens at it or not — and the page just says
 // so. Only without that comparison does the crew member get the switch (user rule). Prevenir counts
 // the day in full: duty, per diem A and the meal allowances (domain/irregularity.ts).
+// Pilots (AE): a flight on a planned day off — paid under RRRGS cl. 13 or the day kept for later —
+// and the minutes of a reduced rest (RRRGS cl. 2.8). Both read from the roster's remarks ("Voo em
+// Off", "Reducao Repouso") and settled by the pilot (colleagues' request); domain/offDayWork.ts.
+function OffDayWork({ date, duties, rest }: { date: string; duties: ParsedDuty[]; rest: RestInfo | null }) {
+  const { setOffDayPay, setRestCut } = useRoster();
+  const flies = duties.some((d) => d.dutyType === 'Flight Duty' || d.dutyType === 'Positioning');
+  const offMarked = markedOffDay(duties);
+  const choice = offDayChoice(duties);
+  const cutMarked = markedRestCut(duties);
+  const typed = typedRestCut(duties);
+  const auto = autoRestCut(rest);
+  const [shown, setShown] = useState(false);
+  const open = cutMarked || typed !== null || shown;
+  if (!flies && !open) return null;
+  const cut = typed ?? auto;
+  return (
+    <Card>
+      <CardContent>
+        <Typography sx={passOverline}>Folga e repouso · AE (experimental)</Typography>
+        {flies && (choice || offMarked ? (
+          <Box mt={1}>
+            <Typography variant="body2" fontWeight={700}>Voo em dia de folga{offMarked ? ' (escala: "Voo em Off")' : ''}</Typography>
+            <ToggleButtonGroup exclusive size="small" value={choice ?? 'paid'} sx={{ mt: 0.75 }}
+              onChange={(_, v: 'paid' | 'kept' | null) => v && setOffDayPay(date, v)}>
+              <ToggleButton value="paid">Recebo</ToggleButton>
+              <ToggleButton value="kept">Gozo a folga</ToggleButton>
+            </ToggleButtonGroup>
+            <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+              {choice === 'kept'
+                ? 'A folga fica para gozar depois (RUPT cl. 15.9 / 15.19): o dia conta como serviço normal.'
+                : 'RRRGS cl. 13: 3% do VB por hora de serviço de voo + 15% do VB pelo dia, no mês seguinte, fora dos plafonds.'}
+            </Typography>
+            {!offMarked && <Button size="small" onClick={() => setOffDayPay(date, null)}>Não era folga</Button>}
+          </Box>
+        ) : (
+          <Button size="small" sx={{ mt: 0.5 }} onClick={() => setOffDayPay(date, 'paid')}>Este voo foi num dia de folga?</Button>
+        ))}
+        {open ? (
+          <Box mt={1.5}>
+            <Typography variant="body2" fontWeight={700}>Redução de repouso{cutMarked ? ' (escala: "Redução Repouso")' : ''}</Typography>
+            {rest && rest.restMinutes !== null && (
+              <Typography variant="caption" color="text.secondary" display="block">
+                Descanso antes deste serviço: {formatDuration(rest.restMinutes)} (do fim do serviço anterior, chegada + 30 min,
+                à apresentação) · mínimo {formatDuration(rest.requiredMinutes)}{rest.away ? ' (fora da base)' : ''} →
+                {' '}calculado <strong>{auto ?? 0} min</strong>.
+              </Typography>
+            )}
+            <Box display="flex" alignItems="center" gap={1} mt={1} flexWrap="wrap">
+              <TextField id={`rest-cut-${date}`} size="small" label="Minutos reduzidos" type="number"
+                value={cut ?? ''} sx={{ width: 170 }}
+                slotProps={{ htmlInput: { min: 0, step: 1, inputMode: 'numeric' } }}
+                onChange={(e) => {
+                  const v = e.target.value === '' ? null : Math.max(0, Math.round(Number(e.target.value)));
+                  setRestCut(date, v === null || Number.isNaN(v) ? null : v);
+                }} />
+              {typed !== null && auto !== null && typed !== auto && (
+                <Button size="small" onClick={() => setRestCut(date, null)}>Usar o calculado ({auto} min)</Button>
+              )}
+            </Box>
+            <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+              {typed !== null ? 'Valor escrito por ti. ' : auto !== null ? 'Calculado pela escala, ao minuto. ' : 'Sem horas para calcular: escreve os minutos. '}
+              Na base, até 2 h (RUPT cl. 34.3). Pago em duty-pay, fora dos plafonds (RRRGS cl. 2.8).
+            </Typography>
+          </Box>
+        ) : (
+          <Button size="small" sx={{ mt: 0.5, display: 'block' }} onClick={() => { setShown(true); setRestCut(date, auto ?? 0); }}>Houve redução de repouso?</Button>
+        )}
+        <Typography variant="caption" color="text.secondary" display="block" mt={1}>{AE_DISCLAIMER}</Typography>
+      </CardContent>
+    </Card>
+  );
+}
+
 function IoPrevenir({ duty }: { duty: ParsedDuty }) {
   const { setPrevenir } = useRoster();
   const on = isPrevenirIO(duty);

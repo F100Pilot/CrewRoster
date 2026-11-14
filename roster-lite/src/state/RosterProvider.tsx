@@ -11,7 +11,7 @@ import {
 } from '../storage/rosterStore';
 import { mergeLogbook } from '../domain/logbook';
 import { regMap } from '../domain/aircraftRegs';
-import { getPrevenirMarks, setCredentials, setPrevenirMark } from '../storage/settings';
+import { getOffDayMarks, getPrevenirMarks, getRestCutMarks, setCredentials, setOffDayMark, setPrevenirMark, setRestCutMark } from '../storage/settings';
 import { RosterContext, type RosterState, type RosterImportPreview } from './useRoster';
 
 // Re-parse a stored PDF roster from its saved PDF(s) with the current parser, so improvements
@@ -347,13 +347,32 @@ export function RosterProvider({ children }: { children: ReactNode }) {
   const setPrevenir = useCallback((date: string, value: boolean | null) => {
     if (activeUser) setPrevenirMarks(setPrevenirMark(activeUser.id, date, value));
   }, [activeUser]);
+  // Same for a flight on a day off (paid / kept) and the minutes of a reduced rest (offDayWork.ts).
+  const [offDayMarks, setOffDayMarks] = useState<Record<string, 'paid' | 'kept'>>({});
+  const [restCutMarks, setRestCutMarks] = useState<Record<string, number>>({});
+  useEffect(() => {
+    setOffDayMarks(activeUser ? getOffDayMarks(activeUser.id) : {});
+    setRestCutMarks(activeUser ? getRestCutMarks(activeUser.id) : {});
+  }, [activeUser]);
+  const setOffDayPay = useCallback((date: string, value: 'paid' | 'kept' | null) => {
+    if (activeUser) setOffDayMarks(setOffDayMark(activeUser.id, date, value));
+  }, [activeUser]);
+  const setRestCut = useCallback((date: string, minutes: number | null) => {
+    if (activeUser) setRestCutMarks(setRestCutMark(activeUser.id, date, minutes));
+  }, [activeUser]);
   const shownRoster = useMemo<Roster | null>(() => {
-    if (!roster || !Object.keys(prevenirMarks).length) return roster;
+    if (!roster || !(Object.keys(prevenirMarks).length || Object.keys(offDayMarks).length || Object.keys(restCutMarks).length)) return roster;
     return {
       ...roster,
-      duties: roster.duties.map((d) => (d.dutyCode === 'IO' && d.date in prevenirMarks ? { ...d, prevenir: prevenirMarks[d.date] } : d)),
+      duties: roster.duties.map((d) => {
+        let x = d;
+        if (d.dutyCode === 'IO' && d.date in prevenirMarks) x = { ...x, prevenir: prevenirMarks[d.date] };
+        if (d.date in offDayMarks) x = { ...x, offDayPay: offDayMarks[d.date] };
+        if (d.date in restCutMarks) x = { ...x, restCutMin: restCutMarks[d.date] };
+        return x;
+      }),
     };
-  }, [roster, prevenirMarks]);
+  }, [roster, prevenirMarks, offDayMarks, restCutMarks]);
 
   // Rebuild the roster from every PDF in the history, oldest first (user request). Resolves to how
   // many PDFs could be read (0: none was a readable roster), or null when the history is empty.
@@ -382,12 +401,12 @@ export function RosterProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<RosterState>(
     () => ({
-      roster: shownRoster, setPrevenir, reloadFromPdfs, loading, importing, error, loadError, warnings, sessionToken,
+      roster: shownRoster, setPrevenir, setOffDayPay, setRestCut, reloadFromPdfs, loading, importing, error, loadError, warnings, sessionToken,
       importFile, previewImport, applyImport, clear, dismissChanges, setSessionToken,
       users, activeUser,
       switchUser, createUser, renameUser, setUserBase, deleteUser: deleteUserFn,
     }),
-    [shownRoster, setPrevenir, reloadFromPdfs, loading, importing, error, loadError, warnings, sessionToken, setSessionToken,
+    [shownRoster, setPrevenir, setOffDayPay, setRestCut, reloadFromPdfs, loading, importing, error, loadError, warnings, sessionToken, setSessionToken,
      importFile, previewImport, applyImport, clear, dismissChanges, users, activeUser, switchUser, createUser, renameUser, setUserBase, deleteUserFn]
   );
 

@@ -7,7 +7,7 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.9.3.14`
+- **Produção (`master`) está em:** `0.9.3.24`
 - **Próxima versão ao promover:** a da experimental (cada atualização sobe a 4.ª casa)
 
 ## Como promover tudo para produção (quando estiver pronto)
@@ -25,7 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(vazio — 0.9.3.11 a 0.9.3.14 promovidas para produção em 14/11/2026)_
+_(vazio — tudo promovido em 0.9.3.24)_
 
 ---
 
@@ -35,7 +35,7 @@ _(vazio — 0.9.3.11 a 0.9.3.14 promovidas para produção em 14/11/2026)_
 - **Google Calendar (0.9.1) está no código mas escondido** até existir o secret `VITE_GOOGLE_CLIENT_ID` (cliente
   OAuth "Web application", origem `https://f100pilot.github.io`, Calendar API ativa, âmbito
   `calendar.app.created`). Com o secret, o próximo deploy mostra o botão — juntar então uma nota de versão.
-- **IO:** ajuda de custo de um IO normal sozinho na base; código **APT** (sem apresentação) ainda não lido.
+- **IO:** ajuda de custo de um IO normal sozinho na base.
 
 - **Duty vs DT da escala (perguntas em aberto ao utilizador):** a escala soma 30 min depois de um DHC que fecha o dia
   (a app segue o AE cl. 17: acaba à chegada) e conta a hora de almoço nos dias GAB (8:00 vs 7:00 na app). Mudar só se
@@ -53,7 +53,8 @@ _(vazio — 0.9.3.11 a 0.9.3.14 promovidas para produção em 14/11/2026)_
 
 - **Abonos RAACO (em produção, experimental):** conferido com maio 2026 (711 € vs 768 €). Por explicar: almoço
   de 39 € num DH LIS→FRA com apresentação 8 min depois do horário (atraso? hora planeada?) e almoço de 18 € num
-  RAK→LIS de 1h37 (bloco planeado ≤ 1h30?). Marrocos não está na Tabela 34; falta a nota "Pernoita*". Casos
+  RAK→LIS de 1h37 (bloco planeado ≤ 1h30?). Marrocos não está na Tabela 34 (confirmado no Anexo 7.6, como a nota "Pernoita*"). Outubro e setembro de
+  colegas conferidos com extrato, em aberto (horas planeadas, voos especiais, prática da empresa). Casos
   em aberto e resolvidos: `roster-lite/docs/ABONOS-CASOS.md`.
 
 - **Do AE SIPLA, ainda por fazer**: estimador de per diem (RRRGS cl. 9, tabela A2.2 —
@@ -66,4 +67,4 @@ _(vazio — 0.9.3.11 a 0.9.3.14 promovidas para produção em 14/11/2026)_
 
 ---
 
-_Última atualização: 2026-11-12._
+_Última atualização: 2026-11-14._

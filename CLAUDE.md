@@ -140,6 +140,13 @@ cross-origin. Endpoints: `POST /api/login`, `/api/roster`, `/api/flightinfo`,
 
 Things learned over this collaboration that should persist across sessions:
 
+- **Pending-work checklist (user request, Nov 2026):** a private Artifact page, https://claude.ai/artifact/AbrVfM4pSxa6F5ksGiTbiF
+  ("CrewRoster · Pendentes"), its items in the artifact's `db` collection `items` (`title`, `area`, `version`, `status`:
+  `todo` | `waiting` | `exp` | `prod`, `waitingFor`, `detail`, `order`). Keep it current with the `ArtifactData` tool in every
+  session: add what the user asks for, move items to `exp` when pushed to the experimental branch and to `prod` on promotion.
+  Never put crew names or pay figures in it. Each item (and the whole open list) has an "Enviar ao Claude" button
+  (`comments` capability → `sendToClaude`, a comment that wakes the session watching the page; "Copiar para o chat" when
+  that isn't available) — a comment from it is the user's request about that item.
 - **Promotion is gated on an explicit user request.** Build on exp, validate with the
   user, only then "passa para o main". The user says when.
 - **Production has real PGA crew using it.** Be conservative; prefer batching exp
@@ -171,7 +178,19 @@ Things learned over this collaboration that should persist across sessions:
 - **Company agreement (AE Portugália/SIPLA 2023) is the source for PILOT limits** (since 0.8.18):
   RUPT cl. 30–31 (flight/duty limits), cl. 19.7/20.4 (standby 25% home / 50% airport / R24 0%),
   cl. 25/34 (rest), cl. 35 (FDP table, Lisbon reference). Cabin crew stay on EASA (SIPLA covers
-  pilots only). The AE text is NOT in the repo — only values, each with its clause in a comment.
+  pilots only). The AE text is NOT in the repo (public) — only values, each with its clause in a comment. **The full
+  AE lives in the owner's Google Drive** (user: "é necessário que fique"), five PDFs: "AE SIPLA - Clausulado Geral",
+  "AE SIPLA - RUPT", "AE SIPLA - RRRGS", "AE SIPLA - RAAA", "AE SIPLA - RBO" — read them with the Google Drive
+  connector (`search_files` title contains 'AE SIPLA', then `read_file_content`; the RUPT is too long for one read,
+  slice it). Quote clauses from there before implementing an AE rule; never commit the text. The **ROV-PGA cap. 4.5**
+  (RAACO, pp. 80–86) is there too since 0.9.3.15: "ROV-PGA - 4.5 Alimentação e ajudas de custo (texto)" (a Google Doc
+  transcription) and "(capturas).pdf" (the user's screenshots), and the **Anexo 7.6** (Tabelas 32–36, pp. 419–420):
+  "ROV-PGA - Anexo 7.6 Quadros RAACO (texto)" + "(capturas).pdf" — checked value by value against `raaco.ts` (all equal).
+  The full ROV is in the user's Drive folder with the AE copies, **split in three** (the connector won't download over
+  10 MB, and `read_file_content` only returns the first ~79 pages as text): "ROV_R01_parte01_p1-258.pdf",
+  "ROV_R01_parte02_p259-411.pdf" (mostly images — little text), "ROV_R01_parte03_p412-427.pdf" (Anexo 7.6 RAACO tables).
+  Read one with `download_file_content` (saved as a local file) + pdf.js text extraction into the scratchpad; delete the
+  copy after. The ROV sends FTL / rest / folga matters for pilots to the AE.
   Standby code windows (H509, H7+… pilots; A1…A8 cabin) come from the DOV notice of Feb 2025
   (`src/domain/standbyWindows.ts`). A/H codes are home standby (H = pilots, A = cabin).
 - **Every AE calculation is pilots-only (SIPLA)** — user rule. Limits/compliance/rest minima/FDP/
@@ -315,7 +334,17 @@ Things learned over this collaboration that should persist across sessions:
   and one on a 1h37 sector. Always labelled **experimental** with a big banner + "Enviar feedback" (mailto,
   prefilled) on `/abonos` and "EM TESTES" on the day card (user request) — keep it. **Windows are read in LOCAL time** (4.5.5.4; user decision): a UTC reading was
   tested on the same month and rejected — it fixes that DH lunch but invents a supper on an early report and
-  loses the stay lunches on the days back, 9/11 vs 7–9/11. The ROV PDF, the roster and the statement are not in the repo.
+  loses the stay lunches on the days back, 9/11 vs 7–9/11. The ROV, the roster and the statement are not in the repo (the ROV 4.5 text is in the owner's Drive, see above).
+- **RAACO unplanned stay** (C09, since 0.9.3.22, user approved): when a duty's last sector came back to where it left
+  (an air/ramp return, X→X) the night away wasn't planned — no double catering — so the hotel breakfast is paid at
+  Tabela 34 and the next duty (the recovery flight) loads no crew meal: its main meals pay Tabela 33. **Morocco is UTC+0
+  from 20 Sep 2026, for good** (user confirmed: UTC+1 abandoned definitively — no summer time, no Ramadan changes): fixed in `localTime.ts` (`fixedOffset`) because devices with older tz data say +1.
+  But the **Meal Plan is per IATA season** (4.5.10.2–3; C10, 0.9.3.23, colleague confirmed the RAK lunch on board): until
+  25 Oct 2026 the LOADING check in Morocco runs on the old UTC+1 clock; what is due and the times shown stay on the real
+  clock. General since 0.9.3.24 (user: "inclui as épocas IATA para correr bem no futuro"): `iataSeasonStart()` (last
+  Sunday of March / October, 01:00 UTC) and `seasonPlanOffsetMinutes()` in `localTime.ts` — the loading check
+  (`planLocalMin` in `raaco.ts`) uses the airport's offset at the season's start; same as the real clock wherever clocks
+  change with the seasons (Europe). Open: Morocco's Ramadan 2026 (UTC+0 mid-winter season) now plans on UTC+1.
 - **RAACO casebook — every real case is kept forever** (user: "estes exemplos têm de servir para corrigir futuros
   problemas"): each crew feedback / checked statement line becomes an entry in
   `src/domain/__tests__/raacoCases.test.ts` (synthetic TP9xxx flight numbers, real airports/times, the columns
@@ -323,8 +352,8 @@ Things learned over this collaboration that should persist across sessions:
   Write the case first and see it fail; a fix may not break any older case — if two cases contradict, record it
   under "Em aberto" and ask instead of forcing. Unresolved reports also go to "Em aberto" there.
 - **EBT simulator briefing** (since 0.8.35, user rule): LIS-EBT-1 = briefing 30 min + debriefing 1 h, LIS-EBT-2 = briefing
-  1 h + debriefing **1 h** (0.8.40.1 — was 30 min; a colleague's November duty-pay was 30 min short; a 4 h EBT-2 is the
-  roster's DT 06:00); the roster only prints the session (4h00/5h00). `domain/simSession.ts`; shown as
+  1 h + debriefing **30 min** (user, 0.9.3.15, from his own roster: "tem de ser 30 minutos" — 0.8.40.1 had made it 1 h
+  after a colleague's November duty-pay); the roster only prints the session (4h00/5h00). `domain/simSession.ts`; shown as
   information on the day, Lista card and "Hoje". The roster's times are the session only (user confirmed); since 0.8.37
   the DUTY counts briefing + session + debriefing (user: "o tempo de simulador conta o simulador mais o briefing e
   debriefing"): `asWorked()` widens EBT sessions inside `dutyWindow` / `dutyDay`, so duty-pay, limits, rest and the
@@ -332,6 +361,23 @@ Things learned over this collaboration that should persist across sessions:
   user confirmed). The duty stays on this rule, NOT on the roster's printed [DT] (user: "mantém como estava"); found while
   checking: the roster's DT also adds 30 min after a day-ending DHC (the app follows AE cl. 17: DHC ends at arrival) and
   counts the lunch hour on GAB days — both left as they are, open questions to the user.
+- **Flight on a day off & reduced rest** (since 0.9.3.19, colleagues' audios; pilots only): the roster's "Voo em Off" →
+  mark `VOO_OFF`, "Reducao Repouso" → `RED_REP` (one token or word by word — a split "Off" must never start a day off nor
+  trip the totals-box filter). Day page card "Folga e repouso": **Recebo / Gozo a folga** (RRRGS cl. 13 — paid by default
+  when marked: FDP hours × 3% VB + 15% VB per day, outside the duty/block plafond credits, cl. 13.5; kept = ordinary day,
+  RUPT cl. 15.9 b / 15.19) and the **minutes of a reduced rest** (0–120, RUPT 34.3; paid in duty-pay outside the plafonds,
+  RRRGS 2.8; a typed value > 0 replaces the planned-vs-flown reduction of that day). Since 0.9.3.20 the cut is **worked
+  out to the minute from the roster itself** (user: no earlier roster needed): `autoRestCut()` = the AE minimum
+  (`restPeriods`) − the rest taken (release = last on-blocks + 30 min → report), capped at 2 h at base; it counts by itself
+  on a `RED_REP` day, and a typed figure (to the minute) wins. Stored per user
+  (`crewroster.offDayPay.*`, `crewroster.restCut.*`), applied in RosterProvider; `domain/offDayWork.ts`. Not yet checked
+  against a real PDF carrying the remarks.
+- **Medical exams** (IM / VIM / MED, `Medical`, timed): done apart (a colleague, 0.9.3.16) the roster has MED on one day
+  ([DT] 3h00) and IM + VIM on another ([DT] 4h00 for IM 08:00–12:00 + VIM 12:00–12:30): the VIM is inside the IM's
+  block, so `countedWork()` (`dutyTime.ts`) leaves a VIM out of the duty maths when the day has an IM; display unchanged.
+  The roster's **"R" column** (a lone "R" between the duty code and the airport) = **requested** by the crew member (user,
+  0.9.3.17: a W_OFF asked for, medical exams at a clinic of their choice, a flight) → mark `REQ` ("Pedido"), info only.
+  A requested W_OFF counts exactly like any other folga in the AE rules (user confirmed) — never branch on `REQ`.
 - **Settings are tabbed** (since 0.8.24): Perfil · Vencimento (pilots only) · App · Dados · Ajuda in
   `SettingsDialog.tsx`; last tab in localStorage `crewroster.settingsTab`. Guardar only on Perfil/App
   (the rest saves on change). New settings go in the tab for their subject, not at the bottom.
@@ -371,9 +417,10 @@ Things learned over this collaboration that should persist across sessions:
   (`ParsedDuty.prevenir`, stored in `crewroster.prevenir.<userId>`, applied by RosterProvider). `domain/irregularity.ts`.
   On the payslip the prevenir shows as "Per diem A PGA CTE T" (at base, taxed in full) — as the app counts it.
   An IO that is NOT the prevenir ("IO normal"): part of the day's PSV for everything — duty (the roster's DT runs to
-  the IO's end) and the RAACO meals by the usual rules, the stay where it ends paying its Tabela 34 rates (casebook
+  the IO's end) and the RAACO meals by the usual rules (since 0.9.3.22 C08's 09/04 breakfast is 29 € by C09's unplanned-stay rule — the colleague confirmed it was paid), the stay where it ends paying its Tabela 34 rates (casebook
   C08, MAN: "teria de assumir as ajudas de lá"; "aquele do prevenir é especial"). Open: per diem for an IO normal
-  alone at base. Without a report, the roster shows APT / assistência / PLS instead of IO (APT not parsed yet).
+  alone at base. Without a report, the roster shows APT / assistência / PLS instead of IO. **APT = assistência no aeroporto**
+  (user, 0.9.3.18): parsed as `Standby Airport` / code APT, timed like the IO — 50% duty (pilots), per diem A, RAACO 4.5.5.5.
 - **PDF history** (since 0.9.3, user request): `/pdfs` groups the saved PDFs in tabs by year → month of the DOWNLOAD
   (local time), newest first, each named by its download day/time; deleting asks first (the PDFs replay planned vs
   flown and the IO prevenir).

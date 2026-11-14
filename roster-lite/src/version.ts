@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.3.14';
+export const APP_VERSION = '0.9.3.24';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,78 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.9.3.24',
+    date: '2026-11-14',
+    highlights: [
+      'Abonos (em testes): as épocas IATA (verão desde o último domingo de março, inverno desde o último domingo de outubro) passam a estar na app para todos os anos — se um país mudar a hora a meio de uma época, a refeição embarcada segue a hora do início da época, como no plano de refeições.',
+    ],
+  },
+  {
+    version: '0.9.3.23',
+    date: '2026-11-14',
+    highlights: [
+      'Abonos (em testes): nos voos de Marrocos entre 20/09 e 25/10/2026 a refeição embarcada segue o plano da época de verão, ainda na hora antiga (UTC+1) — por exemplo, o almoço a bordo num RAK→LIS ao fim da manhã deixa de ser pago, como no extrato de um colega.',
+    ],
+  },
+  {
+    version: '0.9.3.22',
+    date: '2026-11-14',
+    highlights: [
+      'Marrocos passa a UTC+0 desde 20/09/2026, mesmo que o telemóvel ainda tenha a hora antiga: horas locais em RAK, CMN… e abonos certos.',
+      'Abonos (experimental): numa pernoita não planeada (o último voo voltou ao aeroporto de onde saiu), o pequeno-almoço do hotel passa a ser pago pela Tabela 34, e o voo de regresso no dia seguinte paga as refeições pela Tabela 33 — como no extrato de setembro de um colega.',
+    ],
+  },
+  {
+    version: '0.9.3.21',
+    date: '2026-11-14',
+    highlights: [
+      'Corrigido: Alicante (ALC) e vários outros aeroportos não tinham fuso horário, e as horas locais ficavam com a hora de Lisboa — uma hora de diferença em Espanha, França, Itália… Mudava as horas mostradas e os abonos (um almoço embarcado no ALC→LIS aparecia como pago).',
+    ],
+  },
+  {
+    version: '0.9.3.20',
+    date: '2026-11-14',
+    highlights: [
+      'Redução de repouso calculada ao minuto pela própria escala: o mínimo do AE (12 h na base, 10 h fora, ou o serviço anterior se for maior, +2 h depois das 02:00–05:59) menos o descanso real, da chegada do dia anterior (+30 min) à apresentação. Nos dias com "Redução Repouso" conta sozinho; podes escrever outro valor, ao minuto.',
+    ],
+  },
+  {
+    version: '0.9.3.19',
+    date: '2026-11-14',
+    highlights: [
+      'Voo em dia de folga (pilotos, experimental): a app lê o "Voo em Off" da escala e, no dia, escolhes "Recebo" ou "Gozo a folga". Se recebes, o Vencimento conta 3% do VB por hora de serviço de voo + 15% do VB pelo dia (RRRGS cl. 13), fora dos plafonds. Num voo sem a marca, podes indicar à mão que era folga.',
+      'Redução de repouso (pilotos, experimental): no dia, indicas os minutos reduzidos (até 2 h, RUPT cl. 34.3); o Vencimento paga-os em duty-pay, fora dos plafonds (RRRGS cl. 2.8). A app lê também o "Redução Repouso" da escala.',
+    ],
+  },
+  {
+    version: '0.9.3.18',
+    date: '2026-11-14',
+    highlights: [
+      'O código APT (assistência no aeroporto) passa a ser lido, com hora de início e fim: conta como a assistência no aeroporto — 50% no serviço (pilotos), ajuda de custo A e abonos de refeição.',
+    ],
+  },
+  {
+    version: '0.9.3.17',
+    date: '2026-11-14',
+    highlights: [
+      'O "R" da escala passa a ser lido: o serviço foi pedido pelo tripulante (requested) — uma folga pedida, exames médicos na clínica que escolheste, um voo. Aparece no dia como "Pedido". É só informação.',
+    ],
+  },
+  {
+    version: '0.9.3.16',
+    date: '2026-11-14',
+    highlights: [
+      'Exames médicos feitos em separado: o dia com IM + VIM conta 4h00 de serviço (o VIM faz parte do bloco do IM, como no DT da escala) e o dia do MED conta as suas horas (ex.: 3h00). Antes o VIM somava meia hora a mais.',
+    ],
+  },
+  {
+    version: '0.9.3.15',
+    date: '2026-11-14',
+    highlights: [
+      'Simulador EBT-2: o debriefing volta a ser de 30 min (era 1 h) — EBT-2 = briefing 1 h + sessão + debriefing 30 min; a EBT-1 fica 30 min + sessão + 1 h. Muda o tempo de serviço, o duty-pay, os limites e o descanso desses dias.',
+    ],
+  },
   {
     version: '0.9.3.14',
     date: '2026-11-14',
