@@ -60,9 +60,17 @@ export function airportTz(airport: string | null | undefined): string | undefine
   return airport ? AIRPORT_TZ[airport.toUpperCase()] : undefined;
 }
 
+// Morocco moved to UTC+0 for good on 20 Sep 2026 (user confirmed; tz data 2026e) — phones and
+// browsers with older timezone data still say UTC+1, so the change is fixed here.
+const MOROCCO_UTC0_FROM = Date.UTC(2026, 8, 20, 1, 0);
+const fixedOffset = (d: Date, tz: string): number | null =>
+  tz === 'Africa/Casablanca' && d.getTime() >= MOROCCO_UTC0_FROM ? 0 : null;
+
 // Minutes the timezone's clock is ahead of UTC at an instant (DST-aware).
 const offsetFmt = new Map<string, Intl.DateTimeFormat>();
 export function tzOffsetMinutes(d: Date, tz: string): number {
+  const fixed = fixedOffset(d, tz);
+  if (fixed !== null) return fixed;
   let f = offsetFmt.get(tz);
   if (!f) {
     f = new Intl.DateTimeFormat('en-US', {
@@ -78,6 +86,8 @@ export function tzOffsetMinutes(d: Date, tz: string): number {
 
 // Format a UTC instant as "HH:mm" in an arbitrary IANA timezone.
 function formatInTz(dt: Date, tz: string): string {
+  const fixed = fixedOffset(dt, tz);
+  if (fixed !== null) return new Date(dt.getTime() + fixed * 60000).toISOString().slice(11, 16);
   const formatted = new Intl.DateTimeFormat('en-GB', {
     timeZone: tz,
     hour: '2-digit',

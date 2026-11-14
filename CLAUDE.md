@@ -335,6 +335,10 @@ Things learned over this collaboration that should persist across sessions:
   prefilled) on `/abonos` and "EM TESTES" on the day card (user request) — keep it. **Windows are read in LOCAL time** (4.5.5.4; user decision): a UTC reading was
   tested on the same month and rejected — it fixes that DH lunch but invents a supper on an early report and
   loses the stay lunches on the days back, 9/11 vs 7–9/11. The ROV, the roster and the statement are not in the repo (the ROV 4.5 text is in the owner's Drive, see above).
+- **RAACO unplanned stay** (C09, since 0.9.3.22, user approved): when a duty's last sector came back to where it left
+  (an air/ramp return, X→X) the night away wasn't planned — no double catering — so the hotel breakfast is paid at
+  Tabela 34 and the next duty (the recovery flight) loads no crew meal: its main meals pay Tabela 33. **Morocco is UTC+0
+  from 20 Sep 2026** (user confirmed): fixed in `localTime.ts` (`fixedOffset`) because devices with older tz data say +1.
 - **RAACO casebook — every real case is kept forever** (user: "estes exemplos têm de servir para corrigir futuros
   problemas"): each crew feedback / checked statement line becomes an entry in
   `src/domain/__tests__/raacoCases.test.ts` (synthetic TP9xxx flight numbers, real airports/times, the columns
@@ -407,7 +411,7 @@ Things learned over this collaboration that should persist across sessions:
   (`ParsedDuty.prevenir`, stored in `crewroster.prevenir.<userId>`, applied by RosterProvider). `domain/irregularity.ts`.
   On the payslip the prevenir shows as "Per diem A PGA CTE T" (at base, taxed in full) — as the app counts it.
   An IO that is NOT the prevenir ("IO normal"): part of the day's PSV for everything — duty (the roster's DT runs to
-  the IO's end) and the RAACO meals by the usual rules, the stay where it ends paying its Tabela 34 rates (casebook
+  the IO's end) and the RAACO meals by the usual rules (since 0.9.3.22 C08's 09/04 breakfast is 29 € by C09's unplanned-stay rule — user to review), the stay where it ends paying its Tabela 34 rates (casebook
   C08, MAN: "teria de assumir as ajudas de lá"; "aquele do prevenir é especial"). Open: per diem for an IO normal
   alone at base. Without a report, the roster shows APT / assistência / PLS instead of IO. **APT = assistência no aeroporto**
   (user, 0.9.3.18): parsed as `Standby Airport` / code APT, timed like the IO — 50% duty (pilots), per diem A, RAACO 4.5.5.5.

@@ -40,6 +40,7 @@ nos testes de regra em `src/domain/__tests__/raaco.test.ts`.
 | C07b-IO-prevenir-marcado | 0.9.2 | (sem escala anterior guardada para comparar) | — | O tripulante marca o dia como prevenir; conta igual |
 | C07c-IO-prevenir-DT | 0.9.3.5 | Um colega teve de marcar o prevenir à mão. O utilizador: "Só quando o duty é exatamente igual, entre uma escala que existia sem IO, e depois passa a existir com IO, é que é prevenir" (Manchester não foi prevenir) | A app comparava a hora de início com uma apresentação que calcula (partida − 1 h), não com o duty da escala | Prevenir = **[DT] impresso igual** antes e depois do IO. Sem [DT] guardado (dias antigos): o IO tem de cobrir o serviço planeado — apresentação e fim (última chegada + 30 min) com margem de 15 min |
 | C08-IO-normal-MAN | 0.9.2.2 | IO normal: LIS→MAN, MAN→MAN, IO em MAN 11:00–15:08 UTC, estadia em Manchester, DH no dia seguinte — "teria de assumir as ajudas de lá" | (já dava o mesmo total; o IO ficava fora do PSV) | O IO faz parte do PSV do dia: refeições pelas regras normais com o período do IO, estadia com a Tabela 34 do sítio onde acaba. Só o prevenir é especial. *Sem extrato — regra do colega* |
+| C09-FNC-10-09-pernoita-nao-planeada | 0.9.3.22 | Extrato de setembro de um CP: 10/09 FNC→LIS pago p.-alm. 25 € + almoço 18 €; na véspera o FNC→LIS voltou ao Funchal (FNC→FNC), dia que na escala original acabava em Lisboa. O colega confirma o extrato | A app dava 0: tratava a estadia como planeada (pequeno-almoço embarcado à saída de Lisboa) e o almoço como embarcado no voo seguinte | **Pernoita não planeada** (último setor de volta ao aeroporto de onde saiu): pequeno-almoço do hotel pago pela Tabela 34 local (sem *double catering*, Tabela 35 nota 1 / 4.5.8.2); o voo de recuperação não leva refeição → refeições principais pela Tabela 33. **Mudou o C08** (MAN→MAN): p.-alm. de 09/04 passa a 29 € — o utilizador vai rever |
 
 ## Em aberto (registar aqui até haver dados)
 
@@ -65,15 +66,12 @@ nos testes de regra em `src/domain/__tests__/raaco.test.ts`.
     0.9.3.21; fica a diferença do **pequeno-almoço de 5 €** que a empresa paga (apresentação 06:00 local, LIS→ALC às 07:00:
     a app dá-o embarcado no 1.º setor). Por explicar.
   - **21/09 LIS–RAK–LIS**: planeado 1h35 / 1h40 (voado 1h36 / 1h29) — o bloco planeado passa 1h30, refeição embarcada; a
-    empresa paga 0. A app ainda paga 18 porque **o fuso de Marrocos mudou**: os dados de fuso mais recentes (tz 2026e) põem
-    Marrocos em UTC+0 desde 20/09/2026 e o RAK→LIS deixa de atravessar a hora de almoço; com UTC+1 bate. Por confirmar com o
-    utilizador.
+    empresa paga 0. A app paga 18: **Marrocos está em UTC+0 desde 20/09/2026** (confirmado pelo utilizador, fixado em 0.9.3.22)
+    e o RAK→LIS planeado (10:45–12:25 locais) não atravessa a hora de almoço. Com UTC+1 bateria. Por explicar — talvez a
+    empresa ainda faça o Meal Plan com a hora antiga, ou embarque o almoço no LIS→RAK.
   - **16/09 FNC→LIS 02:51**: com as horas voadas (fim antes das 06:00) a app dá 0, como o extrato; com as planeadas (03:05)
     daria pequeno-almoço 5 — a aquisição parece seguir o voado.
-  - **10/09 TP9261 FNC→LIS** (depois do FNC→FNC de 09/09; na escala original 09/09 acabava em LIS e 10/09 era W_OFF):
-    extrato p.-alm. 25 + almoço 18 — o colega confirma que está certo ("estava fora da base"). Pernoita não planeada → sem
-    *double catering*, pequeno-almoço da estadia pago (Tabela 34); voo de recuperação sem refeição → Tabela 33. **Contradiz o
-    C08** (MAN, sem extrato) — decisão do utilizador pendente.
+  - **10/09 TP9261 FNC→LIS**: resolvido — caso **C09** (0.9.3.22).
   - Exames médicos (resposta do colega): 2 dias = 2 per diem B, duty 3 h num e 4 h no outro — como a app (0.9.3.16).
 - **LYS 18/06 — ceia em falta**: mesmo padrão do C06, deve dar ceia 40 € + pernoita 10 €. Falta a
   escala do dia para o transformar em caso (C08).

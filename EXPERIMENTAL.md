@@ -50,6 +50,10 @@ produção, em vez de promover uma a uma.
 - **0.9.3.21** — fusos horários em falta (ALC e o resto da península, França, Itália, Alemanha, Reino Unido, Irlanda,
   Marrocos…): eram lidos na hora de Lisboa. Encontrado ao conferir setembro de um colega com o PDF original (20/09 ALC).
   Teste novo: todo o aeroporto com coordenadas tem fuso.
+- **0.9.3.22** — **Marrocos UTC+0 desde 20/09/2026** (utilizador; tz 2026e) fixado em `localTime.ts` (`fixedOffset`), para
+  não depender dos dados de fuso do telemóvel. **Pernoita não planeada** (C09, aprovado pelo utilizador): último setor de
+  volta ao aeroporto de partida → p.-alm. do hotel pago (Tabela 34) e o PSV seguinte sem catering (Tabela 33). Mudou o C08
+  (p.-alm. 29 € a 09/04) — o utilizador vai rever.
 
 ---
 
