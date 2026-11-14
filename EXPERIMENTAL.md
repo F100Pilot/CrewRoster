@@ -25,8 +25,9 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **0.9.3.26** — Abonos: o **embarque das refeições vê-se na hora de Lisboa** (a base), não na do aeroporto de partida
-  (caso C12: IBZ→LIS 12:05 UTC com almoço a bordo, confirmado pelo utilizador). Todos os casos anteriores passam.
+- **0.9.3.27** — Abonos: o **Meal Plan vê o PSV como um todo** (ROV 4.5.10.1; utilizador): pequeno-almoço só no 1.º
+  voo; cada refeição seguinte no voo da anterior ou num posterior com lugar, atravesse ou não o horário (caso C12:
+  IBZ→LIS com almoço a bordo). Todos os casos anteriores passam. (A 0.9.3.26 — hora de Lisboa — foi substituída.)
 
 ---
 
