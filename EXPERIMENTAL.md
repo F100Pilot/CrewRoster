@@ -28,6 +28,8 @@ produção, em vez de promover uma a uma.
 - **0.9.3.4 / 0.9.3.5** — prevenir = **DT impresso igual** antes e depois do IO (regra do utilizador; Manchester não
   foi prevenir). `pgaDutyTimes()` lê o [DT] de cada dia (`rosterDt`, PARSE_VERSION 18); `mergeDuties` guarda o do dia
   planeado em `planned.dutyMinutes`. Sem [DT]: o IO tem de cobrir apresentação e fim planeados (±15 min). Caso C07c.
+- **0.9.3.6** — campos de dinheiro: um número simples passa pelo `evalExpression` ("7.413,47" = 7413,47; antes
+  `Number()` lia "7.413" como 7,413 e recusava "7.413,47"). Relato "está a majorar o VB" ainda por esclarecer.
 
 ---
 

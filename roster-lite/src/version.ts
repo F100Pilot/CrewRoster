@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.3.5';
+export const APP_VERSION = '0.9.3.6';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,13 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.9.3.6',
+    date: '2026-11-14',
+    highlights: [
+      'Vencimento: um valor escrito como no recibo, com ponto dos milhares ("7.413,47"), passa a ser lido corretamente. Antes ficava 7,41 € (o ponto era lido como vírgula) — se o teu VB ou outro valor ficou errado assim, volta a escrevê-lo.',
+    ],
+  },
   {
     version: '0.9.3.5',
     date: '2026-11-14',
