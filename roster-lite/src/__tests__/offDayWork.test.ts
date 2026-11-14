@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_PAY_SETTINGS, payEstimate, type PaySettings } from '../domain/payEstimate';
-import { offDayChoice, restCutOf } from '../domain/offDayWork';
+import { autoRestCut, offDayChoice, restCutOf } from '../domain/offDayWork';
 import { interpretPgaGrid } from '../parsing/pdf/pgaGrid';
 import type { PositionedToken } from '../parsing/pdf/extractText';
 import type { ParsedDuty } from '../domain/types';
@@ -41,8 +41,8 @@ describe('flight on a planned day off (RRRGS cl. 13)', () => {
 });
 
 describe('reduced rest typed by the pilot (RRRGS cl. 2.8)', () => {
-  it('caps at 120 minutes and pays the time cut at 3% of the VB an hour', () => {
-    expect(restCutOf(trip('2026-09-29', { restCutMin: 150 }))).toBe(120);
+  it('takes the typed minutes as they are, to the minute, and pays them at 3% of the VB an hour', () => {
+    expect(restCutOf(trip('2026-09-29', { restCutMin: 97 }))).toBe(97);
     const r = payEstimate(trip('2026-09-29', { restCutMin: 90 }), '2026-09', S, '2026-09-30');
     expect(r.reducedMinutes).toBe(90);
     expect(r.reductionValue).toBeCloseTo(1.5 * 0.03 * 5000, 2);
@@ -67,3 +67,31 @@ describe('roster remarks', () => {
     expect(flight([tok('Reducao Repouso', 203, 340)])[0].observations).toBe('RED_REP');
   });
 });
+
+describe('reduced rest worked out from the roster, to the minute', () => {
+  const rest = (restMinutes: number, requiredMinutes: number, away = false) =>
+    ({ date: '2026-09-27', restMinutes, requiredMinutes, away, short: restMinutes < requiredMinutes });
+
+  it('is the minimum less the rest taken; at base at most 2 h; nothing when the rest was enough', () => {
+    expect(autoRestCut(rest(11 * 60 + 13, 12 * 60))).toBe(47);
+    expect(autoRestCut(rest(9 * 60, 12 * 60))).toBe(120);
+    expect(autoRestCut(rest(9 * 60 + 50, 12 * 60, true))).toBe(130);
+    expect(autoRestCut(rest(14 * 60 + 20, 12 * 60))).toBe(0);
+    expect(autoRestCut(null)).toBeNull();
+  });
+
+  it('applies by itself on a day marked "Reducao Repouso"; a typed figure wins', () => {
+    const marked = trip('2026-09-27', { observations: 'RED_REP' });
+    expect(restCutOf(marked, rest(11 * 60 + 13, 12 * 60))).toBe(47);
+    expect(restCutOf(trip('2026-09-27'), rest(11 * 60 + 13, 12 * 60))).toBeNull();
+    expect(restCutOf(trip('2026-09-27', { observations: 'RED_REP', restCutMin: 30 }), rest(11 * 60 + 13, 12 * 60))).toBe(30);
+  });
+
+  it('pays the worked-out cut in the estimate (rest before 27/09: release 00:47z → report 12:00z = 11h13)', () => {
+    const prev = [leg('2026-09-26', 'LIS', 'MAD', '20:00', '21:20', { reportingTime: '19:00' }), leg('2026-09-26', 'MAD', 'LIS', '22:30', '00:17')];
+    const day = [leg('2026-09-27', 'LIS', 'MAD', '13:00', '14:20', { reportingTime: '12:00', observations: 'RED_REP' }), leg('2026-09-27', 'MAD', 'LIS', '15:30', '17:00')];
+    const r = payEstimate([...prev, ...day], '2026-09', S, '2026-09-30');
+    expect(r.reducedMinutes).toBe(47);
+  });
+});
+

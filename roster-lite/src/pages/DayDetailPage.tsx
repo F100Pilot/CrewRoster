@@ -1,8 +1,8 @@
-import { Alert, Box, Button, Card, CardContent, Chip, Divider, FormControlLabel, IconButton, Stack, Switch, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from '@mui/material';
+import { Alert, Box, Button, Card, CardContent, Chip, Divider, FormControlLabel, IconButton, Stack, Switch, TextField, ToggleButton, ToggleButtonGroup, Tooltip, Typography } from '@mui/material';
 import { ChevronLeft, ChevronRight, FlightLand, FlightTakeoff, Groups, Hotel, IosShare, Phone, WbSunny, Bedtime, Brightness4 } from '@mui/icons-material';
 import { Link } from '@mui/material';
 import { addDays, format, parseISO } from 'date-fns';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import { dutyColor } from '../theme';
@@ -31,7 +31,8 @@ import { localClock } from '../utils/localTime';
 import { utcDateTime } from '../utils/duration';
 import { briefLabel, ebtBriefing } from '../domain/simSession';
 import { canCompareIO, isIO, isPrevenirIO } from '../domain/irregularity';
-import { REST_CUT_MAX, markedOffDay, markedRestCut, offDayChoice, restCutOf } from '../domain/offDayWork';
+import { autoRestCut, markedOffDay, markedRestCut, offDayChoice, typedRestCut } from '../domain/offDayWork';
+import type { RestInfo } from '../domain/restPeriods';
 
 export default function DayDetailPage() {
   const { date } = useParams<{ date: string }>();
@@ -264,7 +265,7 @@ export default function DayDetailPage() {
         </Card>
       ))}
 
-      {pilot && date && <OffDayWork date={date} duties={duties} />}
+      {pilot && date && <OffDayWork date={date} duties={duties} rest={rest} />}
       {date && <RaacoDayCard date={date} />}
     </Stack>
   );
@@ -530,15 +531,18 @@ function daySummary(duties: ParsedDuty[]): string | undefined {
 // Pilots (AE): a flight on a planned day off — paid under RRRGS cl. 13 or the day kept for later —
 // and the minutes of a reduced rest (RRRGS cl. 2.8). Both read from the roster's remarks ("Voo em
 // Off", "Reducao Repouso") and settled by the pilot (colleagues' request); domain/offDayWork.ts.
-function OffDayWork({ date, duties }: { date: string; duties: ParsedDuty[] }) {
+function OffDayWork({ date, duties, rest }: { date: string; duties: ParsedDuty[]; rest: RestInfo | null }) {
   const { setOffDayPay, setRestCut } = useRoster();
   const flies = duties.some((d) => d.dutyType === 'Flight Duty' || d.dutyType === 'Positioning');
   const offMarked = markedOffDay(duties);
   const choice = offDayChoice(duties);
   const cutMarked = markedRestCut(duties);
-  const cut = restCutOf(duties);
-  if (!flies && !cutMarked && cut === null) return null;
-  const step = (m: number) => setRestCut(date, Math.max(0, Math.min(REST_CUT_MAX, (cut ?? 0) + m)));
+  const typed = typedRestCut(duties);
+  const auto = autoRestCut(rest);
+  const [shown, setShown] = useState(false);
+  const open = cutMarked || typed !== null || shown;
+  if (!flies && !open) return null;
+  const cut = typed ?? auto;
   return (
     <Card>
       <CardContent>
@@ -561,22 +565,35 @@ function OffDayWork({ date, duties }: { date: string; duties: ParsedDuty[] }) {
         ) : (
           <Button size="small" sx={{ mt: 0.5 }} onClick={() => setOffDayPay(date, 'paid')}>Este voo foi num dia de folga?</Button>
         ))}
-        {cutMarked || cut !== null ? (
+        {open ? (
           <Box mt={1.5}>
             <Typography variant="body2" fontWeight={700}>Redução de repouso{cutMarked ? ' (escala: "Redução Repouso")' : ''}</Typography>
-            <Box display="flex" alignItems="center" gap={1} mt={0.5}>
-              <Button size="small" variant="outlined" onClick={() => step(-5)} disabled={(cut ?? 0) <= 0}>−5</Button>
-              <Typography fontWeight={800} sx={{ minWidth: 72, textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>{cut ?? 0} min</Typography>
-              <Button size="small" variant="outlined" onClick={() => step(5)} disabled={(cut ?? 0) >= REST_CUT_MAX}>+5</Button>
-              {cut !== null && <Button size="small" onClick={() => setRestCut(date, null)}>Limpar</Button>}
+            {rest && rest.restMinutes !== null && (
+              <Typography variant="caption" color="text.secondary" display="block">
+                Descanso antes deste serviço: {formatDuration(rest.restMinutes)} (do fim do serviço anterior, chegada + 30 min,
+                à apresentação) · mínimo {formatDuration(rest.requiredMinutes)}{rest.away ? ' (fora da base)' : ''} →
+                {' '}calculado <strong>{auto ?? 0} min</strong>.
+              </Typography>
+            )}
+            <Box display="flex" alignItems="center" gap={1} mt={1} flexWrap="wrap">
+              <TextField id={`rest-cut-${date}`} size="small" label="Minutos reduzidos" type="number"
+                value={cut ?? ''} sx={{ width: 170 }}
+                slotProps={{ htmlInput: { min: 0, step: 1, inputMode: 'numeric' } }}
+                onChange={(e) => {
+                  const v = e.target.value === '' ? null : Math.max(0, Math.round(Number(e.target.value)));
+                  setRestCut(date, v === null || Number.isNaN(v) ? null : v);
+                }} />
+              {typed !== null && auto !== null && typed !== auto && (
+                <Button size="small" onClick={() => setRestCut(date, null)}>Usar o calculado ({auto} min)</Button>
+              )}
             </Box>
             <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
-              Os minutos que o repouso antes deste serviço foi reduzido (máx. 2 h, RUPT cl. 34.3). Pago em duty-pay,
-              fora dos plafonds (RRRGS cl. 2.8). {cut === null && cutMarked ? 'Indica quantos minutos.' : ''}
+              {typed !== null ? 'Valor escrito por ti. ' : auto !== null ? 'Calculado pela escala, ao minuto. ' : 'Sem horas para calcular: escreve os minutos. '}
+              Na base, até 2 h (RUPT cl. 34.3). Pago em duty-pay, fora dos plafonds (RRRGS cl. 2.8).
             </Typography>
           </Box>
         ) : (
-          <Button size="small" sx={{ mt: 0.5, display: 'block' }} onClick={() => setRestCut(date, 0)}>Houve redução de repouso?</Button>
+          <Button size="small" sx={{ mt: 0.5, display: 'block' }} onClick={() => { setShown(true); setRestCut(date, auto ?? 0); }}>Houve redução de repouso?</Button>
         )}
         <Typography variant="caption" color="text.secondary" display="block" mt={1}>{AE_DISCLAIMER}</Typography>
       </CardContent>

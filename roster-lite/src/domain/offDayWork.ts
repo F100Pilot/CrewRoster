@@ -1,4 +1,5 @@
 import type { ParsedDuty } from './types';
+import type { RestInfo } from './restPeriods';
 
 // Two things the pilot settles on the day page, over what the roster prints (pilots only — AE):
 //
@@ -31,7 +32,26 @@ export function offDayChoice(day: ParsedDuty[]): OffDayChoice | null {
 }
 
 // The minutes the pilot typed for the rest cut before this day, or null.
-export function restCutOf(day: ParsedDuty[]): number | null {
+export function typedRestCut(day: ParsedDuty[]): number | null {
   const v = day.find((d) => d.restCutMin != null)?.restCutMin;
-  return v == null ? null : Math.max(0, Math.min(REST_CUT_MAX, v));
+  return v == null ? null : Math.max(0, Math.round(v));
+}
+
+// The cut worked out from the roster itself, to the minute (user: "calcular automaticamente, em
+// relação à chegada do dia anterior e a saída do seguinte" — no earlier roster needed): the AE
+// minimum that applied (RUPT cl. 34.1/34.2 — 12 h at base, 10 h away, or the previous duty if
+// longer, +2 h after 02:00–05:59) less the rest taken, from the release (last on-blocks + 30 min)
+// to this day's report. At base it can't exceed 2 h (cl. 34.3); away, on a night stop, cl. 36.1.
+export function autoRestCut(rest: RestInfo | null | undefined): number | null {
+  if (!rest || rest.restMinutes == null) return null;
+  const cut = Math.max(0, rest.requiredMinutes - rest.restMinutes);
+  return rest.away ? cut : Math.min(REST_CUT_MAX, cut);
+}
+
+// The cut that counts for the day: the pilot's own figure, else the worked-out one on a day the
+// roster marks "Reducao Repouso"; null when neither applies.
+export function restCutOf(day: ParsedDuty[], rest?: RestInfo | null): number | null {
+  const typed = typedRestCut(day);
+  if (typed !== null) return typed;
+  return markedRestCut(day) ? autoRestCut(rest) : null;
 }

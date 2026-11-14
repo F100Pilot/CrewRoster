@@ -43,6 +43,10 @@ produção, em vez de promover uma a uma.
   `restCutMin`). Vencimento: dia pago = FDP × 3% VB/h + 15% VB, fora dos créditos duty/block; minutos escritos substituem a
   redução do planeado-vs-voado nesse dia. `domain/offDayWork.ts`. PARSE_VERSION 25. **Falta confirmar com um PDF real** como
   as duas anotações vêm no texto.
+- **0.9.3.20** — redução de repouso **calculada ao minuto** pela escala (utilizador: "ao minuto… em relação à chegada do dia
+  anterior e a saída do seguinte", mesmo sem a escala original): `autoRestCut(rest)` = mínimo AE − descanso real
+  (`restPeriods`), máx. 2 h na base (34.3), sem teto fora (36.1). Conta sozinho nos dias `RED_REP`; o valor escrito (campo
+  numérico ao minuto, sem passos de 5) ganha. Vencimento usa `restCutOf(day, rest)`.
 
 ---
 

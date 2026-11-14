@@ -10,6 +10,7 @@ import { HOLIDAY_ENTITLEMENT_DAYS } from './aeCompliance';
 import type { ParsedDuty } from './types';
 import { countryOf, raacoDays } from './raaco';
 import { fdpForDay } from './fdp';
+import { restPeriods } from './restPeriods';
 import { OFF_DAY_BONUS, OFF_DAY_HOURLY, offDayChoice, restCutOf } from './offDayWork';
 
 // A gross monthly pay estimate for a Portugália pilot, from the RRRGS (the pay annex of the
@@ -470,7 +471,8 @@ export function payEstimate(
   const hourly = RATE_L1 * s.vb;
   const extensionValue = pvf.extensions.length * EXTENSION_HOURS * hourly;
   // A cut the pilot typed for a day replaces the planned-vs-flown one for that day.
-  const typedCuts = [...days].filter(([date]) => inMonth(date)).map(([date, day]) => [date, restCutOf(day)] as const)
+  const restByDate = new Map(restPeriods(duties, 'pilot', base).map((r) => [r.date, r]));
+  const typedCuts = [...days].filter(([date]) => inMonth(date)).map(([date, day]) => [date, restCutOf(day, restByDate.get(date))] as const)
     .filter((x): x is readonly [string, number] => x[1] !== null && x[1] > 0);
   const typedCutDates = new Set(typedCuts.map(([date]) => date));
   const reducedMinutes = pvf.reductions.filter((r) => !typedCutDates.has(r.date)).reduce((sum, r) => sum + r.cut, 0)

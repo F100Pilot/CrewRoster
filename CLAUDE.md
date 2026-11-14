@@ -354,7 +354,10 @@ Things learned over this collaboration that should persist across sessions:
   trip the totals-box filter). Day page card "Folga e repouso": **Recebo / Gozo a folga** (RRRGS cl. 13 — paid by default
   when marked: FDP hours × 3% VB + 15% VB per day, outside the duty/block plafond credits, cl. 13.5; kept = ordinary day,
   RUPT cl. 15.9 b / 15.19) and the **minutes of a reduced rest** (0–120, RUPT 34.3; paid in duty-pay outside the plafonds,
-  RRRGS 2.8; a typed value > 0 replaces the planned-vs-flown reduction of that day). Stored per user
+  RRRGS 2.8; a typed value > 0 replaces the planned-vs-flown reduction of that day). Since 0.9.3.20 the cut is **worked
+  out to the minute from the roster itself** (user: no earlier roster needed): `autoRestCut()` = the AE minimum
+  (`restPeriods`) − the rest taken (release = last on-blocks + 30 min → report), capped at 2 h at base; it counts by itself
+  on a `RED_REP` day, and a typed figure (to the minute) wins. Stored per user
   (`crewroster.offDayPay.*`, `crewroster.restCut.*`), applied in RosterProvider; `domain/offDayWork.ts`. Not yet checked
   against a real PDF carrying the remarks.
 - **Medical exams** (IM / VIM / MED, `Medical`, timed): done apart (a colleague, 0.9.3.16) the roster has MED on one day

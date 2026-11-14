@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.3.19';
+export const APP_VERSION = '0.9.3.20';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,13 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.9.3.20',
+    date: '2026-11-14',
+    highlights: [
+      'Redução de repouso calculada ao minuto pela própria escala: o mínimo do AE (12 h na base, 10 h fora, ou o serviço anterior se for maior, +2 h depois das 02:00–05:59) menos o descanso real, da chegada do dia anterior (+30 min) à apresentação. Nos dias com "Redução Repouso" conta sozinho; podes escrever outro valor, ao minuto.',
+    ],
+  },
   {
     version: '0.9.3.19',
     date: '2026-11-14',
