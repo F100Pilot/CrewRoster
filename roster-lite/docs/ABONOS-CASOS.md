@@ -59,18 +59,22 @@ nos testes de regra em `src/domain/__tests__/raaco.test.ts`.
   rejeitado: embarcar fora do horário (4.5.4.5) acerta 5/8 mas parte o pequeno-almoço de maio; uma refeição por
   PSV (4.5.11.3) parte C04, C08 e o DHC de maio. **Falta:** um PDF de outubro descarregado antes dos voos, e saber se
   houve atraso / Flight Report em 02 e 10/10.
-- **Setembro 2026 de um CP — extrato 732 €, app (0.9.3.14) 725 €.** Iguais: 07–09/09 (VLC, AGP, FNC), 13–15/09 (MRS,
-  FNC), 26–27/09 (DUB). Diferentes:
-  - **10/09 TP9261 FNC→LIS** (09:55–11:35 UTC): extrato p.-alm. **25** + almoço **18**; app 0. Na véspera o último setor
-    foi **FNC→FNC** (19:34–20:09, regresso abortado — pernoita não planeada). Hipótese: sem night-stop planeado não há
-    *double catering* à saída de LIS (Tabela 35, nota 1), logo o pequeno-almoço da estadia é pago (4.5.8.2, Tabela 34
-    Portugal fora 25); o TP9261 (voo especial de recuperação) não teve refeição de tripulação → Tabela 33 (18). Áudio do
-    colega: "não tinha nem pequeno-almoço nem almoço". **Contradiz o C08** (MAN→MAN antes da estadia, p.-alm. 0 — sem
-    extrato). O TP9xxx não se distingue pela escala (e os testes usam TP9xxx sintéticos).
-  - **16/09 TP1696**: app p.-alm. 5, extrato nada. **20/09 TP1122**: extrato p.-alm. 5, app almoço 18. **21/09 TP1452
-    (LIS–RAK)**: app almoço 18, extrato nada — como o 14/10 de outubro (RAK: bloco planeado acima de 1h30?).
-  - **Falta:** a escala de 14–28/09, confirmar a pernoita não planeada de 09/09. O utilizador avisa que a empresa
-    interpreta alguns itens à sua maneira — vai dar mais informação. Nada aplicado.
+- **Setembro 2026 de um CP — extrato 732 €, app (0.9.3.14) 725 €.** Com o PDF ORIGINAL (impresso a 15/08) e a escala depois
+  do regresso: 13–15/09 (MRS, FNC), 22–23/09 (BIO, BCN), 26–28/09 (DUB) e 07–09/09 batem.
+  - **20/09 LIS–ALC–LIS**: o almoço que a app pagava era um **fuso em falta** (ALC lido na hora de Lisboa) — corrigido em
+    0.9.3.21; fica a diferença do **pequeno-almoço de 5 €** que a empresa paga (apresentação 06:00 local, LIS→ALC às 07:00:
+    a app dá-o embarcado no 1.º setor). Por explicar.
+  - **21/09 LIS–RAK–LIS**: planeado 1h35 / 1h40 (voado 1h36 / 1h29) — o bloco planeado passa 1h30, refeição embarcada; a
+    empresa paga 0. A app ainda paga 18 porque **o fuso de Marrocos mudou**: os dados de fuso mais recentes (tz 2026e) põem
+    Marrocos em UTC+0 desde 20/09/2026 e o RAK→LIS deixa de atravessar a hora de almoço; com UTC+1 bate. Por confirmar com o
+    utilizador.
+  - **16/09 FNC→LIS 02:51**: com as horas voadas (fim antes das 06:00) a app dá 0, como o extrato; com as planeadas (03:05)
+    daria pequeno-almoço 5 — a aquisição parece seguir o voado.
+  - **10/09 TP9261 FNC→LIS** (depois do FNC→FNC de 09/09; na escala original 09/09 acabava em LIS e 10/09 era W_OFF):
+    extrato p.-alm. 25 + almoço 18 — o colega confirma que está certo ("estava fora da base"). Pernoita não planeada → sem
+    *double catering*, pequeno-almoço da estadia pago (Tabela 34); voo de recuperação sem refeição → Tabela 33. **Contradiz o
+    C08** (MAN, sem extrato) — decisão do utilizador pendente.
+  - Exames médicos (resposta do colega): 2 dias = 2 per diem B, duty 3 h num e 4 h no outro — como a app (0.9.3.16).
 - **LYS 18/06 — ceia em falta**: mesmo padrão do C06, deve dar ceia 40 € + pernoita 10 €. Falta a
   escala do dia para o transformar em caso (C08).
 - **Almoço pago num DH LIS→FRA** com apresentação 8 min depois do fim do horário (hora local):

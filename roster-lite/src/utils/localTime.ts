@@ -12,20 +12,41 @@ const AIRPORT_TZ: Record<string, string> = {
   MAD: 'Europe/Madrid', BCN: 'Europe/Madrid', AGP: 'Europe/Madrid', SVQ: 'Europe/Madrid',
   VLC: 'Europe/Madrid', BIO: 'Europe/Madrid', VGO: 'Europe/Madrid', SCQ: 'Europe/Madrid',
   PMI: 'Europe/Madrid', IBZ: 'Europe/Madrid', MAH: 'Europe/Madrid',
+  // ALC was missing: a sector from Alicante was read on the Lisbon clock (an hour off — Sept 2026
+  // RAACO check), so the rest of the peninsula goes in too.
+  ALC: 'Europe/Madrid', OVD: 'Europe/Madrid', SDR: 'Europe/Madrid', LCG: 'Europe/Madrid', GRX: 'Europe/Madrid',
+  XRY: 'Europe/Madrid', LEI: 'Europe/Madrid', REU: 'Europe/Madrid', GRO: 'Europe/Madrid', ZAZ: 'Europe/Madrid',
+  VLL: 'Europe/Madrid', MJV: 'Europe/Madrid', PNA: 'Europe/Madrid', EAS: 'Europe/Madrid', BJZ: 'Europe/Madrid',
   LPA: 'Atlantic/Canary', TFN: 'Atlantic/Canary', TFS: 'Atlantic/Canary', ACE: 'Atlantic/Canary',
   // France
   NCE: 'Europe/Paris', CDG: 'Europe/Paris', ORY: 'Europe/Paris', LYS: 'Europe/Paris',
   TLS: 'Europe/Paris', BOD: 'Europe/Paris', MRS: 'Europe/Paris', NTE: 'Europe/Paris',
+  MPL: 'Europe/Paris', BIQ: 'Europe/Paris', LIL: 'Europe/Paris', SXB: 'Europe/Paris', RNS: 'Europe/Paris',
+  BES: 'Europe/Paris', CFE: 'Europe/Paris', MLH: 'Europe/Paris', BSL: 'Europe/Paris', AJA: 'Europe/Paris', BIA: 'Europe/Paris',
+  PUF: 'Europe/Paris', LRH: 'Europe/Paris', LDE: 'Europe/Paris', TLN: 'Europe/Paris',
   // Italy
   BLQ: 'Europe/Rome', FLR: 'Europe/Rome', FCO: 'Europe/Rome', MXP: 'Europe/Rome',
   LIN: 'Europe/Rome', VCE: 'Europe/Rome', NAP: 'Europe/Rome', TRN: 'Europe/Rome',
+  PSA: 'Europe/Rome', CTA: 'Europe/Rome', PMO: 'Europe/Rome', BRI: 'Europe/Rome', OLB: 'Europe/Rome', CAG: 'Europe/Rome',
+  GOA: 'Europe/Rome', BGY: 'Europe/Rome', VRN: 'Europe/Rome', TSF: 'Europe/Rome', AHO: 'Europe/Rome', SUF: 'Europe/Rome',
   // Germany
   FRA: 'Europe/Berlin', MUC: 'Europe/Berlin', DUS: 'Europe/Berlin', HAM: 'Europe/Berlin',
   STR: 'Europe/Berlin', BER: 'Europe/Berlin', CGN: 'Europe/Berlin', NUE: 'Europe/Berlin',
+  HAJ: 'Europe/Berlin', LEJ: 'Europe/Berlin', BRE: 'Europe/Berlin', DRS: 'Europe/Berlin', FMO: 'Europe/Berlin', DTM: 'Europe/Berlin',
   // Morocco
   RAK: 'Africa/Casablanca', CMN: 'Africa/Casablanca', RBA: 'Africa/Casablanca', TNG: 'Africa/Casablanca',
+  AGA: 'Africa/Casablanca', FEZ: 'Africa/Casablanca', OUD: 'Africa/Casablanca', NDR: 'Africa/Casablanca',
   // Rest of Europe
   LHR: 'Europe/London', LGW: 'Europe/London', MAN: 'Europe/London', DUB: 'Europe/Dublin',
+  STN: 'Europe/London', LTN: 'Europe/London', LCY: 'Europe/London', BHX: 'Europe/London', BRS: 'Europe/London',
+  EDI: 'Europe/London', GLA: 'Europe/London', NCL: 'Europe/London', LPL: 'Europe/London', SOU: 'Europe/London',
+  EXT: 'Europe/London', JER: 'Europe/Jersey', GCI: 'Europe/Guernsey',
+  ORK: 'Europe/Dublin', SNN: 'Europe/Dublin', NOC: 'Europe/Dublin', KIR: 'Europe/Dublin',
+  RTM: 'Europe/Amsterdam', EIN: 'Europe/Amsterdam', CRL: 'Europe/Brussels', LGG: 'Europe/Brussels', ANR: 'Europe/Brussels',
+  BRN: 'Europe/Zurich', SZG: 'Europe/Vienna', INN: 'Europe/Vienna', GRZ: 'Europe/Vienna',
+  ARN: 'Europe/Stockholm', GOT: 'Europe/Stockholm', BUD: 'Europe/Budapest', WAW: 'Europe/Warsaw', KRK: 'Europe/Warsaw',
+  ATH: 'Europe/Athens', IST: 'Europe/Istanbul', TLV: 'Asia/Jerusalem', TUN: 'Africa/Tunis', ALG: 'Africa/Algiers',
+  DSS: 'Africa/Dakar', DKR: 'Africa/Dakar', ABJ: 'Africa/Abidjan', BXO: 'Africa/Bissau', OXB: 'Africa/Bissau',
   AMS: 'Europe/Amsterdam', BRU: 'Europe/Brussels', LUX: 'Europe/Luxembourg',
   GVA: 'Europe/Zurich', ZRH: 'Europe/Zurich', VIE: 'Europe/Vienna',
   // Other countries in the RAACO per-diem table (ROV-PGA, Anexo 7.6, Tabela 34)

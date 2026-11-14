@@ -47,6 +47,9 @@ produção, em vez de promover uma a uma.
   anterior e a saída do seguinte", mesmo sem a escala original): `autoRestCut(rest)` = mínimo AE − descanso real
   (`restPeriods`), máx. 2 h na base (34.3), sem teto fora (36.1). Conta sozinho nos dias `RED_REP`; o valor escrito (campo
   numérico ao minuto, sem passos de 5) ganha. Vencimento usa `restCutOf(day, rest)`.
+- **0.9.3.21** — fusos horários em falta (ALC e o resto da península, França, Itália, Alemanha, Reino Unido, Irlanda,
+  Marrocos…): eram lidos na hora de Lisboa. Encontrado ao conferir setembro de um colega com o PDF original (20/09 ALC).
+  Teste novo: todo o aeroporto com coordenadas tem fuso.
 
 ---
 
