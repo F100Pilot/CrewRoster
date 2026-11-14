@@ -29,7 +29,7 @@ import RaacoDayCard from '../components/RaacoDayCard';
 import { PASS_MONO, PassCells, passOverline } from '../components/PassCard';
 import { localClock } from '../utils/localTime';
 import { utcDateTime } from '../utils/duration';
-import { briefLabel, ebtBriefing } from '../domain/simSession';
+import { briefLabel, ebtBriefing, ebtDutyMinutes } from '../domain/simSession';
 import { canCompareIO, isIO, isPrevenirIO } from '../domain/irregularity';
 import { autoRestCut, markedOffDay, markedRestCut, offDayChoice, typedRestCut } from '../domain/offDayWork';
 import type { RestInfo } from '../domain/restPeriods';
@@ -664,6 +664,14 @@ function GroundTimes({ duty, date, place }: { duty: ParsedDuty; date: string; pl
           { label: 'SESSÃO', value: span !== null ? formatDuration(span) : '—' },
           { label: 'DEBRIEFING', value: briefLabel(ebt.debriefMin) },
         ]} />
+      )}
+      {/* The duty the app counts — briefing + session + a 1-hour debriefing on both days (user, 0.9.3.25: the day-2
+          30 min is information only). Shown so nobody adds up the cells above and reads 30 min less (Nov 2026). */}
+      {ebt && span !== null && (
+        <Typography variant="caption" color="text.secondary" display="block" sx={{ px: 2, pt: 0.5 }}>
+          Serviço contado: <strong>{formatDuration(ebtDutyMinutes(ebt, span))}</strong> — briefing{' '}
+          {briefLabel(ebt.briefMin)} + sessão + {briefLabel(ebt.dutyDebriefMin)} de debriefing (limites, descanso e duty-pay).
+        </Typography>
       )}
     </Box>
   );

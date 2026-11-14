@@ -1,4 +1,5 @@
 import type { ParsedDuty } from './types';
+import { diffMinutes, formatDuration } from '../utils/duration';
 
 // EBT simulator sessions (LIS-EBT-1 / LIS-EBT-2, since Sep 2026): the roster only gives the session
 // block (4h00 or 5h00); the briefing and debriefing around it are not printed. User rule: day 1 has a
@@ -22,7 +23,12 @@ export function ebtBriefing(d: Pick<ParsedDuty, 'dutyType' | 'dutyCode'>): EbtBr
 export const briefLabel = (min: number) => (min < 60 ? `${min} min` : `${min / 60} h`);
 
 // One line for lists: "briefing 30 min · debriefing 1 h".
-export const ebtBriefingText = (b: EbtBriefing) => `briefing ${briefLabel(b.briefMin)} · debriefing ${briefLabel(b.debriefMin)}`;
+export const ebtBriefingText = (b: EbtBriefing, sessionMin?: number | null) =>
+  `briefing ${briefLabel(b.briefMin)} · debriefing ${briefLabel(b.debriefMin)}`
+  + (sessionMin ? ` · serviço ${formatDuration(ebtDutyMinutes(b, sessionMin))}` : '');
+
+/** The duty the app counts for an EBT session of `sessionMin` (briefing + session + the duty's debriefing). */
+export const ebtDutyMinutes = (b: EbtBriefing, sessionMin: number) => b.briefMin + sessionMin + b.dutyDebriefMin;
 
 const shift = (hhmm: string, min: number) => {
   const t = ((Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5)) + min) % 1440 + 1440) % 1440;
@@ -37,3 +43,7 @@ export function asWorked(d: ParsedDuty): ParsedDuty {
   const start = shift(d.departureTime, -b.briefMin);
   return { ...d, reportingTime: start, departureTime: start, arrivalTime: shift(d.arrivalTime, b.dutyDebriefMin) };
 }
+
+/** The session's length as the roster prints it (departure → arrival), or null. */
+export const sessionMinutes = (d: Pick<ParsedDuty, 'departureTime' | 'arrivalTime'>) =>
+  d.departureTime && d.arrivalTime ? diffMinutes(d.departureTime, d.arrivalTime) : null;

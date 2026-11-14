@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.3.34';
+export const APP_VERSION = '0.9.3.35';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,13 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.9.3.35',
+    date: '2026-11-14',
+    highlights: [
+      'EBT: o dia de simulador mostra o serviço contado — briefing + sessão + 1 h de debriefing (por exemplo EBT-2 de 5 h = 7h00), no dia, na lista e em "Hoje". O debriefing de 30 min do EBT-2 continua a ser só informação.',
+    ],
+  },
   {
     version: '0.9.3.34',
     date: '2026-11-14',

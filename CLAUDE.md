@@ -378,7 +378,9 @@ Things learned over this collaboration that should persist across sessions:
 - **EBT simulator briefing** (since 0.8.35, user rule): LIS-EBT-1 = briefing 30 min + debriefing 1 h, LIS-EBT-2 = briefing
   1 h + debriefing **30 min** (user, 0.9.3.15, from his own roster: "tem de ser 30 minutos" — 0.8.40.1 had made it 1 h
   after a colleague's November duty-pay) — but that 30 min is **information to the pilot only** (user, 0.9.3.25: "não é
-  para mudar no duty"): the DUTY keeps a 1-hour debriefing on both days (`dutyDebriefMin`, used by `asWorked`); the roster only prints the session (4h00/5h00). `domain/simSession.ts`; shown as
+  para mudar no duty"): the DUTY keeps a 1-hour debriefing on both days (`dutyDebriefMin`, used by `asWorked`); the roster only prints the session (4h00/5h00).
+  Since 0.9.3.35 the counted duty is SHOWN (`ebtDutyMinutes`, "serviço 7h00" on the day card, Lista and "Hoje") — a user
+  added up the cells (briefing 1 h · sessão · debriefing 30 min) and reported the duty as 30 min short. `domain/simSession.ts`; shown as
   information on the day, Lista card and "Hoje". The roster's times are the session only (user confirmed); since 0.8.37
   the DUTY counts briefing + session + debriefing (user: "o tempo de simulador conta o simulador mais o briefing e
   debriefing"): `asWorked()` widens EBT sessions inside `dutyWindow` / `dutyDay`, so duty-pay, limits, rest and the

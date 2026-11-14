@@ -37,6 +37,8 @@ produção, em vez de promover uma a uma.
   refeições em jogo (embarcadas ou pagas; nunca a ceia, DHC ou estadia); cartão "Refeições a bordo" + janela por dia e
   a mesma lista no cartão do dia; "Havia a bordo" → 0, "Não havia" → Tabela 33 (4.5.11.5/6). `components/MealConfirm.tsx`,
   `crewroster.mealOnboard.<user>`, `MealLine.askable` / `crew`.
+- **0.9.3.35** — EBT: **mostra o serviço contado** (briefing + sessão + 1 h, `ebtDutyMinutes`) no dia, na Lista e em
+  "Hoje" — um utilizador somava as células (debriefing 30 min) e lia 30 min a menos. A conta já estava certa desde 0.9.3.25.
 
 ---
 
