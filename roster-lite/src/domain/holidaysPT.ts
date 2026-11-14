@@ -40,3 +40,16 @@ export function nationalHolidays(year: number): Set<string> {
     shift(easter, 60), // Corpo de Deus
   ]);
 }
+
+// The base's municipal holiday counts too for the RRRGS cl. 12.2.d premium (colleagues, Nov 2026: "se for porto e apanhar
+// o dia 24 paga, se não for não; em Lisboa igual"): Santo António in Lisbon, São João in Porto. And Carnival (Shrove
+// Tuesday, Easter − 47 days) — user, Nov 2026: "Carnaval é para considerar como feriado". Only for the premium: the
+// working-day count of the holiday subsidy (autoHolidayPayMonth) keeps the national list.
+const MUNICIPAL: Record<string, string> = { LIS: '06-13', OPO: '06-24' };
+export function baseHolidays(year: number, base: string): Set<string> {
+  const out = nationalHolidays(year);
+  out.add(shift(easterSunday(year), -47)); // Carnaval
+  const md = MUNICIPAL[base.toUpperCase()];
+  if (md) out.add(`${year}-${md}`);
+  return out;
+}
