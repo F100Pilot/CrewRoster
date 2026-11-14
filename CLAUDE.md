@@ -179,8 +179,11 @@ Things learned over this collaboration that should persist across sessions:
   (RAACO, pp. 80–86) is there too since 0.9.3.15: "ROV-PGA - 4.5 Alimentação e ajudas de custo (texto)" (a Google Doc
   transcription) and "(capturas).pdf" (the user's screenshots), and the **Anexo 7.6** (Tabelas 32–36, pp. 419–420):
   "ROV-PGA - Anexo 7.6 Quadros RAACO (texto)" + "(capturas).pdf" — checked value by value against `raaco.ts` (all equal).
-  The full "ROV_R01.pdf" (18,5 MB) is in the user's Drive folder with the AE copies, but the connector reads only its first
-  79 pages as text and won't download files over 10 MB — ask for page captures or a split/compressed copy.
+  The full ROV is in the user's Drive folder with the AE copies, **split in three** (the connector won't download over
+  10 MB, and `read_file_content` only returns the first ~79 pages as text): "ROV_R01_parte01_p1-258.pdf",
+  "ROV_R01_parte02_p259-411.pdf" (mostly images — little text), "ROV_R01_parte03_p412-427.pdf" (Anexo 7.6 RAACO tables).
+  Read one with `download_file_content` (saved as a local file) + pdf.js text extraction into the scratchpad; delete the
+  copy after. The ROV sends FTL / rest / folga matters for pilots to the AE.
   Standby code windows (H509, H7+… pilots; A1…A8 cabin) come from the DOV notice of Feb 2025
   (`src/domain/standbyWindows.ts`). A/H codes are home standby (H = pilots, A = cabin).
 - **Every AE calculation is pilots-only (SIPLA)** — user rule. Limits/compliance/rest minima/FDP/
