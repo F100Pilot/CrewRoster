@@ -345,6 +345,10 @@ Things learned over this collaboration that should persist across sessions:
   Sunday of March / October, 01:00 UTC) and `seasonPlanOffsetMinutes()` in `localTime.ts` — the loading check
   (`planLocalMin` in `raaco.ts`) uses the airport's offset at the season's start; same as the real clock wherever clocks
   change with the seasons (Europe). Open: Morocco's Ramadan 2026 (UTC+0 mid-winter season) now plans on UTC+1.
+  **Since 0.9.3.26 the loading check runs on the BASE clock** (Lisbon/Porto), not the departure airport's (casebook C12,
+  user: an IBZ→LIS at 12:05 UTC — 14:05 in Ibiza — was "bem dentro da refeição embarcada"): the Meal Plan is drawn in
+  Lisbon and a turnaround's return is catered there. Every older case gives the same on the Lisbon clock. Entitlement
+  (what is due) and the times shown stay on local clocks.
 - **RAACO casebook — every real case is kept forever** (user: "estes exemplos têm de servir para corrigir futuros
   problemas"): each crew feedback / checked statement line becomes an entry in
   `src/domain/__tests__/raacoCases.test.ts` (synthetic TP9xxx flight numbers, real airports/times, the columns

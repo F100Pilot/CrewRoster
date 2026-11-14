@@ -190,6 +190,17 @@ const CASES: Case[] = [
     ],
     days: { '2026-10-08': [0, 0, 0, 0], '2026-10-14': [0, 0, 0, 0], '2026-10-15': [0, 0, 0, 0], '2026-10-16': [0, 0, 0, 0] },
   },
+  {
+    id: 'C12-IBZ-09-10-almoco-embarcado',
+    since: '0.9.3.26',
+    reported: 'Extrato de outubro de um FO: 09/10 LIS→IBZ→LIS (planeado 09:15–11:00 e 12:05–14:05 UTC) sem almoço pago. O utilizador confirma: o regresso de IBZ está "bem dentro da refeição embarcada" — havia almoço a bordo.',
+    rule: 'O embarque vê-se na hora da BASE (Lisboa), não na do aeroporto de partida: o regresso sai às 13:05 em Lisboa e atravessa o almoço (12:30–14:00). Em Ibiza seriam 14:05, cinco minutos depois do horário. Todos os casos anteriores dão o mesmo com a hora de Lisboa.',
+    duties: [
+      leg('2026-10-09', 'TP9121', 'LIS', 'IBZ', '09:15', '11:00', '08:15'),
+      leg('2026-10-09', 'TP9122', 'IBZ', 'LIS', '12:05', '14:05'),
+    ],
+    days: { '2026-10-09': [0, 0, 0, 0] },
+  },
 ];
 
 describe('RAACO casebook (real cases — none may regress)', () => {

@@ -25,7 +25,8 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(vazio — tudo promovido em 0.9.3.25)_
+- **0.9.3.26** — Abonos: o **embarque das refeições vê-se na hora de Lisboa** (a base), não na do aeroporto de partida
+  (caso C12: IBZ→LIS 12:05 UTC com almoço a bordo, confirmado pelo utilizador). Todos os casos anteriores passam.
 
 ---
 

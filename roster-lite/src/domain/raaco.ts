@@ -225,12 +225,15 @@ function psvMeals(p: Psv, base: string, nextIsStay: boolean, paidInStay: Set<str
 
   // Load each meal on a sector that can carry it: none on sectors up to 1h30 (4.5.11.4), one main
   // meal on sectors under 5 h (4.5.11.2), two on longer ones. The sector must fly through the meal's
-  // window on its departure clock (4.5.10.5) — or be the duty's first sector, for a meal due because
+  // window on the BASE clock — or be the duty's first sector, for a meal due because
   // the duty starts inside the window. As paid in May 2026: a breakfast due at a 07:56 report on a
   // 59-min first sector is not carried by a later sector at noon; it's paid.
+  // Base clock, not the departure airport's (4.5.10.5 reads "hora local de partida"), since 0.9.3.26: the Meal Plan is
+  // drawn in Lisbon and the return of a turnaround is catered there (C12: an IBZ→LIS leaving 12:05 UTC — 14:05 in
+  // Ibiza, 13:05 in Lisbon — had the crew lunch on board, user confirmed). Every older case agrees on both clocks.
   const room = new Map<Leg, number>(p.legs.map((l) => [l, blockMin(l) <= 90 ? 0 : blockMin(l) < 300 ? 1 : 2]));
   const flies = (l: Leg, a: Acquired) => {
-    const tz = tzOf(l.duty.departureAirport, base);
+    const tz = tzOf(base, base);
     const day = Math.round(Date.parse(`${a.day}T00:00:00Z`) / 86_400_000);
     const [ws, we] = a.meal === 'supper' && (l.duty.departureAirport ?? base).toUpperCase() !== base ? SUPPER_AWAY : WINDOW[a.meal];
     return planLocalMin(l.off, tz) <= day * 1440 + we && planLocalMin(l.on, tz) >= day * 1440 + ws;
