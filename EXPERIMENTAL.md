@@ -47,7 +47,9 @@ produção, em vez de promover uma a uma.
   "Agradecimentos" em Definições → Ajuda. Sem nomes.
 - **0.9.3.38** — **Explicações colapsadas** (utilizador): `components/InfoCollapse.tsx` (fechado por defeito) em Abonos
   ("Como a app calcula"), Códigos (UTC e hora local), AE (Planeado vs voado: "Como se conta") e Ajuda ("Instalar como
-  app", "Agradecimentos"). Avisos e "em testes" continuam abertos.
+  app"). Avisos e "em testes" continuam abertos.
+- **0.9.3.39** — **Agradecimentos sempre visíveis e a negrito** (utilizador): fora do colapso em Ajuda; nas Novidades num
+  campo próprio `ReleaseNote.thanks`, a negrito, acima das notas.
 
 ---
 

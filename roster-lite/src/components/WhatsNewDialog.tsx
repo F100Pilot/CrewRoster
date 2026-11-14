@@ -49,6 +49,9 @@ export default function WhatsNewDialog() {
             {notes.length > 1 && (
               <Typography variant="subtitle2" gutterBottom>Versão {n.version}</Typography>
             )}
+            {n.thanks && (
+              <Typography variant="body2" fontWeight={700} sx={{ my: 0.75 }}>{n.thanks}</Typography>
+            )}
             <List dense disablePadding>
               {n.highlights.map((h, i) => (
                 <ListItem key={i} disableGutters alignItems="flex-start" sx={{ py: 0.25 }}>

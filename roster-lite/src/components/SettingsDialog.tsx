@@ -645,13 +645,15 @@ export default function SettingsDialog({ open, onClose: close }: { open: boolean
             </InfoCollapse>
 
             {/* The owner's thanks (Nov 2026: "têm sido essenciais"). No names — crew names never go in the app or the repo. */}
-            <InfoCollapse card={false} title="Agradecimentos">
-              <Typography variant="body2" color="text.secondary">
+            {/* Always open and in bold (user, Nov 2026: "os agradecimentos têm de estar sempre visíveis e a bold"). */}
+            <Box>
+              <Typography variant="subtitle2" gutterBottom>💙 Agradecimentos</Typography>
+              <Typography variant="body2" fontWeight={700}>
                 A CrewRoster é feita por um piloto, mas não seria possível sem os colegas que ajudam a interpretar as cláusulas
                 do AE e do ROV, partilham escalas, extratos de abonos e recibos para conferir os cálculos, e testam cada nova
                 versão. Cada caso que enviam fica guardado e serve para corrigir os seguintes. Obrigado a todos.
               </Typography>
-            </InfoCollapse>
+            </Box>
 
             <Box>
               <Typography variant="subtitle2" gutterBottom>Sobre</Typography>

@@ -169,7 +169,8 @@ Things learned over this collaboration that should persist across sessions:
 - **Explanations are collapsed** (user, 0.9.3.38: "estas informações que são só explicações devem estar colapsadas …
   em todas as outras páginas"): help text — how the app counts, what a note means — goes in `components/InfoCollapse.tsx`
   (closed by default; `card={false}` inside a card or dialog). Warnings, "em testes" banners and missing-data alerts stay
-  open. New explanatory text uses it.
+  open. New explanatory text uses it. EXCEPT the thanks to colleagues (user: "têm de estar sempre visíveis e a bold"):
+  Ajuda → Agradecimentos open and bold, and `ReleaseNote.thanks` shown in bold in the Novidades. Never names.
 - **Labels/chips must line up vertically across repeated cards** (user: "alinha sempre"): give the
   leading text (e.g. the day's date) a fixed-width column so the chips after it start at the same x.
 - **When a fix "doesn't appear,"** suspect a stale stored roster (crew is baked at
