@@ -25,7 +25,8 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(nada — tudo promovido em `0.9.3.3`)_
+- **0.9.3.4** — prevenir reconhecido com margem de 15 min entre o início do IO e a apresentação planeada
+  (`PREVENIR_TOLERANCE_MIN`, `autoPrevenir`); caso C07c. Um colega tinha de o marcar à mão.
 
 ---
 

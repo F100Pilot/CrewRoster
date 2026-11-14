@@ -16,10 +16,21 @@ export const isIO = (d: ParsedDuty): boolean => d.dutyCode === 'IO';
 
 const ioStart = (d: ParsedDuty) => d.reportingTime ?? d.departureTime;
 
-// Read from the roster alone: the IO opens at the planned report.
+// How far the IO's start may be from the planned report and still be "at the report". The PDF has
+// no report time: the app takes the first departure − 1 h, while the real one is a few minutes off
+// (MAN case: departure 06:12, the roster's FDP puts the report at 05:15). A colleague's prevenir
+// wasn't recognised for that; an IO normal starts after about an hour of duty, well beyond this.
+export const PREVENIR_TOLERANCE_MIN = 15;
+
+const minutesOf = (hhmm: string) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5));
+
+// Read from the roster alone: the IO opens at the planned report (give or take the tolerance).
 export function autoPrevenir(d: ParsedDuty): boolean {
   const start = ioStart(d);
-  return isIO(d) && !!start && !!d.planned?.reportingTime && d.planned.reportingTime === start;
+  const plan = d.planned?.reportingTime;
+  if (!isIO(d) || !start || !plan) return false;
+  const diff = Math.abs(minutesOf(start) - minutesOf(plan));
+  return Math.min(diff, 1440 - diff) <= PREVENIR_TOLERANCE_MIN;
 }
 
 // The roster can tell: there is a planned report to compare the IO's start with.

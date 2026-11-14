@@ -37,6 +37,16 @@ describe('IO / prevenir', () => {
     expect(isPrevenirIO({ ...mergeDuties(planned, [io()])[0], prevenir: false })).toBe(true);
   });
 
+  it('the IO starts at the REAL report, a few minutes off the app\'s departure − 1 h: still the prevenir', () => {
+    // A colleague's case: the flight day was stored, the IO came in a later download, and the app
+    // asked instead of recognising it — the real report wasn't exactly 1 h before departure.
+    const day = [d({ flightNumber: 'TP9101', departureAirport: 'LIS', arrivalAirport: 'RAK', departureTime: '11:12', arrivalTime: '12:55', reportingTime: '10:12' })];
+    expect(isPrevenirIO(mergeDuties(day, [io('10:15')], '2026-11-01')[0])).toBe(true);
+    expect(isPrevenirIO(mergeDuties(day, [io('10:00')], '2026-11-01')[0])).toBe(true);
+    // An IO normal: reported, about an hour of duty, then the IO.
+    expect(isPrevenirIO(mergeDuties(day, [io('11:20')], '2026-11-01')[0])).toBe(false);
+  });
+
   it('a later download showing the same IO keeps the plan', () => {
     const first = mergeDuties(planned, [io()], '2026-11-01');
     const again = mergeDuties(first, [io()], '2026-11-05');
