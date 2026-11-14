@@ -119,9 +119,9 @@ describe('raacoDays', () => {
   });
 });
 
-// The Meal Plan sees the PSV as a whole (4.5.10.1; user, 0.9.3.27–28): breakfast on the first sector, each
-// later meal on a later sector — and a sector flying through a meal's window carries THAT meal, however early
-// the duty began ("se um dos voos cair em cima do período do jantar, o jantar embarca").
+// The Meal Plan (4.5.10; user, 0.9.3.28–29): a meal is loaded on a sector that, as PLANNED, flies in its period —
+// however early the duty began ("se um dos voos cair em cima do período do jantar, o jantar embarca"); what is due
+// follows the duty as flown, so a delay into a meal period the plan didn't cover is paid.
 describe('Meal Plan over the whole PSV', () => {
   it('loads the dinner on the evening sector of a duty that began in the morning', () => {
     const d = raacoDays([
@@ -131,16 +131,20 @@ describe('Meal Plan over the whole PSV', () => {
       leg('2026-10-20', 'TP9204', 'BCN', 'LIS', '19:00', '21:00'),
     ], 'LIS').get('2026-10-20')!;
     const where = Object.fromEntries(d.meals.map((m) => [m.meal, `${m.how} ${m.where}`]));
-    expect(where).toMatchObject({ breakfast: 'onboard TP9201', lunch: 'onboard TP9202', dinner: 'onboard TP9204' });
+    // No sector flies in the lunch period (TP9202 lands 12:05 in Lisbon, TP9203 leaves 16:30): the lunch is paid,
+    // on ground (O/G, 4.5.6 — the stop in Lisbon is over 1h30).
+    expect(where).toMatchObject({ breakfast: 'onboard TP9201', lunch: 'ground LIS', dinner: 'onboard TP9204' });
   });
 
-  it('keeps the dinner sector for the dinner: a lunch with no sector of its own is paid', () => {
-    const d = raacoDays([
-      leg('2026-10-21', 'TP9211', 'LIS', 'OPO', '12:15', '13:00', '11:15'),
-      leg('2026-10-21', 'TP9212', 'OPO', 'LIS', '17:00', '17:50'),
-      leg('2026-10-21', 'TP9213', 'LIS', 'FNC', '19:30', '21:15'),
-    ], 'LIS').get('2026-10-21')!;
-    expect(d.meals.find((m) => m.meal === 'lunch')).toMatchObject({ how: 'allowance' });
-    expect(d.meals.find((m) => m.meal === 'dinner')).toMatchObject({ how: 'onboard', where: 'TP9213' });
+  it('pays a meal a delayed flight runs into when the plan had no flight in that period', () => {
+    // Planned FNC→LIS 09:15–10:50 UTC (lands 11:50 in Lisbon, duty ends 12:20: no lunch); flown 10:15–11:50
+    // (11:15–12:50 in Lisbon): the duty now runs into lunch, but the Meal Plan loaded none — paid (4.5.11.5).
+    const out = leg('2026-10-22', 'TP9221', 'LIS', 'FNC', '07:00', '08:45', '06:00');
+    const late = { ...leg('2026-10-22', 'TP9222', 'FNC', 'LIS', '10:15', '11:50'), planned: { reportingTime: null, departureTime: '09:15', arrivalTime: '10:50' } } as ParsedDuty;
+    const d = raacoDays([out, late], 'LIS').get('2026-10-22')!;
+    expect(d.meals.find((m) => m.meal === 'lunch')).toMatchObject({ how: 'allowance', value: 18 });
+    // On time, the same duty ends before lunch: nothing is due.
+    const onTime = raacoDays([out, leg('2026-10-22', 'TP9222', 'FNC', 'LIS', '09:15', '10:50')], 'LIS').get('2026-10-22')!;
+    expect(onTime.meals.find((m) => m.meal === 'lunch')).toBeUndefined();
   });
 });

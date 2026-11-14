@@ -345,13 +345,13 @@ Things learned over this collaboration that should persist across sessions:
   Sunday of March / October, 01:00 UTC) and `seasonPlanOffsetMinutes()` in `localTime.ts` — the loading check
   (`planLocalMin` in `raaco.ts`) uses the airport's offset at the season's start; same as the real clock wherever clocks
   change with the seasons (Europe). Open: Morocco's Ramadan 2026 (UTC+0 mid-winter season) now plans on UTC+1.
-  **Since 0.9.3.27 the Meal Plan sees the PSV as a whole** (ROV 4.5.10.1; casebook C12; user: "o pequeno-almoço é em
-  relação ao primeiro voo, o almoço o segundo ou terceiro, seja o que for"): the breakfast is loaded on the FIRST sector
-  only; each later main meal on the sector of the meal before or a later one with room (> 1h30, one per sector < 5 h),
-  whether or not it flies through the window — preferring the one that does on its departure clock (season clock).
-  A sector flying through a meal's window is KEPT for that meal (0.9.3.28, user: "se um dos voos cair em cima do período
-  do jantar, o jantar embarca, mesmo que os voos anteriores tenham começado de manhã"): an earlier meal with no sector
-  of its own doesn't take it — it is paid.
+  **Since 0.9.3.29 (user rules, casebook C12): a meal is LOADED only on a sector that, as PLANNED, flies in its period**
+  ("temos sempre de ver se existe um voo no período de PA, AL ou JA. Se tiver, embarca") — read on the BASE clock (the
+  IBZ→LIS at 12:05 UTC is 14:05 in Ibiza but 13:05 in Lisbon and carried the lunch; every older case agrees on both
+  clocks); or on the first sector when the duty starts in the window. What is DUE follows the flown times (`psvsOf` on
+  the roster as it is; `asPlanned()` gives each leg's plan for loading and the block): a delay into a period the plan
+  didn't cover pays that meal ("quer dizer que originalmente não embarcava, e teve de ser pago", 4.5.11.5).
+  0.9.3.26–28 tried other readings on exp (Lisbon clock alone; any later sector) — replaced, never in production.
   (0.9.3.26 tried the Lisbon clock instead — replaced, never in production.)
 - **RAACO casebook — every real case is kept forever** (user: "estes exemplos têm de servir para corrigir futuros
   problemas"): each crew feedback / checked statement line becomes an entry in

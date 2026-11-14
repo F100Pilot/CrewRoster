@@ -52,8 +52,9 @@ nos testes de regra em `src/domain/__tests__/raaco.test.ts`.
   - **02/10 LIS–NCE–LIS** (regresso planeado 10:30–13:15 UTC = 12:30–15:15 em Nice) e **10/10 LIS–PMI–LIS** (regresso
     10:50–12:50 UTC = 12:50–14:50 em Palma): a empresa paga o almoço (18 €); pela regra da app o regresso atravessa a
     janela do almoço (12:30–14:00) e leva-o embarcado.
-  - **09/10 LIS–IBZ–LIS**: resolvido — caso **C12** (0.9.3.27, o Meal Plan vê o PSV como um todo).
-  - Pela regra do C12 os regressos de NCE e PMI levam o almoço (2.º voo, com lugar); a empresa pagou-o. **Pergunta ao colega:** havia almoço de tripulação a
+  - **09/10 LIS–IBZ–LIS**: resolvido — caso **C12** (0.9.3.29, embarque na escala planeada, hora de Lisboa).
+  - Planeado e voado, os regressos de NCE (11:30–14:15 em Lisboa) e PMI (11:50–13:50) caem no período do almoço → a app
+    dá-o embarcado; a empresa pagou-o. **Pergunta ao colega:** havia almoço de tripulação a
     bordo nos regressos de NCE (02/10) e PMI (10/10)? Se não havia (falha de catering / irregularidade, 4.5.11.5), a
     empresa pagou bem e a app só não o pode saber.
 - **Setembro 2026 de um CP — extrato 732 €, app (0.9.3.14) 725 €.** Com o PDF ORIGINAL (impresso a 15/08) e a escala depois

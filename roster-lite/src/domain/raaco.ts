@@ -211,6 +211,25 @@ const BASIS: Record<Basis, string> = {
 };
 
 const blockMin = (l: Leg) => Math.round((l.on.getTime() - l.off.getTime()) / 60000);
+// A sector as the Meal Plan saw it: its PLANNED times (kept when a later sync replaced them with the flown ones).
+// The plan decides what is loaded; what is due follows the duty as it happened (user, 0.9.3.29: "se a escala não
+// previa alguma dessas refeições e o voo chegou dentro desse período, quer dizer que originalmente não embarcava, e
+// teve de ser pago" — 4.5.11.5).
+const hm = (s: string) => Number(s.slice(0, 2)) * 60 + Number(s.slice(3, 5));
+const moved = (now: string | null, plan: string | null | undefined) => {
+  if (!now || !plan) return 0;
+  const d = hm(plan) - hm(now);
+  return d > 720 ? d - 1440 : d < -720 ? d + 1440 : d;
+};
+const asPlanned = (l: Leg): Leg => {
+  const p = l.duty.planned;
+  if (!p) return l;
+  return {
+    ...l,
+    off: new Date(l.off.getTime() + moved(l.duty.departureTime, p.departureTime) * 60000),
+    on: new Date(l.on.getTime() + moved(l.duty.arrivalTime, p.arrivalTime) * 60000),
+  };
+};
 const flightLabel = (l: Leg) => l.duty.flightNumber ?? `${l.duty.departureAirport}–${l.duty.arrivalAirport}`;
 const gapDistance = (l: Leg, a: Acquired) =>
   Math.max(0, l.off.getTime() - a.to.getTime(), a.from.getTime() - l.on.getTime());
@@ -224,36 +243,30 @@ function psvMeals(p: Psv, base: string, nextIsStay: boolean, paidInStay: Set<str
   if (p.minutes <= 180 && due.length > 1) due = [due.reduce((m, x) => (x.overlap > m.overlap ? x : m))];
 
   // Load each meal on a sector that can carry it: none on sectors up to 1h30 (4.5.11.4), one main
-  // meal on sectors under 5 h (4.5.11.2), two on longer ones. The Meal Plan sees the PSV as a whole
-  // (4.5.10.1), not each flight alone (user, 0.9.3.26: "o pequeno-almoço é em relação ao primeiro voo, o
-  // almoço o segundo ou terceiro, seja o que for"; 0.9.3.28: "se um dos voos cair em cima do período do jantar, o jantar
-  // embarca"): the breakfast goes on the FIRST sector only — as paid in
-  // May 2026, a breakfast due at a 07:56 report on a 59-min first sector is not carried by a later one —
-  // and each later meal on the sector of the meal before or a later one, whether or not it flies through
-  // the window (C12: an IBZ→LIS leaving at 14:05 in Ibiza carried the lunch). Among those, the sector flying
-  // through the window on its departure clock (4.5.10.5, the season's clock — C10) is preferred, then the nearest.
-  const room = new Map<Leg, number>(p.legs.map((l) => [l, blockMin(l) <= 90 ? 0 : blockMin(l) < 300 ? 1 : 2]));
-  const flies = (l: Leg, a: Acquired) => {
-    const tz = tzOf(l.duty.departureAirport, base);
+  // meal on sectors under 5 h (4.5.11.2), two on longer ones — the PLANNED block (4.5.11.4, "consoante o Block
+  // Time em cada período IATA"). A meal is loaded only on a sector that, as planned, flies through its window
+  // (user, 0.9.3.29: "temos sempre de ver se existe um voo no período de PA, AL ou JA. Se tiver, embarca") — or
+  // on the duty's first sector, for a meal due because the duty starts inside the window. As paid in May 2026:
+  // a breakfast due at a 07:56 report on a 59-min first sector is not carried by a later sector at noon; it's paid.
+  // The window is read on the BASE clock (C12: an IBZ→LIS leaving 12:05 UTC — 14:05 in Ibiza, 13:05 in Lisbon — had
+  // the crew lunch on board, user: "bem dentro da refeição embarcada"); the Meal Plan is drawn in Lisbon. Every older
+  // case agrees on both clocks.
+  const room = new Map<Leg, number>(p.legs.map((l) => [l, blockMin(asPlanned(l)) <= 90 ? 0 : blockMin(asPlanned(l)) < 300 ? 1 : 2]));
+  const flies = (leg: Leg, a: Acquired) => {
+    const l = asPlanned(leg);
+    const tz = tzOf(base, base);
     const day = Math.round(Date.parse(`${a.day}T00:00:00Z`) / 86_400_000);
     const [ws, we] = a.meal === 'supper' && (l.duty.departureAirport ?? base).toUpperCase() !== base ? SUPPER_AWAY : WINDOW[a.meal];
     return planLocalMin(l.off, tz) <= day * 1440 + we && planLocalMin(l.on, tz) >= day * 1440 + ws;
   };
   const out: MealLine[] = [];
-  let after = 0; // index of the sector that carried the last meal: the next one goes on it or later
   for (const a of due) {
     // The supper is never loaded (colleagues' statements: LYS 18/06, BCN 12/07, DUB, MRS, VLC — it is
     // always paid, even on a sector flying through its window), so it goes straight to the allowance.
     // After an unplanned stay the flight home is a recovery: no crew meal was planned for it (C09).
-    const open = a.meal === 'supper' || (noCatering && p.legs.every((l) => l.duty.dutyType !== 'Positioning')) ? [] : p.legs
-      .filter((l, i) => (room.get(l) ?? 0) > 0 && (a.meal === 'breakfast' ? i === 0 : i >= after));
-    // A sector flying through a LATER meal's window is kept for that meal ("se um dos voos cair em cima do
-    // período do jantar, o jantar embarca") — a lunch with no sector of its own is paid, not loaded on it.
-    const later = due.slice(due.indexOf(a) + 1).filter((b) => b.meal !== 'supper');
-    const own = open.filter((l) => flies(l, a));
-    const leg = (own.length ? own : open.filter((l) => !later.some((b) => flies(l, b))))
-      .sort((x, y) => gapDistance(x, a) - gapDistance(y, a))[0];
-    if (leg) after = p.legs.indexOf(leg);
+    const leg = a.meal === 'supper' || (noCatering && p.legs.every((l) => l.duty.dutyType !== 'Positioning')) ? undefined : p.legs
+      .filter((l) => (room.get(l) ?? 0) > 0 && (flies(l, a) || (a.basis === 'a' && l === p.legs[0])))
+      .sort((x, y) => gapDistance(asPlanned(x), a) - gapDistance(asPlanned(y), a))[0];
     const why = `${BASIS[a.basis]} (4.5.5.1 ${a.basis})`;
     if (leg && leg.duty.dutyType === 'Positioning') {
       // DHC: paid, not counted as a passenger meal (May 2026: the breakfast on a DH to Frankfurt at
@@ -335,15 +348,11 @@ const MAX_STAY_MS = 4 * 86_400_000;
 
 export function raacoDays(roster: ParsedDuty[], base: string): Map<string, RaacoDay> {
   const b = base.toUpperCase();
-  // The Meal Plan is built on the schedule (4.5.10), so a sector's planned times — kept when a later
-  // sync replaced them with the flown ones — decide which meals are due and where they're loaded.
-  const duties = roster.map((d) => (d.planned ? {
-    ...d,
-    reportingTime: d.planned.reportingTime ?? d.reportingTime,
-    departureTime: d.planned.departureTime ?? d.departureTime,
-    arrivalTime: d.planned.arrivalTime ?? d.arrivalTime,
-  } : d));
-  const psvs = psvsOf(duties, b);
+  // What is due follows the duty as it happened (the report stays the planned one — rosterMerge); where a meal is
+  // loaded follows the Meal Plan, i.e. each sector's planned times (`asPlanned`, 4.5.10). A delayed flight that
+  // ends up in a meal window the plan didn't cover gets that meal paid (user, 0.9.3.29; 4.5.11.5) — and a meal
+  // the flown times no longer reach isn't due (Sept 2026: an FNC→LIS early on the block gave no breakfast).
+  const psvs = psvsOf(roster, b);
   const lines: MealLine[] = [];
   const nights: NightLine[] = [];
   const stayOf = new Map<string, string>();
@@ -406,7 +415,7 @@ export function raacoDays(roster: ParsedDuty[], base: string): Map<string, Raaco
   // A day with no duty period of its own (a simulator during a stay, say) shows its first code.
   for (const d of days.values()) {
     if (d.start) continue;
-    const own = duties.find((x) => x.date === d.date && x.dutyType !== 'Day Off');
+    const own = roster.find((x) => x.date === d.date && x.dutyType !== 'Day Off');
     d.start = own?.dutyCode ?? null;
   }
   for (const d of days.values()) {

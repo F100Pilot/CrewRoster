@@ -192,9 +192,9 @@ const CASES: Case[] = [
   },
   {
     id: 'C12-IBZ-09-10-almoco-embarcado',
-    since: '0.9.3.27',
+    since: '0.9.3.29',
     reported: 'Extrato de outubro de um FO: 09/10 LIS→IBZ→LIS (planeado 09:15–11:00 e 12:05–14:05 UTC) sem almoço pago. O utilizador confirma: o regresso de IBZ está "bem dentro da refeição embarcada" — havia almoço a bordo.',
-    rule: 'O Meal Plan vê o PSV como um todo (4.5.10.1; utilizador: "o pequeno-almoço é em relação ao primeiro voo, o almoço o segundo ou terceiro, seja o que for"): o pequeno-almoço só no 1.º setor; cada refeição seguinte no setor da anterior ou num posterior com lugar, atravesse ou não o horário. O IBZ→LIS sai às 14:05 em Ibiza e leva o almoço.',
+    rule: 'O embarque vê-se na escala PLANEADA, num voo que cai no período da refeição, na hora da base (Lisboa): o regresso sai às 13:05 em Lisboa e atravessa o almoço (12:30–14:00). Em Ibiza seriam 14:05, cinco minutos depois do horário. Todos os casos anteriores dão o mesmo com a hora de Lisboa.',
     duties: [
       leg('2026-10-09', 'TP9121', 'LIS', 'IBZ', '09:15', '11:00', '08:15'),
       leg('2026-10-09', 'TP9122', 'IBZ', 'LIS', '12:05', '14:05'),
