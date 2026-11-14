@@ -7,7 +7,7 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.9.3.3`
+- **Produção (`master`) está em:** `0.9.3.6`
 - **Próxima versão ao promover:** a da experimental (cada atualização sobe a 4.ª casa)
 
 ## Como promover tudo para produção (quando estiver pronto)
@@ -25,11 +25,14 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(nada — tudo promovido em `0.9.3.3`)_
+_(nada — tudo promovido em `0.9.3.6`)_
 
 ---
 
 ## TODO / Backlog (decidir mais tarde)
+
+- **Vencimento "majorado"** (relato de utilizadores, nov 2026): por confirmar com captura do cartão — hipótese: o subsídio de
+  Natal no cartão de outubro (recibo de novembro). Se for, talvez uma caixa "Subsídio de Natal neste recibo".
 
 - **Google Calendar (0.9.1) está no código mas escondido** até existir o secret `VITE_GOOGLE_CLIENT_ID` (cliente
   OAuth "Web application", origem `https://f100pilot.github.io`, Calendar API ativa, âmbito

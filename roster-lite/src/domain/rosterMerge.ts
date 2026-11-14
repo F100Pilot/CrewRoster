@@ -70,8 +70,9 @@ function carryPlans(previous: ParsedDuty[], incoming: ParsedDuty[], asOfISO: str
 
 // An IO (irregularidade operacional) replaces the day's planned duty. What it replaced is the
 // evidence of the "prevenir" (domain/irregularity.ts): an IO starting at the planned report. So the
-// stored day's report is kept on the IO, as `planned` — the earliest report of the duties it
-// replaces, or the plan an IO already carried (a later download shows the same IO again).
+// stored day's report and printed duty time are kept on the IO, as `planned` — the earliest report and
+// last arrival of the duties it replaces, their [DT] — or the plan an IO already carried (a later
+// download shows the same IO again).
 function carryIoPlans(previous: ParsedDuty[], incoming: ParsedDuty[]): ParsedDuty[] {
   if (!incoming.some((d) => d.dutyCode === 'IO')) return incoming;
   return incoming.map((d) => {
@@ -79,10 +80,13 @@ function carryIoPlans(previous: ParsedDuty[], incoming: ParsedDuty[]): ParsedDut
     const before = previous.filter((p) => p.date === d.date);
     const kept = before.find((p) => p.dutyCode === 'IO' && p.planned)?.planned;
     if (kept) return { ...d, planned: kept };
-    const work = before.filter((p) => p.dutyCode !== 'IO' && p.reportingTime && p.dutyType !== 'Day Off' && p.dutyType !== 'Vacation')
-      .sort((a, b) => (a.reportingTime! < b.reportingTime! ? -1 : 1));
+    const busy = before.filter((p) => p.dutyCode !== 'IO' && p.dutyType !== 'Day Off' && p.dutyType !== 'Vacation');
+    // The report is on the first duty only (the parser derives it); the end is the last arrival.
+    const work = busy.filter((p) => p.reportingTime).sort((a, b) => (a.reportingTime! < b.reportingTime! ? -1 : 1));
     if (!work.length) return d;
-    const last = work[work.length - 1];
-    return { ...d, planned: { reportingTime: work[0].reportingTime, departureTime: work[0].departureTime, arrivalTime: last.arrivalTime } };
+    const last = [...busy].filter((p) => p.arrivalTime)
+      .sort((a, b) => ((a.departureTime ?? '') < (b.departureTime ?? '') ? -1 : 1)).pop() ?? work[0];
+    const dutyMinutes = before.find((p) => p.rosterDt !== undefined)?.rosterDt ?? null;
+    return { ...d, planned: { reportingTime: work[0].reportingTime, departureTime: work[0].departureTime, arrivalTime: last.arrivalTime, dutyMinutes } };
   });
 }

@@ -113,11 +113,11 @@ const CASES: Case[] = [
     id: 'C07-IO-prevenir',
     since: '0.9.2',
     reported: 'IO (irregularidade operacional) por causa do prevenir — chamado na apresentação para o teste de álcool, não fez o voo: os abonos desse dia são pagos e o duty conta. A app deixava o dia vazio.',
-    rule: 'IO que começa à hora da apresentação do PSV planeado = prevenir: o período do IO é um PSV na base e paga as refeições cujas janelas apanha, pela Tabela 33 (almoço 18 €).',
+    rule: 'IO com exatamente o mesmo duty do dia planeado ([DT] igual antes e depois) = prevenir: o período do IO é um PSV na base e paga as refeições cujas janelas apanha, pela Tabela 33 (almoço 18 €).',
     duties: [
       base('2026-11-01', {
         dutyType: 'Other', dutyCode: 'IO', departureAirport: 'LIS', reportingTime: '10:15', departureTime: '10:15', arrivalTime: '16:40',
-        planned: { reportingTime: '10:15', departureTime: '11:15', arrivalTime: '15:30' },
+        rosterDt: 385, planned: { reportingTime: '10:15', departureTime: '11:15', arrivalTime: '16:10', dutyMinutes: 385 },
       }),
     ],
     days: { '2026-11-01': [0, 18, 0, 0] },

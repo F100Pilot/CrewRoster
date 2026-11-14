@@ -38,8 +38,10 @@ export default function PaySettingsSection({ userId }: { userId: string }) {
 
   const onMoney = (field: MoneyField, raw: string) => {
     setText((t) => ({ ...t, [field]: raw }));
-    // A sum typed in the field ("69 + 236,38") counts as its result; a half-typed one waits.
-    const v = isExpression(raw) ? evalExpression(raw) ?? NaN : Number(raw.replace(/\s/g, '').replace(',', '.'));
+    // A sum typed in the field ("69 + 236,38") counts as its result; a half-typed one waits. A plain
+    // number goes through the same reader, so it's taken as the payslip writes it: "7.413,47" is
+    // 7413,47 € (Number() read "7.413" as 7,41 € and refused "7.413,47", leaving that behind).
+    const v = evalExpression(raw) ?? NaN;
     if (raw.trim() !== '' && !Number.isFinite(v)) return;
     const n = raw.trim() === '' ? 0 : Math.max(0, v);
     const cmd = s.veCommand ?? 0;

@@ -28,6 +28,8 @@ export interface ParsedDuty {
    * differ. See `mergeDuties`.
    */
   planned?: PlannedTimes;
+  /** The day's duty time as the roster prints it ([DT], minutes) — PDF grid only. */
+  rosterDt?: number;
   /**
    * IO (irregularidade operacional) only: the crew member's own mark that it was the "prevenir"
    * (called at the report for the alcohol test, so the flight wasn't flown). Undefined = decide
@@ -42,6 +44,8 @@ export interface PlannedTimes {
   reportingTime: string | null;
   departureTime: string | null;
   arrivalTime: string | null;
+  /** IO only: the replaced day's printed duty time ([DT], minutes), when the roster had it. */
+  dutyMinutes?: number | null;
 }
 
 // One crew member on a leg, from the PDF "Crew Information on Leg" section.

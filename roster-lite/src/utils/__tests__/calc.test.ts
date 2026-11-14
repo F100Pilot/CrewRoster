@@ -22,4 +22,13 @@ describe('evalExpression', () => {
     expect(isExpression('69+236,38')).toBe(true);
     expect(isExpression('305,38')).toBe(false);
   });
+
+  it('reads a plain amount as the payslip writes it (the money fields use it for every value)', () => {
+    expect(evalExpression('7.413,47')).toBe(7413.47);
+    expect(evalExpression('7.413')).toBe(7413);
+    expect(evalExpression('7413,47')).toBe(7413.47);
+    expect(evalExpression('7413.47')).toBe(7413.47);
+    expect(evalExpression('7 413,47')).toBe(7413.47);
+    expect(evalExpression('7413,')).toBe(7413);
+  });
 });
