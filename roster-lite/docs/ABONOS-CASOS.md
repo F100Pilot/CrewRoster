@@ -64,8 +64,9 @@ nos testes de regra em `src/domain/__tests__/raaco.test.ts`.
 - **Almoço pago num DH LIS→FRA** com apresentação 8 min depois do fim do horário (hora local):
   atraso, hora planeada diferente, ou regra própria do DH?
 - **Almoço de 18 € num setor de 1h37** (RAK→LIS): bloco planeado ≤ 1h30?
-- **Marrocos não está na Tabela 34**: os valores de estadia ficam de fora do total.
-- **Nota "Pernoita\*"** da Tabela 34: texto por confirmar.
+- **Marrocos não está na Tabela 34** (confirmado no Anexo 7.6, 14/11/2026): os valores de estadia ficam de fora do total.
+- ~~Nota "Pernoita\*" da Tabela 34~~ — confirmada (Anexo 7.6): "devido por cada noite em que o Tripulante esteja alojado
+  em estabelecimento hoteleiro". Tabelas 32–34 da app conferidas valor a valor com o Anexo 7.6: iguais.
 - **IO normal sozinho na base** (apresentou-se, ~1 h de serviço e depois IO, sem voos): os abonos seguem as regras
   normais (C08); **por confirmar** se paga ajuda de custo A (T) — por agora não paga. Sem apresentação, a escala
   mostra **APT**, assistência ou PLS em vez de IO — o código APT ainda não é lido (falta saber o que é).

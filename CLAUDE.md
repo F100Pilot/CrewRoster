@@ -177,7 +177,10 @@ Things learned over this collaboration that should persist across sessions:
   connector (`search_files` title contains 'AE SIPLA', then `read_file_content`; the RUPT is too long for one read,
   slice it). Quote clauses from there before implementing an AE rule; never commit the text. The **ROV-PGA cap. 4.5**
   (RAACO, pp. 80–86) is there too since 0.9.3.15: "ROV-PGA - 4.5 Alimentação e ajudas de custo (texto)" (a Google Doc
-  transcription) and "(capturas).pdf" (the user's screenshots); the Anexo 7.6 tables are not (values are in `raaco.ts`).
+  transcription) and "(capturas).pdf" (the user's screenshots), and the **Anexo 7.6** (Tabelas 32–36, pp. 419–420):
+  "ROV-PGA - Anexo 7.6 Quadros RAACO (texto)" + "(capturas).pdf" — checked value by value against `raaco.ts` (all equal).
+  The full "ROV_R01.pdf" (18,5 MB) is in the user's Drive folder with the AE copies, but the connector reads only its first
+  79 pages as text and won't download files over 10 MB — ask for page captures or a split/compressed copy.
   Standby code windows (H509, H7+… pilots; A1…A8 cabin) come from the DOV notice of Feb 2025
   (`src/domain/standbyWindows.ts`). A/H codes are home standby (H = pilots, A = cabin).
 - **Every AE calculation is pilots-only (SIPLA)** — user rule. Limits/compliance/rest minima/FDP/
