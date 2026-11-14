@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.3.6';
+export const APP_VERSION = '0.9.3.7';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,13 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.9.3.7',
+    date: '2026-11-14',
+    highlights: [
+      'Definições → Vencimento: o "Fixo por mês" passa a ser só a soma dos valores que escreves. Com o fundo de pensões automático somava também a contribuição PGA (6,5%) e parecia majorado (1 € dava 1,07 €). O cartão do Vencimento não mudou — já estava certo.',
+    ],
+  },
   {
     version: '0.9.3.6',
     date: '2026-11-14',

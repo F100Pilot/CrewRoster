@@ -176,9 +176,11 @@ export default function PaySettingsSection({ userId }: { userId: string }) {
             <Stack spacing={1.5}>
               <Box display="flex" alignItems="baseline">
                 <Box flexGrow={1}>{sectionTitle('Fixo por mês')}</Box>
-                {/* The sum to check against the payslip: every fixed line of the month, added up. */}
+                {/* The sum of what is typed below — nothing added: with the automatic pension, the PGA's
+                    6,5% sat in this total too, so 1 € typed showed 1,07 € ("está a majorar", crew). That
+                    contribution has its own line in the pension box and on the pay card. */}
                 <Typography variant="body2" fontWeight={700} sx={{ fontVariantNumeric: 'tabular-nums' }}>
-                  {EUR2.format(s.vb + s.ve + s.vs + s.extras + pension.contribution)}
+                  {EUR2.format(s.vb + s.ve + s.vs + s.extras)}
                 </Typography>
               </Box>
               <TextField

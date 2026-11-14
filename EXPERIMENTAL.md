@@ -25,14 +25,13 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(nada — tudo promovido em `0.9.3.6`)_
+- **0.9.3.7** — "Fixo por mês" nas Definições = soma dos campos (sem a contribuição PGA 6,5%): era o "majorado"
+  dos utilizadores (1 € → 1,07 €). O cartão do Vencimento estava certo.
 
 ---
 
 ## TODO / Backlog (decidir mais tarde)
 
-- **Vencimento "majorado"** (relato de utilizadores, nov 2026): por confirmar com captura do cartão — hipótese: o subsídio de
-  Natal no cartão de outubro (recibo de novembro). Se for, talvez uma caixa "Subsídio de Natal neste recibo".
 
 - **Google Calendar (0.9.1) está no código mas escondido** até existir o secret `VITE_GOOGLE_CLIENT_ID` (cliente
   OAuth "Web application", origem `https://f100pilot.github.io`, Calendar API ativa, âmbito
