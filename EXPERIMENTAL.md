@@ -7,7 +7,7 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.9.3.42`
+- **Produção (`master`) está em:** `0.9.3.44`
 - **Próxima versão ao promover:** a da experimental (cada atualização sobe a 4.ª casa)
 
 ## Como promover tudo para produção (quando estiver pronto)
@@ -25,11 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **0.9.3.43** — Majoração de feriados (colegas): **feriado municipal da base** (13/06 LIS, 24/06 OPO — `baseHolidays()`
-  em `holidaysPT.ts`, pela base do perfil) e **assistência num feriado a dobrar** (a parte da assistência no feriado, fora
-  da janela de trabalho, × a sua percentagem × 100%).
-- **0.9.3.44** — **Carnaval majorado como feriado** (utilizador): terça-feira de Carnaval (Páscoa − 47 dias) em
-  `baseHolidays()`; só para a majoração (a contagem de dias úteis do subsídio de férias fica com os nacionais).
+_(vazio — tudo promovido em 0.9.3.44)_
 
 ---
 
