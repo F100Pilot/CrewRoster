@@ -126,6 +126,12 @@ describe('payEstimate', () => {
     expect(opo24.block.credited).toBe(120);
   });
 
+  it('adds Carnival (Shrove Tuesday, Easter − 47 days) as a holiday — user, Nov 2026', () => {
+    // Easter 2027 = 28 Mar → Carnival = 9 Feb 2027 (winter: Lisbon = UTC).
+    const r = payEstimate([leg('2027-02-09', 'LIS', 'OPO', '07:00', '08:00', '06:00')], '2027-02', S, '2027-02-28');
+    expect(r.block.credited).toBe(120);
+  });
+
   it('doubles a home standby on a holiday: 10 h at 25% = 2h30, on a holiday 5 h', () => {
     // 1 Dec (winter: Lisbon = UTC), standby at home 08:00–18:00.
     const sby = duty('2026-12-01', 'Standby Home', { dutyCode: 'H7+', departureAirport: 'LIS', departureTime: '08:00', arrivalTime: '18:00' });
