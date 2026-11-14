@@ -1,6 +1,7 @@
 import { Box, Card, CardContent, Divider, Stack, Typography } from '@mui/material';
 import { dutyColor } from '../theme';
 import PageHero from '../components/PageHero';
+import InfoCollapse from '../components/InfoCollapse';
 import { MEAL_ICON, MEAL_SHORT } from '../components/MealIcon';
 import { MEAL_LABEL, type Meal } from '../domain/raaco';
 
@@ -87,12 +88,14 @@ export default function CodesPage() {
           })}
         </CardContent>
       </Card>
-      <Typography variant="caption" color="text.secondary">
+      <InfoCollapse title="Horas: UTC e hora local">
+      <Typography variant="body2" color="text.secondary">
         A escala vem em UTC (Zulu, "z"), mas a app mostra as horas em <strong>hora local (LT)</strong>
         do aeroporto: no detalhe do voo a partida e a chegada aparecem em LT, com o UTC entre
         parênteses por baixo, e a <strong>apresentação (check-in)</strong> é sempre em hora local.
         Só se recorre a UTC quando o fuso do aeroporto é desconhecido.
       </Typography>
+      </InfoCollapse>
     </Stack>
   );
 }

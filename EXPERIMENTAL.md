@@ -45,6 +45,9 @@ produção, em vez de promover uma a uma.
   `offDayPay: 'none'`, `restCutMin: -1`). Chip da turbulência legível (cor no `background`, não no `bgcolor`).
 - **0.9.3.37** — **Agradecimento aos colegas** (utilizador): primeiro ponto das Novidades desta edição + secção fixa
   "Agradecimentos" em Definições → Ajuda. Sem nomes.
+- **0.9.3.38** — **Explicações colapsadas** (utilizador): `components/InfoCollapse.tsx` (fechado por defeito) em Abonos
+  ("Como a app calcula"), Códigos (UTC e hora local), AE (Planeado vs voado: "Como se conta") e Ajuda ("Instalar como
+  app", "Agradecimentos"). Avisos e "em testes" continuam abertos.
 
 ---
 

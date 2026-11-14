@@ -166,6 +166,10 @@ Things learned over this collaboration that should persist across sessions:
   minimal (🅿 + number). Verified the parser against real DEP and ARR board captures.
 - **Layout/UX taste:** the user wants things **graphical, modern and vertically
   compact** on mobile; align related cards on one row rather than stacking.
+- **Explanations are collapsed** (user, 0.9.3.38: "estas informações que são só explicações devem estar colapsadas …
+  em todas as outras páginas"): help text — how the app counts, what a note means — goes in `components/InfoCollapse.tsx`
+  (closed by default; `card={false}` inside a card or dialog). Warnings, "em testes" banners and missing-data alerts stay
+  open. New explanatory text uses it.
 - **Labels/chips must line up vertically across repeated cards** (user: "alinha sempre"): give the
   leading text (e.g. the day's date) a fixed-width column so the chips after it start at the same x.
 - **When a fix "doesn't appear,"** suspect a stale stored roster (crew is baked at
