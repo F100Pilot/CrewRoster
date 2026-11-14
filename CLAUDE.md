@@ -344,7 +344,8 @@ Things learned over this collaboration that should persist across sessions:
 - **Medical exams** (IM / VIM / MED, `Medical`, timed): done apart (a colleague, 0.9.3.16) the roster has MED on one day
   ([DT] 3h00) and IM + VIM on another ([DT] 4h00 for IM 08:00–12:00 + VIM 12:00–12:30): the VIM is inside the IM's
   block, so `countedWork()` (`dutyTime.ts`) leaves a VIM out of the duty maths when the day has an IM; display unchanged.
-  An "R" printed before the airport (on IM and flights) is ignored by the parser — meaning unknown.
+  The roster's **"R" column** (a lone "R" between the duty code and the airport) = **requested** by the crew member (user,
+  0.9.3.17: a W_OFF asked for, medical exams at a clinic of their choice, a flight) → mark `REQ` ("Pedido"), info only.
 - **Settings are tabbed** (since 0.8.24): Perfil · Vencimento (pilots only) · App · Dados · Ajuda in
   `SettingsDialog.tsx`; last tab in localStorage `crewroster.settingsTab`. Guardar only on Perfil/App
   (the rest saves on change). New settings go in the tab for their subject, not at the bottom.

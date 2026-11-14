@@ -295,6 +295,11 @@ export function parseSubColumn(
         const login = w.match(/\b([A-Z]{3,})\s+(?:CLTC|CTRI)\b/)?.[1];
         if (login) cur.trainee = login;
       }
+    } else if (w === 'R') {
+      // The roster's "R" column, between the code and the airport: the duty was REQUESTED by the crew
+      // member (user, Nov 2026) — a day off asked for (W_OFF), medical exams at a clinic of their
+      // choice, a flight. Information only.
+      if (cur && !cur.notes.includes('REQ')) cur.notes.push('REQ');
     } else if (isAnnotation(w) || isCrewName(w)) {
       if (cur && /_INS$/.test(w)) cur.notes.push(w);
     } else if (cur) {

@@ -50,4 +50,15 @@ describe('pgaGrid — medical exam codes', () => {
     expect(flight[0].flightNumber).toBe('TP100');
     expect([flight[0].departureAirport, flight[0].arrivalAirport]).toEqual(['LIS', 'MED']);
   });
+
+  it('reads the "R" column (requested) as REQ on the duty, without changing it', () => {
+    const withR = interpretPgaGrid([
+      tok('01Sep26 -', 562, 745), tok('date', 496, 544), tok('Wed09', 203, 544), tok('Tue08', 232, 544),
+      tok('IM', 203, 502), tok('R', 203, 460), tok('LIS', 203, 440), tok('0800', 203, 419), tok('1200', 203, 398),
+      tok('VIM', 198, 502), tok('LIS', 198, 440), tok('1200', 198, 419), tok('1230', 198, 398),
+    ]).filter((d) => d.date === '2026-09-09');
+    expect(withR.map((d) => [d.dutyCode, d.departureAirport, d.departureTime, d.arrivalTime, d.observations])).toEqual([
+      ['IM', 'LIS', '08:00', '12:00', 'REQ'], ['VIM', 'LIS', '12:00', '12:30', null],
+    ]);
+  });
 });
