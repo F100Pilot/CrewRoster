@@ -19,6 +19,13 @@ describe('airport timezones', () => {
     expect(toLocalTime('2026-09-21', '10:45', 'RAK')).toBe('10:45');
     expect(tzOffsetMinutes(new Date('2026-08-15T12:00:00Z'), 'Africa/Casablanca')).toBe(60);
   });
+
+  it('keeps Morocco on UTC+0 for good: no summer time and no Ramadan changes any more (user confirmed)', () => {
+    for (const iso of ['2027-02-15T12:00:00Z', '2027-07-01T12:00:00Z', '2028-01-30T12:00:00Z', '2030-08-01T12:00:00Z']) {
+      expect(tzOffsetMinutes(new Date(iso), 'Africa/Casablanca')).toBe(0);
+      expect(seasonPlanOffsetMinutes(new Date(iso), 'Africa/Casablanca')).toBe(0);
+    }
+  });
 });
 
 // The Meal Plan is drawn per IATA season (ROV 4.5.10.2–3): a clock change mid-season doesn't move it.
