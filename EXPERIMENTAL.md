@@ -60,7 +60,8 @@ produção, em vez de promover uma a uma.
 
 - **Abonos RAACO (em produção, experimental):** conferido com maio 2026 (711 € vs 768 €). Por explicar: almoço
   de 39 € num DH LIS→FRA com apresentação 8 min depois do horário (atraso? hora planeada?) e almoço de 18 € num
-  RAK→LIS de 1h37 (bloco planeado ≤ 1h30?). Marrocos não está na Tabela 34; falta a nota "Pernoita*". Casos
+  RAK→LIS de 1h37 (bloco planeado ≤ 1h30?). Marrocos não está na Tabela 34 (confirmado no Anexo 7.6, como a nota "Pernoita*"). Outubro e setembro de
+  colegas conferidos com extrato, em aberto (horas planeadas, voos especiais, prática da empresa). Casos
   em aberto e resolvidos: `roster-lite/docs/ABONOS-CASOS.md`.
 
 - **Do AE SIPLA, ainda por fazer**: estimador de per diem (RRRGS cl. 9, tabela A2.2 —
@@ -73,4 +74,4 @@ produção, em vez de promover uma a uma.
 
 ---
 
-_Última atualização: 2026-11-12._
+_Última atualização: 2026-11-14._
