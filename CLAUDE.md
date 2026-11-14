@@ -207,6 +207,10 @@ Things learned over this collaboration that should persist across sessions:
   "Gabinete" (user, 0.9.3: `dutyLabel()` in `dutyLabels.ts`; use it, not `dutyTypeLabel`, for a duty's word). RUPT cl. 7.1 waives the
   FOLGA rules for qualification/command courses but never the weekly rest; the app can't tell a
   course apart, so folga warnings involving S.EXT./training carry a caveat instead of being dropped.
+  **S.EXT. is NOT duty for the limits** (user, 0.9.3.45, from a real November roster: CrewLink prints no [DT] under it and
+  its "Duty time" total, 62:55 = the sum of the printed [DT]s, leaves it out): `countsAsDuty()` in `dutyTime.ts` drops it
+  from `dutyDays` (AE/EASA limits, duty-pay, monthly totals) and the day page shows "Serviço: não conta". It stays a
+  working day for rest, folgas and per diem B (`workWindow` unchanged).
 - **AE analysis is labelled experimental everywhere it shows** (user request): `AeDisclaimer.tsx`.
   Limits / compliance / holidays live on `/limites`; the roster list only has a one-line summary
   (user wants the first page light).
@@ -404,8 +408,10 @@ Things learned over this collaboration that should persist across sessions:
   debriefing"): `asWorked()` widens EBT sessions inside `dutyWindow` / `dutyDay`, so duty-pay, limits, rest and the
   "Hoje" report time follow; displayed session times and block-pay stay on the session (block-pay = sim time only,
   user confirmed). The duty stays on this rule, NOT on the roster's printed [DT] (user: "mantém como estava"); found while
-  checking: the roster's DT also adds 30 min after a day-ending DHC (the app follows AE cl. 17: DHC ends at arrival) and
-  counts the lunch hour on GAB days — both left as they are, open questions to the user.
+  checking: the roster's DT also adds 30 min after a day-ending DHC (the app follows AE cl. 17: DHC ends at arrival) —
+  left as it is, an open question to the user. **Ground days (GAB, FP, medical) count from the first start to the last
+  end, the lunch included, as the [DT]** (user, 0.9.3.45: GAB1 09:30–13:00 + GAB2 14:00–17:30 = DT 8h00); until then
+  only the sessions counted.
 - **Flight on a day off & reduced rest** (since 0.9.3.19, colleagues' audios; pilots only): the roster's "Voo em Off" →
   mark `VOO_OFF`, "Reducao Repouso" → `RED_REP` (one token or word by word — a split "Off" must never start a day off nor
   trip the totals-box filter). Day page card "Folga e repouso": **Recebo / Gozo a folga** (RRRGS cl. 13 — paid by default

@@ -191,15 +191,29 @@ describe('dutyDays — company agreement (pilots)', () => {
   });
 });
 
-// A day with no flying counts its sessions, not the gap between them (RRRGS cl. 12.1 a, RUPT def. 46).
+// A day with no flying counts from the first start to the last end, the lunch included — as the
+// roster's [DT] (GAB1 09:30–13:00 + GAB2 14:00–17:30 = DT 8h00 on a real November roster).
 describe('dutyDays — dias só em terra', () => {
   const session = (date: string, code: string, from: string, to: string, type = 'Training') =>
     duty({ date, dutyType: type, dutyCode: code, reportingTime: from, departureTime: from, arrivalTime: to });
   const courseDay = (date: string) => [session(date, 'FP1', '09:30', '12:30'), session(date, 'FP2', '14:00', '17:00')];
 
-  it('leaves the lunch break between two training sessions out', () => {
+  it('counts the lunch break between two sessions, as the roster\'s [DT]', () => {
     const [d] = dutyDays(courseDay('2026-10-25'), PGA_PILOT_RULES);
-    expect(d.minutes).toBe(360); // 3h + 3h, not 09:30 → 17:00
+    expect(d.minutes).toBe(450); // 09:30 → 17:00
+    const [gab] = dutyDays([
+      session('2026-11-09', 'GAB1', '09:30', '13:00', 'Office Duty'),
+      session('2026-11-09', 'GAB2', '14:00', '17:30', 'Office Duty'),
+    ], PGA_PILOT_RULES);
+    expect(gab.minutes).toBe(8 * 60); // [DT 08:00]
+  });
+
+  it('leaves S.EXT. out of the duty (no [DT] under it on the roster)', () => {
+    const ext = (date: string) => session(date, 'S.EXT.', '08:00', '16:00', 'Office Duty');
+    expect(dutyDays([ext('2026-11-04'), ext('2026-11-05')], PGA_PILOT_RULES)).toEqual([]);
+    // Beside other work the same day, only the other work counts.
+    const [d] = dutyDays([ext('2026-11-04'), session('2026-11-04', 'FP1', '17:00', '18:00')], PGA_PILOT_RULES);
+    expect(d.minutes).toBe(60);
   });
 
   it('counts overlapping sessions once', () => {
@@ -218,8 +232,8 @@ describe('dutyDays — dias só em terra', () => {
     expect(d.minutes).toBe(5 * 60 + 30); // 08:00 → 13:00 + 30 min debrief
   });
 
-  it('puts a six-day course at 36h in the 7-day window, not 45h', () => {
+  it('puts a six-day course at 45h in the 7-day window', () => {
     const days = ['25', '26', '27', '28', '29', '30'].flatMap((d) => courseDay(`2026-10-${d}`));
-    expect(aeDutyTime(days, '2026-10-16').days7.minutes).toBe(36 * 60);
+    expect(aeDutyTime(days, '2026-10-16').days7.minutes).toBe(45 * 60);
   });
 });

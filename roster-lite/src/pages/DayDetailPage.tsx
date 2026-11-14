@@ -10,7 +10,7 @@ import { toLocalTime, checkInTimeLabel } from '../utils/localTime';
 import { diffMinutes, formatDuration } from '../utils/duration';
 import { baseOf, dayStats } from '../domain/dutyStats';
 import { restBefore } from '../domain/restPeriods';
-import { workWindow, PGA_PILOT_RULES } from '../domain/dutyTime';
+import { countsAsDuty, workWindow, PGA_PILOT_RULES } from '../domain/dutyTime';
 import { fdpForDay, type FdpInfo } from '../domain/fdp';
 import { dutyTags, type DutyTag } from '../domain/aeCompliance';
 import { LATE_MINUTES } from '../domain/planVsFlown';
@@ -48,8 +48,10 @@ export default function DayDetailPage() {
   const rest = date ? restBefore(roster?.duties ?? [], date, pilot ? 'pilot' : 'cabin', base) : null;
   // On duty until 30 min after the last on-blocks (RUPT cl. 6, def. 42) — the figure the limits use.
   const dutyMinutes = stats && pilot && date
-    ? workWindow(date, duties, PGA_PILOT_RULES)?.span ?? stats.dutyMinutes
+    ? workWindow(date, duties.filter(countsAsDuty), PGA_PILOT_RULES)?.span ?? stats.dutyMinutes
     : stats?.dutyMinutes;
+  // S.EXT. isn't duty for the limits (no [DT] under it on the roster — dutyTime.ts).
+  const notDuty = duties.length > 0 && !duties.some(countsAsDuty);
   const fdp = pilot && duties.length ? fdpForDay(duties, rest, base) : null;
   const tags = pilot && date ? dutyTags(date, duties) : [];
 
@@ -108,7 +110,7 @@ export default function DayDetailPage() {
         subtitle={daySummary(duties)}
         stats={stats ? [
           { label: 'Bloco', value: formatDuration(stats.blockMinutes) },
-          { label: 'Serviço', value: formatDuration(dutyMinutes ?? stats.dutyMinutes) },
+          { label: 'Serviço', value: notDuty ? 'não conta' : formatDuration(dutyMinutes ?? stats.dutyMinutes) },
         ] : undefined}
         actions={
           <>

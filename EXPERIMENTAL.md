@@ -25,7 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(vazio — tudo promovido em 0.9.3.44)_
+_(vazio — tudo promovido em 0.9.3.45)_
 
 ---
 
