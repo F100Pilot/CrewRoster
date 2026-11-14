@@ -167,18 +167,11 @@ export function standbyInterval(d: ParsedDuty): { start: Date; end: Date } | nul
   return { start, end: new Date(start.getTime() + slot.minutes * 60000) };
 }
 
-// The counted duty of a single day: the work window in full, plus each standby at its share.
-// A standby that ran into a call-out stops counting where the work begins (RUPT cl. 19.4: it
-// ends at the report time), so the overlap is counted once, as work. Returns null for a day with
-// nothing countable — a day off, or a duty the parser couldn't time.
-// On a day with no flying — only training, simulator, office or medical work — the time between
-// sessions (a lunch break between FP1 and FP2, say) is not duty: each activity is logged with its
-// own start and end (RRRGS cl. 12.1 a), and duty is the time spent working or available for it
-// (RUPT cl. 6, def. 46). So such a day counts the union of its timed sessions, not the span from
-// the first start to the last end. A day that includes flying keeps the span: the ground time
-// between sectors is part of the flight duty. Null when no session on the day has both times.
-const FLYING = new Set(['Flight Duty', 'Positioning']);
-
+// A ground day (training, office, medical) counts from the first start to the last end, the lunch
+// between sessions included — as the roster's [DT] does (user, Nov 2026, on a real November roster:
+// GAB1 09:30–13:00 + GAB2 14:00–17:30 = DT 8h00, FP1 09:00 + FP2 … 18:00 = DT 9h00). Until 0.9.3.45
+// only the sessions counted (RRRGS cl. 12.1 a), an hour short of the roster on every such day.
+//
 // The day's work as the duty maths counts it. The VIM printed after an IM is part of the IM's block:
 // the roster's [DT] for IM 08:00–12:00 + VIM 12:00–12:30 is 4h00, not 4h30 (a colleague: "IM/VIM,
 // que é as duas com 4 horas"; the MED done on another day is its own 3h00). Shown as printed.
@@ -186,31 +179,21 @@ function countedWork(duties: ParsedDuty[]): ParsedDuty[] {
   const work = duties.filter((d) => !FREE.has(d.dutyType) && !STANDBY.has(d.dutyType));
   return work.some((d) => d.dutyCode === 'IM') ? work.filter((d) => d.dutyCode !== 'VIM') : work;
 }
-function groundSessionsMinutes(work: ParsedDuty[], w: DutyWindow): number | null {
-  if (work.some((d) => FLYING.has(d.dutyType))) return null;
-  const at = (t: string) => (toMinutes(t) - w.open + 1440) % 1440;
-  const sessions = work
-    .filter((d) => d.departureTime && d.arrivalTime)
-    .map((d) => {
-      const from = at(d.departureTime!);
-      return [from, from + ((toMinutes(d.arrivalTime!) - toMinutes(d.departureTime!) + 1440) % 1440)] as const;
-    })
-    .sort((a, b) => a[0] - b[0]);
-  if (sessions.length === 0) return null;
-  // Union, so overlapping or repeated sessions count once.
-  let total = 0;
-  let [curFrom, curTo] = sessions[0];
-  for (const [from, to] of sessions.slice(1)) {
-    if (from <= curTo) curTo = Math.max(curTo, to);
-    else { total += curTo - curFrom; [curFrom, curTo] = [from, to]; }
-  }
-  return total + (curTo - curFrom);
-}
 
-function dutyDay(date: string, duties: ParsedDuty[], rules: DutyRules): DutyDay | null {
+// S.EXT. (serviço externo) is not duty for the limits: CrewLink prints no [DT] under it, and the
+// roster's "Duty time" total leaves it out (user, Nov 2026: a November roster with two S.EXT. days
+// totals 62:55 = the sum of the printed [DT]s; the app had 74:25). It is still a working day —
+// rest, folgas and per diem B are unchanged; only the counted duty (limits, duty-pay) drops it.
+export const countsAsDuty = (d: ParsedDuty): boolean => !/^S\.?EXT\.?$/i.test(d.dutyCode);
+
+// The counted duty of a single day: the work window in full, plus each standby at its share.
+// A standby that ran into a call-out stops counting where the work begins (RUPT cl. 19.4: it
+// ends at the report time), so the overlap is counted once, as work. Returns null for a day with
+// nothing countable — a day off, or a duty the parser couldn't time.
+function dutyDay(date: string, all: ParsedDuty[], rules: DutyRules): DutyDay | null {
+  const duties = all.filter(countsAsDuty);
   const w = workWindow(date, duties, rules);
-  const work = countedWork(duties).map(asWorked);
-  let span = w ? groundSessionsMinutes(work, w) ?? w.span : 0;
+  let span = w ? w.span : 0;
   let minutes = span;
   let anyStandby = false;
 

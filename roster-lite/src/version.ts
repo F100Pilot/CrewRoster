@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.3.44';
+export const APP_VERSION = '0.9.3.45';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -20,6 +20,14 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.9.3.45',
+    date: '2026-11-15',
+    highlights: [
+      'Limites (AE, experimental): o serviço externo (S.EXT.) deixa de contar para o duty, como na escala, que não lhe imprime [DT]. Continua a ser um dia de trabalho para o repouso, as folgas e o per diem.',
+      'Os dias de gabinete e de formação contam do início ao fim, com a hora de almoço, como o [DT] da escala (GAB 09:30–17:30 = 8h00).',
+    ],
+  },
   {
     version: '0.9.3.44',
     date: '2026-11-14',

@@ -25,7 +25,10 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(vazio — tudo promovido em 0.9.3.44)_
+- **0.9.3.45** — Duty como o [DT] da escala (escala de novembro real: "Duty time 62:55"):
+  - o S.EXT. (serviço externo) deixa de contar para o duty: limites AE/EASA, duty-pay e totais do mês. Continua a ser um dia de trabalho para o repouso, as folgas e o per diem B. A página do dia mostra "Serviço: não conta";
+  - os dias de GAB e de FP contam do início ao fim, com o almoço (GAB 8h00, FP 09:00–18:00 = 9h00).
+  Com isto, novembro fica em 63:25 na app; a escala diz 62:55. Os 30 min de diferença são o debriefing de 1 h do EBT-2, que é regra do utilizador.
 
 ---
 
