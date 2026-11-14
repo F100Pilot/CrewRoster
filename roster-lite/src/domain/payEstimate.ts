@@ -9,6 +9,8 @@ import { irsRetention, type IrsTable } from './irsWithholding';
 import { HOLIDAY_ENTITLEMENT_DAYS } from './aeCompliance';
 import type { ParsedDuty } from './types';
 import { countryOf, raacoDays } from './raaco';
+import { fdpForDay } from './fdp';
+import { OFF_DAY_BONUS, OFF_DAY_HOURLY, offDayChoice, restCutOf } from './offDayWork';
 
 // A gross monthly pay estimate for a Portugália pilot, from the RRRGS (the pay annex of the
 // AE Portugália/SIPLA 2023). Everything personal — the VB, VE and VS in euros — comes from the
@@ -25,8 +27,10 @@ import { countryOf, raacoDays } from './raaco';
 //   • simulator sessions given as an instructor (OPC_INS / LPC_INS and the check's second day),
 //     at a per-session fee the pilot sets — it is not in the AE, but payslips carry it the
 //     month after.
-// Not modelled: work on a planned day off (cl. 13 — the app can't tell a folga was planned),
-// split duty (cl. 11), the annual plafond reconciliation paid in March (cl. 2.4), the holiday
+//   • a flight on a planned day off (cl. 13 — "Voo em Off", or marked by the pilot) when paid: 3% of
+//     the VB per FDP hour + 15% of the VB for the day, outside the plafonds (domain/offDayWork.ts);
+//   • reduced rests the pilot typed (cl. 2.8), over the planned-vs-flown one for that day.
+// Not modelled: split duty (cl. 11), the annual plafond reconciliation paid in March (cl. 2.4), the holiday
 // and Christmas subsidies, and anything below the gross line (IRS, Segurança Social).
 
 export type PayCategory = 'CTE' | 'OP3' | 'OP2' | 'OP1' | 'OPJ';
@@ -230,6 +234,9 @@ export interface PayEstimate {
   extensionValue: number;
   reducedMinutes: number;
   reductionValue: number;
+  offDays: number; // flights on a planned day off, paid under cl. 13
+  offDayMinutes: number; // their flight duty time
+  offDayValue: number;
   instructorSessions: number;
   instructorValue: number;
   lineTrainingDays: number;
@@ -338,9 +345,11 @@ export function payEstimate(
   // the airport — a positioning-only day at 50% (cl. 12.2.a.iv), plus 25% of the work between
   // 23:00 and 06:00 Lisbon and 100% of the work on a holiday. Night and holiday are separate
   // alíneas, so both apply where they meet (cl. 12.3 only stops cumulating within one alínea).
+  // Flights on a day off paid under cl. 13 stay out of the plafonds (cl. 13.5): paid on their own.
+  const offDayDates = new Set([...days].filter(([date, day]) => inMonth(date) && offDayChoice(day) === 'paid').map(([date]) => date));
   let dutyCredited = 0;
   for (const d of dutyDays(duties, PGA_PILOT_RULES)) {
-    if (!inMonth(d.date)) continue;
+    if (!inMonth(d.date) || offDayDates.has(d.date)) continue;
     const day = days.get(d.date) ?? [];
     const positioningOnly = day.some((x) => x.dutyType === 'Positioning')
       && !day.some((x) => x.dutyType === 'Flight Duty' || x.dutyType === 'Simulator');
@@ -370,7 +379,7 @@ export function payEstimate(
   // on a holiday counts twice.
   let blockCredited = 0;
   for (const [date, day] of days) {
-    if (!inMonth(date)) continue;
+    if (!inMonth(date) || offDayDates.has(date)) continue;
     const operatedDay = day.some((x) => x.dutyType === 'Flight Duty');
     for (const x of day) {
       if (!FLYING.has(x.dutyType) || !x.departureTime || !x.arrivalTime) continue;
@@ -460,8 +469,21 @@ export function payEstimate(
   const pvf = planVsFlown(duties, month, todayISO, base);
   const hourly = RATE_L1 * s.vb;
   const extensionValue = pvf.extensions.length * EXTENSION_HOURS * hourly;
-  const reducedMinutes = pvf.reductions.reduce((sum, r) => sum + r.cut, 0);
+  // A cut the pilot typed for a day replaces the planned-vs-flown one for that day.
+  const typedCuts = [...days].filter(([date]) => inMonth(date)).map(([date, day]) => [date, restCutOf(day)] as const)
+    .filter((x): x is readonly [string, number] => x[1] !== null && x[1] > 0);
+  const typedCutDates = new Set(typedCuts.map(([date]) => date));
+  const reducedMinutes = pvf.reductions.filter((r) => !typedCutDates.has(r.date)).reduce((sum, r) => sum + r.cut, 0)
+    + typedCuts.reduce((sum, [, m]) => sum + m, 0);
   const reductionValue = (reducedMinutes / 60) * hourly;
+
+  // ── Flights on a planned day off, paid (cl. 13): each flight duty period, then the day ──
+  let offDayMinutes = 0;
+  for (const date of offDayDates) {
+    const fdp = fdpForDay(days.get(date)!, null, base);
+    offDayMinutes += fdp?.planned ?? 0;
+  }
+  const offDayValue = (offDayMinutes / 60) * OFF_DAY_HOURLY * s.vb + offDayDates.size * OFF_DAY_BONUS * s.vb;
 
   // ── Simulator sessions as instructor (not in the AE; the pilot's own fee) ──
   const instructorSessions = [...instructorSimDates(duties)].filter(inMonth).length;
@@ -505,7 +527,7 @@ export function payEstimate(
   const holidaySubsidy = holidayPayMonth === paidMonth ? cents((fixedPay / 30) * HOLIDAY_ENTITLEMENT_DAYS) : 0;
   const christmasSubsidy = paidMonth === CHRISTMAS_PAY_MONTH ? cents(fixedPay) : 0;
 
-  const variable = overtimeVal + perDiemValue + complementValue + extensionValue + reductionValue + instructorValue + lineTrainingValue
+  const variable = overtimeVal + perDiemValue + complementValue + extensionValue + reductionValue + offDayValue + instructorValue + lineTrainingValue
     + lineCheckValue + officeValue + mealTicketValue;
   const lastDay = `${month}-${String(daysInMonth(month)).padStart(2, '0')}`;
   return {
@@ -532,6 +554,9 @@ export function payEstimate(
     extensionValue,
     reducedMinutes,
     reductionValue,
+    offDays: offDayDates.size,
+    offDayMinutes,
+    offDayValue,
     instructorSessions,
     instructorValue,
     lineTrainingDays,

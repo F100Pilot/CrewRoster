@@ -38,6 +38,10 @@ export interface ParsedDuty {
    * from the roster (`isPrevenirIO`).
    */
   prevenir?: boolean;
+  /** Flight on a planned day off: the pilot's choice — paid (RRRGS cl. 13) or the day kept for later. */
+  offDayPay?: 'paid' | 'kept';
+  /** Minutes of rest cut before this day, typed by the pilot (RRRGS cl. 2.8, max 120). */
+  restCutMin?: number;
   /** Imported after its day had passed: the times are the flown ones, not a plan. */
   settled?: boolean;
 }

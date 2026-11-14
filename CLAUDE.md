@@ -344,6 +344,14 @@ Things learned over this collaboration that should persist across sessions:
   user confirmed). The duty stays on this rule, NOT on the roster's printed [DT] (user: "mantém como estava"); found while
   checking: the roster's DT also adds 30 min after a day-ending DHC (the app follows AE cl. 17: DHC ends at arrival) and
   counts the lunch hour on GAB days — both left as they are, open questions to the user.
+- **Flight on a day off & reduced rest** (since 0.9.3.19, colleagues' audios; pilots only): the roster's "Voo em Off" →
+  mark `VOO_OFF`, "Reducao Repouso" → `RED_REP` (one token or word by word — a split "Off" must never start a day off nor
+  trip the totals-box filter). Day page card "Folga e repouso": **Recebo / Gozo a folga** (RRRGS cl. 13 — paid by default
+  when marked: FDP hours × 3% VB + 15% VB per day, outside the duty/block plafond credits, cl. 13.5; kept = ordinary day,
+  RUPT cl. 15.9 b / 15.19) and the **minutes of a reduced rest** (0–120, RUPT 34.3; paid in duty-pay outside the plafonds,
+  RRRGS 2.8; a typed value > 0 replaces the planned-vs-flown reduction of that day). Stored per user
+  (`crewroster.offDayPay.*`, `crewroster.restCut.*`), applied in RosterProvider; `domain/offDayWork.ts`. Not yet checked
+  against a real PDF carrying the remarks.
 - **Medical exams** (IM / VIM / MED, `Medical`, timed): done apart (a colleague, 0.9.3.16) the roster has MED on one day
   ([DT] 3h00) and IM + VIM on another ([DT] 4h00 for IM 08:00–12:00 + VIM 12:00–12:30): the VIM is inside the IM's
   block, so `countedWork()` (`dutyTime.ts`) leaves a VIM out of the duty maths when the day has an IM; display unchanged.

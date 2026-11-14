@@ -35,6 +35,14 @@ produção, em vez de promover uma a uma.
   `REQ` nas observações ("Pedido"); só informação. PARSE_VERSION 23.
 - **0.9.3.18** — **APT = assistência no aeroporto** (utilizador): `Standby Airport`, código APT, com início/fim (como o
   IO). Conta 50% (pilotos), per diem A, RAACO 4.5.5.5. PARSE_VERSION 24.
+- **0.9.3.19** — áudios de colegas: **voo em folga** (RRRGS cl. 13; RUPT cl. 15.18 / 15.9 b / 15.19) e **redução de
+  repouso** manual (RUPT 34.3 / 36, RRRGS 2.8). Lê "Voo em Off" → `VOO_OFF` e "Reducao Repouso" → `RED_REP` (inteiros ou
+  palavra a palavra; o "Off" já não apaga a sub-coluna pelo filtro do quadro de totais). Cartão "Folga e repouso" no dia
+  (pilotos): Recebo / Gozo a folga (pago por omissão com a marca) e minutos de redução (0–120, passos de 5). Escolhas em
+  `crewroster.offDayPay.<user>` / `crewroster.restCut.<user>`, aplicadas no RosterProvider (`ParsedDuty.offDayPay` /
+  `restCutMin`). Vencimento: dia pago = FDP × 3% VB/h + 15% VB, fora dos créditos duty/block; minutos escritos substituem a
+  redução do planeado-vs-voado nesse dia. `domain/offDayWork.ts`. PARSE_VERSION 25. **Falta confirmar com um PDF real** como
+  as duas anotações vêm no texto.
 
 ---
 

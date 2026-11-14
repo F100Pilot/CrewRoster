@@ -270,7 +270,18 @@ export function parseSubColumn(
   let pendingDH = false; // a "DH" token seen above the next flight marks it deadhead
   let pendingHotel: string | undefined; // an "Hn" marker above the next duty (layover)
 
+  let prev = '';
   for (const w of ordered) {
+    const before = prev;
+    prev = w;
+    // Remarks printed under a sector: "Voo em Off" (flown on a planned day off — RRRGS cl. 13) and
+    // "Reducao Repouso" (a reduced rest — RUPT cl. 34.3 / 36). In one piece or word by word; the
+    // "Off" must never start a day off of its own in the middle of the flights.
+    const remark = REMARK_MARK(w, before);
+    if (remark !== undefined) {
+      if (remark && cur && !cur.notes.includes(remark)) cur.notes.push(remark);
+      continue;
+    }
     // A single-digit "Hn" is the layover-hotel marker for this day; it applies to the
     // NEXT duty starter (the overnighting flight). H7+/H509 are standby codes (handled
     // by classifyDuty), not hotels, so /^H\d$/ only catches the hotel markers.
@@ -520,7 +531,12 @@ function prepareBands(tokens: PositionedToken[]): { calendar: CalDay[]; bands: C
       // off: a vacation day (RLIC) showed up as "OFF + RLIC". Drop every sub-column that carries
       // one of the box's labels; those are fixed NetLine strings, and none can occur in a day
       // cell, whose codes, airports and crew names are all printed in capitals.
-      const subs = allSubs.filter((s) => !s.tokens.some((t) => TOTALS_LABEL.test(t.text.trim())));
+      // Except the "Off" of a "Voo em Off" remark split into words under a sector (RRRGS cl. 13): that
+      // sub-column holds the flight itself.
+      const offRemark = (s: { tokens: PositionedToken[] }) => s.tokens.some((t) => /^em$/i.test(t.text.trim()))
+        && s.tokens.some((t) => /^voo$/i.test(t.text.trim()));
+      const subs = allSubs.filter((s) => !s.tokens.some((t) => TOTALS_LABEL.test(t.text.trim())
+        && !(/^off$/i.test(t.text.trim()) && offRemark(s))));
 
       const colKeys = cols.map((c) => c.token);
       bands.push({ cols, colKeys, subs, cand: bandCandidates(colKeys, calendar) });
@@ -606,6 +622,20 @@ const SAFETY_MARK = /^FO_SAFETY$/;
 // RAACO; it goes to every flight of that day.
 const DAY_FLIGHT_MARK = /^W_PNC_ST$/;
 
+// The remarks the roster prints under a sector, as a mark — or '' for a word of one still being
+// read ("Voo", "em", "Reducao"), undefined for anything else. `before` is the previous word.
+export const OFF_DAY_FLIGHT = 'VOO_OFF';
+export const REST_REDUCED = 'RED_REP';
+function REMARK_MARK(w: string, before: string): string | undefined {
+  const t = w.trim();
+  if (/^voo\s+em\s+off$/i.test(t)) return OFF_DAY_FLIGHT;
+  if (/^redu[cç][aã]o\s+(de\s+)?repouso$/i.test(t)) return REST_REDUCED;
+  if (/^off$/i.test(t) && /^em$/i.test(before.trim())) return OFF_DAY_FLIGHT;
+  if (/^repouso$/i.test(t) && /^(redu[cç][aã]o|de)$/i.test(before.trim())) return REST_REDUCED;
+  if (/^(voo|em)$/i.test(t) || /^redu[cç][aã]o$/i.test(t)) return '';
+  return undefined;
+}
+
 // The days a band's header shows, and which day each of its sub-columns belongs to.
 function bandDays(b: CollectedBand, calendar: CalDay[]): { dates: string[]; dateAt: (x: number) => string | undefined } {
   const bandDate = new Map<string, string>();
@@ -682,6 +712,7 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
   const flightMarks: { date: string; x: number; mark: string }[] = [];
   const safetyMarks: { date: string; x: number; mark: string }[] = [];
   const dayMarks = new Map<string, string>();
+  const remarkMarks: { date: string; x: number; mark: string }[] = [];
   for (const b of bands) {
     if (b.offset === undefined) continue;
     const { dateAt } = bandDays(b, calendar);
@@ -697,6 +728,11 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
       if (SAFETY_MARK.test(lone)) safetyMarks.push({ date, x: s.x, mark: lone });
       const dayMark = s.tokens.map((t) => t.text.trim()).find((t) => DAY_FLIGHT_MARK.test(t));
       if (dayMark) dayMarks.set(date, dayMark);
+      const text = s.tokens.map((t) => t.text.trim()).join(' ');
+      if (!s.tokens.some((t) => CARRIER.test(t.text.trim()))) {
+        if (/voo\s+em\s+off/i.test(text)) remarkMarks.push({ date, x: s.x, mark: OFF_DAY_FLIGHT });
+        if (/redu[cç][aã]o\s+(de\s+)?repouso/i.test(text)) remarkMarks.push({ date, x: s.x, mark: REST_REDUCED });
+      }
       const entries = parseSubColumn(s.tokens, date, hotels);
       if (!byDate.has(date)) byDate.set(date, []);
       const arr = byDate.get(date)!;
@@ -731,6 +767,14 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
       .sort((a, b) => b.x - a.x)[0];
     for (const d of target?.duties ?? []) {
       if (!(d.observations ?? '').includes(m.mark)) d.observations = d.observations ? `${d.observations}, ${m.mark}` : m.mark;
+    }
+  }
+
+  // A remark in a sub-column of its own goes to the nearest flight sub-column of the day.
+  for (const m of remarkMarks) {
+    const target = flightSubs.filter((f) => f.date === m.date).sort((a, b) => Math.abs(a.x - m.x) - Math.abs(b.x - m.x))[0];
+    for (const d of target?.duties ?? []) {
+      if (!(d.observations ?? '').split(/,\s*/).includes(m.mark)) d.observations = d.observations ? `${d.observations}, ${m.mark}` : m.mark;
     }
   }
 

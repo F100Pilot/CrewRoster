@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.3.18';
+export const APP_VERSION = '0.9.3.19';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,14 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.9.3.19',
+    date: '2026-11-14',
+    highlights: [
+      'Voo em dia de folga (pilotos, experimental): a app lê o "Voo em Off" da escala e, no dia, escolhes "Recebo" ou "Gozo a folga". Se recebes, o Vencimento conta 3% do VB por hora de serviço de voo + 15% do VB pelo dia (RRRGS cl. 13), fora dos plafonds. Num voo sem a marca, podes indicar à mão que era folga.',
+      'Redução de repouso (pilotos, experimental): no dia, indicas os minutos reduzidos (até 2 h, RUPT cl. 34.3); o Vencimento paga-os em duty-pay, fora dos plafonds (RRRGS cl. 2.8). A app lê também o "Redução Repouso" da escala.',
+    ],
+  },
   {
     version: '0.9.3.18',
     date: '2026-11-14',

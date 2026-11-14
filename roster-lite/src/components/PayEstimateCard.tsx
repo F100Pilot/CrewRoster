@@ -181,6 +181,9 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                   <Row label={`Subsídio de alimentação: ${r.mealTicketDays} ${r.mealTicketDays === 1 ? 'dia' : 'dias'} em terra na base (cartão)`} value={r.mealTicketValue} />
                 )}
                 {r.reducedMinutes > 0 && <Row label={`Descansos reduzidos: ${formatDuration(r.reducedMinutes)}`} value={r.reductionValue} />}
+                {r.offDays > 0 && (
+                  <Row label={`Voos em dia de folga (cl. 13): ${r.offDays} ${r.offDays === 1 ? 'dia' : 'dias'} · ${formatDuration(r.offDayMinutes)} — 3% VB/h + 15% VB/dia, fora dos plafonds`} value={r.offDayValue} />
+                )}
                 {r.holidaySubsidy > 0 && <Row label="Subsídio de férias (42 dias, cl. 7)" value={r.holidaySubsidy} />}
                 {r.christmasSubsidy > 0 && <Row label="Subsídio de Natal (cl. 8)" value={r.christmasSubsidy} />}
                 {/* The roster rarely shows the long holidays months ahead, so the pilot can confirm or
