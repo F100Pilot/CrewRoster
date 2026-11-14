@@ -70,3 +70,18 @@ describe('deleteUser completeness (audit Wave 1)', () => {
     expect(await listPdfs('keep')).toHaveLength(1);
   });
 });
+
+describe('keepImportedPdf', () => {
+  it('keeps a hand-imported PDF in the history once, marked as imported', async () => {
+    const { keepImportedPdf } = await import('../storage/rosterStore');
+    const uid = 'imp-' + Math.random().toString(36).slice(2);
+    const file = () => new File([new Uint8Array([37, 80, 68, 70, 1, 2, 3])], 'escala.pdf', { type: 'application/pdf' });
+    expect(await keepImportedPdf(uid, file())).toBe(true);
+    expect(await keepImportedPdf(uid, file())).toBe(false);
+    const other = new File([new Uint8Array([37, 80, 68, 70, 9, 9, 9])], 'outra.pdf', { type: 'application/pdf' });
+    expect(await keepImportedPdf(uid, other)).toBe(true);
+    const kept = await listPdfs(uid);
+    expect(kept).toHaveLength(2);
+    expect(kept.every((p) => p.source === 'import')).toBe(true);
+  });
+});

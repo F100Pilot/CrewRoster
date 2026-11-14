@@ -19,7 +19,7 @@ PDF is parsed in the browser and stored on-device (IndexedDB). Hosted on GitHub 
 ```bash
 npm install
 npm run dev        # vite dev server → http://localhost:5173
-npm test           # vitest run (477 tests) — keep green
+npm test           # vitest run (480 tests) — keep green
 npm run typecheck  # tsc -b
 npm run lint       # eslint . (warnings tolerated, 0 errors required)
 npm run build      # tsc -b && vite build → dist/
@@ -93,6 +93,10 @@ cross-origin. Endpoints: `POST /api/login`, `/api/roster`, `/api/flightinfo`,
 - **Auto re-parse on load:** `RosterProvider` re-parses stored PDFs when
   `parseVersion` is behind `PARSE_VERSION`, so parser improvements (crew included) apply
   without the user re-importing.
+  It can only replay PDFs in the history: in-app downloads AND (since 0.9.3.1) hand-imported PDFs
+  (`keepImportedPdf`, `source: 'import'`, deduped by `sha256`). Before that, a hand-imported day the parser missed
+  (an IO) stayed empty until re-imported. The PDF history also has a manual **"Recarregar escala"** (since 0.9.3.2, user request):
+  `reloadFromPdfs()` forces the same replay (`reparseStoredRoster(…, force = true)`) and reports how many PDFs it read.
 - **pdf.js is lazy** (`loadPdfjs()` in `extractText.ts`): never import `pdfjs-dist` statically,
   or the 330 KB chunk goes back into the first paint. Same for `tour.ts` (driver.js) and the README.
 - **CSP:** `vite.config.ts` injects a Content-Security-Policy at build time (self + the worker
@@ -109,9 +113,10 @@ cross-origin. Endpoints: `POST /api/login`, `/api/roster`, `/api/flightinfo`,
 
 ## Conventions
 
-- **Versioning** (`src/version.ts`): `0.<major>.<centesimal>[.<milésima>]` — 0.9.x since the 3D look (user asked
-  for 0.9.0 Beta on promotion). New feature → bump the centesimal (`0.9.0 → 0.9.1`); small fix → bump the milésima
-  (`0.9.1 → 0.9.1.1`). The minor (0.8 → 0.9) moves only when the user asks. **Add a `RELEASE_NOTES` entry for every bump** (pt-PT) — the
+- **Versioning** (`src/version.ts`): `0.<major>.<centesimal>.<milésima>` — 0.9.x since the 3D look (user asked
+  for 0.9.0 Beta on promotion). **Every update bumps the 4th place** (user rule, Nov 2026: "o bump é aumentado na
+  quarta casa"): `0.9.3.2 → 0.9.3.3`, features and fixes alike. The 3rd place and the minor (0.8 → 0.9) move only
+  when the user asks. **Add a `RELEASE_NOTES` entry for every bump** (pt-PT) — the
   "Novidades" pop-up shows it after an update.
 - **Match the surrounding code:** comment density, naming, idioms. Comments explain
   *why*, in the existing style.
@@ -163,7 +168,8 @@ Things learned over this collaboration that should persist across sessions:
   no "AE" wording. Any new AE feature must be gated the same way.
 - **Pilot base is a per-profile setting** (Settings → Base: Lisboa/Porto, `UserProfile.base`,
   default LIS; `baseOf()` in `dutyStats.ts`). Never hardcode LIS for at-base/away logic.
-- **S.EXT. = any external duty** (course, meeting, …) → Office Duty, timed. RUPT cl. 7.1 waives the
+- **S.EXT. = any external duty** (course, meeting, …) → Office Duty, timed — but SHOWN as "Serviço externo", never
+  "Gabinete" (user, 0.9.3: `dutyLabel()` in `dutyLabels.ts`; use it, not `dutyTypeLabel`, for a duty's word). RUPT cl. 7.1 waives the
   FOLGA rules for qualification/command courses but never the weekly rest; the app can't tell a
   course apart, so folga warnings involving S.EXT./training carry a caveat instead of being dropped.
 - **AE analysis is labelled experimental everywhere it shows** (user request): `AeDisclaimer.tsx`.
@@ -340,6 +346,9 @@ Things learned over this collaboration that should persist across sessions:
   the IO's end) and the RAACO meals by the usual rules, the stay where it ends paying its Tabela 34 rates (casebook
   C08, MAN: "teria de assumir as ajudas de lá"; "aquele do prevenir é especial"). Open: per diem for an IO normal
   alone at base. Without a report, the roster shows APT / assistência / PLS instead of IO (APT not parsed yet).
+- **PDF history** (since 0.9.3, user request): `/pdfs` groups the saved PDFs in tabs by year → month of the DOWNLOAD
+  (local time), newest first, each named by its download day/time; deleting asks first (the PDFs replay planned vs
+  flown and the IO prevenir).
 - **Backlog:** the rest of the AE items (folgas check, ES/LF/ND, per diem, duty-pay/block-pay
   credits, holiday counter), PWA local reminders, crosswind (runway DB). See `EXPERIMENTAL.md`
   (TODO/Backlog) and `roster-lite/TODO.md`.

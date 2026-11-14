@@ -185,7 +185,7 @@ function renderMonthCard(monthKey: string, duties: ParsedDuty[], subtitle?: stri
   const title = format(first, 'MMMM yyyy', { locale: pt });
   // Days off are drawn as plain glass keys, so their swatch is glass too.
   const swatch = (t: string) => (t === 'Day Off' ? 'rgba(255,255,255,0.3)' : dutyColor(t));
-  const legend = [...new Map(month.map((d) => [MONTH_LABEL[d.dutyType] ?? d.dutyType, swatch(d.dutyType)])).entries()];
+  const legend = [...new Map(month.map((d) => [d.dutyCode === 'S.EXT.' ? 'Serviço externo' : MONTH_LABEL[d.dutyType] ?? d.dutyType, swatch(d.dutyType)])).entries()];
 
   const scale = 2, W = 560, pad = 28, gap = 6;
   const cellW = (W - 2 * pad - 6 * gap) / 7;

@@ -66,7 +66,7 @@ export default function CalendarPage() {
   const legend = useMemo(() => {
     const seen = new Map<string, string>(); // label → colour
     for (const d of monthDuties) {
-      const label = DUTY_LABELS[d.dutyType] ?? d.dutyType;
+      const label = d.dutyCode === 'S.EXT.' ? 'Serviço externo' : DUTY_LABELS[d.dutyType] ?? d.dutyType;
       if (!seen.has(label)) seen.set(label, dutyColor(d.dutyType));
     }
     return [...seen.entries()];

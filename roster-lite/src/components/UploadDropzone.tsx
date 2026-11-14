@@ -2,15 +2,19 @@ import { useRef, useState } from 'react';
 import { Button, CircularProgress, Paper, Typography } from '@mui/material';
 import { CloudUpload } from '@mui/icons-material';
 import { useRoster } from '../state/useRoster';
+import { keepImportedPdf } from '../storage/rosterStore';
 
 export default function UploadDropzone() {
-  const { importFile, importing } = useRoster();
+  const { importFile, importing, activeUser } = useRoster();
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
 
   const handleFiles = (files: FileList | null) => {
     const file = files?.[0];
-    if (file) importFile(file);
+    if (!file) return;
+    // A PDF goes to the history as well (like an in-app download), so parser updates reach it.
+    const keep = activeUser && /\.pdf$/i.test(file.name) ? keepImportedPdf(activeUser.id, file).catch(() => false) : Promise.resolve(false);
+    void keep.then(() => importFile(file));
   };
 
   return (

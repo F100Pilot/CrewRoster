@@ -20,9 +20,11 @@ import { RosterContext, type RosterState, type RosterImportPreview } from './use
 // saved PDFs are re-parsed oldest→newest and merged on top of the existing roster, so dates whose
 // source PDF is no longer kept aren't lost. Best-effort: needs the original PDF in history
 // (in-app downloads keep it) and returns the roster unchanged on any failure.
-async function reparseStoredRoster(roster: Roster, userId: string): Promise<Roster> {
-  if (roster.sourceType !== 'pdf') return roster;
-  if ((roster.parseVersion ?? 0) >= PARSE_VERSION) return roster;
+// `force` (the PDF history's "Recarregar escala", user request): replay them now, whatever the parse
+// version or how the roster came in — e.g. after importing a PDF that was missing from the history.
+async function reparseStoredRoster(roster: Roster, userId: string, force = false, stats?: { read: number }): Promise<Roster> {
+  if (!force && roster.sourceType !== 'pdf') return roster;
+  if (!force && (roster.parseVersion ?? 0) >= PARSE_VERSION) return roster;
   try {
     const pdfs = await listPdfs(userId);
     if (pdfs.length === 0) return roster; // no source PDF kept → can't re-parse (re-import path)
@@ -40,12 +42,13 @@ async function reparseStoredRoster(roster: Roster, userId: string): Promise<Rost
         duties = mergeDuties(duties, result.duties, p.downloadedAt.slice(0, 10), result.blankDates);
         rawText = result.rawText;
         reparsed = true;
+        if (stats) stats.read++;
       } catch {
         // A single unreadable/non-roster PDF must not abort the refresh — skip it.
       }
     }
     if (!reparsed) return roster;
-    const updated: Roster = { ...roster, duties, rawText, parseVersion: PARSE_VERSION };
+    const updated: Roster = { ...roster, sourceType: 'pdf', duties, rawText, parseVersion: PARSE_VERSION };
     await saveRoster(userId, updated);
     return updated;
   } catch {
@@ -352,14 +355,39 @@ export function RosterProvider({ children }: { children: ReactNode }) {
     };
   }, [roster, prevenirMarks]);
 
+  // Rebuild the roster from every PDF in the history, oldest first (user request). Resolves to how
+  // many PDFs could be read (0: none was a readable roster), or null when the history is empty.
+  const reloadFromPdfs = useCallback(async (): Promise<number | null> => {
+    if (!activeUser) return null;
+    const userId = activeUser.id;
+    const pdfs = await listPdfs(userId);
+    if (!pdfs.length) return null;
+    setImporting(true);
+    const stats = { read: 0 };
+    try {
+      const run = importLock.current.then(async () => {
+        const current = (await loadRoster(userId)) ?? {
+          id: userId, fileName: pdfs[0].fileName, sourceType: 'pdf' as const, importedAt: new Date().toISOString(), duties: [], rawText: '',
+        };
+        const updated = await reparseStoredRoster(current, userId, true, stats);
+        if (updated !== current && activeUserRef.current?.id === userId) setRoster(updated);
+      });
+      importLock.current = run.catch(() => {});
+      await run;
+      return stats.read;
+    } finally {
+      setImporting(false);
+    }
+  }, [activeUser]);
+
   const value = useMemo<RosterState>(
     () => ({
-      roster: shownRoster, setPrevenir, loading, importing, error, loadError, warnings, sessionToken,
+      roster: shownRoster, setPrevenir, reloadFromPdfs, loading, importing, error, loadError, warnings, sessionToken,
       importFile, previewImport, applyImport, clear, dismissChanges, setSessionToken,
       users, activeUser,
       switchUser, createUser, renameUser, setUserBase, deleteUser: deleteUserFn,
     }),
-    [shownRoster, setPrevenir, loading, importing, error, loadError, warnings, sessionToken, setSessionToken,
+    [shownRoster, setPrevenir, reloadFromPdfs, loading, importing, error, loadError, warnings, sessionToken, setSessionToken,
      importFile, previewImport, applyImport, clear, dismissChanges, users, activeUser, switchUser, createUser, renameUser, setUserBase, deleteUserFn]
   );
 

@@ -494,7 +494,9 @@ export default function DownloadRosterDialog({ open, onClose }: { open: boolean;
             {status && !error && (
               <Alert severity="info" icon={<CircularProgress size={18} />}>{status}</Alert>
             )}
-            <Box display="flex" gap={2}>
+            {/* One under the other on a phone: side by side, a full-size date (and the picker's chevron)
+                didn't fit and was cut ("06/11/202"). */}
+            <Box display="flex" flexDirection={{ xs: 'column', sm: 'row' }} gap={2}>
               <TextField
                 label="Data início"
                 type="date"

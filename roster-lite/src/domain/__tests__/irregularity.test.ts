@@ -4,6 +4,8 @@ import { mergeDuties } from '../rosterMerge';
 import { dutyDays, PGA_PILOT_RULES } from '../dutyTime';
 import { DEFAULT_PAY_SETTINGS, payEstimate } from '../payEstimate';
 import type { ParsedDuty } from '../types';
+import tokensJson from '../../__tests__/fixtures/pga-tokens.json';
+import { interpretPgaGrid } from '../../parsing/pdf/pgaGrid';
 
 // IO (irregularidade operacional) and the "prevenir" — a colleague's report (Nov 2026): called at
 // the report for the alcohol test, the planned flight isn't flown; the roster shows IO from the
@@ -69,5 +71,16 @@ describe('IO / prevenir', () => {
     expect(r.perDiemA).toBe(1);
     expect(r.perDiemTravelDays).toBe(0);
     expect(payEstimate([io()], '2026-11', DEFAULT_PAY_SETTINGS, '2026-11-30').perDiemA).toBe(0);
+  });
+
+  it('the grid parser reads an IO where the roster prints a ground duty (code, airport, two times)', () => {
+    // The anonymised fixture's GAB1/GAB2 day (25/06) with its codes turned into IO — the real layout.
+    const tokens = JSON.parse(JSON.stringify((tokensJson as { tokens?: unknown }).tokens ?? tokensJson));
+    for (const t of tokens) if (t.page === 1 && Math.abs(t.y - 769) < 1 && [222, 227].includes(Math.round(t.x))) t.text = 'IO';
+    const io = interpretPgaGrid(tokens).filter((x) => x.dutyCode === 'IO');
+    expect(io.map((x) => [x.date, x.dutyType, x.departureAirport, x.departureTime, x.arrivalTime])).toEqual([
+      ['2026-06-25', 'Other', 'LIS', '08:30', '12:00'],
+      ['2026-06-25', 'Other', 'LIS', '13:00', '16:30'],
+    ]);
   });
 });

@@ -23,7 +23,7 @@ import FlightWeather from '../components/FlightWeather';
 import FlightInfo from '../components/FlightInfo';
 import FlicStand from '../components/FlicStand';
 import { dayLabel } from '../utils/dates';
-import { dutyTypeLabel } from '../domain/dutyLabels';
+import { dutyLabel } from '../domain/dutyLabels';
 import PageHero from '../components/PageHero';
 import RaacoDayCard from '../components/RaacoDayCard';
 import { PASS_MONO, PassCells, passOverline } from '../components/PassCard';
@@ -101,7 +101,7 @@ export default function DayDetailPage() {
   return (
     <Stack spacing={2} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       <PageHero
-        back label={duties.length ? dutyTypeLabel(duties[0].dutyType) : 'Dia'}
+        back label={duties.length ? dutyLabel(duties[0]) : 'Dia'}
         title={date ? dayLabel(date, true) : ''}
         subtitle={daySummary(duties)}
         stats={stats ? [
@@ -165,7 +165,7 @@ export default function DayDetailPage() {
           <CardContent>
             <Box display="flex" alignItems="baseline" gap={1} mb={duty.flightNumber ? 1.5 : 0.5} flexWrap="wrap">
               <Typography component="div" sx={{ ...passOverline, flexGrow: 1 }}>
-                {isIO(duty) ? 'IRREGULARIDADE OPERACIONAL' : dutyTypeLabel(duty.dutyType).toUpperCase()}{duty.flightNumber ? ` · ${duty.dutyCode}` : ''}
+                {dutyLabel(duty).toUpperCase()}{duty.flightNumber ? ` · ${duty.dutyCode}` : ''}
               </Typography>
               {duty.reportingTime && duty.flightNumber && (
                 <Typography sx={{ ...passOverline, color: 'primary.main' }}>
@@ -518,7 +518,7 @@ function TimePoint({
 function daySummary(duties: ParsedDuty[]): string | undefined {
   const legs = duties.filter((d) => (d.dutyType === 'Flight Duty' || d.dutyType === 'Positioning') && d.departureAirport);
   if (legs.length) return `${[legs[0].departureAirport, ...legs.map((l) => l.arrivalAirport)].join(' → ')} · ${legs.length} ${legs.length === 1 ? 'setor' : 'setores'}`;
-  return duties[0] ? `${dutyTypeLabel(duties[0].dutyType)} · ${duties[0].dutyCode}` : undefined;
+  return duties[0] ? `${dutyLabel(duties[0])} · ${duties[0].dutyCode}` : undefined;
 }
 
 // An IO: was it the "prevenir" (called at the report for the alcohol test)? When an earlier download
