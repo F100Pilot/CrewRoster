@@ -346,6 +346,7 @@ Things learned over this collaboration that should persist across sessions:
   block, so `countedWork()` (`dutyTime.ts`) leaves a VIM out of the duty maths when the day has an IM; display unchanged.
   The roster's **"R" column** (a lone "R" between the duty code and the airport) = **requested** by the crew member (user,
   0.9.3.17: a W_OFF asked for, medical exams at a clinic of their choice, a flight) → mark `REQ` ("Pedido"), info only.
+  A requested W_OFF counts exactly like any other folga in the AE rules (user confirmed) — never branch on `REQ`.
 - **Settings are tabbed** (since 0.8.24): Perfil · Vencimento (pilots only) · App · Dados · Ajuda in
   `SettingsDialog.tsx`; last tab in localStorage `crewroster.settingsTab`. Guardar only on Perfil/App
   (the rest saves on change). New settings go in the tab for their subject, not at the bottom.
