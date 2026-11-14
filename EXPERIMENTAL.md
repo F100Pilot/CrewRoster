@@ -7,7 +7,7 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.9.3.10`
+- **Produção (`master`) está em:** `0.9.3.14`
 - **Próxima versão ao promover:** a da experimental (cada atualização sobe a 4.ª casa)
 
 ## Como promover tudo para produção (quando estiver pronto)
@@ -25,21 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **0.9.3.11** — escala real de novembro (dia 23): `CLTC` / `CTRI` ao lado do voo (token "LOGIN CLTC") = line training dado
-  (`isInstructorFlight`, MARK_LABEL); `FO_SAFETY` (sub-coluna antes do voo) vai para os voos com 2 FO
-  (`placeSafetyMarks`); a tripulação de um voo sem entrada passa a vir do voo ANTERIOR (antes vinha de um voo
-  seguinte do mesmo dia — o regresso AGP→LIS levava o formando); piloto sem posto entre o PU e o cockpit = FO.
-  PARSE_VERSION 19. Verificado com o PDF real (não guardado).
-- **0.9.3.12** — regra do utilizador: a tripulação não é obrigatoriamente a do voo anterior; o FO ao lado do
-  `CLTC` / `CTRI` é o que se junta. O login do token fica em `ParsedDuty.trainee`; `placeTrainees()` (depois do
-  attach, antes do `placeSafetyMarks`) tira-o dos voos do dia antes do primeiro voo marcado e põe-no (FO) nos
-  marcados. PARSE_VERSION 20. Verificado com o PDF real (não guardado).
-- **0.9.3.13** — `CrewMember.seat` ('trainee' / 'safety'): nos voos com FO_SAFETY e formando conhecido, o outro FO é o
-  safety pilot (utilizador: dia 23 — o FO do 1.º voo fica como FO_SAFETY quando entra o formando). Mostrado na lista da
-  tripulação (FlightInfo). PARSE_VERSION 21. Verificado com o PDF real (não guardado).
-- **0.9.3.14** — `W_PNC_ST` (verificação em voo de cabina de um tripulante não chefe de cabina; utilizador) lido
-  como marca do dia (`DAY_FLIGHT_MARK` em `pgaGrid.ts`) e posto nos voos desse dia; só informação (MARK_LABEL).
-  PARSE_VERSION 22.
+_(vazio — 0.9.3.11 a 0.9.3.14 promovidas para produção em 14/11/2026)_
 
 ---
 
