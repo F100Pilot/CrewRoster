@@ -202,6 +202,9 @@ export interface RaacoDay {
   supperNight: number;
   total: number;
   unknownRate: boolean;
+  // A flown day the app never saw planned (only rosters printed after it): the Meal Plan goes by the planned times and
+  // blocks, so these abonos may be wrong (user, Nov 2026: say so, and ask for the original roster).
+  noPlan: boolean;
 }
 
 const BASIS: Record<Basis, string> = {
@@ -386,7 +389,7 @@ export function raacoDays(roster: ParsedDuty[], base: string): Map<string, Raaco
   const day = (date: string) => {
     let d = days.get(date);
     if (!d) {
-      d = { date, start: null, stay: null, meals: [], nights: [], breakfast: 0, lunch: 0, dinner: 0, supperNight: 0, total: 0, unknownRate: false };
+      d = { date, start: null, stay: null, meals: [], nights: [], breakfast: 0, lunch: 0, dinner: 0, supperNight: 0, total: 0, unknownRate: false, noPlan: false };
       days.set(date, d);
     }
     return d;
@@ -417,6 +420,12 @@ export function raacoDays(roster: ParsedDuty[], base: string): Map<string, Raaco
     if (d.start) continue;
     const own = roster.find((x) => x.date === d.date && x.dutyType !== 'Day Off');
     d.start = own?.dutyCode ?? null;
+  }
+  for (const x of roster) {
+    if ((x.dutyType === 'Flight Duty' || x.dutyType === 'Positioning') && x.flightNumber && x.settled && !x.planned && !x.planKnown) {
+      const d = days.get(x.date);
+      if (d) d.noPlan = true;
+    }
   }
   for (const d of days.values()) {
     d.meals.sort((x, y) => MEALS.indexOf(x.meal) - MEALS.indexOf(y.meal));

@@ -21,7 +21,7 @@ const FEEDBACK_TO = 'pflm.bet@gmail.com';
 
 export const euro = (v: number) => v.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 // In rem, so the header (smaller type) and the rows share the same column widths.
-const COLS = '2.4rem minmax(0, 1fr) 2.2rem repeat(4, 2.9rem)';
+const COLS = '2.8rem minmax(0, 1fr) 2.2rem repeat(4, 2.9rem)';
 
 export default function AbonosPage() {
   const { roster, activeUser } = useRoster();
@@ -40,6 +40,7 @@ export default function AbonosPage() {
   const nights = days.reduce((s, d) => s + d.nights.length, 0);
   const onboard = days.reduce((s, d) => s + d.meals.filter((m) => m.how === 'onboard').length, 0);
   const unknown = days.some((d) => d.unknownRate);
+  const noPlan = days.filter((d) => d.noPlan);
 
   if (!roster) return <Typography color="text.secondary">Importa uma escala primeiro.</Typography>;
 
@@ -63,6 +64,15 @@ export default function AbonosPage() {
 
       <ExperimentalBanner month={monthLabel(month)} total={euro(total)} />
 
+      {noPlan.length > 0 && (
+        <Alert severity="warning">
+          <strong>Sem a escala original {noPlan.length === 1 ? 'de 1 dia' : `de ${noPlan.length} dias`}</strong>{' '}
+          ({noPlan.map((d) => format(parseISO(d.date), 'dd/MM')).join(', ')}, marcados com ⚠): a app só tem as horas voadas.
+          As refeições embarcadas seguem o planeamento (horas e blocos planeados), por isso os abonos destes dias podem estar
+          errados. Importa o PDF da escala impresso antes destes voos para os corrigir.
+        </Alert>
+      )}
+
       {days.length === 0 ? (
         <Alert severity="info">Sem abonos previstos para este mês.</Alert>
       ) : (
@@ -76,7 +86,7 @@ export default function AbonosPage() {
             {days.map((d) => (
               <ButtonBase key={d.date} onClick={() => navigate(`/day/${d.date}`)}
                 sx={{ display: 'grid', gridTemplateColumns: COLS, gap: 0.5, width: '100%', textAlign: 'left', py: 0.9, borderBottom: 1, borderColor: 'divider', fontSize: '0.8rem', fontVariantNumeric: 'tabular-nums', alignItems: 'center' }}>
-                <Box fontWeight={700}>{format(parseISO(d.date), 'dd/MM')}</Box>
+                <Box fontWeight={700}>{format(parseISO(d.date), 'dd/MM')}{d.noPlan && <Box component="span" title="Sem a escala original" sx={{ color: '#B45309', ml: 0.25, fontSize: '0.7rem' }}>⚠</Box>}</Box>
                 <Box sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'ui-monospace, Menlo, monospace', fontWeight: 600 }}>{d.start ?? '—'}</Box>
                 <Box sx={{ fontWeight: 700, color: 'primary.main' }}>{d.stay ?? ''}</Box>
                 {[d.breakfast, d.lunch, d.dinner, d.supperNight].map((v, i) => (

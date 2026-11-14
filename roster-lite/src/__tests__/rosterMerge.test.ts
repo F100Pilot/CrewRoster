@@ -140,3 +140,22 @@ describe('mergeDuties — an older roster imported later', () => {
     expect(old.find((d) => d.date === '2026-11-21')).toMatchObject({ departureTime: '08:00' });
   });
 });
+
+// The abonos warn on a flown day whose plan the app never saw (user, Nov 2026). `planned` is kept only when it differs,
+// so `planKnown` tells "flown as planned" from "no plan".
+describe('mergeDuties — was the plan seen?', () => {
+  const leg = (date: string, off: string, on: string): ParsedDuty => ({
+    ...duty(date, 'FLT', 'TP1940'), departureAirport: 'LIS', arrivalAirport: 'OPO', departureTime: off, arrivalTime: on,
+  });
+  it('knows the plan of a day flown as planned, and of a delayed one', () => {
+    const plan = mergeDuties([], [leg('2026-10-10', '07:00', '08:00'), leg('2026-10-11', '07:00', '08:00')], '2026-10-01');
+    const flown = mergeDuties(plan, [leg('2026-10-10', '07:00', '08:00'), leg('2026-10-11', '07:30', '08:30')], '2026-10-12');
+    expect(flown.map((d) => [d.settled, d.planKnown, !!d.planned])).toEqual([[true, true, false], [true, true, true]]);
+  });
+  it('does not know it when the first roster seen came after the day — until the original is imported', () => {
+    const flown = mergeDuties([], [leg('2026-10-10', '07:00', '08:00')], '2026-10-12');
+    expect(flown[0].planKnown).toBeUndefined();
+    const original = mergeDuties(flown, [leg('2026-10-10', '07:00', '08:00')], '2026-09-15');
+    expect(original[0].planKnown).toBe(true);
+  });
+});

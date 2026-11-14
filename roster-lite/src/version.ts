@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.3.32';
+export const APP_VERSION = '0.9.3.33';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -18,6 +18,13 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.9.3.33',
+    date: '2026-11-14',
+    highlights: [
+      'Abonos: os dias voados de que a app não tem a escala original (planeada) ficam marcados com ⚠ e um aviso — as refeições embarcadas seguem o planeamento, por isso esses abonos podem estar errados. Importar o PDF impresso antes dos voos corrige-os.',
+    ],
+  },
   {
     version: '0.9.3.32',
     date: '2026-11-14',

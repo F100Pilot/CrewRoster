@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Box, ButtonBase, Card, CardContent, Stack, Typography } from '@mui/material';
+import { Alert, Box, ButtonBase, Card, CardContent, Stack, Typography } from '@mui/material';
 import { ChevronRight } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
@@ -38,6 +38,12 @@ export default function RaacoDayCard({ date }: { date: string }) {
             {day.total > 0 ? euro(day.total) : 'Abonos'} <ChevronRight sx={{ fontSize: 16 }} />
           </ButtonBase>
         </Box>
+        {day.noPlan && (
+          <Alert severity="warning" sx={{ mb: 1 }}>
+            Sem a escala original deste dia: a app só tem as horas voadas, e as refeições embarcadas seguem o planeamento —
+            estes abonos podem estar errados. Importa o PDF da escala impresso antes do voo.
+          </Alert>
+        )}
         <Stack spacing={0.75}>
           {day.meals.map((m, i) => (
             <TimelineRow key={i} wrapSub color={HOW[m.how].color} title={MEAL_LABEL[m.meal]}

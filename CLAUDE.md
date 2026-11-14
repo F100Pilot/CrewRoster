@@ -222,6 +222,10 @@ Things learned over this collaboration that should persist across sessions:
   keeps the newest. In `mergeDuties`, a day the incoming roster still saw ahead while the app holds it flown
   (`settled`) keeps the flown times and takes the incoming ones as `planned`; a roster printed before the newest one
   (`older`) never replaces a day the app has — it only lends plans and fills missing days.
+  **No plan → warn** (since 0.9.3.33, user: "deve existir uma mensagem nos abonos a informar que podem estar errados"):
+  `planned` is only stored when it differs, so the merge also sets `ParsedDuty.planKnown` on a settled sector whose plan
+  it saw (PARSE_VERSION 28); `RaacoDay.noPlan` = a flown flight/DHC with neither → warning + ⚠ on `/abonos`, warning on
+  `RaacoDayCard`, asking for the PDF printed before the flights.
 - **Pay estimate** (since 0.8.22; in production since 0.8.26): `domain/payEstimate.ts` applies the RRRGS (RB, plafonds
   table 2.1 cut per holiday day, 3%/6% VB/h, per diem A/B cl. 9, complement cl. 10, cl. 2.6/2.8
   from planVsFlown, night 25% and national holidays 100% via `holidaysPT.ts`). **Personal figures

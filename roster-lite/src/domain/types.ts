@@ -44,6 +44,9 @@ export interface ParsedDuty {
   restCutMin?: number;
   /** Imported after its day had passed: the times are the flown ones, not a plan. */
   settled?: boolean;
+  /** A settled sector whose plan the app saw (from a roster printed before the day) — `planned` is only kept when it
+   *  differs, so this tells "flown as planned" from "no plan known" (the abonos warn on the latter). */
+  planKnown?: boolean;
 }
 
 export interface PlannedTimes {

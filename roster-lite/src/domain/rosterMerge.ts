@@ -43,8 +43,9 @@ export function mergeDuties(previous: ParsedDuty[], incoming: ParsedDuty[], asOf
     const planOf = new Map(incoming.filter((d) => d.flightNumber && flownKept.has(d.date)).map((d) => [sectorKey(d), d]));
     previous = previous.map((d) => {
       const plan = flownKept.has(d.date) && d.flightNumber && !d.planned && d.settled ? planOf.get(sectorKey(d)) : undefined;
-      if (!plan || sameTimes(timesOf(plan), timesOf(d))) return d;
-      return { ...d, planned: timesOf(plan), reportingTime: plan.reportingTime ?? d.reportingTime };
+      if (!plan) return d;
+      if (sameTimes(timesOf(plan), timesOf(d))) return { ...d, planKnown: true };
+      return { ...d, planned: timesOf(plan), reportingTime: plan.reportingTime ?? d.reportingTime, planKnown: true };
     });
     incoming = incoming.filter((d) => !flownKept.has(d.date));
     blankDates = blankDates.filter((d) => !flownKept.has(d));
@@ -87,7 +88,10 @@ function carryPlans(previous: ParsedDuty[], incoming: ParsedDuty[], asOfISO: str
       // run from the real report.
       if (plan.reportingTime) out.reportingTime = plan.reportingTime;
     }
-    if (d.date < asOfISO) out.settled = true;
+    if (d.date < asOfISO) {
+      out.settled = true;
+      if (out.planned || (prev && (!prev.settled || prev.planKnown || prev.planned))) out.planKnown = true;
+    }
     return out;
   });
 }

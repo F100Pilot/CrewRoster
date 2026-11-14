@@ -31,6 +31,8 @@ produção, em vez de promover uma a uma.
   voados de 1h23 / 1h29 davam almoço pago a 14 e 15/10): a data de impressão do PDF (`pgaPrintedAt`, `ParseResult` /
   `Roster.printedAt`) é a referência do merge; um PDF mais antigo empresta o plano aos dias já voados e nunca substitui
   um dia que a app já tem; a releitura ordena os PDFs pela data de impressão.
+- **0.9.3.33** — **Aviso nos abonos sem escala original** (utilizador): setor voado sem plano visto (`planKnown`, gravado
+  no merge; PARSE_VERSION 28) → `RaacoDay.noPlan`: alerta + ⚠ na página Abonos e alerta no cartão do dia.
 
 ---
 

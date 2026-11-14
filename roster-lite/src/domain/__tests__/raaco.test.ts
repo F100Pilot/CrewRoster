@@ -158,4 +158,11 @@ describe('Meal Plan over the whole PSV', () => {
     ] as ParsedDuty[];
     expect(raacoDays(planned, 'LIS').get('2026-10-14')?.lunch ?? 0).toBe(0);
   });
+
+  it('flags a flown day with no plan seen (the abonos may be wrong)', () => {
+    const flown = { ...leg('2026-10-15', 'TP9251', 'PXO', 'LIS', '11:00', '12:29'), settled: true } as ParsedDuty;
+    expect(raacoDays([flown], 'LIS').get('2026-10-15')!.noPlan).toBe(true);
+    expect(raacoDays([{ ...flown, planKnown: true }], 'LIS').get('2026-10-15')!.noPlan).toBe(false);
+    expect(raacoDays([{ ...flown, settled: false }], 'LIS').get('2026-10-15')!.noPlan).toBe(false);
+  });
 });
