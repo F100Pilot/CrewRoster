@@ -25,7 +25,6 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **0.9.3.47** — Histórico de PDFs: uma escala pedida para um intervalo fechado fica no mês da escala (dezembro de 2025 → separador dez 2025), não no mês do download.
 - **0.9.3.46** — Vencimento: Guardar "Só este recibo". Só os valores mudados valem para esse recibo; os anteriores e os seguintes ficam como estavam.
 
 ---

@@ -1,5 +1,4 @@
-import { format, parseISO, subDays } from 'date-fns';
-import type { SavedPdf } from './types';
+import { format, subDays } from 'date-fns';
 
 // How many days BEFORE today a roster download starts by default.
 //
@@ -19,17 +18,4 @@ export function defaultBeginDate(today: Date = new Date()): string {
  *  days already flown, and their settled times must not be reported as roster changes. */
 export function todayISO(today: Date = new Date()): string {
   return format(today, 'yyyy-MM-dd');
-}
-
-// The month a PDF is filed under: the roster's own month when the crew member asked for a closed
-// range (user, 0.9.3.47: a roster of December 2025 alone, downloaded in November 2026, was filed
-// under November 2026) — the month at the middle of that range; otherwise (the usual download, from
-// a few days back to whatever the server has, or a PDF imported by hand) the month it was downloaded.
-export function pdfMonth(p: SavedPdf): Date {
-  if (p.beginDate && p.endDate) {
-    const a = parseISO(p.beginDate).getTime();
-    const b = parseISO(p.endDate).getTime();
-    return new Date((a + b) / 2);
-  }
-  return parseISO(p.downloadedAt);
 }

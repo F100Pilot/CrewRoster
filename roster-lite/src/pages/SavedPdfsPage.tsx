@@ -23,7 +23,6 @@ import { pt } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
 import type { SavedPdf } from '../domain/types';
 import { listPdfs, deletePdf } from '../storage/rosterStore';
-import { pdfMonth } from '../domain/rosterWindow';
 import { downloadBlob } from '../utils/download';
 import { useRoster } from '../state/useRoster';
 import PageHero from '../components/PageHero';
@@ -40,9 +39,10 @@ function formatRange(pdf: SavedPdf): string {
 const MONTHS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-// The PDF history in tabs (user request): a tab per year, inside it a tab per month — the roster's
-// month (pdfMonth). Each PDF is named by its download moment, the one the re-parse used to replay
-// them by (now the print day, RosterProvider); newest download first, the latest of all marked.
+// The PDF history in tabs (user request): a tab per year, inside it a tab per month, both by
+// when the PDF was DOWNLOADED (local time) — the moment that matters, since the re-parse replays
+// the PDFs in that order to rebuild planned vs flown (and an IO's "prevenir"). Each PDF is named by
+// that moment; newest first, the latest of all marked.
 export default function SavedPdfsPage() {
   const navigate = useNavigate();
   const { activeUser, reloadFromPdfs, importing } = useRoster();
@@ -73,7 +73,7 @@ export default function SavedPdfsPage() {
   const tree = useMemo(() => {
     const t = new Map<string, Map<string, SavedPdf[]>>();
     for (const p of pdfs) {
-      const d = pdfMonth(p);
+      const d = parseISO(p.downloadedAt);
       const y = format(d, 'yyyy');
       const m = format(d, 'MM');
       if (!t.has(y)) t.set(y, new Map());
@@ -101,7 +101,7 @@ export default function SavedPdfsPage() {
   return (
     <Stack spacing={2}>
       <PageHero label="PDFs" title="Histórico de PDFs"
-        subtitle={pdfs.length ? `${pdfs.length} ${pdfs.length === 1 ? 'escala guardada' : 'escalas guardadas'} neste dispositivo, por mês da escala` : 'As escalas descarregadas ficam guardadas aqui'}
+        subtitle={pdfs.length ? `${pdfs.length} ${pdfs.length === 1 ? 'escala guardada' : 'escalas guardadas'} neste dispositivo, por data de download` : 'As escalas descarregadas ficam guardadas aqui'}
         actions={pdfs.length > 0 && (
           <Button size="small" variant="outlined" startIcon={importing ? <CircularProgress size={14} color="inherit" /> : <Refresh />}
             disabled={importing} onClick={() => setAskReload(true)}>
@@ -122,14 +122,14 @@ export default function SavedPdfsPage() {
       {years.length > 0 && (
         <Stack spacing={1}>
           <Tabs value={shownYear} onChange={(_, v: string) => { setYear(v); setMonth(null); }}
-            variant="scrollable" scrollButtons={false} aria-label="Ano da escala" sx={{ '&&': { mx: 0 } }}>
+            variant="scrollable" scrollButtons={false} aria-label="Ano do download" sx={{ '&&': { mx: 0 } }}>
             {years.map((y) => {
               const n = [...tree.get(y)!.values()].reduce((s, l) => s + l.length, 0);
               return <Tab key={y} value={y} label={`${y} · ${n}`} sx={{ minHeight: 40, py: 0.5, fontWeight: 800 }} />;
             })}
           </Tabs>
           <Tabs value={shownMonth} onChange={(_, v: string) => setMonth(v)}
-            variant="scrollable" scrollButtons={false} aria-label="Mês da escala" sx={{ '&&': { mx: 0 } }}>
+            variant="scrollable" scrollButtons={false} aria-label="Mês do download" sx={{ '&&': { mx: 0 } }}>
             {months.map((m) => (
               <Tab key={m} value={m} label={`${MONTHS[Number(m) - 1]} · ${tree.get(shownYear!)!.get(m)!.length}`}
                 sx={{ minHeight: 36, minWidth: 64, py: 0.25, textTransform: 'none', fontWeight: 700 }} />
