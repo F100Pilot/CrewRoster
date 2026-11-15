@@ -161,6 +161,17 @@ describe('payEstimate', () => {
     expect(payEstimate(duties, '2026-10', S, '2026-11-30').covered).toBe(false);
   });
 
+  it('leaves out of the duty-pay the gap between a flight duty (on-blocks + 30 min) and the e-learning after it', () => {
+    // An expert, from the company's monthly map of hours: "a diferença entre os 30 minutos depois de calços e o início da
+    // formação não conta". Report 03:05, on-blocks 06:44 → flight duty ends 07:14; e-learning 07:30–08:00.
+    const flight = leg('2026-06-28', 'NCE', 'LIS', '04:05', '06:44', '03:05');
+    const learn = duty('2026-06-28', 'Training', { dutyCode: 'FPE-LEARN', departureAirport: 'LIS', departureTime: '07:30', arrivalTime: '08:00' });
+    // The flight duty (03:05–07:14) carries its night premium either way; the e-learning adds its 30 min only, not 07:14–08:00.
+    const alone = payEstimate([flight], '2026-06', S, '2026-06-30').duty.credited;
+    const both = payEstimate([flight, learn], '2026-06', S, '2026-06-30').duty.credited;
+    expect(both - alone).toBe(30); // was 46: the 16 min between 07:14 and 07:30 counted
+  });
+
   it('cuts the plafonds by each office (GAB) day like a day of holidays — user, 0.9.3.63', () => {
     const gab = (date: string) => duty(date, 'Office Duty', { dutyCode: 'GAB1', departureAirport: 'LIS', departureTime: '08:30', arrivalTime: '12:00' });
     // June 2026: 6 GAB days + 1 day of holidays → block Limite 1 = 60h − 7 × 2h = 46h (the July payslip paid 13 min over).

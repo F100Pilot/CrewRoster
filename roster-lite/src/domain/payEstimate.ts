@@ -398,6 +398,30 @@ export function overtimeValue(credited: number, l1: number, l2: number, vb: numb
 // The last day a simulator trip's per diem was "… T" (taxed in full) on the payslips seen: January 2026 (see payEstimate).
 // Moved to March 2026 with the April payslip (0.9.3.56): its "Outros valores p/ impostos" is 0 for a month of simulator
 // trips only, and the February / March ones reconcile to the cent with the RAACO abonos of those trips left untaxed.
+// Ground training on a flying day isn't continuous with the flights for the duty-pay: the time between the flight duty's
+// end (on-blocks + 30 min) and the training's start — or the training's end and the report, when it comes first — doesn't
+// count (an expert, Nov 2026, from the company's monthly map of hours: "a diferença entre os 30 minutos depois de calços e
+// o início da formação não conta"; the roster's [DT] and the app's duty run on through it, the map doesn't).
+function trainingGapMinutes(date: string, day: ParsedDuty[]): number {
+  const flights = day.filter((x) => x.dutyType === 'Flight Duty' || x.dutyType === 'Positioning');
+  const training = day.filter((x) => x.dutyType === 'Training' && !paidApart(x) && x.departureTime && x.arrivalTime);
+  if (!flights.length || !training.length) return 0;
+  const fw = workWindow(date, flights, PGA_PILOT_RULES);
+  if (!fw) return 0;
+  const a = fw.start.getTime();
+  const b = fw.end.getTime();
+  let firstAfter = Infinity;
+  let lastBefore = -Infinity;
+  for (const t of training) {
+    const ts = Date.parse(`${date}T${t.departureTime}:00Z`);
+    let te = Date.parse(`${date}T${t.arrivalTime}:00Z`);
+    if (te < ts) te += 86_400_000;
+    if (ts >= b) firstAfter = Math.min(firstAfter, ts);
+    else if (te <= a) lastBefore = Math.max(lastBefore, te);
+  }
+  return ((firstAfter < Infinity ? firstAfter - b : 0) + (lastBefore > -Infinity ? a - lastBefore : 0)) / 60_000;
+}
+
 export const TRAINING_TRIP_TAXED_UNTIL = '2026-03-31';
 
 export function payEstimate(
@@ -430,7 +454,7 @@ export function payEstimate(
     if (instruction && day.every((x) => paidApart(x) || x.dutyType === 'Day Off')) continue;
     const positioningOnly = day.some((x) => x.dutyType === 'Positioning')
       && !day.some((x) => x.dutyType === 'Flight Duty' || x.dutyType === 'Simulator');
-    let credit = Math.max(0, d.minutes - instruction) * (positioningOnly ? 0.5 : 1);
+    let credit = Math.max(0, d.minutes - instruction - trainingGapMinutes(d.date, day)) * (positioningOnly ? 0.5 : 1);
     const w = workWindow(d.date, day, PGA_PILOT_RULES);
     if (w) {
       const a = w.start.getTime();

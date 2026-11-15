@@ -289,6 +289,12 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
   printed BEFORE the flights the app only has flown times (report = actual departure − 1 h); with it the planned report is
   kept (0.8.32.2) and the duty matches the [DT]. Since 0.9.3.70 the pay card warns "Falta a escala do início do mês" for
   flown days with no plan (settled && !planned && !planKnown — like RAACO's noPlan). ALWAYS ask the user before changing a pay rule.
+- **Flight + ground training on one day: the gap doesn't count for duty-pay** (an expert, user-approved, 0.9.3.71: "a
+  diferença entre os 30 minutos depois de calços e o início da formação não conta … é o que vem no mapa de horas"):
+  `trainingGapMinutes()` in `payEstimate.ts` takes out the time between the flight duty's end (on-blocks + 30 min) and a
+  Training session after it (or the session's end and the report, when it comes first). Duty-pay only — the AE limits,
+  the roster's [DT] and the day's duty stay continuous. The same expert: **the roster's [DT] carries no premiums** (night,
+  holiday) — the company's map and the app add them, so the app's credited duty is above the summed [DT] by design.
 - **Pay figures are shown to the cent** (since 0.8.37.2, user: "não quero que faças arredondamentos"): no whole-euro
   formatting and no "≈" on the pay card; the maths was already in cents. The one rounding kept is the payroll's own:
   IRS withheld floored to the euro (the payslip shows 6 950,00 for 40,08 % × 17 341,22).

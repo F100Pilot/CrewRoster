@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.3.70';
+export const APP_VERSION = '0.9.3.71';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -20,6 +20,14 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.9.3.71',
+    date: '2026-11-15',
+    highlights: [
+      'Vencimento: num dia com voo e formação em terra (por exemplo um e-learning), o tempo entre o fim do serviço de voo (calços mais 30 minutos) e o início da formação deixa de contar para o duty-pay, como no mapa mensal de horas da empresa. O mesmo quando a formação vem antes do voo. Os limites do AE não mudam.',
+    ],
+    thanks: 'Obrigado ao colega especialista que explicou como o mapa de horas conta estes dias.',
+  },
   {
     version: '0.9.3.70',
     date: '2026-11-15',
