@@ -324,3 +324,31 @@ describe('subsídio de gabinete por ordem do dia', () => {
     expect(r.officePaidDays).toBe(7);
   });
 });
+
+// A January 2026 payslip: December's variable is income of the year before, withheld apart at its own rate
+// ("Ded. fisc. per. ant."); the fixed pay alone takes the month's table rate.
+describe('IRS de janeiro: variável de dezembro à parte', () => {
+  const days = [
+    leg('2025-12-02', 'LIS', 'OPO', '07:00', '08:00', '06:00'),
+    leg('2025-12-02', 'OPO', 'LIS', '09:00', '10:00'),
+  ];
+  const settings: PaySettings = { ...S, vb: 7000, ve: 1200, vs: 1300, instructorSession: 550 };
+
+  it('withholds the fixed pay and the variable separately in the December work month', () => {
+    const r = payEstimate(days, '2025-12', settings, '2025-12-31');
+    const n = netEstimate(r, settings);
+    expect(n.priorYearIrsBase).toBeGreaterThan(0);
+    expect(n.irs).toBe(irsRetention(n.irsBase, 'I', 0));
+    expect(n.priorYearIrs).toBe(irsRetention(n.priorYearIrsBase, 'I', 0));
+    // Apart, each at its own (lower) rate: less than one sum at one rate.
+    expect(n.irs + n.priorYearIrs).toBeLessThan(irsRetention(n.irsBase + n.priorYearIrsBase, 'I', 0));
+    expect(n.net).toBeCloseTo(n.gross - n.irs - n.priorYearIrs - n.ss - n.pensionDeposit - n.union - n.fixedDeductions - n.mealCard, 2);
+  });
+
+  it('keeps one sum in any other month', () => {
+    const nov = days.map((d) => ({ ...d, date: '2025-11-04' }));
+    const n = netEstimate(payEstimate(nov, '2025-11', settings, '2025-11-30'), settings);
+    expect(n.priorYearIrs).toBe(0);
+    expect(n.priorYearIrsBase).toBe(0);
+  });
+});

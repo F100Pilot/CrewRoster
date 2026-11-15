@@ -212,6 +212,12 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                 <Box sx={{ borderTop: 1, borderColor: 'divider', my: 0.5 }} />
                 <Row label="Bruto" value={n.gross} strong />
                 <Row label={`IRS (${(n.irsRate * 100).toFixed(2).replace('.', ',')}% de ${EUR.format(n.irsBase)})`} value={-n.irs} />
+                {n.priorYearIrs > 0 && (
+                  <Row
+                    label={`IRS do variável de dezembro, ano anterior (${((n.priorYearIrs / n.priorYearIrsBase) * 100).toFixed(2).replace('.', ',')}% de ${EUR.format(n.priorYearIrsBase)})`}
+                    value={-n.priorYearIrs}
+                  />
+                )}
                 {n.subsidyIrs > 0 && <Row label="IRS dos subsídios (retenção à parte)" value={-n.subsidyIrs} />}
                 <Row label="Segurança Social (11%)" value={-n.ss} />
                 {n.pensionDeposit > 0 && <Row label="Depósito f. pensões SIPLA (7,5%)" value={-n.pensionDeposit} />}

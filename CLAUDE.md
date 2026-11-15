@@ -301,7 +301,10 @@ Things learned over this collaboration that should persist across sessions:
   which is INCLUDED in its "Sujeito a IRS" and in the next month's SS line); per diem for days at base ("… T") is
   taxed in full. A SIM away (e.g. FRA during a stay) is per diem A away, not "… T". With the real abonos, IRS and SS
   of Jun–Sep 2026 match to the cent; the remaining error is the RAACO abonos estimate.
-  Verified to within a few euros on two real payslips. Pension plan (RRRGS cl. 16, `pensionAuto`):
+  Verified to within a few euros on two real payslips. **January is different** (since 0.9.3.50, a January 2026
+  payslip): December's variable is income of the year before and is withheld apart — "IRS (Cat. A)" on the fixed pay
+  alone (37,37% = the app's table to the euro) + "Ded. fisc. per. ant." on that variable at its own table rate (34,20%;
+  the app gives 1 € more) — `NetEstimate.priorYearIrs` when the work month is a December. Pension plan (RRRGS cl. 16, `pensionAuto`):
   PGA contribution 6,5% of VB+VE+VS paid as a non-taxable abono, SIPLA deposit 7,5% deducted — both
   matched the payslip to the cent. Union fee = `unionPct` (1%) of a base that (since 0.8.26.1)
   is automatic: `unionBaseAuto()` = all fixed pay minus the command lines "Anuid. técnica Comando"
