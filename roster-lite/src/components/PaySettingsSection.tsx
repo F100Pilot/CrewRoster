@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  Accordion, AccordionDetails, AccordionSummary, Alert, Box, Button, IconButton, InputAdornment, MenuItem, Paper, Stack, Switch, TextField,
+  Accordion, AccordionDetails, AccordionSummary, Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, InputAdornment, MenuItem, Paper, Stack, Switch, TextField,
   ToggleButton, ToggleButtonGroup, Typography,
 } from '@mui/material';
 import { Calculate, ExpandMore } from '@mui/icons-material';
 import CalculatorDialog from './CalculatorDialog';
+import InfoCollapse from './InfoCollapse';
 import { evalExpression, isExpression } from '../utils/calc';
-import { getPayHistory, getPaySettings, getPaySettingsFor, patchPayGlobal, samePayValues, savePayVersion } from '../storage/settings';
+import { getPayHistory, getPaySettings, getPaySettingsFor, patchPayGlobal, savePayVersion } from '../storage/settings';
+import { getViewedPayMonth } from './settingsEvents';
 import { payFiguresFromBackup, readBackupFile } from '../storage/backup';
 import { DEFAULT_PAY_SETTINGS } from '../domain/payEstimate';
 import { PAY_CATEGORIES, pensionLines, perDiemDefaults, unionBaseAuto, unionFee, type PayCategory, type PaySettings } from '../domain/payEstimate';
@@ -17,7 +19,7 @@ const cents = (v: number) => Math.round(v * 100) / 100;
 
 // `veTech` and `extrasOther` are what's left of VE / the complements once the command lines are
 // typed apart (the union fee's base leaves those out); the stored totals stay `ve` and `extras`.
-type MoneyField = 'vb' | 'veTech' | 'veCommand' | 'vs' | 'extrasOther' | 'chiefBonus' | 'perDiemA' | 'perDiemB' | 'instructorSession' | 'lineTrainingDay' | 'lineCheck'
+type MoneyField = 'vb' | 'veTech' | 'veCommand' | 'vs' | 'extrasOther' | 'chiefBonus' | 'perDiemA' | 'perDiemB' | 'instructorSession' | 'lineTrainingDay' | 'groundInstructionHour' | 'lineCheck'
   | 'officeDay' | 'mealTicket'
   | 'nonTaxableFixed' | 'fixedDeductions' | 'exemptNationalIrs' | 'exemptNationalSs' | 'exemptAbroadIrs' | 'exemptAbroadSs'
   | 'unionPct' | 'unionBase';
@@ -27,6 +29,8 @@ const shiftMonth = (key: string, by: number) => {
   const idx = Number(key.slice(0, 4)) * 12 + Number(key.slice(5, 7)) - 1 + by;
   return `${Math.floor(idx / 12)}-${String((idx % 12) + 1).padStart(2, '0')}`;
 };
+const monthsBetween = (a: string, b: string) =>
+  (Number(b.slice(0, 4)) - Number(a.slice(0, 4))) * 12 + Number(b.slice(5, 7)) - Number(a.slice(5, 7));
 // A version is keyed by the WORK month (the pay card's "Trabalho de …"); the crew think in payslips,
 // so it's named by the payslip that work is paid on — the month after.
 const payslipOf = (workMonth: string) => {
@@ -39,52 +43,56 @@ const payslipOf = (workMonth: string) => {
 // botão de salvar"), and each Guardar is a version from a chosen payslip on — the months before keep
 // the figures they had (user: "nunca pode alterar os valores anteriores").
 export default function PaySettingsSection({ userId, onDirtyChange }: { userId: string; onDirtyChange?: (dirty: boolean) => void }) {
-  const [s, setS] = useState<PaySettings>(() => getPaySettings(userId));
-  // The text of each money field as typed, so "1234," doesn't jump while editing.
-  const [text, setText] = useState<Record<MoneyField, string>>(() => toText(getPaySettings(userId)));
-  const [dirty, setDirty] = useState(false);
   const thisMonth = new Date().toISOString().slice(0, 7);
-  const [from, setFrom] = useState(thisMonth);
-  // Guardar for the chosen payslip on (default), or for that payslip alone.
-  const [only, setOnly] = useState(false);
+  // The payslip the form shows: the one open on the Vencimento page, else the next one. Its own
+  // figures are loaded (an older payslip may have had others), and Guardar applies only the fields
+  // edited here (user, 0.9.3.47: "quando altero um valor específico num recibo do mês, não está a gravar").
+  const [viewed, setViewed] = useState(() => getViewedPayMonth() ?? thisMonth);
+  const [loaded, setLoaded] = useState<PaySettings>(() => getPaySettingsFor(userId, viewed));
+  const [s, setS] = useState<PaySettings>(loaded);
+  // The text of each money field as typed, so "1234," doesn't jump while editing.
+  const [text, setText] = useState<Record<MoneyField, string>>(() => toText(loaded));
+  const [dirty, setDirty] = useState(false);
+  // "A partir de um recibo" starts at the payslip open on the Vencimento page (user, 0.9.3.55: saved from the next payslip
+  // by default, a switch turned on for January never reached January).
+  const [from, setFrom] = useState(viewed);
+  // Guardar for that payslip alone (the default when another payslip than the next is open), or
+  // from a chosen payslip on. Chosen in a dialog, so nothing sits over the field being typed.
+  const [only, setOnly] = useState(viewed !== thisMonth);
+  const [askSave, setAskSave] = useState(false);
   const [savedNote, setSavedNote] = useState<string | null>(null);
-  const reset = () => {
-    const next = getPaySettings(userId);
+  const load = () => {
+    const v = getViewedPayMonth() ?? thisMonth;
+    const next = getPaySettingsFor(userId, v);
+    setViewed(v);
+    setLoaded(next);
     setS(next);
     setText(toText(next));
     setDirty(false);
-    setFrom(thisMonth);
-    setOnly(false);
+    setFrom(v);
+    setOnly(v !== thisMonth);
+    setAskSave(false);
   };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(reset, [userId]);
+  useEffect(load, [userId]);
   useEffect(() => { onDirtyChange?.(dirty); }, [dirty, onDirtyChange]);
 
   const save = (next: PaySettings) => { setS(next); setDirty(true); setSavedNote(null); };
   const commit = () => {
-    const one = only && !!from;
-    // For one payslip, only the fields edited here change, on that month's own figures — an older
-    // month must not take the other figures of today.
-    let values = s;
-    if (one) {
-      const base = getPaySettings(userId) as unknown as Record<string, unknown>;
-      const draft = s as unknown as Record<string, unknown>;
-      const month = { ...getPaySettingsFor(userId, from) } as unknown as Record<string, unknown>;
-      for (const k of Object.keys(draft)) if (JSON.stringify(draft[k]) !== JSON.stringify(base[k])) month[k] = draft[k];
-      values = month as unknown as PaySettings;
-    }
-    savePayVersion(userId, from, values, one);
-    setDirty(false);
-    setSavedNote(!from ? 'Guardado para todos os meses.'
-      : one ? `Guardado só para o ${payslipOf(from)}. Os outros recibos ficam como estavam.`
+    const target = only ? viewed : from;
+    // Only the fields edited here change, on the target's own figures — another payslip must not
+    // take the other figures shown in the form.
+    const draft = s as unknown as Record<string, unknown>;
+    const was = loaded as unknown as Record<string, unknown>;
+    const edited: Record<string, unknown> = {};
+    for (const k of Object.keys(draft)) if (JSON.stringify(draft[k]) !== JSON.stringify(was[k])) edited[k] = draft[k];
+    const values = { ...(target ? getPaySettingsFor(userId, target) : getPaySettings(userId)), ...edited } as unknown as PaySettings;
+    // From a payslip on: only the edited fields reach the later payslips, each keeping its own other figures.
+    savePayVersion(userId, target, values, only, only ? undefined : (edited as Partial<PaySettings>));
+    load();
+    setSavedNote(only ? `Guardado só para o ${payslipOf(viewed)}. Os outros recibos ficam como estavam.`
+      : !from ? 'Guardado para todos os meses.'
         : `Guardado: vale a partir do ${payslipOf(from)}. Os recibos anteriores ficam como estavam.`);
-    if (one) {
-      // The form shows the figures of the months to come again, which this save didn't touch.
-      const next = getPaySettings(userId);
-      setS(next);
-      setText(toText(next));
-    }
-    setOnly(false);
   };
   // Recover figures lost to an overwrite from a backup file — into the draft, never saved by itself.
   const backupInput = useRef<HTMLInputElement>(null);
@@ -106,10 +114,7 @@ export default function PaySettingsSection({ userId, onDirtyChange }: { userId: 
     }
   };
   const history = getPayHistory(userId);
-  const inForce = [...history].reverse().find((v) => v.from <= thisMonth) ?? history[0];
-  // The form shows the current set (the latest version). When this month's payslip was saved on its
-  // own ("Só este recibo"), say so instead of dating the figures below by it.
-  const ownMonth = !!inForce.from && !samePayValues(inForce.s, getPaySettings(userId)) ? inForce.from : null;
+  const inForce = [...history].reverse().find((v) => v.from <= viewed) ?? history[0];
   // The two halves of the section: what is paid, and what the payslip takes off.
   const [part, setPart] = useState<'valores' | 'descontos'>('valores');
 
@@ -248,8 +253,8 @@ export default function PaySettingsSection({ userId, onDirtyChange }: { userId: 
       {s.enabled && (
         <>
           <Typography variant="caption" color="text.secondary">
-            {ownMonth ? `O ${payslipOf(ownMonth)} tem valores só seus; abaixo estão os dos recibos seguintes`
-              : inForce.from ? `Valores em vigor desde o ${payslipOf(inForce.from)}` : 'Valores em vigor para todos os meses'}
+            {`Valores do ${payslipOf(viewed)}${viewed === thisMonth ? ' (o próximo)' : ''}`}
+            {inForce.from ? ` · em vigor desde o ${payslipOf(inForce.from)}` : ''}
             {history.length > 1 ? ` · ${history.length - 1} ${history.length === 2 ? 'versão anterior guardada' : 'versões anteriores guardadas'} (os recibos antigos usam-nas)` : ''}.
             {' '}Alterações só contam depois de Guardar.
           </Typography>
@@ -336,16 +341,46 @@ export default function PaySettingsSection({ userId, onDirtyChange }: { userId: 
                 {money('perDiemB', 'Per diem B')}
                 {money('instructorSession', 'Sessão simulador (instr.)')}
                 {money('lineTrainingDay', 'Line training (dia)')}
+                {money('groundInstructionHour', 'Instrução em terra (hora)')}
                 {money('lineCheck', 'Line check (cada)')}
                 {money('officeDay', 'Subs. gabinete (dia GAB)')}
                 {money('mealTicket', 'Sub. alimentação (dia)')}
               </Box>
-              <Typography variant="caption" color="text.secondary">
+              {/* Task force: every simulator session is paid at the session fee, even the ones received. */}
+              <Box display="flex" alignItems="center" gap={1}>
+                <Typography variant="body2" sx={{ flexGrow: 1 }}>
+                  Todas as sessões de simulador são pagas
+                  <Typography component="span" variant="caption" color="text.secondary" display="block">
+                    Taskforce: também as sessões em que recebes instrução. Desligado, contam só as marcadas _INS e o 2.º dia.
+                  </Typography>
+                </Typography>
+                <Switch checked={!!s.allSimsPaid} onChange={(_, on) => save({ ...s, allSimsPaid: on })} inputProps={{ 'aria-label': 'Todas as sessões de simulador são pagas' }} />
+              </Box>
+              {/* Which GAB days of the month are paid, by their order — some chief bonuses pay only the 3rd to the 7th. */}
+              <Box display="grid" gridTemplateColumns="1fr 1fr" gap={1.5}>
+                <TextField
+                  select size="small" fullWidth label="GAB pago do" value={s.officeDayFrom ?? 1}
+                  onChange={(e) => save({ ...s, officeDayFrom: Number(e.target.value) })}
+                >
+                  {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => <MenuItem key={n} value={n}>{n}.º dia</MenuItem>)}
+                </TextField>
+                <TextField
+                  select size="small" fullWidth label="Até ao" value={s.officeDayTo ?? 0}
+                  onChange={(e) => save({ ...s, officeDayTo: Number(e.target.value) })}
+                >
+                  <MenuItem value={0}>Sem limite</MenuItem>
+                  {Array.from({ length: 20 }, (_, i) => i + 1).map((n) => <MenuItem key={n} value={n}>{n}.º dia</MenuItem>)}
+                </TextField>
+              </Box>
+              <InfoCollapse title="Como se conta o variável" card={false}>
+                <Typography variant="caption" color="text.secondary">
                 Per diem pela tabela A2.2 do AE ("sujeito a confirmação"). Instrutor: sessões OPC_INS / LPC_INS e o
-                2.º dia do check; line training por dia com voos LIFUS_INS ou FAM_INS; line check por dia com voos W_INS
+                2.º dia do check; line training por dia com voos LIFUS_INS ou FAM_INS; instrução em terra por hora das sessões
+                FP…_INST (fora do duty-pay); line check por dia com voos W_INS, ou FAM_INS e LIFUS_INS juntos
                 (corrige a contagem no cartão do Vencimento). 0 se não és instrutor.
-                Gabinete por dia GAB; subsídio de alimentação por dia em terra na base (isento, vai para o cartão-refeição).
-              </Typography>
+                Gabinete por dia GAB, só os dias do mês entre o "GAB pago do" e o "Até ao" (ex.: do 3.º ao 7.º); subsídio de alimentação por dia em terra na base (isento, vai para o cartão-refeição).
+                </Typography>
+              </InfoCollapse>
             </Stack>
           ) : (
             <Stack spacing={1.5}>
@@ -417,32 +452,47 @@ export default function PaySettingsSection({ userId, onDirtyChange }: { userId: 
             </Stack>
           )}
 
-          {/* Nothing is saved until here. The version applies from the chosen payslip on; the payslips
-              before keep their own figures. "Todos os meses" is there to fix a typo everywhere. */}
+          {/* Nothing is saved until here. One slim bar, so it never covers the field being typed (user,
+              0.9.3.47); where the figures apply is chosen in the dialog Guardar opens. */}
           {dirty && (
-            <Paper elevation={0} sx={{ position: 'sticky', bottom: 0, zIndex: 2, p: 1.5, borderRadius: '16px', boxShadow: '0 -8px 20px -8px rgba(0,0,0,.35)' }}>
-              <TextField select size="small" fullWidth label={only && from ? 'Aplicar só ao' : 'Aplicar a partir do'} value={from} onChange={(e) => setFrom(e.target.value)}>
-                {Array.from({ length: 16 }, (_, i) => shiftMonth(thisMonth, 3 - i)).map((m) => (
-                  <MenuItem key={m} value={m}>{payslipOf(m)}{m === thisMonth ? ' (o próximo)' : ''}</MenuItem>
-                ))}
-                <MenuItem value="">Todos os meses (corrigir um engano)</MenuItem>
-              </TextField>
-              {from && (
-                <ToggleButtonGroup
-                  exclusive size="small" fullWidth value={only ? 'only' : 'on'} sx={{ mt: 1 }}
-                  onChange={(_, v) => { if (v) setOnly(v === 'only'); }}
-                  aria-label="Meses a que se aplica"
-                >
-                  <ToggleButton value="on">Deste recibo em diante</ToggleButton>
-                  <ToggleButton value="only">Só este recibo</ToggleButton>
-                </ToggleButtonGroup>
-              )}
-              <Box display="flex" gap={1} mt={1.25} justifyContent="flex-end">
-                <Button color="inherit" onClick={reset}>Descartar</Button>
-                <Button variant="contained" onClick={commit}>Guardar</Button>
-              </Box>
+            <Paper elevation={0} sx={{ position: 'sticky', bottom: 0, zIndex: 2, px: 1.5, py: 1, borderRadius: '16px', boxShadow: '0 -8px 20px -8px rgba(0,0,0,.35)', display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="caption" color="text.secondary" sx={{ flexGrow: 1, lineHeight: 1.3 }}>Alterações por guardar</Typography>
+              <Button color="inherit" size="small" onClick={load}>Descartar</Button>
+              <Button variant="contained" size="small" onClick={() => setAskSave(true)}>Guardar</Button>
             </Paper>
           )}
+          <Dialog open={askSave} onClose={() => setAskSave(false)} fullWidth maxWidth="xs">
+            <DialogTitle sx={{ pb: 1 }}>Guardar valores</DialogTitle>
+            <DialogContent>
+              <Stack spacing={1.5} sx={{ pt: 0.5 }}>
+                <ToggleButtonGroup
+                  exclusive size="small" fullWidth orientation="vertical" value={only ? 'only' : 'on'}
+                  onChange={(_, v) => { if (v) setOnly(v === 'only'); }}
+                  aria-label="Recibos a que se aplica"
+                >
+                  <ToggleButton value="only">Só o {payslipOf(viewed)}</ToggleButton>
+                  <ToggleButton value="on">A partir de um recibo</ToggleButton>
+                </ToggleButtonGroup>
+                {!only && (
+                  <TextField select size="small" fullWidth label="Aplicar a partir do" value={from} onChange={(e) => setFrom(e.target.value)}>
+                    {Array.from({ length: Math.max(16, monthsBetween(viewed, thisMonth) + 4) }, (_, i) => shiftMonth(thisMonth, 3 - i)).map((m) => (
+                      <MenuItem key={m} value={m}>{payslipOf(m)}{m === thisMonth ? ' (o próximo)' : ''}</MenuItem>
+                    ))}
+                    <MenuItem value="">Todos os meses (corrigir um engano)</MenuItem>
+                  </TextField>
+                )}
+                <Typography variant="caption" color="text.secondary">
+                  {only ? 'Os outros recibos, antes e depois, ficam como estavam.'
+                    : from ? 'Os recibos anteriores ficam como estavam.' : 'Vale para todos os recibos.'}
+                  {' '}Só mudam os valores que alteraste.
+                </Typography>
+              </Stack>
+            </DialogContent>
+            <DialogActions>
+              <Button color="inherit" onClick={() => setAskSave(false)}>Cancelar</Button>
+              <Button variant="contained" onClick={commit}>Guardar</Button>
+            </DialogActions>
+          </Dialog>
         </>
       )}
     </Stack>
@@ -464,7 +514,7 @@ function toText(s: PaySettings): Record<MoneyField, string> {
     vb: f(s.vb), veTech: f(cents(s.ve - (s.veCommand ?? 0))), veCommand: f(s.veCommand ?? 0), vs: f(s.vs),
     extrasOther: f(cents(s.extras - (s.chiefBonus ?? 0))), chiefBonus: f(s.chiefBonus ?? 0),
     perDiemA: f(s.perDiemA), perDiemB: f(s.perDiemB), instructorSession: f(s.instructorSession),
-    lineTrainingDay: f(s.lineTrainingDay), lineCheck: f(s.lineCheck ?? 0), officeDay: f(s.officeDay ?? 0), mealTicket: f(s.mealTicket ?? 0), nonTaxableFixed: f(s.nonTaxableFixed), fixedDeductions: f(s.fixedDeductions),
+    lineTrainingDay: f(s.lineTrainingDay), groundInstructionHour: f(s.groundInstructionHour ?? 0), lineCheck: f(s.lineCheck ?? 0), officeDay: f(s.officeDay ?? 0), mealTicket: f(s.mealTicket ?? 0), nonTaxableFixed: f(s.nonTaxableFixed), fixedDeductions: f(s.fixedDeductions),
     exemptNationalIrs: f(s.exemptNationalIrs), exemptNationalSs: f(s.exemptNationalSs),
     exemptAbroadIrs: f(s.exemptAbroadIrs), exemptAbroadSs: f(s.exemptAbroadSs),
     unionPct: f(s.unionPct), unionBase: f(s.unionBase),

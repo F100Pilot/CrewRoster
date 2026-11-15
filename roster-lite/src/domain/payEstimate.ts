@@ -64,13 +64,25 @@ export interface PaySettings {
   perDiemA: number;
   perDiemB: number;
   instructorSession: number; // € per session given as an instructor; 0 if not an instructor
+  // Every simulator session paid at that fee, whatever the roster marks (user, 0.9.3.52: a task-force pilot is paid all
+  // of them, "mesmo as que dizem instrução" — January 2026: 7 sessions paid, 5 given and 2 received). Off by default.
+  allSimsPaid: boolean;
   lineTrainingDay: number; // € per day of flights flown as instructor (LIFUS_INS / FAM_INS)
+  groundInstructionHour: number; // € per hour of ground training given (FP…_INST, "Instrução em terra")
+  // The month's hours as the pilot types them on the pay card ('yyyy-MM' → decimal hours): the ones done or planned, to
+  // see the pay coming (user, 0.9.3.57; the roster's sessions don't match what was paid — Dec–Apr 2026: 54,83/51,37,
+  // 7/0, 5,83/6,33, 12/6,17, 10/2 h). Absent = the roster's sessions.
+  instructionHours: Record<string, number>;
   // € per line check ("LCC_Line Check" on the payslip), one per day of flights marked W_INS (the
   // examiner's mark; the day's own code is W_PNT). `lineChecks` ('yyyy-MM' → count) is the pilot's
   // correction on the pay card, when the roster's count is wrong; absent = the roster's.
   lineCheck: number;
   lineChecks: Record<string, number>;
   officeDay: number; // € per office day ("Subs. gabinete" on the payslip — GAB days), the pilot's own figure
+  // Which GAB days of the month are paid, by their order (user, 0.9.3.49: with one chief bonus the 1st and 2nd aren't
+  // paid, the 3rd to the 7th are, from the 8th none; with a higher one, none — typed by the pilot, like the fee).
+  officeDayFrom: number; // the first paid GAB day of the month (1 = from the first)
+  officeDayTo: number; // the last paid one (0 = no limit)
   mealTicket: number; // € per day of ground duty at base ("Sub. alimentação tickets", paid to the meal card)
   // ── For the net estimate ──
   irsTable: IrsTable;
@@ -94,10 +106,10 @@ export interface PaySettings {
 
 export const DEFAULT_PAY_SETTINGS: PaySettings = {
   enabled: false, category: 'OP3', vb: 0, ve: 0, veCommand: 0, vs: 0, extras: 0, chiefBonus: 0,
-  perDiemA: AE_PER_DIEM.OP.a, perDiemB: AE_PER_DIEM.OP.b, instructorSession: 0, lineTrainingDay: 0, lineCheck: 0, lineChecks: {},
+  perDiemA: AE_PER_DIEM.OP.a, perDiemB: AE_PER_DIEM.OP.b, instructorSession: 0, allSimsPaid: false, lineTrainingDay: 0, groundInstructionHour: 0, instructionHours: {}, lineCheck: 0, lineChecks: {},
   // The meal-card value of a real 2026 payslip (10,46 € a day, = the card's tax-free limit); office
   // days are paid at a rate the pilot types.
-  officeDay: 0, mealTicket: 10.46,
+  officeDay: 0, officeDayFrom: 1, officeDayTo: 0, mealTicket: 10.46,
   irsTable: 'I', dependents: 0, nonTaxableFixed: 0, fixedDeductions: 0,
   // Per diem paid for a day away is partly exempt (as ajudas de custo); per diem for days at base
   // (simulator, training, office — "Perdiem … T" on payslips) is taxed in full. The limit is per
@@ -154,14 +166,54 @@ export const isInstructorFlight = (d: ParsedDuty) =>
 
 // A flight on a line check given as the examiner: marked W_INS on each sector (user, Nov 2026,
 // from a CrewLine roster: a W_PNT day with W_INS on both legs). One line check per such day.
-export const isLineCheckFlight = (d: ParsedDuty) =>
-  (d.dutyType === 'Flight Duty' || d.dutyType === 'Positioning') && /\bW_INS\b/.test(d.observations ?? '');
+// FAM_INS and LIFUS_INS on the same leg is one too (0.9.3.60, the June 2026 payslip: May's only such
+// day paid "LCC Line Check", the two LIFUS_INS days "Line Training"; FAM_INS alone stays line
+// training — June and September 2026 paid it so). A line check day is not a line training day.
+// W_PNT on the pilot's own flights ("Pilot in Command, W_PNT") is HIS line check — nothing paid.
+export const isLineCheckFlight = (d: ParsedDuty) => {
+  if (d.dutyType !== 'Flight Duty' && d.dutyType !== 'Positioning') return false;
+  const obs = d.observations ?? '';
+  return /\bW_INS\b/.test(obs) || (/\bFAM_INS\b/.test(obs) && /\bLIFUS_INS\b/.test(obs));
+};
 
 // Simulator sessions given as an instructor. The roster marks the first day of a check with
 // "OPC" / "LPC" when the pilot is the one checked, or with "OPC_INS" / "LPC_INS" when he gives it;
 // the next session, the check's second day, carries no mark and follows the first. Unmarked
 // sessions with no marked one before them stay unpaid — better to under-count than invent pay.
 // Checked against a real September: 6 simulator days, 4 paid as instructor, 2 his own OPC.
+// Ground training given (FP…_INST): paid apart as "Instrução em terra" — hours × the pilot's hourly fee — and left
+// out of the duty-pay plafonds (user, 0.9.3.48, from a January 2026 payslip: nine FP…_INST days in December 2025 and
+// no duty-pay — without them the month stays under limit 1; "não conta para duty pay"). The hours are the sessions as
+// printed, the lunch between them left out — an assumption: that payslip paid 51,37 h where the sessions give 54h50
+// and the [DT] 62h20, and the user is asking how the company counts them.
+export const isGroundInstruction = (d: ParsedDuty): boolean => d.dutyType === 'Training' && /_INST$/i.test(d.dutyCode);
+// Office days (GAB) are paid apart too ("Subs. gabinete") and are not in the duty-pay plafonds (user, 0.9.3.59: the March
+// and June 2026 payslips paid no duty-pay where the app had 1817,94 € and 6171,71 € — without the 3 and 7 GAB days the
+// month is under limit 1). Still duty for the AE limits, like the CrewLink [DT].
+export const isOfficeDay = (d: ParsedDuty): boolean => d.dutyType === 'Office Duty' && /^GAB/i.test(d.dutyCode);
+const paidApart = (d: ParsedDuty): boolean => isGroundInstruction(d) || isOfficeDay(d);
+const sessionMinutesOf = (d: ParsedDuty): number => {
+  if (!d.departureTime || !d.arrivalTime) return 0;
+  const t = (x: string) => Number(x.slice(0, 2)) * 60 + Number(x.slice(3, 5));
+  return (t(d.arrivalTime) - t(d.departureTime) + 1440) % 1440;
+};
+
+// The pilot's OWN checks: a session marked OPC / LPC with no _INS, and the unmarked one that follows it within 3 days
+// (the check's 2nd day). Even in the task force they aren't paid (April 2026 payslip: 6 of 8 March sessions — the LPC
+// of 10/03 and the day after left out; January's sessions received as training were paid).
+export function ownCheckDates(duties: ParsedDuty[]): Set<string> {
+  const out = new Set<string>();
+  let prev: { date: string; own: boolean } | null = null;
+  const sims = duties.filter((d) => d.dutyType === 'Simulator').sort((a, b) => a.date.localeCompare(b.date));
+  for (const d of sims) {
+    const mark = (d.observations ?? '').match(/\b(?:OPC|LPC)(?:_INS)?\b/g);
+    const own: boolean = mark ? !mark.some((m) => m.endsWith('_INS')) : !!prev && prev.own && daysBetween(prev.date, d.date) <= 3;
+    if (own) out.add(d.date);
+    prev = { date: d.date, own: mark ? own : false };
+  }
+  return out;
+}
+
 export function instructorSimDates(duties: ParsedDuty[]): Set<string> {
   const out = new Set<string>();
   let prev: { date: string; instructor: boolean } | null = null;
@@ -242,10 +294,15 @@ export interface PayEstimate {
   instructorValue: number;
   lineTrainingDays: number;
   lineTrainingValue: number;
+  groundInstructionMinutes: number; // FP…_INST sessions of the month
+  groundInstructionHours: number; // as the payslip's quantity: decimal hours, 2 places (the pilot's figure when typed)
+  groundInstructionHoursAuto: number; // the roster's sessions, in the same decimal hours
+  groundInstructionValue: number;
   lineChecks: number;
-  lineChecksAuto: number; // the roster's count (days with W_INS flights)
+  lineChecksAuto: number; // the roster's count (days with line check flights — isLineCheckFlight)
   lineCheckValue: number;
   officeDays: number; // GAB days
+  officePaidDays: number; // the ones paid (officeDayFrom … officeDayTo)
   officeValue: number;
   mealTicketDays: number; // per diem B days at base (ground duty): one meal ticket each
   mealTicketValue: number; // tax-free, loaded onto the meal card (and taken off the transfer)
@@ -255,6 +312,7 @@ export interface PayEstimate {
   holidayPayMonth: number | null; // the payslip month that carries the holiday subsidy, if known
   holidayPayAuto: boolean; // that month comes from the roster, not from the pilot's tick
   holidayDays: number; // days of holidays taken, which cut the plafonds
+  officeCutDays: number; // office (GAB) days, which cut them the same way
   variable: number; // everything above the RB, paid the month after
   includesPlanned: boolean; // the month isn't over yet
 }
@@ -331,6 +389,11 @@ export function overtimeValue(credited: number, l1: number, l2: number, vb: numb
   return (band1 / 60) * RATE_L1 * vb + (band2 / 60) * RATE_L2 * vb;
 }
 
+// The last day a simulator trip's per diem was "… T" (taxed in full) on the payslips seen: January 2026 (see payEstimate).
+// Moved to March 2026 with the April payslip (0.9.3.56): its "Outros valores p/ impostos" is 0 for a month of simulator
+// trips only, and the February / March ones reconcile to the cent with the RAACO abonos of those trips left untaxed.
+export const TRAINING_TRIP_TAXED_UNTIL = '2026-03-31';
+
 export function payEstimate(
   duties: ParsedDuty[], month: string, s: PaySettings, todayISO: string, base: string = HOME_BASE,
 ): PayEstimate {
@@ -354,9 +417,14 @@ export function payEstimate(
   for (const d of dutyDays(duties, PGA_PILOT_RULES)) {
     if (!inMonth(d.date) || offDayDates.has(d.date)) continue;
     const day = days.get(d.date) ?? [];
+    // Work paid apart stays out of the plafonds: ground training given (isGroundInstruction, "Instrução em terra") and
+    // office days (isOfficeDay, "Subs. gabinete"). A day of it alone credits nothing; beside other work its sessions come
+    // off the day's credit.
+    const instruction = day.filter(paidApart).reduce((a, x) => a + sessionMinutesOf(x), 0);
+    if (instruction && day.every((x) => paidApart(x) || x.dutyType === 'Day Off')) continue;
     const positioningOnly = day.some((x) => x.dutyType === 'Positioning')
       && !day.some((x) => x.dutyType === 'Flight Duty' || x.dutyType === 'Simulator');
-    let credit = d.minutes * (positioningOnly ? 0.5 : 1);
+    let credit = Math.max(0, d.minutes - instruction) * (positioningOnly ? 0.5 : 1);
     const w = workWindow(d.date, day, PGA_PILOT_RULES);
     if (w) {
       const a = w.start.getTime();
@@ -393,9 +461,10 @@ export function payEstimate(
 
   // ── Block-pay credit ──
   // Operated sectors and simulator in full; a positioning sector in full when the same day has
-  // an operated one (extra-crew next to a working sector, cl. 12.2.a.iii), else at 50%; plus 100% of the flight time
-  // between 00:00 and 23:59 (Lisbon) of a holiday (cl. 12.2.d) — summed with alínea a, and only that part of a sector
-  // that crosses midnight (it used to double the whole sector by its UTC date).
+  // an operated one (extra-crew next to a working sector, cl. 12.2.a.iii), else at 50%. NO holiday 100% here (user,
+  // 0.9.3.63): the July 2026 payslip paid 0,25 h of June's block-pay, which matches only without it (46h13 against 46h00
+  // — with Corpus Christi and 13 June doubled it would have been 7h31 over); February's Carnival agrees. The holiday stays
+  // in the duty-pay credit.
   let blockCredited = 0;
   for (const [date, day] of days) {
     if (!inMonth(date) || offDayDates.has(date)) continue;
@@ -403,21 +472,18 @@ export function payEstimate(
     for (const x of day) {
       if (!FLYING.has(x.dutyType) || !x.departureTime || !x.arrivalTime) continue;
       let min = diffMinutes(x.departureTime, x.arrivalTime);
-      const off = Date.parse(`${date}T${x.departureTime}:00Z`);
-      const on = off + min * MIN;
       if (x.dutyType === 'Positioning' && !operatedDay) min *= 0.5;
-      let holiday = 0;
-      for (const iso of [nextDate(date, -1), date, nextDate(date)]) {
-        if (holidays.has(iso)) holiday += overlap(off, on, lisbonMidnightUtc(iso), lisbonMidnightUtc(nextDate(iso)));
-      }
-      blockCredited += min + (holiday / MIN) * HOLIDAY_SHARE;
+      blockCredited += min;
     }
   }
 
-  // ── Plafonds, cut by the holidays taken in the month ──
+  // ── Plafonds, cut by the holidays taken in the month — and by the office days ──
+  // A GAB day cuts them like a day of holidays (user, 0.9.3.63: "um dia de gabinete descontava para plafond de horas como
+  // se fosse um dia de férias"); its hours are out of the credits and paid apart (subsídio de gabinete).
   const holidayDays = [...days].filter(([date, day]) => inMonth(date) && day.some(isHoliday)).length;
+  const officeCutDays = [...days].filter(([date, day]) => inMonth(date) && !day.some(isHoliday) && day.some(isOfficeDay)).length;
   const p = MONTH_PLAFONDS[daysInMonth(month)];
-  const cut = (v: number, perDay: number) => Math.max(0, v - perDay * holidayDays);
+  const cut = (v: number, perDay: number) => Math.max(0, v - perDay * (holidayDays + officeCutDays));
   const dutyL1 = cut(p.dutyL1, PLAFOND_CUT_PER_DAY.dutyL1);
   const dutyL2 = cut(p.dutyL2, PLAFOND_CUT_PER_DAY.dutyL2);
   const blockL1 = cut(p.blockL1, PLAFOND_CUT_PER_DAY.blockL1);
@@ -445,8 +511,42 @@ export function payEstimate(
   const abroadOn = (day: ParsedDuty[], at: string) => [at, ...day.flatMap((x) => [x.departureAirport, x.arrivalAirport])]
     .filter((a): a is string => !!a)
     .some((a) => a.toUpperCase() !== base.toUpperCase() && countryOf(a) !== 'Portugal (fora da base)');
-  let where = base; // the airport the pilot is at, carried through the roster
   const dates = [...days.keys()].sort();
+  // Training trips — away from base with no flight duty (a DHC out, simulator sessions, a DHC home): their per diem is
+  // the payslip's "Perdiem A … T", taxed IN FULL even abroad (user, 0.9.3.54, January 2026 payslip: 11 "A T" days = the
+  // VIE and FRA simulator trips; December's 4 = the VIE one; only the flying days kept the exempt part). A simulator
+  // during a flying stay stays per diem A away, with its exempt part. LATER payslips changed it: the June–September 2026
+  // ones (work of May–August, matched to the cent in 0.8.33.1) pay the FRA simulator trips as per diem A away, not "T".
+  // So the rule holds up to TRAINING_TRIP_TAXED_UNTIL — February to April 2026 still to be checked against payslips.
+  const trainingTripDates = new Set<string>();
+  {
+    let at = base;
+    let trip: string[] = [];
+    let flies = false;
+    for (const date of dates) {
+      const day = days.get(date)!;
+      const leaving = at === base;
+      for (const x of [...day].sort((a, b) => (a.departureTime ?? '').localeCompare(b.departureTime ?? ''))) {
+        if ((x.dutyType === 'Flight Duty' || x.dutyType === 'Positioning') && x.arrivalAirport) {
+          if (at === base && x.departureAirport && x.departureAirport.toUpperCase() !== base.toUpperCase()) continue;
+          if (at === base) { trip = []; flies = false; }
+          at = x.arrivalAirport.toUpperCase();
+          if (x.dutyType === 'Flight Duty') flies = true;
+          if (!trip.includes(date)) trip.push(date);
+        }
+      }
+      if (!leaving || at !== base) { if (!trip.includes(date)) trip.push(date); }
+      if (day.some((x) => x.dutyType === 'Flight Duty')) flies = true;
+      if (at === base && trip.length) {
+        if (!flies && trip.some((d) => days.get(d)!.some((x) => x.dutyType === 'Simulator' || x.dutyType === 'Training'))) {
+          for (const d of trip) if (d <= TRAINING_TRIP_TAXED_UNTIL) trainingTripDates.add(d);
+        }
+        trip = [];
+        flies = false;
+      }
+    }
+  }
+  let where = base; // the airport the pilot is at, carried through the roster
   const carryOver = new Set<string>();
   for (const date of dates) {
     const day = days.get(date)!;
@@ -466,7 +566,7 @@ export function payEstimate(
       perDiemA++;
       perDiemDates.a.push(date);
       // Away counts too: a simulator in Frankfurt during a stay is per diem A away, not "… T".
-      if (travelling || awayAtStart) {
+      if ((travelling || awayAtStart) && !trainingTripDates.has(date)) {
         perDiemTravelDays++; perDiemTravelValue += s.perDiemA;
         perDiemTravel.push({ date, value: s.perDiemA, abroad: abroadOn(day, awayAtStart ? whereAtStart : base) });
       }
@@ -476,7 +576,7 @@ export function payEstimate(
       // A medical day pays per diem B "T" but no meal ticket (October payslip: 7 B T, 6 tickets —
       // the one without is the aeromedical exam, user-confirmed).
       if (!awayAtStart && !day.every((x) => x.dutyType === 'Medical' || !GROUND_B.has(x.dutyType))) mealTicketDays++;
-      if (awayAtStart) {
+      if (awayAtStart && !trainingTripDates.has(date)) {
         perDiemTravelDays++; perDiemTravelValue += s.perDiemB;
         perDiemTravel.push({ date, value: s.perDiemB, abroad: abroadOn(day, whereAtStart) });
       }
@@ -511,27 +611,44 @@ export function payEstimate(
   const offDayValue = (offDayMinutes / 60) * OFF_DAY_HOURLY * s.vb + offDayDates.size * OFF_DAY_BONUS * s.vb;
 
   // ── Simulator sessions as instructor (not in the AE; the pilot's own fee) ──
-  const instructorSessions = [...instructorSimDates(duties)].filter(inMonth).length;
+  const ownChecks = ownCheckDates(duties);
+  const instructorSessions = s.allSimsPaid
+    ? new Set(duties.filter((d) => inMonth(d.date) && d.dutyType === 'Simulator' && !ownChecks.has(d.date)).map((d) => d.date)).size
+    : [...instructorSimDates(duties)].filter(inMonth).length;
   const instructorValue = instructorSessions * (s.instructorSession || 0);
 
   // ── Line training / familiarisation flown as instructor, per day ──
-  const lineTrainingDays = new Set(duties.filter((d) => inMonth(d.date) && isInstructorFlight(d)).map((d) => d.date)).size;
+  const lineCheckDates = new Set(duties.filter((d) => inMonth(d.date) && isLineCheckFlight(d)).map((d) => d.date));
+  const lineTrainingDays = new Set(duties.filter((d) => inMonth(d.date) && isInstructorFlight(d) && !lineCheckDates.has(d.date)).map((d) => d.date)).size;
   const lineTrainingValue = lineTrainingDays * (s.lineTrainingDay || 0);
 
+  // ── Ground training given ("Instrução em terra"), per hour, apart from the plafonds ──
+  const groundInstructionMinutes = duties.filter((d) => inMonth(d.date) && isGroundInstruction(d)).reduce((a, d) => a + sessionMinutesOf(d), 0);
+  const groundInstructionHoursAuto = Math.round((groundInstructionMinutes / 60) * 100) / 100;
+  const typedHours = s.instructionHours?.[month];
+  const groundInstructionHours = typedHours === undefined ? groundInstructionHoursAuto : Math.max(0, typedHours);
+  const groundInstructionValue = cents(groundInstructionHours * (s.groundInstructionHour || 0));
+
   // ── Line checks: days with W_INS flights, unless the pilot corrected the month's count ──
-  const lineChecksAuto = new Set(duties.filter((d) => inMonth(d.date) && isLineCheckFlight(d)).map((d) => d.date)).size;
+  const lineChecksAuto = lineCheckDates.size;
   const typed = s.lineChecks?.[month];
   const lineChecks = typed === undefined ? lineChecksAuto : Math.max(0, typed);
   const lineCheckValue = lineChecks * (s.lineCheck || 0);
 
   // ── Office days ("Subs. gabinete"): the GAB days of the month, at the pilot's rate ──
   const officeDays = new Set(duties.filter((d) => inMonth(d.date) && d.dutyType === 'Office Duty' && /^GAB/i.test(d.dutyCode)).map((d) => d.date)).size;
-  const officeValue = officeDays * (s.officeDay || 0);
+  const fromDay = Math.max(1, s.officeDayFrom || 1);
+  const toDay = s.officeDayTo && s.officeDayTo > 0 ? s.officeDayTo : Infinity;
+  const officePaidDays = Math.max(0, Math.min(officeDays, toDay) - fromDay + 1);
+  const officeValue = officePaidDays * (s.officeDay || 0);
   const mealTicketValue = cents(mealTicketDays * (s.mealTicket || 0));
 
   // ── RAACO meal allowances (paid apart; only their tax is on the payslip) ──
+  // The abonos of a simulator trip ("… T" days) are left out: the payslips tax none of them (user's Dec 2025–Mar 2026
+  // payslips, "Outros valores p/ impostos" to the cent: only the flying days' per diem and abonos over the limits; the
+  // 1275 € of January's trips taxed in February came back in March).
   const abonosByDate: Record<string, number> = {};
-  for (const d of raacoDays(duties, base).values()) if (inMonth(d.date) && d.total > 0) abonosByDate[d.date] = d.total;
+  for (const d of raacoDays(duties, base).values()) if (inMonth(d.date) && d.total > 0 && !trainingTripDates.has(d.date)) abonosByDate[d.date] = d.total;
   const abonos = Object.values(abonosByDate).reduce((a, v) => a + v, 0);
 
   const pension = pensionLines(s);
@@ -553,7 +670,7 @@ export function payEstimate(
   const christmasSubsidy = paidMonth === CHRISTMAS_PAY_MONTH ? cents(fixedPay) : 0;
 
   const variable = overtimeVal + perDiemValue + complementValue + extensionValue + reductionValue + offDayValue + instructorValue + lineTrainingValue
-    + lineCheckValue + officeValue + mealTicketValue;
+    + groundInstructionValue + lineCheckValue + officeValue + mealTicketValue;
   const lastDay = `${month}-${String(daysInMonth(month)).padStart(2, '0')}`;
   return {
     month,
@@ -586,10 +703,15 @@ export function payEstimate(
     instructorValue,
     lineTrainingDays,
     lineTrainingValue,
+    groundInstructionMinutes,
+    groundInstructionHours,
+    groundInstructionHoursAuto,
+    groundInstructionValue,
     lineChecks,
     lineChecksAuto,
     lineCheckValue,
     officeDays,
+    officePaidDays,
     officeValue,
     mealTicketDays,
     mealTicketValue,
@@ -598,6 +720,7 @@ export function payEstimate(
     holidayPayMonth: holidayPayMonth || null,
     holidayPayAuto: ticked === null,
     holidayDays,
+    officeCutDays,
     variable,
     includesPlanned: todayISO < lastDay,
   };
@@ -608,6 +731,17 @@ export interface NetEstimate {
   irsBase: number; // pay subject to IRS in the payslip
   irs: number;
   irsRate: number; // effective, of irsBase
+  // January's payslip pays December's variable — income of the YEAR BEFORE — and the payroll withholds it apart, at the
+  // table's rate for that amount alone ("Ded. fisc. per. ant." on the payslip). 0 in every other month.
+  priorYearIrsBase: number;
+  priorYearIrs: number;
+  // Every other month the payroll withholds the payslip's own IRS on its FIXED pay only, and the variable it pays is
+  // income of the month before: that month's IRS is withheld again on its fixed pay + this variable, less what it held
+  // then (payslips of Jun–Oct 2026: "IRS 07/2026 4624", "IRS 06/2026 4209−", "IRS 06/2026 7300"). Given only when the
+  // previous payslip's figures are known (netEstimate's `prev`); 0 otherwise, and `irs` is then one sum at one rate.
+  prevIrsBase: number; // the month before: its fixed pay + the variable paid now
+  prevIrs: number; // its IRS withheld again on that
+  prevIrsWithheld: number; // what its payslip held on its fixed pay alone, given back
   ssBase: number;
   ss: number;
   pensionDeposit: number;
@@ -623,13 +757,19 @@ export interface NetEstimate {
 
 // The payslip below the gross line, for the month the estimate is paid in: base pay plus the
 // previous month's variable part. IRS is withheld by the 2026 tables on the whole month's taxable
-// pay; SS takes 11%. Both leave out the non-taxable fixed part, and the exempt share of the per
+// pay (in January, December's variable apart: it is the year before's); SS takes 11%. Both leave out the non-taxable fixed part, and the exempt share of the per
 // diem for days away; per diem for days at base is taxed in full. Checked against a real October
 // 2026 payslip: IRS and both SS lines to the cent.
-export function netEstimate(r: PayEstimate, s: PaySettings): NetEstimate {
+// The fixed pay subject to IRS: every fixed line but the non-taxable part (the PGA's pension contribution).
+const fixedTaxableOf = (s: PaySettings) => s.vb + s.ve + s.vs + s.extras - (s.nonTaxableFixed || 0);
+
+// `prev` = the figures of the payslip before (the work month before): with them the IRS is withheld as the payroll does,
+// the fixed pay of this payslip apart and the variable on the month before (user, 0.9.3.62: "recalcular o IRS dos meses
+// anteriores"). It only changes the sum when the fixed pay changed between the two (a raise, a new chief bonus).
+export function netEstimate(r: PayEstimate, s: PaySettings, prev?: PaySettings): NetEstimate {
   const gross = r.rb + r.variable;
   const pension = pensionLines(s);
-  const fixedTaxable = r.rb - (s.nonTaxableFixed || 0) - pension.contribution;
+  const fixedTaxable = r.rb - (s.nonTaxableFixed || 0) - pension.contribution; // = fixedTaxableOf(s)
   // Everything but the per diem for days away and the meal tickets (tax-free, on the meal card).
   const variableTaxed = r.variable - r.perDiemTravelValue - (r.mealTicketValue || 0);
   // Per day away: per diem + that day's abonos, less the day's limit (national or abroad); abonos
@@ -648,9 +788,22 @@ export function netEstimate(r: PayEstimate, s: PaySettings): NetEstimate {
     for (const [date, v] of Object.entries(abonos)) if (!counted.has(date)) taxable += v;
     return taxable;
   };
-  const irsBase = fixedTaxable + variableTaxed + travelTaxable('irs');
+  // The variable of a December is paid in January, the year after: withheld on its own (user, 0.9.3.50, a January 2026
+  // payslip: "IRS (Cat. A)" 37,37% on the fixed pay alone and "Ded. fisc. per. ant." 34,20% on December's variable — the
+  // app's tables give 4171 € to the euro and 2693 € for the payslip's 2692 €; one sum at one rate was ~846 € too much).
+  const priorYear = (r.month ?? '').endsWith('-12');
+  const variableIrsBase = variableTaxed + travelTaxable('irs');
+  const withPrev = !priorYear && !!prev;
+  const irsBase = priorYear || withPrev ? fixedTaxable : fixedTaxable + variableIrsBase;
   const ssBase = fixedTaxable + variableTaxed + travelTaxable('ss');
   const irs = irsRetention(irsBase, s.irsTable || 'I', s.dependents || 0);
+  const priorYearIrsBase = priorYear ? variableIrsBase : 0;
+  const priorYearIrs = priorYear ? irsRetention(priorYearIrsBase, s.irsTable || 'I', s.dependents || 0) : 0;
+  // The month before, withheld again with the variable (its own table and dependants, as its payslip had them).
+  const prevFixed = withPrev ? fixedTaxableOf(prev!) : 0;
+  const prevIrsBase = withPrev ? prevFixed + variableIrsBase : 0;
+  const prevIrs = withPrev ? irsRetention(prevIrsBase, prev!.irsTable || 'I', prev!.dependents || 0) : 0;
+  const prevIrsWithheld = withPrev ? irsRetention(prevFixed, prev!.irsTable || 'I', prev!.dependents || 0) : 0;
   // Subsidies: SS like any pay, IRS withheld apart for each one, and the pension plan applies to
   // them too (it "incide 14 vezes por ano", RRRGS cl. 16.2): 6,5% / 7,5% of the subsidy itself —
   // the PGA's part as a non-taxable abono ("Fundo pensões contr. SF/SN"), the deposit taken off.
@@ -667,10 +820,11 @@ export function netEstimate(r: PayEstimate, s: PaySettings): NetEstimate {
   const pensionDeposit = cents(pension.deposit + subsidyPension.deposit);
   const grossAll = gross + subsidyTotal + subsidyPension.contribution;
   return {
-    gross: grossAll, irsBase, irs, irsRate: irsBase > 0 ? irs / irsBase : 0, ssBase, ss, pensionDeposit, union, fixedDeductions,
+    gross: grossAll, irsBase, irs, irsRate: irsBase > 0 ? irs / irsBase : 0, priorYearIrsBase, priorYearIrs,
+    prevIrsBase, prevIrs, prevIrsWithheld, ssBase, ss, pensionDeposit, union, fixedDeductions,
     subsidyIrs,
     subsidyPensionContribution: subsidyPension.contribution,
     mealCard: r.mealTicketValue || 0,
-    net: grossAll - irs - subsidyIrs - ss - pensionDeposit - union - fixedDeductions - (r.mealTicketValue || 0),
+    net: grossAll - irs - priorYearIrs - (prevIrs - prevIrsWithheld) - subsidyIrs - ss - pensionDeposit - union - fixedDeductions - (r.mealTicketValue || 0),
   };
 }

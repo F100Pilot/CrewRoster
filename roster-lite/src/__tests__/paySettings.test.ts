@@ -84,6 +84,30 @@ describe('pay values by version (a raise never changes the months before)', () =
     expect(getPaySettingsFor(uid, '2027-03').vb).toBe(7500);
   });
 
+  it('saving from a payslip on changes only the edited fields, never a payslip\'s own other figures', async () => {
+    const { getPaySettingsFor, savePayVersion, setPaySettings, getPaySettings } = await import('../storage/settings');
+    const { DEFAULT_PAY_SETTINGS } = await import('../domain/payEstimate');
+    const uid = 'edit-' + Math.random().toString(36).slice(2);
+    setPaySettings(uid, { ...DEFAULT_PAY_SETTINGS, enabled: true, vb: 7000, ve: 1000 });
+    // January's payslip (December's work) fixed on its own.
+    savePayVersion(uid, '2025-12', { ...getPaySettingsFor(uid, '2025-12'), vb: 7341.5 }, true);
+    // Then an hourly fee for every payslip, and a GAB rule from November on: January keeps its VB.
+    savePayVersion(uid, '', { ...getPaySettings(uid), groundInstructionHour: 60 }, false, { groundInstructionHour: 60 });
+    savePayVersion(uid, '2026-11', { ...getPaySettingsFor(uid, '2026-11'), officeDayFrom: 3 }, false, { officeDayFrom: 3 });
+    expect(getPaySettingsFor(uid, '2025-12').vb).toBe(7341.5);
+    expect(getPaySettingsFor(uid, '2025-12').groundInstructionHour).toBe(60);
+    expect(getPaySettingsFor(uid, '2025-12').officeDayFrom).toBe(1);
+    expect(getPaySettingsFor(uid, '2026-01').vb).toBe(7000);
+    expect(getPaySettingsFor(uid, '2026-12').officeDayFrom).toBe(3);
+    expect(getPaySettingsFor(uid, '2026-12').groundInstructionHour).toBe(60);
+    expect(getPaySettings(uid).officeDayFrom).toBe(3);
+    // A raise from a month on still reaches every later payslip.
+    savePayVersion(uid, '2026-06', { ...getPaySettingsFor(uid, '2026-06'), ve: 1100 }, false, { ve: 1100 });
+    expect(getPaySettingsFor(uid, '2026-12').ve).toBe(1100);
+    expect(getPaySettingsFor(uid, '2026-05').ve).toBe(1000);
+    expect(getPaySettingsFor(uid, '2025-12').vb).toBe(7341.5);
+  });
+
   it('figures typed in the older installed app (current set only) win over the latest version', async () => {
     const { getPaySettingsFor, savePayVersion, setPaySettings, getPaySettings } = await import('../storage/settings');
     const { DEFAULT_PAY_SETTINGS } = await import('../domain/payEstimate');

@@ -111,6 +111,19 @@ describe('interpretPgaGrid — line check marks (W_INS)', () => {
   });
 });
 
+describe('interpretPgaGrid — two instructor marks in one sub-column', () => {
+  it('reads "FAM_INS, LIFUS_INS" as both marks on the leg (a real May roster: a line check given)', () => {
+    const both = (tokens as PositionedToken[]).map((t) => (t.text.trim() === 'LIFUS_INS' ? { ...t, text: 'FAM_INS, LIFUS_INS' } : t));
+    const lifus = duties.filter((d) => (d.observations ?? '').split(/,\s*/).includes('LIFUS_INS')).map((d) => `${d.date} ${d.flightNumber}`);
+    const read = interpretPgaGrid(both).filter((d) => {
+      const obs = (d.observations ?? '').split(/,\s*/);
+      return obs.includes('FAM_INS') && obs.includes('LIFUS_INS');
+    }).map((d) => `${d.date} ${d.flightNumber}`);
+    expect(lifus.length).toBeGreaterThan(0);
+    expect(read).toEqual(lifus);
+  });
+});
+
 describe('interpretPgaGrid — line training given (CLTC / CTRI)', () => {
   it('reads "LOGIN CLTC" after the aircraft: the mark goes to the notes, the login is the trainee', () => {
     // The token printed after TP868's aircraft, swapped for a synthetic line-training mark.

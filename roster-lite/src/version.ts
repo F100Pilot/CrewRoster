@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.3.46';
+export const APP_VERSION = '0.9.3.64';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -20,6 +20,137 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.9.3.64',
+    date: '2026-11-15',
+    highlights: [
+      'Estatísticas: o botão Bloco / Serviço da evolução mensal passa a mudar também os totais "Por ano". Em Serviço, cada ano mostra as horas de serviço, contadas como nos limites, e os dias de serviço. Só contam os meses com escala guardada, e o cartão diz quantos são.',
+      'Vencimento: quando o subsídio de gabinete não tem valor, a linha diz "não pagos", em vez de pedir o valor nas Definições.',
+    ],
+  },
+  {
+    version: '0.9.3.63',
+    date: '2026-11-15',
+    highlights: [
+      'Vencimento (experimental): cada dia de gabinete (GAB) passa a reduzir os plafonds como um dia de férias. Os feriados deixam de contar a dobrar no block-pay e ficam só no duty-pay. Com isto, o block-pay de junho de 2026 fica 13 minutos acima do Limite 1, e o recibo de julho pagou 0,25 h.',
+    ],
+  },
+  {
+    version: '0.9.3.62',
+    date: '2026-11-15',
+    highlights: [
+      'Vencimento (experimental): o IRS passa a ser retido como no recibo. O IRS do mês é calculado só sobre o fixo, e o do mês anterior é refeito com o variável que agora se paga, descontando o que já tinha sido retido. O cartão mostra as duas linhas. Só muda o valor quando o fixo mudou de um mês para o outro, como num aumento.',
+    ],
+  },
+  {
+    version: '0.9.3.61',
+    date: '2026-11-15',
+    highlights: [
+      'Vencimento: a linha "Instrução em terra" aparece em todos os meses quando tens o valor por hora nas Definições, mesmo sem sessões FP…_INST na escala. Assim já podes escrever no ✎ as horas que fizeste fora da escala (o recibo de julho de 2026 pagou 1 h de junho).',
+    ],
+  },
+  {
+    version: '0.9.3.60',
+    date: '2026-11-15',
+    highlights: [
+      'Vencimento (experimental): um dia com voos marcados FAM_INS e LIFUS_INS ao mesmo tempo conta como line check, e não como line training, como no recibo de junho de 2026. A app perdia estas marcas quando vinham juntas na escala. A escala guardada é relida sozinha. FAM_INS sozinho continua a contar como line training, como nos recibos de julho e outubro.',
+    ],
+  },
+  {
+    version: '0.9.3.59',
+    date: '2026-11-15',
+    highlights: [
+      'Vencimento (experimental): os dias de gabinete (GAB) deixam de contar para o duty-pay, porque são pagos à parte com o subsídio de gabinete. Os recibos de março e junho de 2026 não pagaram duty-pay, e sem os GAB o mês fica abaixo do Limite 1. Continuam a contar nos limites do AE.',
+    ],
+  },
+  {
+    version: '0.9.3.58',
+    date: '2026-11-15',
+    highlights: [
+      'Vencimento: a janela das horas de instrução em terra diz apenas "Horas de instrução em terra". Escreve as horas que fizeste ou que estão previstas.',
+    ],
+  },
+  {
+    version: '0.9.3.57',
+    date: '2026-11-15',
+    highlights: [
+      'Vencimento: as horas de instrução em terra de cada mês podem ser escritas no cartão (✎), as feitas ou as previstas, para teres uma ideia do ordenado. "Repor a escala" volta às sessões FP…_INST.',
+    ],
+  },
+  {
+    version: '0.9.3.56',
+    date: '2026-11-15',
+    highlights: [
+      'Vencimento (líquido, experimental): até março de 2026, os abonos RAACO das deslocações de simulador deixam de ser tributados, e o per diem dessas deslocações é tributado por inteiro ("A … T"). Bate ao cêntimo com os recibos de janeiro a abril.',
+      'Taskforce: com "Todas as sessões de simulador são pagas", o teu próprio check (OPC/LPC sem _INS) e o dia a seguir não contam, como no recibo de abril.',
+    ],
+  },
+  {
+    version: '0.9.3.55',
+    date: '2026-11-15',
+    highlights: [
+      'Definições → Vencimento: em "A partir de um recibo", o mês proposto é agora o do recibo aberto no Vencimento, e não o próximo. Antes, uma opção ligada a ver janeiro só passava a valer a partir de dezembro.',
+    ],
+  },
+  {
+    version: '0.9.3.54',
+    date: '2026-11-15',
+    highlights: [
+      'Vencimento (líquido, experimental): até janeiro de 2026, o per diem das deslocações de simulador (DHC de ida, sessões, DHC de volta) é tributado por inteiro, como no recibo ("Perdiem A … T"). Só os dias de voo mantêm a parte isenta. Os recibos a partir de junho de 2026 já tratam estas deslocações como dias fora; fevereiro a abril ainda está por confirmar.',
+    ],
+  },
+  {
+    version: '0.9.3.53',
+    date: '2026-11-15',
+    highlights: [
+      'Calendário: um dia com simulador e outro serviço (por exemplo o DHC de regresso) fica com a tecla dividida na diagonal. O primeiro serviço do dia fica em cima à esquerda e o segundo em baixo à direita. Substitui a marca "SIM".',
+    ],
+  },
+  {
+    version: '0.9.3.52',
+    date: '2026-11-15',
+    highlights: [
+      'Definições → Vencimento: nova opção "Todas as sessões de simulador são pagas" (taskforce). Conta todas as sessões ao valor por sessão, também aquelas em que recebes instrução.',
+      'Calendário: um dia com simulador e, a seguir, o DHC de regresso mostra agora uma marca "SIM". Antes só aparecia o voo e o simulador ficava escondido.',
+    ],
+  },
+  {
+    version: '0.9.3.51',
+    date: '2026-11-15',
+    highlights: [
+      'Vencimento: guardar "A partir de um recibo" ou "Todos os meses" muda só os valores que alteraste. Os recibos com valores só seus (gravados com "Só este recibo") mantêm os outros valores. Antes eram substituídos pelos do formulário, e parecia que a app repunha os valores.',
+    ],
+  },
+  {
+    version: '0.9.3.50',
+    date: '2026-11-15',
+    highlights: [
+      'Vencimento (experimental): no recibo de janeiro, o IRS do variável de dezembro (rendimento do ano anterior) é retido à parte, com a sua própria taxa, como no recibo ("Ded. fisc. per. ant."). A soma única dava centenas de euros de IRS a mais. Os outros meses não mudam.',
+    ],
+  },
+  {
+    version: '0.9.3.49',
+    date: '2026-11-15',
+    highlights: [
+      'Definições → Vencimento: o subsídio de gabinete pode pagar só alguns dias GAB do mês, por ordem ("Gabinete pago a partir do" … "Até ao"). Por exemplo, do 3.º ao 7.º. Por omissão pagam-se todos, como até aqui.',
+    ],
+  },
+  {
+    version: '0.9.3.48',
+    date: '2026-11-15',
+    highlights: [
+      'Vencimento (experimental): nova linha "Instrução em terra". São as horas das sessões FP…_INST × o teu valor por hora (Definições → Vencimento → "Instrução em terra (hora)").',
+      'Os dias de instrução em terra deixam de contar para o duty-pay, porque são pagos à parte. Continuam a contar nos limites do AE. As horas contam-se pelas sessões da escala, sem o almoço; a forma de contar ainda está a ser confirmada.',
+    ],
+  },
+  {
+    version: '0.9.3.47',
+    date: '2026-11-15',
+    highlights: [
+      'Definições → Vencimento: abertas a partir do Vencimento, mostram os valores do recibo que lá tens aberto. "Só este recibo" grava nesse recibo (antes ia para o próximo).',
+      'A barra "Alterações por guardar" passou a uma linha e já não tapa o campo que estás a escrever. Ao carregar em Guardar escolhes "Só o recibo de …" (sem escolha de mês) ou "A partir de um recibo".',
+    ],
+  },
   {
     version: '0.9.3.46',
     date: '2026-11-15',

@@ -1,14 +1,18 @@
 import InfoCollapse from './InfoCollapse';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Alert, Box, Card, CardContent, Checkbox, FormControlLabel, IconButton, Stack, Typography } from '@mui/material';
-import { Add, ChevronLeft, ChevronRight, ExpandLess, ExpandMore, Payments, Remove } from '@mui/icons-material';
+import { Alert, Box, Button, Card, CardContent, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, IconButton, InputAdornment, Stack, TextField, Typography } from '@mui/material';
+import { Add, ChevronLeft, ChevronRight, Edit, ExpandLess, ExpandMore, Payments, Remove } from '@mui/icons-material';
 import { netEstimate, payEstimate, type Credit } from '../domain/payEstimate';
 import { depth } from '../theme';
 import { getPaySettingsFor, patchPayGlobal } from '../storage/settings';
+import { setViewedPayMonth } from './settingsEvents';
 import { ExperimentalChip } from './AeDisclaimer';
 import { formatDuration } from '../utils/duration';
 import type { ParsedDuty } from '../domain/types';
 import { todayISO } from '../domain/rosterWindow';
+import { evalExpression } from '../utils/calc';
+
+const hoursText = (h: number) => h.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const MONTHS_LONG = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto',
   'setembro', 'outubro', 'novembro', 'dezembro'];
@@ -37,9 +41,20 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
     window.addEventListener('pay-settings-updated', reload);
     return () => window.removeEventListener('pay-settings-updated', reload);
   }, [userId, month]);
+  // Settings → Vencimento edits the payslip open here.
+  useEffect(() => { setViewedPayMonth(month); return () => setViewedPayMonth(null); }, [month]);
   const [showDays, setShowDays] = useState(false);
   const r = useMemo(() => payEstimate(duties, month, settings, today, base), [duties, month, settings, today, base]);
-  const n = useMemo(() => netEstimate(r, settings), [r, settings]);
+  // The payslip before's figures: the payroll withholds this payslip's IRS on its fixed pay and the variable on that month.
+  const [prevSettings, setPrevSettings] = useState(() => getPaySettingsFor(userId, shiftMonth(month, -1)));
+  useEffect(() => {
+    const reload = () => setPrevSettings(getPaySettingsFor(userId, shiftMonth(month, -1)));
+    reload();
+    window.addEventListener('pay-settings-updated', reload);
+    return () => window.removeEventListener('pay-settings-updated', reload);
+  }, [userId, month]);
+  const n = useMemo(() => netEstimate(r, settings, prevSettings), [r, settings, prevSettings]);
+  const pct = (part: number, of: number) => `${((of > 0 ? part / of : 0) * 100).toFixed(2).replace('.', ',')}%`;
 
   // Tick: this payslip carries the holiday subsidy. Untick: not this one — back to the roster's
   // month if that's another one, otherwise "none seen yet" for the year.
@@ -57,6 +72,17 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
     if (n === r.lineChecksAuto) delete lineChecks[month]; else lineChecks[month] = Math.max(0, n);
     patchPayGlobal(userId, { lineChecks });
   };
+  // Ground instruction hours: the roster's sessions unless the pilot typed the month's hours (done or planned).
+  const [editHours, setEditHours] = useState(false);
+  const [hoursInput, setHoursText] = useState('');
+  const saveHours = (value: number | null) => {
+    const instructionHours = { ...(settings.instructionHours ?? {}) };
+    if (value === null || Math.round(value * 100) === Math.round(r.groundInstructionHoursAuto * 100)) delete instructionHours[month];
+    else instructionHours[month] = Math.max(0, Math.round(value * 100) / 100);
+    patchPayGlobal(userId, { instructionHours });
+    setEditHours(false);
+  };
+  const typedHours = evalExpression(hoursInput);
   if (!settings.enabled) return null;
   const subsidyCount = (r.holidaySubsidy > 0 ? 1 : 0) + (r.christmasSubsidy > 0 ? 1 : 0);
   const subsidyNames = [r.holidaySubsidy > 0 && 'subsídio de férias', r.christmasSubsidy > 0 && 'subsídio de Natal'].filter(Boolean).join(' e ');
@@ -116,9 +142,12 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
             <Stack spacing={0.75} mt={0.5}>
               <CreditBar label="Duty-pay" c={r.duty} chosen={r.overtime === 'duty'} showValue={hasVb} />
               <CreditBar label="Block-pay" c={r.block} chosen={r.overtime === 'block'} showValue={hasVb} />
-              {r.holidayDays > 0 && (
+              {r.holidayDays + r.officeCutDays > 0 && (
                 <Typography variant="caption" color="text.secondary">
-                  Plafonds reduzidos por {r.holidayDays} {r.holidayDays === 1 ? 'dia' : 'dias'} de férias.
+                  Plafonds reduzidos por {[
+                    r.holidayDays > 0 ? `${r.holidayDays} ${r.holidayDays === 1 ? 'dia' : 'dias'} de férias` : '',
+                    r.officeCutDays > 0 ? `${r.officeCutDays} ${r.officeCutDays === 1 ? 'dia' : 'dias'} de gabinete` : '',
+                  ].filter(Boolean).join(' e ')}.
                 </Typography>
               )}
             </Stack>
@@ -152,7 +181,7 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                 {/* Shown even with no fee typed yet, so sessions found in the roster don't go unnoticed. */}
                 {r.instructorSessions > 0 && (
                   <Row
-                    label={`Simulador como instrutor: ${r.instructorSessions} ${r.instructorSessions === 1 ? 'sessão' : 'sessões'}${settings.instructorSession ? '' : ' · falta o valor nas Definições'}`}
+                    label={`Simulador como instrutor: ${r.instructorSessions} ${r.instructorSessions === 1 ? 'sessão' : 'sessões'}${settings.allSimsPaid ? ' (todas pagas)' : ''}${settings.instructorSession ? '' : ' · falta o valor nas Definições'}`}
                     value={r.instructorValue}
                   />
                 )}
@@ -162,10 +191,22 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                     value={r.lineTrainingValue}
                   />
                 )}
+                {/* The pilot types the hours done or planned for the month (✎) — the roster's sessions by default; "Repor" goes back. */}
+                {(r.groundInstructionHoursAuto > 0 || settings.instructionHours?.[month] !== undefined || settings.groundInstructionHour > 0) && (
+                  <Box display="flex" alignItems="center" gap={0.5}>
+                    <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1, minWidth: 0 }}>
+                      Instrução em terra: {hoursText(r.groundInstructionHours)} h
+                      {settings.instructionHours?.[month] !== undefined ? ` · corrigido (escala: ${hoursText(r.groundInstructionHoursAuto)} h)` : ' · pelas sessões FP…_INST'}
+                      {settings.groundInstructionHour ? '' : ' · falta o valor nas Definições'}
+                    </Typography>
+                    <IconButton size="small" aria-label="Corrigir as horas de instrução em terra" onClick={() => { setHoursText(hoursText(r.groundInstructionHours)); setEditHours(true); }}><Edit fontSize="small" /></IconButton>
+                    <Typography variant="body2" fontWeight={600} sx={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{EUR.format(r.groundInstructionValue)}</Typography>
+                  </Box>
+                )}
                 {(r.lineChecks > 0 || r.lineChecksAuto > 0 || settings.lineCheck > 0) && (
                   <Box display="flex" alignItems="center" gap={0.5}>
                     <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1, minWidth: 0 }}>
-                      Line checks: {r.lineChecks}{r.lineChecks !== r.lineChecksAuto ? ` · corrigido (escala: ${r.lineChecksAuto})` : r.lineChecks > 0 ? ' · pela escala (W_INS)' : ''}{r.lineChecks > 0 && !settings.lineCheck ? ' · falta o valor nas Definições' : ''}
+                      Line checks: {r.lineChecks}{r.lineChecks !== r.lineChecksAuto ? ` · corrigido (escala: ${r.lineChecksAuto})` : r.lineChecks > 0 ? ' · pela escala' : ''}{r.lineChecks > 0 && !settings.lineCheck ? ' · falta o valor nas Definições' : ''}
                     </Typography>
                     <IconButton size="small" aria-label="Menos um line check" disabled={r.lineChecks === 0} onClick={() => setLineChecks(r.lineChecks - 1)}><Remove fontSize="small" /></IconButton>
                     <IconButton size="small" aria-label="Mais um line check" onClick={() => setLineChecks(r.lineChecks + 1)}><Add fontSize="small" /></IconButton>
@@ -174,7 +215,7 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                 )}
                 {r.officeDays > 0 && (
                   <Row
-                    label={`Subsídio de gabinete: ${r.officeDays} ${r.officeDays === 1 ? 'dia' : 'dias'} GAB${settings.officeDay ? '' : ' · falta o valor nas Definições'}`}
+                    label={`Subsídio de gabinete: ${r.officeDays} ${r.officeDays === 1 ? 'dia' : 'dias'} GAB${!settings.officeDay ? ' · não pagos' : r.officePaidDays !== r.officeDays ? ` · ${r.officePaidDays} ${r.officePaidDays === 1 ? 'pago' : 'pagos'}` : ''}`}
                     value={r.officeValue}
                   />
                 )}
@@ -202,7 +243,23 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                 />
                 <Box sx={{ borderTop: 1, borderColor: 'divider', my: 0.5 }} />
                 <Row label="Bruto" value={n.gross} strong />
-                <Row label={`IRS (${(n.irsRate * 100).toFixed(2).replace('.', ',')}% de ${EUR.format(n.irsBase)})`} value={-n.irs} />
+                {n.prevIrsBase > 0 ? (
+                  <>
+                    <Row label={`IRS de ${monthName(shiftMonth(month, 1))}, só o fixo (${pct(n.irs, n.irsBase)} de ${EUR.format(n.irsBase)})`} value={-n.irs} />
+                    <Row
+                      label={`IRS de ${monthName(month)} refeito com o variável (${pct(n.prevIrs, n.prevIrsBase)} de ${EUR.format(n.prevIrsBase)}, menos ${EUR.format(n.prevIrsWithheld)} já retidos)`}
+                      value={-(n.prevIrs - n.prevIrsWithheld)}
+                    />
+                  </>
+                ) : (
+                  <Row label={`IRS (${(n.irsRate * 100).toFixed(2).replace('.', ',')}% de ${EUR.format(n.irsBase)})`} value={-n.irs} />
+                )}
+                {n.priorYearIrs > 0 && (
+                  <Row
+                    label={`IRS do variável de dezembro, ano anterior (${((n.priorYearIrs / n.priorYearIrsBase) * 100).toFixed(2).replace('.', ',')}% de ${EUR.format(n.priorYearIrsBase)})`}
+                    value={-n.priorYearIrs}
+                  />
+                )}
                 {n.subsidyIrs > 0 && <Row label="IRS dos subsídios (retenção à parte)" value={-n.subsidyIrs} />}
                 <Row label="Segurança Social (11%)" value={-n.ss} />
                 {n.pensionDeposit > 0 && <Row label="Depósito f. pensões SIPLA (7,5%)" value={-n.pensionDeposit} />}
@@ -223,10 +280,12 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
             <Box mt={0.75}>
               <InfoCollapse card={false} title="Como se calcula">
                 <Typography variant="caption" color="text.secondary" display="block" lineHeight={1.35}>
-                  O variável (per diem incluído) é pago no mês seguinte. IRS pelas tabelas de retenção de 2026 (continente); não
-                  prevê acertos de meses anteriores. Noturno 23h–06h e feriados nacionais em hora de Lisboa, somados às outras
-                  alíneas da cl. 12.2. Subsídios sobre todos os fixos: férias = 42 dias (fixos ÷ 30 × 42), Natal = um mês (cl. 7 e
-                  8), com IRS retido à parte, SS e fundo de pensões. Line checks: um por dia com voos W_INS — corrige com − / + se
+                  O variável (per diem incluído) é pago no mês seguinte. IRS pelas tabelas de retenção de 2026 (continente), como
+                  no recibo: o do mês só sobre o fixo, e o do mês anterior refeito com o variável que agora se paga (menos o
+                  que já tinha sido retido); em janeiro, o variável de dezembro à parte. Não prevê outras correções de meses
+                  passados. Noturno 23h–06h e feriados em hora de Lisboa, somados às outras
+                  alíneas da cl. 12.2 (o feriado só no duty-pay, como nos recibos). Cada dia de férias ou de gabinete reduz os plafonds. Subsídios sobre todos os fixos: férias = 42 dias (fixos ÷ 30 × 42), Natal = um mês (cl. 7 e
+                  8), com IRS retido à parte, SS e fundo de pensões. Line checks: um por dia com voos W_INS, ou FAM_INS e LIFUS_INS juntos — corrige com − / + se
                   não bater. Voos em dia de folga (cl. 13) e reduções de repouso (cl. 2.8) contam quando marcados no dia. Não
                   inclui split-duty nem o acerto anual dos plafonds (março). Confirma sempre no recibo.
                 </Typography>
@@ -235,6 +294,20 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
           </>
         )}
       </CardContent>
+      <Dialog open={editHours} onClose={() => setEditHours(false)} fullWidth maxWidth="xs">
+        <DialogTitle sx={{ pb: 1 }}>Horas de instrução em terra</DialogTitle>
+        <DialogContent sx={{ pt: '8px !important' }}>
+          <TextField
+            fullWidth size="small" label="Horas" value={hoursInput} onChange={(e) => setHoursText(e.target.value)}
+            inputProps={{ inputMode: 'decimal' }} InputProps={{ endAdornment: <InputAdornment position="end">h</InputAdornment> }}
+            error={hoursInput.trim() !== '' && typedHours === null}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button color="inherit" onClick={() => saveHours(null)}>Repor a escala</Button>
+          <Button variant="contained" disabled={typedHours === null} onClick={() => saveHours(typedHours)}>Guardar</Button>
+        </DialogActions>
+      </Dialog>
     </Card>
   );
 }

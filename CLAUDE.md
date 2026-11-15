@@ -246,15 +246,36 @@ Things learned over this collaboration that should persist across sessions:
   Medical days — verified day-for-day against a real roster + payslip. Simulator instructor sessions
   (paid at a per-session fee the pilot sets, not in the AE) = sims whose check mark (parsed into
   `observations`: OPC/LPC, or OPC_INS/LPC_INS as instructor) has `_INS`, plus the check's unmarked
-  2nd day; FP…_INST is ground training given, not a sim session. Line training as instructor = days
+  2nd day — unless the pilot switches on `allSimsPaid` (then every session but the pilot's OWN checks — OPC/LPC without
+  _INS and the day after, `ownCheckDates`; April 2026 payslip: 6 of 8) (since 0.9.3.52, user: in the task force every session is paid,
+  "mesmo as que dizem instrução"; January 2026: 7 paid, 5 given + 2 received), then every simulator day counts; the
+  calendar splits the key of a day with a simulator and another duty on the diagonal (earlier duty's colour top-left;
+  user, 0.9.3.53 — it showed only the DHC home); FP…_INST is ground training given, not a sim session — **paid apart as "Instrução em terra"** (since 0.9.3.48,
+  user, from a January 2026 payslip: hours × the pilot's hourly fee `groundInstructionHour`, decimal hours to 2 places)
+  **and left out of the duty-pay plafonds** (`isGroundInstruction` in `payEstimate.ts`; still duty for the AE limits).
+  Hours = the FP…_INST sessions as printed, lunch out — PROVISIONAL: that payslip paid 51,37 h where the sessions give
+  54h50 and the [DT] 62h20; the user is asking a specialist how they are counted. Since 0.9.3.57 the pilot types
+  the month's hours on the pay card — the ones done or planned, to see the pay coming (user: the dialog just says "Horas
+  de instrução em terra", never "what the payslip shows") — ✎ → decimal hours, `instructionHours['yyyy-MM']`, global like
+  `lineChecks`; "Repor a escala" drops it: Dec–Apr 2026 paid 51,37 / 0 / 6,33 / 6,17 / 2 h against 54,83 / 7 / 5,83 / 12 / 10 h
+  of sessions — no rule found. Since 0.9.3.61 the row shows whenever the pilot has an hourly fee, even with no sessions on the roster (the July 2026 payslip paid 1 h of a June without any). Line training as instructor = days
   with a flight marked LIFUS_INS or FAM_INS (mark in its own sub-column just left of its leg; the
   parser attaches it to the nearest flight sub-column on its right), paid once per day. Variable items
   paid the month after. Since 0.8.34: office days ("Subs. gabinete", per GAB day, `officeDay` typed by the
-  pilot) and meal tickets ("Sub. alimentação tickets", one per per-diem-B day at base, `mealTicket` 10,46 €,
+  pilot; since 0.9.3.49 only the GAB days of the month from `officeDayFrom` to `officeDayTo` by their order — user: with
+  one chief bonus the 1st–2nd aren't paid, the 3rd–7th are, from the 8th none; with a higher one none — the tiers and
+  amounts are typed by each pilot, never in the code; since 0.9.3.59 GAB days are OUT of the duty-pay plafonds too —
+  `isOfficeDay` / `paidApart` in `payEstimate.ts`, like FP…_INST: the March and June 2026 payslips paid no duty-pay where
+  the app had 1817,94 € / 6171,71 €, all of it from the 3 / 7 GAB days; still duty for the AE limits; since 0.9.3.63 each GAB day also CUTS the plafonds like a day of holidays — user: "um dia
+  de gabinete descontava para plafond de horas como se fosse um dia de férias"; `officeCutDays`; June 2026: 6 GAB + 1 F → block
+  L1 46h, the app 46h13, the payslip paid 0,25 h; open: February 2026 gives 50h38 against 50h and the payslip paid nothing) and meal tickets ("Sub. alimentação tickets", one per per-diem-B day at base, `mealTicket` 10,46 €,
   tax-free, taken off the net as "Cartão-refeição"; NOT on a medical-only day, which still pays per diem B — October
   payslip, user-confirmed, since 0.8.37.1). Line checks (payslip "LCC_Line Check") since 0.8.36: the fee is typed by the pilot (`lineCheck`); since
   0.8.36.1 counted from the roster — one per day with flights marked **W_INS** (the examiner; the day's code is
-  W_PNT; user found it on a CrewLine roster) via `isLineCheckFlight`; −/+ on the pay card stores a per-month
+  W_PNT; user found it on a CrewLine roster) via `isLineCheckFlight`; since 0.9.3.60 also a day whose legs carry FAM_INS
+AND LIFUS_INS together (one sub-column "FAM_INS, LIFUS_INS", read since PARSE_VERSION 29; the June 2026 payslip paid it as
+"LCC Line Check" — that day is not a line training day; FAM_INS alone stays line training: Jul/Oct 2026 payslips; LT and LC
+counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on the pilot's own legs = HIS line check, nothing paid; −/+ on the pay card stores a per-month
   correction (`lineChecks['yyyy-MM']`, dropped when it equals the roster's count). Variable part.
 - **Pay figures are shown to the cent** (since 0.8.37.2, user: "não quero que faças arredondamentos"): no whole-euro
   formatting and no "≈" on the pay card; the maths was already in cents. The one rounding kept is the payroll's own:
@@ -268,8 +289,16 @@ Things learned over this collaboration that should persist across sessions:
   `storage/settings.ts`; `crewroster.pay.<user>` stays the current set. **"Só este recibo"** (user, 0.9.3.46: "tem de ser
   possível a gravação só naquele mês"): a toggle beside the month on the Guardar panel — `savePayVersion(…, onlyThisMonth)`
   replaces only that month's version and adds one for the month after with the figures it was using (unless it has its
-  own); only the fields edited in the draft change, on top of that month's own figures (`getPaySettingsFor`). The form
-  then shows the figures of the months to come again, and its caption says that month has figures of its own. NEVER let a change rewrite earlier months (user:
+  own); only the fields edited in the draft change, on top of that month's own figures (`getPaySettingsFor`). Since
+  0.9.3.47 (user: the change went to the next payslip, the box covered the field, no month list for "só este"): the form
+  loads the payslip open on the Vencimento page (`setViewedPayMonth` in `settingsEvents.ts`, written by
+  `PayEstimateCard`; else the next one), the sticky bar is one line (Descartar · Guardar) and Guardar opens a dialog:
+  "Só o recibo de …" (that payslip, no month list; default when it isn't the next one) or "A partir de um recibo" (the
+  month list, "Todos os meses" included; since 0.9.3.55 it proposes the OPEN payslip, not the next one — a switch turned on
+  while looking at January had gone to December on). Either way only the edited fields change, on the target month's figures.
+  **From a month on, only the EDITED fields go into every later version** (`savePayVersion(…, edited)`, since 0.9.3.51 —
+  user: "está sempre a repor os valores que eu tinha alterado": saving the instruction fee for all months replaced the
+  whole form over every version and wiped a January fixed with "Só este recibo"); each version keeps its other figures. NEVER let a change rewrite earlier months (user:
   "nunca pode alterar os valores anteriores"). The on/off switch and the card's per-month notes (`holidayPay`, `lineChecks`)
   are global, written with `patchPayGlobal()`. Leaving Settings / switching tab with unsaved figures asks first.
   Lost figures can be read back from a backup file without a full restore ("Recuperar valores de uma cópia de segurança",
@@ -289,9 +318,22 @@ Things learned over this collaboration that should persist across sessions:
   cent; a load-time migration moves a saved 51,9 back), already reduced for the hotel the company pays; update with the State Budget), applied to that day's
   per diem + its RAACO abonos; the rest is taxed with the salary (the payslip's "Outros valores p/ impostos",
   which is INCLUDED in its "Sujeito a IRS" and in the next month's SS line); per diem for days at base ("… T") is
-  taxed in full. A SIM away (e.g. FRA during a stay) is per diem A away, not "… T". With the real abonos, IRS and SS
+  taxed in full. A SIM away (e.g. FRA during a stay) is per diem A away, not "… T". BUT up to January 2026 a SIMULATOR
+  TRIP (away with no flight duty: DHC out, sessions, DHC home) was "Perdiem A … T", taxed in full even abroad (Jan and Feb
+  2026 payslips; `TRAINING_TRIP_TAXED_UNTIL` in `payEstimate.ts`, March 2026 since 0.9.3.56) — "T" is not "at base" — and
+  the RAACO abonos of those trips are NOT taxed (Dec 2025–Mar 2026 "Outros valores p/ impostos" to the cent: IRS = flying
+  days' per diem + abonos − limits only; 1275 € of January's trip abonos taxed in February came back in March; SS the
+  same with the SS limits). The Jun–Sep 2026 payslips pay the FRA sim trips as A away; April–May 2026 still to check. With the real abonos, IRS and SS
   of Jun–Sep 2026 match to the cent; the remaining error is the RAACO abonos estimate.
-  Verified to within a few euros on two real payslips. Pension plan (RRRGS cl. 16, `pensionAuto`):
+  Verified to within a few euros on two real payslips. **January is different** (since 0.9.3.50, a January 2026
+  payslip): December's variable is income of the year before and is withheld apart — "IRS (Cat. A)" on the fixed pay
+  alone (37,37% = the app's table to the euro) + "Ded. fisc. per. ant." on that variable at its own table rate (34,20%;
+  the app gives 1 € more) — `NetEstimate.priorYearIrs` when the work month is a December. **Every other month the IRS is
+  split like the payslip** (since 0.9.3.62, user: "recalcular o IRS dos meses anteriores"; payslips of Jun–Oct 2026:
+  "IRS 07/2026 4614" on the fixed pay, "IRS 06/2026 −4209" given back, "IRS 06/2026 7300" on June's fixed + the variable paid
+  in July — table I with the pilot's dependants gives all three to the euro): `netEstimate(r, s, prev)` with `prev` = the
+  previous work month's settings (`getPaySettingsFor`) → `irs` on the fixed pay alone + `prevIrs − prevIrsWithheld`. Same
+  total as one sum while both fixed pays sit in the same bracket; it differs on a raise across brackets. Pension plan (RRRGS cl. 16, `pensionAuto`):
   PGA contribution 6,5% of VB+VE+VS paid as a non-taxable abono, SIPLA deposit 7,5% deducted — both
   matched the payslip to the cent. Union fee = `unionPct` (1%) of a base that (since 0.8.26.1)
   is automatic: `unionBaseAuto()` = all fixed pay minus the command lines "Anuid. técnica Comando"
@@ -299,8 +341,9 @@ Things learned over this collaboration that should persist across sessions:
   payslip to the cent (user wants it automatic); a typed `unionBase` still overrides, under Avançado.
 - **Night / holiday premiums — the alíneas of RRRGS cl. 12.2 are SUMMED** (a colleague, Nov 2026: "as alíneas devem ser
   somadas, o que está dentro delas não"; cl. 12.3 keeps only the highest WITHIN one alínea): a positioning's 50% (a.iv)
-  + night 25% (c) + holiday 100% (d), never a share of them. Block-pay adds 100% of the flight time between 00:00 and 23:59
-  Lisbon of the holiday only (a sector crossing midnight counts its part). Since 0.9.3.43 (colleagues): the BASE's
+  + night 25% (c) + holiday 100% (d), never a share of them. The holiday 100% is on DUTY-PAY only (the time between 00:00
+  and 23:59 Lisbon of the holiday; a duty crossing midnight counts its part) — since 0.9.3.63 NOT on block-pay (user decision
+  from the July 2026 payslip: June's 0,25 h of block-pay matches only without it; February's Carnival agrees). Since 0.9.3.43 (colleagues): the BASE's
   municipal holiday counts (`baseHolidays()` — 13/06 LIS, 24/06 OPO, by the profile's base) and a standby on a holiday is
   doubled (its counted share again for the part on the holiday, outside the work window: 10 h home = 2h30 → 5h00).
   Since 0.9.3.44 Carnival (Shrove Tuesday, Easter − 47) counts too (user: "Carnaval é para considerar como feriado") —

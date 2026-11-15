@@ -136,7 +136,16 @@ export default function CalendarPage() {
             const off = !main || main.dutyType === 'Day Off';
             const col = main ? dutyColor(main.dutyType) : '#9e9e9e';
             const label = main ? (main.flightNumber || main.dutyCode) : '';
-            const keyBg = off ? d3.keyLight : `linear-gradient(180deg, ${lighten(col, 0.25)}, ${darken(col, 0.05)})`;
+            // A simulator and another duty on one day (the sim, then the DHC home): the key split on the diagonal, the earlier
+            // duty's colour top-left (user, 0.9.3.53: "metade duma cor e a outra metade de outra, na diagonal").
+            const other = main && !off && dayDuties.some((x) => x.dutyType === 'Simulator')
+              ? dayDuties.find((x) => x.dutyType !== main.dutyType && x.dutyType !== 'Day Off') : undefined;
+            const startOf = (x: ParsedDuty) => x.reportingTime ?? x.departureTime ?? '99:99';
+            const [first, second] = other ? (startOf(other) < startOf(main!) ? [other, main!] : [main!, other]) : [];
+            const keyBg = off ? d3.keyLight
+              : first && second
+                ? `linear-gradient(135deg, ${lighten(dutyColor(first.dutyType), 0.25)} 0%, ${dutyColor(first.dutyType)} 49.5%, ${dutyColor(second.dutyType)} 50.5%, ${darken(dutyColor(second.dutyType), 0.05)} 100%)`
+                : `linear-gradient(180deg, ${lighten(col, 0.25)}, ${darken(col, 0.05)})`;
             const edge = off ? d3.keyEdge : darken(col, 0.4);
             return (
               <Box

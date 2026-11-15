@@ -216,16 +216,13 @@ export function setPaySettings(userId: string, s: PaySettings): void {
 export interface PayVersion { from: string; s: PaySettings }
 const PAY_HISTORY_PREFIX = 'crewroster.payHistory.';
 // Card notes and the switch: one value for all months, never part of a version.
-const PAY_GLOBAL = ['enabled', 'holidayPay', 'lineChecks'] as const;
+const PAY_GLOBAL = ['enabled', 'holidayPay', 'lineChecks', 'instructionHours'] as const;
 
 const valuesKey = (s: PaySettings) => {
   const v: Record<string, unknown> = { ...s };
   for (const k of PAY_GLOBAL) delete v[k];
   return JSON.stringify(Object.keys(v).sort().map((k) => [k, v[k]]));
 };
-
-// Two sets with the same figures (the card's notes and the switch left aside).
-export const samePayValues = (a: PaySettings, b: PaySettings): boolean => valuesKey({ ...DEFAULT_PAY_SETTINGS, ...a }) === valuesKey({ ...DEFAULT_PAY_SETTINGS, ...b });
 
 export function getPayHistory(userId: string): PayVersion[] {
   try {
@@ -268,7 +265,11 @@ const nextMonth = (m: string) => {
   const i = Number(m.slice(0, 4)) * 12 + Number(m.slice(5, 7));
   return `${Math.floor(i / 12)}-${String((i % 12) + 1).padStart(2, '0')}`;
 };
-export function savePayVersion(userId: string, from: string, s: PaySettings, onlyThisMonth = false): void {
+// `edited` (since 0.9.3.51, user: "quando atualiza a app, está sempre a repor os valores que eu tinha alterado"): the
+// fields changed in the form. Saved from a month on, only THEY go into every later version, each keeping its other
+// figures — before, the whole form replaced them, and a payslip's own figures (a January fixed by "Só este recibo")
+// went back as soon as anything else was saved for all months.
+export function savePayVersion(userId: string, from: string, s: PaySettings, onlyThisMonth = false, edited?: Partial<PaySettings>): void {
   const values = { ...s };
   for (const k of PAY_GLOBAL) delete (values as unknown as Record<string, unknown>)[k];
   const history = getPayHistory(userId);
@@ -278,11 +279,23 @@ export function savePayVersion(userId: string, from: string, s: PaySettings, onl
     const before = [...history].reverse().find((v) => v.from <= after) ?? history[0];
     list = history.filter((v) => v.from !== from);
     if (!list.some((v) => v.from === after)) list.push({ from: after, s: before.s });
+  } else if (edited) {
+    const patch = { ...edited } as Record<string, unknown>;
+    for (const k of PAY_GLOBAL) delete patch[k];
+    list = history.map((v) => (v.from >= from ? { from: v.from, s: { ...v.s, ...patch } as PaySettings } : v));
+    if (!list.some((v) => v.from === from)) list.push({ from, s: values as PaySettings });
+    list.sort((a, b) => a.from.localeCompare(b.from));
+    writeHistory(userId, list);
+    return;
   } else {
     list = from ? history.filter((v) => v.from < from) : [];
   }
   list.push({ from, s: values as PaySettings });
   list.sort((a, b) => a.from.localeCompare(b.from));
+  writeHistory(userId, list);
+}
+
+function writeHistory(userId: string, list: PayVersion[]): void {
   try {
     localStorage.setItem(PAY_HISTORY_PREFIX + userId, JSON.stringify(list));
   } catch { /* ignore */ }

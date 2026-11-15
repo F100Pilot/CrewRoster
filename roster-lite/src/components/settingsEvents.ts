@@ -10,3 +10,9 @@ export function openSettings(tab?: SettingsTab): void {
   }
   window.dispatchEvent(new Event(OPEN_SETTINGS_EVENT));
 }
+
+// The work month the Vencimento page has open, so Settings → Vencimento shows that payslip's figures
+// and "Só este recibo" saves for it (user, 0.9.3.47: the change went to the next payslip instead).
+let viewedPayMonth: string | null = null;
+export const setViewedPayMonth = (month: string | null): void => { viewedPayMonth = month; };
+export const getViewedPayMonth = (): string | null => viewedPayMonth;
