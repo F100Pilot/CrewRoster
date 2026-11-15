@@ -155,7 +155,7 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                 {/* Shown even with no fee typed yet, so sessions found in the roster don't go unnoticed. */}
                 {r.instructorSessions > 0 && (
                   <Row
-                    label={`Simulador como instrutor: ${r.instructorSessions} ${r.instructorSessions === 1 ? 'sessão' : 'sessões'}${settings.instructorSession ? '' : ' · falta o valor nas Definições'}`}
+                    label={`Simulador como instrutor: ${r.instructorSessions} ${r.instructorSessions === 1 ? 'sessão' : 'sessões'}${settings.allSimsPaid ? ' (todas pagas)' : ''}${settings.instructorSession ? '' : ' · falta o valor nas Definições'}`}
                     value={r.instructorValue}
                   />
                 )}

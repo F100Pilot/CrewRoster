@@ -160,6 +160,10 @@ export default function CalendarPage() {
                 {mealDays.get(key)?.meals.some((m) => m.askable && m.crew === undefined) && (
                   <Box component="span" aria-label="refeições a confirmar" sx={{ position: 'absolute', top: 1, right: 3, fontSize: '0.6rem', lineHeight: 1 }}>🍽</Box>
                 )}
+                {/* A simulator under another duty (a sim then the DHC home the same day): the key shows the flight, so mark it. */}
+                {main && main.dutyType !== 'Simulator' && dayDuties.some((x) => x.dutyType === 'Simulator') && (
+                  <Box component="span" aria-label="também simulador" sx={{ position: 'absolute', top: 2, left: 3, fontSize: '0.45rem', fontWeight: 900, lineHeight: 1, px: '2px', py: '1px', borderRadius: '3px', bgcolor: dutyColor('Simulator'), color: '#fff', boxShadow: '0 0 0 1px rgba(255,255,255,.7)' }}>SIM</Box>
+                )}
                 {label && (
                   <Box component="span" sx={{ fontFamily: 'ui-monospace, Menlo, monospace', fontSize: '0.56rem', fontWeight: 700, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', opacity: off ? 0.75 : 0.95 }}>
                     {label}{dayDuties.length > 1 ? ` +${dayDuties.length - 1}` : ''}

@@ -352,3 +352,19 @@ describe('IRS de janeiro: variável de dezembro à parte', () => {
     expect(n.priorYearIrsBase).toBe(0);
   });
 });
+
+// January 2026 (task force): seven simulator days, five given and two received — all seven paid.
+describe('todas as sessões de simulador pagas (taskforce)', () => {
+  const sim = (date: string, obs: string | null = null) => duty(date, 'Simulator', { dutyCode: 'E90-VIE-1', departureAirport: 'VIE', reportingTime: '09:45', departureTime: '09:45', arrivalTime: '13:45', observations: obs });
+  const jan = [sim('2026-01-04'), sim('2026-01-05'), sim('2026-01-11', 'LPC_INS'), sim('2026-01-12'), sim('2026-01-25'), sim('2026-01-26', 'OPC_INS'), sim('2026-01-27')];
+
+  it('counts only the marked sessions and their 2nd day by default', () => {
+    expect(payEstimate(jan, '2026-01', { ...S, instructorSession: 100 }, '2026-01-31').instructorSessions).toBe(4);
+  });
+
+  it('counts every simulator day when all are paid', () => {
+    const r = payEstimate(jan, '2026-01', { ...S, instructorSession: 100, allSimsPaid: true }, '2026-01-31');
+    expect(r.instructorSessions).toBe(7);
+    expect(r.instructorValue).toBe(700);
+  });
+});

@@ -342,6 +342,16 @@ export default function PaySettingsSection({ userId, onDirtyChange }: { userId: 
                 {money('officeDay', 'Subs. gabinete (dia GAB)')}
                 {money('mealTicket', 'Sub. alimentação (dia)')}
               </Box>
+              {/* Task force: every simulator session is paid at the session fee, even the ones received. */}
+              <Box display="flex" alignItems="center" gap={1}>
+                <Typography variant="body2" sx={{ flexGrow: 1 }}>
+                  Todas as sessões de simulador são pagas
+                  <Typography component="span" variant="caption" color="text.secondary" display="block">
+                    Taskforce: também as sessões em que recebes instrução. Desligado, contam só as marcadas _INS e o 2.º dia.
+                  </Typography>
+                </Typography>
+                <Switch checked={!!s.allSimsPaid} onChange={(_, on) => save({ ...s, allSimsPaid: on })} inputProps={{ 'aria-label': 'Todas as sessões de simulador são pagas' }} />
+              </Box>
               {/* Which GAB days of the month are paid, by their order — some chief bonuses pay only the 3rd to the 7th. */}
               <Box display="grid" gridTemplateColumns="1fr 1fr" gap={1.5}>
                 <TextField

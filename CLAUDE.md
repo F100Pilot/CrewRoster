@@ -246,7 +246,9 @@ Things learned over this collaboration that should persist across sessions:
   Medical days — verified day-for-day against a real roster + payslip. Simulator instructor sessions
   (paid at a per-session fee the pilot sets, not in the AE) = sims whose check mark (parsed into
   `observations`: OPC/LPC, or OPC_INS/LPC_INS as instructor) has `_INS`, plus the check's unmarked
-  2nd day; FP…_INST is ground training given, not a sim session — **paid apart as "Instrução em terra"** (since 0.9.3.48,
+  2nd day — unless the pilot switches on `allSimsPaid` (since 0.9.3.52, user: in the task force every session is paid,
+  "mesmo as que dizem instrução"; January 2026: 7 paid, 5 given + 2 received), then every simulator day counts; the
+  calendar marks "SIM" on a day whose key shows another duty (a sim then the DHC home); FP…_INST is ground training given, not a sim session — **paid apart as "Instrução em terra"** (since 0.9.3.48,
   user, from a January 2026 payslip: hours × the pilot's hourly fee `groundInstructionHour`, decimal hours to 2 places)
   **and left out of the duty-pay plafonds** (`isGroundInstruction` in `payEstimate.ts`; still duty for the AE limits).
   Hours = the FP…_INST sessions as printed, lunch out — PROVISIONAL: that payslip paid 51,37 h where the sessions give

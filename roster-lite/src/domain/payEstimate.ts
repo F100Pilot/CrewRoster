@@ -64,6 +64,9 @@ export interface PaySettings {
   perDiemA: number;
   perDiemB: number;
   instructorSession: number; // € per session given as an instructor; 0 if not an instructor
+  // Every simulator session paid at that fee, whatever the roster marks (user, 0.9.3.52: a task-force pilot is paid all
+  // of them, "mesmo as que dizem instrução" — January 2026: 7 sessions paid, 5 given and 2 received). Off by default.
+  allSimsPaid: boolean;
   lineTrainingDay: number; // € per day of flights flown as instructor (LIFUS_INS / FAM_INS)
   groundInstructionHour: number; // € per hour of ground training given (FP…_INST, "Instrução em terra")
   // € per line check ("LCC_Line Check" on the payslip), one per day of flights marked W_INS (the
@@ -99,7 +102,7 @@ export interface PaySettings {
 
 export const DEFAULT_PAY_SETTINGS: PaySettings = {
   enabled: false, category: 'OP3', vb: 0, ve: 0, veCommand: 0, vs: 0, extras: 0, chiefBonus: 0,
-  perDiemA: AE_PER_DIEM.OP.a, perDiemB: AE_PER_DIEM.OP.b, instructorSession: 0, lineTrainingDay: 0, groundInstructionHour: 0, lineCheck: 0, lineChecks: {},
+  perDiemA: AE_PER_DIEM.OP.a, perDiemB: AE_PER_DIEM.OP.b, instructorSession: 0, allSimsPaid: false, lineTrainingDay: 0, groundInstructionHour: 0, lineCheck: 0, lineChecks: {},
   // The meal-card value of a real 2026 payslip (10,46 € a day, = the card's tax-free limit); office
   // days are paid at a rate the pilot types.
   officeDay: 0, officeDayFrom: 1, officeDayTo: 0, mealTicket: 10.46,
@@ -536,7 +539,9 @@ export function payEstimate(
   const offDayValue = (offDayMinutes / 60) * OFF_DAY_HOURLY * s.vb + offDayDates.size * OFF_DAY_BONUS * s.vb;
 
   // ── Simulator sessions as instructor (not in the AE; the pilot's own fee) ──
-  const instructorSessions = [...instructorSimDates(duties)].filter(inMonth).length;
+  const instructorSessions = s.allSimsPaid
+    ? new Set(duties.filter((d) => inMonth(d.date) && d.dutyType === 'Simulator').map((d) => d.date)).size
+    : [...instructorSimDates(duties)].filter(inMonth).length;
   const instructorValue = instructorSessions * (s.instructorSession || 0);
 
   // ── Line training / familiarisation flown as instructor, per day ──

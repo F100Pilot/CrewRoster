@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.3.51';
+export const APP_VERSION = '0.9.3.52';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -20,6 +20,14 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.9.3.52',
+    date: '2026-11-15',
+    highlights: [
+      'Definições → Vencimento: nova opção "Todas as sessões de simulador são pagas" (taskforce). Conta todas as sessões ao valor por sessão, também aquelas em que recebes instrução.',
+      'Calendário: um dia com simulador e, a seguir, o DHC de regresso mostra agora uma marca "SIM". Antes só aparecia o voo e o simulador ficava escondido.',
+    ],
+  },
   {
     version: '0.9.3.51',
     date: '2026-11-15',
