@@ -7,7 +7,7 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.9.3.64`
+- **Produção (`master`) está em:** `0.9.3.67`
 - **Próxima versão ao promover:** a da experimental (cada atualização sobe a 4.ª casa)
 
 ## Como promover tudo para produção (quando estiver pronto)
@@ -25,9 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **0.9.3.67** — Vencimento: e-learning (FPE-LEARN) só com per diem B / ticket quando é do refrescamento (RGTC na escala); sozinho não é pago.
-- **0.9.3.66** — Hoje: dia de falta (FAL) = "FALTA", dia de férias = "FÉRIAS" (era "FOLGA · Descansa."; reportado por um tester).
-- **0.9.3.65** — Aspeto: a aresta dos botões 3D passa para dentro do botão (inset); já não sai da borda de baixo.
+_(nada — 0.9.3.65 a 0.9.3.67 promovidas para produção em 2026-11-15)_
 
 ---
 
