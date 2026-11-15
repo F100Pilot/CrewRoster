@@ -279,6 +279,11 @@ AND LIFUS_INS together (one sub-column "FAM_INS, LIFUS_INS", read since PARSE_VE
 "LCC Line Check" — that day is not a line training day; FAM_INS alone stays line training: Jul/Oct 2026 payslips; LT and LC
 counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on the pilot's own legs = HIS line check, nothing paid; −/+ on the pay card stores a per-month
   correction (`lineChecks['yyyy-MM']`, dropped when it equals the roster's count). Variable part.
+- **Overtime is paid by the quarter hour** (since 0.9.3.70): `overtimeValue()` pays the band it stops in rounded UP to 15 min
+  and a band it went past to the minute — a tester's August 2026: 124h05 credited → "Limite1 DutyPay 10,38" (113h37→124h00)
+  + "Limite2 DutyPay 0,25" (5 min); the user's June 2026 block-pay, 13 min over → 0,25 h. The company's **"Mapa Mensal de
+  Horas de Voo e Aterragens"** (DOV, per day: Escala, PD A/B, H.Block, H.Duty; summary: standby "serviço de solo (33%)"
+  but H12+ = 2:30 / H9+ = 2:15, night 25%, voo em folga 50%, DH 50%) is the best reference for duty-pay — ask crew for it.
 - **Pay figures are shown to the cent** (since 0.8.37.2, user: "não quero que faças arredondamentos"): no whole-euro
   formatting and no "≈" on the pay card; the maths was already in cents. The one rounding kept is the payroll's own:
   IRS withheld floored to the euro (the payslip shows 6 950,00 for 40,08 % × 17 341,22).
@@ -469,7 +474,8 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
 - **Flight on a day off & reduced rest** (since 0.9.3.19, colleagues' audios; pilots only): the roster's "Voo em Off" →
   mark `VOO_OFF`, "Reducao Repouso" → `RED_REP` (one token or word by word — a split "Off" must never start a day off nor
   trip the totals-box filter). Day page card "Folga e repouso": **Recebo / Gozo a folga** (RRRGS cl. 13 — paid by default
-  when marked: FDP hours × 3% VB + 15% VB per day, outside the duty/block plafond credits, cl. 13.5; kept = ordinary day,
+  when marked: the day's DUTY hours × 3% VB + 15% VB per day (duty, not FDP, since 0.9.3.70 — a tester's August 2026 payslip
+  paid "Med. Comp.PNT-Folgas Hora 7,12" for the 07:07 of H.Duty of the company's monthly map), outside the duty/block plafond credits, cl. 13.5; kept = ordinary day,
   RUPT cl. 15.9 b / 15.19) and the **minutes of a reduced rest** (0–120, RUPT 34.3; paid in duty-pay outside the plafonds,
   RRRGS 2.8; a typed value > 0 replaces the planned-vs-flown reduction of that day). Since 0.9.3.20 the cut is **worked
   out to the minute from the roster itself** (user: no earlier roster needed): `autoRestCut()` = the AE minimum

@@ -4,8 +4,8 @@ import type { RestInfo } from './restPeriods';
 // Two things the pilot settles on the day page, over what the roster prints (pilots only — AE):
 //
 // • A flight on a planned day off ("Voo em Off" under the sector). RRRGS cl. 13: accepted at the
-//   company's invitation (RUPT cl. 15.18), each flight duty period of the day is paid at 3% of the VB
-//   an hour plus 15% of the VB for the day given up, the month after — and those hours stay out of
+//   company's invitation (RUPT cl. 15.18), the day's duty is paid at 3% of the VB an hour (its duty, not the FDP — a
+//   tester's August 2026 payslip, 0.9.3.70) plus 15% of the VB for the day given up, the month after — and those hours stay out of
 //   the monthly plafonds (cl. 13.5, no double pay). Or the pilot keeps the day off and takes it later
 //   (RUPT cl. 15.9 b / 15.19): then the day is ordinary work. A colleague asked for the choice.
 // • A reduced rest ("Reducao Repouso"): at base by an irregularity and with the pilot's agreement, up

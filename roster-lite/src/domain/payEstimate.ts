@@ -9,7 +9,6 @@ import { irsRetention, type IrsTable } from './irsWithholding';
 import { HOLIDAY_ENTITLEMENT_DAYS } from './aeCompliance';
 import type { ParsedDuty } from './types';
 import { countryOf, raacoDays } from './raaco';
-import { fdpForDay } from './fdp';
 import { restPeriods } from './restPeriods';
 import { OFF_DAY_BONUS, OFF_DAY_HOURLY, offDayChoice, restCutOf } from './offDayWork';
 
@@ -389,9 +388,14 @@ function byDate(duties: ParsedDuty[]): Map<string, ParsedDuty[]> {
 }
 
 // The hours above the plafonds, in euros, at the two hourly rates.
+// The payroll pays the hours of the band it stops in rounded UP to the quarter hour; a band it went past is paid in
+// full, to the minute (a tester's August 2026 payslip: 124h05 credited → "Limite1 DutyPay 10,38" = 113h37→124h00 and
+// "Limite2 DutyPay 0,25" for 5 minutes; the user's July 2026 payslip: block-pay 13 min over Limite 1 → 0,25 h).
+const ceilQuarter = (min: number) => Math.ceil(Math.round(min) / 15) * 15;
 export function overtimeValue(credited: number, l1: number, l2: number, vb: number): number {
-  const band1 = Math.max(0, Math.min(credited, l2) - l1);
-  const band2 = Math.max(0, credited - l2);
+  const over2 = credited > l2;
+  const band1 = over2 ? Math.max(0, l2 - l1) : Math.min(Math.max(0, l2 - l1), ceilQuarter(Math.max(0, credited - l1)));
+  const band2 = over2 ? ceilQuarter(credited - l2) : 0;
   return (band1 / 60) * RATE_L1 * vb + (band2 / 60) * RATE_L2 * vb;
 }
 
@@ -608,11 +612,12 @@ export function payEstimate(
     + typedCuts.reduce((sum, [, m]) => sum + m, 0);
   const reductionValue = (reducedMinutes / 60) * hourly;
 
-  // ── Flights on a planned day off, paid (cl. 13): each flight duty period, then the day ──
+  // ── Flights on a planned day off, paid (cl. 13): the day's hours, then the day ──
+  // The DUTY of the day, not its FDP (a tester's August 2026 payslip: "Med. Comp.PNT-Folgas Hora 7,12" = the 07:07 of
+  // H.Duty the company's monthly map shows for that day; its FDP was 6h37).
   let offDayMinutes = 0;
   for (const date of offDayDates) {
-    const fdp = fdpForDay(days.get(date)!, null, base);
-    offDayMinutes += fdp?.planned ?? 0;
+    offDayMinutes += dutyDays(days.get(date)!, PGA_PILOT_RULES).filter((x) => x.date === date).reduce((a, x) => a + x.minutes, 0);
   }
   const offDayValue = (offDayMinutes / 60) * OFF_DAY_HOURLY * s.vb + offDayDates.size * OFF_DAY_BONUS * s.vb;
 
