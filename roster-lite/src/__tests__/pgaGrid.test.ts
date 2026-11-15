@@ -111,6 +111,17 @@ describe('interpretPgaGrid — line check marks (W_INS)', () => {
   });
 });
 
+describe('interpretPgaGrid — e-learning of the refresher (RGTC)', () => {
+  it('marks the day\'s e-learning RGTC when its column mentions RGTC, not otherwise', () => {
+    const learnTok = (tokens as PositionedToken[]).find((t) => t.text.trim() === 'FPE-LEARN')!;
+    const elearning = (list: typeof duties) => list.find((d) => d.dutyCode === 'FPE-LEARN')!;
+    expect(elearning(duties).observations ?? '').not.toMatch(/RGTC/);
+    // A remark under it naming the refresher, as the roster prints "c/m: …".
+    const withRgtc = [...(tokens as PositionedToken[]), { ...learnTok, y: learnTok.y - 30, text: 'c/m: RGTC e-learning' }];
+    expect(elearning(interpretPgaGrid(withRgtc)).observations).toMatch(/\bRGTC\b/);
+  });
+});
+
 describe('interpretPgaGrid — two instructor marks in one sub-column', () => {
   it('reads "FAM_INS, LIFUS_INS" as both marks on the leg (a real May roster: a line check given)', () => {
     const both = (tokens as PositionedToken[]).map((t) => (t.text.trim() === 'LIFUS_INS' ? { ...t, text: 'FAM_INS, LIFUS_INS' } : t));

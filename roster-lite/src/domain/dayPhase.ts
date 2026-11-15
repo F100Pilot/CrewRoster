@@ -30,6 +30,9 @@ export interface DayContext {
   location: string;
   // The last duty period that already ended (for the rest that follows it).
   lastEnd: Date | null;
+  // What today is when it isn't work: a day off, holidays or an absence (FAL…) — so the home screen names it right
+  // (a tester, 0.9.3.66: a FAL day read "FOLGA · Descansa."). null on a working day or a day the roster doesn't have.
+  todayOff: 'dayoff' | 'vacation' | 'absence' | null;
 }
 
 const FLIGHT = new Set(['Flight Duty', 'Positioning']);
@@ -91,6 +94,11 @@ export function dayContext(all: ParsedDuty[], now: Date, base: string): DayConte
   }
   for (const c of candidates) if (c.window.end.getTime() <= now.getTime()) lastEnd = c.window.end;
 
+  const todayDuties = days.get(today) ?? [];
+  const todayOff: DayContext['todayOff'] = !todayDuties.length || todayDuties.some((d) => !NOT_WORK.has(d.dutyType)) ? null
+    : todayDuties.some((d) => d.dutyType === 'Absence') ? 'absence'
+      : todayDuties.some((d) => d.dutyType === 'Vacation') ? 'vacation' : 'dayoff';
+
   const make = (phase: Phase, date: string | null, window: DutyWindow | null): DayContext => {
     const duties = date ? days.get(date) ?? [] : [];
     const legs = date ? legsOf(date, duties) : [];
@@ -99,7 +107,7 @@ export function dayContext(all: ParsedDuty[], now: Date, base: string): DayConte
       phase, now, date, duties, window, legs,
       currentLeg: legs.find((l) => l.off.getTime() <= t && t < l.on.getTime()) ?? null,
       nextLeg: legs.find((l) => l.off.getTime() > t) ?? null,
-      location, lastEnd,
+      location, lastEnd, todayOff,
     };
   };
 

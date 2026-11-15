@@ -325,6 +325,21 @@ describe('instrução em terra (FP…_INST)', () => {
     expect(r.groundInstructionValue).toBe(0);
   });
 
+  it('pays per diem B for an e-learning only when it is the refresher (RGTC) — colleague + user, Nov 2026', () => {
+    const learn = (date: string, obs: string | null, code = 'FPE-LEARN') =>
+      duty(date, 'Training', { dutyCode: code, departureAirport: 'LIS', departureTime: '09:00', arrivalTime: '11:00', observations: obs });
+    const s = { ...S, mealTicket: 10.46 };
+    // "Se for só FPE-LEARN, não paga": no per diem, no meal ticket; still duty.
+    const plain = payEstimate([learn('2026-10-06', null)], '2026-10', s, '2026-11-30');
+    expect(plain).toMatchObject({ perDiemB: 0, mealTicketDays: 0 });
+    expect(plain.duty.credited).toBe(120);
+    // RGTC beside it (the refresher's e-learning), or in its code: per diem B and the meal ticket.
+    expect(payEstimate([learn('2026-10-06', 'RGTC')], '2026-10', s, '2026-11-30')).toMatchObject({ perDiemB: 1, mealTicketDays: 1 });
+    expect(payEstimate([learn('2026-10-06', null, 'RGTC-LEARN')], '2026-10', s, '2026-11-30')).toMatchObject({ perDiemB: 1 });
+    // Presential refresher sessions (RGTC1 / RGTC2) pay as before.
+    expect(payEstimate([inst('2026-10-07', 'RGTC1', '08:30', '12:55')], '2026-10', s, '2026-11-30').perDiemB).toBe(1);
+  });
+
   it('keeps ground training as a trainee (no _INST) in the duty-pay', () => {
     const r = payEstimate([inst('2026-03-03', 'RGTC1', '08:30', '12:55')], '2026-03', S, '2026-03-31');
     expect(r.groundInstructionMinutes).toBe(0);

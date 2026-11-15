@@ -19,8 +19,8 @@ export interface HeroStat { label: string; value: string }
 // Glass keys on the sky: round icon buttons and outlined buttons.
 export const glassKey = {
   background: 'linear-gradient(180deg, rgba(255,255,255,.28), rgba(255,255,255,.08))',
-  boxShadow: 'inset 0 1px 0 rgba(255,255,255,.5), 0 4px 0 rgba(4,14,40,.45), 0 10px 14px -6px rgba(0,0,0,.5)',
-  '&:active': { transform: 'translateY(3px)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,.4), 0 1px 0 rgba(4,14,40,.45)' },
+  boxShadow: 'inset 0 1px 0 rgba(255,255,255,.5), inset 0 -3px 0 rgba(4,14,40,.45), 0 8px 12px -6px rgba(0,0,0,.5)',
+  '&:active': { transform: 'translateY(1px)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,.4), inset 0 -1px 0 rgba(4,14,40,.45)' },
 };
 
 // The hills in front of the sky, darker towards the viewer.
@@ -42,7 +42,7 @@ export const heroPanel = {
 export function pillKey(pill: string) {
   return {
     background: `linear-gradient(180deg, ${lighten(pill, 0.45)}, ${pill})`,
-    boxShadow: `0 3px 0 ${darken(pill, 0.3)}, 0 7px 10px -4px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.9)`,
+    boxShadow: `inset 0 -3px 0 ${darken(pill, 0.3)}, 0 7px 10px -4px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.9)`,
   };
 }
 export default function PageHero({
@@ -84,7 +84,7 @@ export default function PageHero({
         '& .MuiToggleButton-root': { color: 'rgba(255,255,255,.88)', fontWeight: 700, px: 1.25, py: 0.25, lineHeight: 1.6 },
         '& .MuiToggleButton-root.Mui-selected, & .MuiToggleButton-root.Mui-selected:hover': {
           color: '#0B1222', background: `linear-gradient(180deg, ${lighten(pill, 0.45)}, ${pill})`,
-          boxShadow: `0 2px 0 ${darken(pill, 0.3)}, inset 0 1px 0 rgba(255,255,255,.9)`,
+          boxShadow: `inset 0 -2px 0 ${darken(pill, 0.3)}, inset 0 1px 0 rgba(255,255,255,.9)`,
         },
         // Weather can draw light clouds behind the text: a soft shadow keeps it legible.
         '& .MuiTypography-root': { textShadow: '0 1px 3px rgba(0, 0, 0, 0.28)' },

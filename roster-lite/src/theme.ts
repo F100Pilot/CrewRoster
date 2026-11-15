@@ -41,16 +41,18 @@ export function depth(mode: ColorMode): Depth {
     };
 }
 
-// A coloured key: lit gradient, darker edge under it, a coloured glow below.
+// A coloured key: lit gradient, darker edge along its foot, a coloured glow below. The edge is drawn INSIDE the key
+// (inset) so the key keeps its own outline (user, 0.9.3.65: the edges drawn under the keys "saem um pouco de fora,
+// na borda de baixo").
 export function keyStyle(main: string) {
   return {
     background: `linear-gradient(180deg, ${lighten(main, 0.22)} 0%, ${main} 100%)`,
-    boxShadow: `0 4px 0 ${darken(main, 0.35)}, 0 12px 18px -8px ${alpha(main, 0.7)}, inset 0 1px 0 rgba(255,255,255,.4)`,
+    boxShadow: `inset 0 -3px 0 ${darken(main, 0.35)}, 0 10px 16px -8px ${alpha(main, 0.7)}, inset 0 1px 0 rgba(255,255,255,.4)`,
   };
 }
 export const keyPressed = (main: string) => ({
-  transform: 'translateY(3px)',
-  boxShadow: `0 1px 0 ${darken(main, 0.35)}, 0 4px 8px -4px ${alpha(main, 0.6)}, inset 0 2px 4px rgba(0,0,0,.25)`,
+  transform: 'translateY(1px)',
+  boxShadow: `inset 0 -1px 0 ${darken(main, 0.35)}, 0 4px 8px -4px ${alpha(main, 0.6)}, inset 0 2px 4px rgba(0,0,0,.25)`,
 });
 
 // Build the MUI theme for a given colour mode — the design language of the "Hoje" screen, in 3D
@@ -126,17 +128,17 @@ export function createAppTheme(mode: ColorMode): Theme {
           contained: ({ ownerState, theme }) => {
             const main = theme.palette[(ownerState.color as KeyColor) in theme.palette ? (ownerState.color as KeyColor) : 'primary']?.main ?? theme.palette.primary.main;
             return {
-              ...keyStyle(main), color: theme.palette.getContrastText(main), marginBottom: 4,
+              ...keyStyle(main), color: theme.palette.getContrastText(main),
               '&:hover': keyStyle(darken(main, 0.06)),
               '&:active': keyPressed(main),
               '&.Mui-disabled': { background: d.well, boxShadow: d.wellShadow },
             };
           },
           outlined: {
-            border: 0, background: d.keyLight, marginBottom: 4,
-            boxShadow: `0 4px 0 ${d.keyEdge}, 0 10px 16px -8px rgba(15,27,45,.35), inset 0 1px 0 ${light ? '#fff' : 'rgba(255,255,255,.08)'}`,
+            border: 0, background: d.keyLight,
+            boxShadow: `inset 0 -3px 0 ${d.keyEdge}, 0 8px 14px -8px rgba(15,27,45,.35), inset 0 1px 0 ${light ? '#fff' : 'rgba(255,255,255,.08)'}`,
             '&:hover': { border: 0, background: d.keyLight },
-            '&:active': { transform: 'translateY(3px)', boxShadow: `0 1px 0 ${d.keyEdge}, inset 0 2px 4px rgba(0,0,0,.15)` },
+            '&:active': { transform: 'translateY(1px)', boxShadow: `inset 0 -1px 0 ${d.keyEdge}, inset 0 2px 4px rgba(0,0,0,.15)` },
           },
         },
       },
@@ -161,15 +163,15 @@ export function createAppTheme(mode: ColorMode): Theme {
           filled: ({ ownerState, theme }) => {
             if (ownerState.color && ownerState.color !== 'default') {
               const main = theme.palette[ownerState.color as KeyColor].main;
-              return { background: `linear-gradient(180deg, ${lighten(main, 0.18)}, ${main})`, boxShadow: `0 2px 0 ${darken(main, 0.3)}, inset 0 1px 0 rgba(255,255,255,.35)` };
+              return { background: `linear-gradient(180deg, ${lighten(main, 0.18)}, ${main})`, boxShadow: `inset 0 -2px 0 ${darken(main, 0.3)}, inset 0 1px 0 rgba(255,255,255,.35)` };
             }
-            return { background: d.keyLight, boxShadow: `0 2px 0 ${d.keyEdge}, inset 0 1px 0 ${light ? '#fff' : 'rgba(255,255,255,.08)'}` };
+            return { background: d.keyLight, boxShadow: `inset 0 -2px 0 ${d.keyEdge}, inset 0 1px 0 ${light ? '#fff' : 'rgba(255,255,255,.08)'}` };
           },
         },
       },
       MuiSwitch: {
         styleOverrides: {
-          thumb: { background: 'linear-gradient(180deg, #FFFFFF, #E3E9F2)', boxShadow: '0 2px 0 #B8C4D6, 0 4px 6px -2px rgba(0,0,0,.4)' },
+          thumb: { background: 'linear-gradient(180deg, #FFFFFF, #E3E9F2)', boxShadow: 'inset 0 -2px 0 #B8C4D6, 0 4px 6px -2px rgba(0,0,0,.4)' },
           track: { opacity: 1, background: d.well, boxShadow: d.wellShadow },
           switchBase: ({ theme }) => ({ '&.Mui-checked + .MuiSwitch-track': { opacity: 1, background: `linear-gradient(180deg, ${theme.palette.primary.main}, ${darken(theme.palette.primary.main, 0.2)})` } }),
         },
@@ -194,7 +196,7 @@ export function createAppTheme(mode: ColorMode): Theme {
         styleOverrides: {
           root: ({ theme }) => ({
             borderRadius: 14, color: theme.palette.text.secondary,
-            '&.Mui-selected': { color: theme.palette.primary.main, background: d.keyLight, boxShadow: `0 3px 0 ${d.keyEdge}, 0 8px 12px -6px rgba(15,27,45,.4)` },
+            '&.Mui-selected': { color: theme.palette.primary.main, background: d.keyLight, boxShadow: `inset 0 -3px 0 ${d.keyEdge}, 0 8px 12px -6px rgba(15,27,45,.4)` },
           }),
         },
       },

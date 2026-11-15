@@ -331,6 +331,12 @@ const daysInMonth = (month: string) => {
 const FLYING = new Set(['Flight Duty', 'Positioning', 'Simulator']);
 // Ground duties that earn per diem B (cl. 9.1.b).
 const GROUND_B = new Set(['Training', 'Office Duty', 'Medical']);
+// An e-learning pays per diem B only when it's the refresher (RRRGS cl. 9.1.b.ii: "ação de refrescamento (formação
+// presencial ou e-learning)"): RGTC in its code or as its mark (pgaGrid). Any other e-learning — an ethics course,
+// "FP-Elearning CA-MEL" — isn't paid (a colleague, Nov 2026: "se não for refrescamento não é pago"); it stays duty.
+const isElearningDuty = (d: ParsedDuty) => d.dutyType === 'Training' && /LEARN/i.test(d.dutyCode);
+export const isPaidElearning = (d: ParsedDuty) => isElearningDuty(d) && /RGTC/i.test(`${d.dutyCode} ${d.observations ?? ''}`);
+const paysGroundB = (d: ParsedDuty) => GROUND_B.has(d.dutyType) && (!isElearningDuty(d) || isPaidElearning(d));
 const isHoliday = (d: ParsedDuty) => d.dutyType === 'Vacation';
 export const CHRISTMAS_PAY_MONTH = 11; // paid with the November pay (user, from PGA payslips)
 const nextMonth = (month: string) => {
@@ -570,12 +576,12 @@ export function payEstimate(
         perDiemTravelDays++; perDiemTravelValue += s.perDiemA;
         perDiemTravel.push({ date, value: s.perDiemA, abroad: abroadOn(day, awayAtStart ? whereAtStart : base) });
       }
-    } else if (awayAtStart || day.some((x) => GROUND_B.has(x.dutyType))) {
+    } else if (awayAtStart || day.some(paysGroundB)) {
       perDiemB++;
       perDiemDates.b.push(date);
       // A medical day pays per diem B "T" but no meal ticket (October payslip: 7 B T, 6 tickets —
       // the one without is the aeromedical exam, user-confirmed).
-      if (!awayAtStart && !day.every((x) => x.dutyType === 'Medical' || !GROUND_B.has(x.dutyType))) mealTicketDays++;
+      if (!awayAtStart && !day.every((x) => x.dutyType === 'Medical' || !paysGroundB(x))) mealTicketDays++;
       if (awayAtStart && !trainingTripDates.has(date)) {
         perDiemTravelDays++; perDiemTravelValue += s.perDiemB;
         perDiemTravel.push({ date, value: s.perDiemB, abroad: abroadOn(day, whereAtStart) });
