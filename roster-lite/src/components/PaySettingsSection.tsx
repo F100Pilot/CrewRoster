@@ -6,7 +6,7 @@ import {
 import { Calculate, ExpandMore } from '@mui/icons-material';
 import CalculatorDialog from './CalculatorDialog';
 import { evalExpression, isExpression } from '../utils/calc';
-import { getPayHistory, getPaySettings, patchPayGlobal, savePayVersion } from '../storage/settings';
+import { getPayHistory, getPaySettings, getPaySettingsFor, patchPayGlobal, samePayValues, savePayVersion } from '../storage/settings';
 import { payFiguresFromBackup, readBackupFile } from '../storage/backup';
 import { DEFAULT_PAY_SETTINGS } from '../domain/payEstimate';
 import { PAY_CATEGORIES, pensionLines, perDiemDefaults, unionBaseAuto, unionFee, type PayCategory, type PaySettings } from '../domain/payEstimate';
@@ -45,6 +45,8 @@ export default function PaySettingsSection({ userId, onDirtyChange }: { userId: 
   const [dirty, setDirty] = useState(false);
   const thisMonth = new Date().toISOString().slice(0, 7);
   const [from, setFrom] = useState(thisMonth);
+  // Guardar for the chosen payslip on (default), or for that payslip alone.
+  const [only, setOnly] = useState(false);
   const [savedNote, setSavedNote] = useState<string | null>(null);
   const reset = () => {
     const next = getPaySettings(userId);
@@ -52,6 +54,7 @@ export default function PaySettingsSection({ userId, onDirtyChange }: { userId: 
     setText(toText(next));
     setDirty(false);
     setFrom(thisMonth);
+    setOnly(false);
   };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(reset, [userId]);
@@ -59,9 +62,29 @@ export default function PaySettingsSection({ userId, onDirtyChange }: { userId: 
 
   const save = (next: PaySettings) => { setS(next); setDirty(true); setSavedNote(null); };
   const commit = () => {
-    savePayVersion(userId, from, s);
+    const one = only && !!from;
+    // For one payslip, only the fields edited here change, on that month's own figures — an older
+    // month must not take the other figures of today.
+    let values = s;
+    if (one) {
+      const base = getPaySettings(userId) as unknown as Record<string, unknown>;
+      const draft = s as unknown as Record<string, unknown>;
+      const month = { ...getPaySettingsFor(userId, from) } as unknown as Record<string, unknown>;
+      for (const k of Object.keys(draft)) if (JSON.stringify(draft[k]) !== JSON.stringify(base[k])) month[k] = draft[k];
+      values = month as unknown as PaySettings;
+    }
+    savePayVersion(userId, from, values, one);
     setDirty(false);
-    setSavedNote(from ? `Guardado: vale a partir do ${payslipOf(from)}. Os recibos anteriores ficam como estavam.` : 'Guardado para todos os meses.');
+    setSavedNote(!from ? 'Guardado para todos os meses.'
+      : one ? `Guardado só para o ${payslipOf(from)}. Os outros recibos ficam como estavam.`
+        : `Guardado: vale a partir do ${payslipOf(from)}. Os recibos anteriores ficam como estavam.`);
+    if (one) {
+      // The form shows the figures of the months to come again, which this save didn't touch.
+      const next = getPaySettings(userId);
+      setS(next);
+      setText(toText(next));
+    }
+    setOnly(false);
   };
   // Recover figures lost to an overwrite from a backup file — into the draft, never saved by itself.
   const backupInput = useRef<HTMLInputElement>(null);
@@ -84,6 +107,9 @@ export default function PaySettingsSection({ userId, onDirtyChange }: { userId: 
   };
   const history = getPayHistory(userId);
   const inForce = [...history].reverse().find((v) => v.from <= thisMonth) ?? history[0];
+  // The form shows the current set (the latest version). When this month's payslip was saved on its
+  // own ("Só este recibo"), say so instead of dating the figures below by it.
+  const ownMonth = !!inForce.from && !samePayValues(inForce.s, getPaySettings(userId)) ? inForce.from : null;
   // The two halves of the section: what is paid, and what the payslip takes off.
   const [part, setPart] = useState<'valores' | 'descontos'>('valores');
 
@@ -222,7 +248,8 @@ export default function PaySettingsSection({ userId, onDirtyChange }: { userId: 
       {s.enabled && (
         <>
           <Typography variant="caption" color="text.secondary">
-            {inForce.from ? `Valores em vigor desde o ${payslipOf(inForce.from)}` : 'Valores em vigor para todos os meses'}
+            {ownMonth ? `O ${payslipOf(ownMonth)} tem valores só seus; abaixo estão os dos recibos seguintes`
+              : inForce.from ? `Valores em vigor desde o ${payslipOf(inForce.from)}` : 'Valores em vigor para todos os meses'}
             {history.length > 1 ? ` · ${history.length - 1} ${history.length === 2 ? 'versão anterior guardada' : 'versões anteriores guardadas'} (os recibos antigos usam-nas)` : ''}.
             {' '}Alterações só contam depois de Guardar.
           </Typography>
@@ -394,12 +421,22 @@ export default function PaySettingsSection({ userId, onDirtyChange }: { userId: 
               before keep their own figures. "Todos os meses" is there to fix a typo everywhere. */}
           {dirty && (
             <Paper elevation={0} sx={{ position: 'sticky', bottom: 0, zIndex: 2, p: 1.5, borderRadius: '16px', boxShadow: '0 -8px 20px -8px rgba(0,0,0,.35)' }}>
-              <TextField select size="small" fullWidth label="Aplicar a partir do" value={from} onChange={(e) => setFrom(e.target.value)}>
+              <TextField select size="small" fullWidth label={only && from ? 'Aplicar só ao' : 'Aplicar a partir do'} value={from} onChange={(e) => setFrom(e.target.value)}>
                 {Array.from({ length: 16 }, (_, i) => shiftMonth(thisMonth, 3 - i)).map((m) => (
                   <MenuItem key={m} value={m}>{payslipOf(m)}{m === thisMonth ? ' (o próximo)' : ''}</MenuItem>
                 ))}
                 <MenuItem value="">Todos os meses (corrigir um engano)</MenuItem>
               </TextField>
+              {from && (
+                <ToggleButtonGroup
+                  exclusive size="small" fullWidth value={only ? 'only' : 'on'} sx={{ mt: 1 }}
+                  onChange={(_, v) => { if (v) setOnly(v === 'only'); }}
+                  aria-label="Meses a que se aplica"
+                >
+                  <ToggleButton value="on">Deste recibo em diante</ToggleButton>
+                  <ToggleButton value="only">Só este recibo</ToggleButton>
+                </ToggleButtonGroup>
+              )}
               <Box display="flex" gap={1} mt={1.25} justifyContent="flex-end">
                 <Button color="inherit" onClick={reset}>Descartar</Button>
                 <Button variant="contained" onClick={commit}>Guardar</Button>

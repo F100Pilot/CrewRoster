@@ -265,7 +265,11 @@ Things learned over this collaboration that should persist across sessions:
   replacing every version from that month on (0.9.3.10 — a later zero version kept hiding a save); the months before
   keep theirs. If the older installed app wrote the current set (shared storage with /exp/), it becomes the latest version:
   `crewroster.payHistory.<user>`, `savePayVersion()` / `getPaySettingsFor(user, month)` / `getPayHistory()` in
-  `storage/settings.ts`; `crewroster.pay.<user>` stays the current set. NEVER let a change rewrite earlier months (user:
+  `storage/settings.ts`; `crewroster.pay.<user>` stays the current set. **"Só este recibo"** (user, 0.9.3.46: "tem de ser
+  possível a gravação só naquele mês"): a toggle beside the month on the Guardar panel — `savePayVersion(…, onlyThisMonth)`
+  replaces only that month's version and adds one for the month after with the figures it was using (unless it has its
+  own); only the fields edited in the draft change, on top of that month's own figures (`getPaySettingsFor`). The form
+  then shows the figures of the months to come again, and its caption says that month has figures of its own. NEVER let a change rewrite earlier months (user:
   "nunca pode alterar os valores anteriores"). The on/off switch and the card's per-month notes (`holidayPay`, `lineChecks`)
   are global, written with `patchPayGlobal()`. Leaving Settings / switching tab with unsaved figures asks first.
   Lost figures can be read back from a backup file without a full restore ("Recuperar valores de uma cópia de segurança",
@@ -479,7 +483,8 @@ Things learned over this collaboration that should persist across sessions:
   alone at base. Without a report, the roster shows APT / assistência / PLS instead of IO. **APT = assistência no aeroporto**
   (user, 0.9.3.18): parsed as `Standby Airport` / code APT, timed like the IO — 50% duty (pilots), per diem A, RAACO 4.5.5.5.
 - **PDF history** (since 0.9.3, user request): `/pdfs` groups the saved PDFs in tabs by year → month of the DOWNLOAD
-  (local time), newest first, each named by its download day/time; deleting asks first (the PDFs replay planned vs
+  (local time) — keep it so (user, Nov 2026: filing by the roster's month was tried as 0.9.3.47 and withdrawn, "algumas
+  escalas têm vários meses"), newest first, each named by its download day/time; deleting asks first (the PDFs replay planned vs
   flown and the IO prevenir).
 - **Backlog:** the rest of the AE items (folgas check, ES/LF/ND, per diem, duty-pay/block-pay
   credits, holiday counter), PWA local reminders, crosswind (runway DB). See `EXPERIMENTAL.md`
