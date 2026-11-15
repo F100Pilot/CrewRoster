@@ -224,6 +224,9 @@ const valuesKey = (s: PaySettings) => {
   return JSON.stringify(Object.keys(v).sort().map((k) => [k, v[k]]));
 };
 
+// Two sets with the same figures (the card's notes and the switch left aside).
+export const samePayValues = (a: PaySettings, b: PaySettings): boolean => valuesKey({ ...DEFAULT_PAY_SETTINGS, ...a }) === valuesKey({ ...DEFAULT_PAY_SETTINGS, ...b });
+
 export function getPayHistory(userId: string): PayVersion[] {
   try {
     const raw = localStorage.getItem(PAY_HISTORY_PREFIX + userId);
@@ -258,10 +261,26 @@ export function getPaySettingsFor(userId: string, month: string): PaySettings {
 // Guardar: the figures apply from `from` (a work month, "" = every month) ON — every later month
 // too, so versions saved for later months give way (they kept zeros over what had just been saved:
 // "não está a assumir… está a zero"). The months before `from` keep theirs.
-export function savePayVersion(userId: string, from: string, s: PaySettings): void {
+// `onlyThisMonth` (user, 0.9.3.46: "tem de ser possível a gravação só naquele mês"): the figures
+// apply to that work month alone — every other month, before and after, keeps what it had. The month
+// after gets a version with the figures it was using, unless it already had its own.
+const nextMonth = (m: string) => {
+  const i = Number(m.slice(0, 4)) * 12 + Number(m.slice(5, 7));
+  return `${Math.floor(i / 12)}-${String((i % 12) + 1).padStart(2, '0')}`;
+};
+export function savePayVersion(userId: string, from: string, s: PaySettings, onlyThisMonth = false): void {
   const values = { ...s };
   for (const k of PAY_GLOBAL) delete (values as unknown as Record<string, unknown>)[k];
-  const list = from ? getPayHistory(userId).filter((v) => v.from < from) : [];
+  const history = getPayHistory(userId);
+  let list: PayVersion[];
+  if (onlyThisMonth && from) {
+    const after = nextMonth(from);
+    const before = [...history].reverse().find((v) => v.from <= after) ?? history[0];
+    list = history.filter((v) => v.from !== from);
+    if (!list.some((v) => v.from === after)) list.push({ from: after, s: before.s });
+  } else {
+    list = from ? history.filter((v) => v.from < from) : [];
+  }
   list.push({ from, s: values as PaySettings });
   list.sort((a, b) => a.from.localeCompare(b.from));
   try {

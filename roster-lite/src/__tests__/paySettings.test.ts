@@ -55,6 +55,35 @@ describe('pay values by version (a raise never changes the months before)', () =
     expect(getPayHistory(uid)).toHaveLength(1);
   });
 
+  it('"Só este recibo" changes that work month alone; the months before and after keep theirs', async () => {
+    const { getPaySettingsFor, savePayVersion, setPaySettings, getPaySettings } = await import('../storage/settings');
+    const { DEFAULT_PAY_SETTINGS } = await import('../domain/payEstimate');
+    const uid = 'one-' + Math.random().toString(36).slice(2);
+    setPaySettings(uid, { ...DEFAULT_PAY_SETTINGS, enabled: true, vb: 7000 });
+
+    // No later version: December goes on with 7000, and Settings keeps showing the ongoing figures.
+    savePayVersion(uid, '2026-11', { ...getPaySettings(uid), vb: 9000 }, true);
+    expect(getPaySettingsFor(uid, '2026-10').vb).toBe(7000);
+    expect(getPaySettingsFor(uid, '2026-11').vb).toBe(9000);
+    expect(getPaySettingsFor(uid, '2026-12').vb).toBe(7000);
+    expect(getPaySettingsFor(uid, '2027-05').vb).toBe(7000);
+    expect(getPaySettings(uid).vb).toBe(7000);
+
+    // With a raise saved from February on, a one-month fix in January leaves the raise alone.
+    savePayVersion(uid, '2027-02', { ...getPaySettings(uid), vb: 7500 });
+    savePayVersion(uid, '2027-01', { ...getPaySettings(uid), vb: 8000 }, true);
+    expect(getPaySettingsFor(uid, '2026-12').vb).toBe(7000);
+    expect(getPaySettingsFor(uid, '2027-01').vb).toBe(8000);
+    expect(getPaySettingsFor(uid, '2027-02').vb).toBe(7500);
+    expect(getPaySettingsFor(uid, '2026-11').vb).toBe(9000);
+
+    // Saving the same month alone again replaces it, nothing else.
+    savePayVersion(uid, '2026-11', { ...getPaySettings(uid), vb: 9100 }, true);
+    expect(getPaySettingsFor(uid, '2026-11').vb).toBe(9100);
+    expect(getPaySettingsFor(uid, '2026-12').vb).toBe(7000);
+    expect(getPaySettingsFor(uid, '2027-03').vb).toBe(7500);
+  });
+
   it('figures typed in the older installed app (current set only) win over the latest version', async () => {
     const { getPaySettingsFor, savePayVersion, setPaySettings, getPaySettings } = await import('../storage/settings');
     const { DEFAULT_PAY_SETTINGS } = await import('../domain/payEstimate');

@@ -25,7 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(vazio — tudo promovido em 0.9.3.45)_
+- **0.9.3.46** — Vencimento: Guardar "Só este recibo". Só os valores mudados valem para esse recibo; os anteriores e os seguintes ficam como estavam.
 
 ---
 
