@@ -279,7 +279,10 @@ Things learned over this collaboration that should persist across sessions:
   loads the payslip open on the Vencimento page (`setViewedPayMonth` in `settingsEvents.ts`, written by
   `PayEstimateCard`; else the next one), the sticky bar is one line (Descartar · Guardar) and Guardar opens a dialog:
   "Só o recibo de …" (that payslip, no month list; default when it isn't the next one) or "A partir de um recibo" (the
-  month list, "Todos os meses" included). Either way only the edited fields change, on the target month's figures. NEVER let a change rewrite earlier months (user:
+  month list, "Todos os meses" included). Either way only the edited fields change, on the target month's figures.
+  **From a month on, only the EDITED fields go into every later version** (`savePayVersion(…, edited)`, since 0.9.3.51 —
+  user: "está sempre a repor os valores que eu tinha alterado": saving the instruction fee for all months replaced the
+  whole form over every version and wiped a January fixed with "Só este recibo"); each version keeps its other figures. NEVER let a change rewrite earlier months (user:
   "nunca pode alterar os valores anteriores"). The on/off switch and the card's per-month notes (`holidayPay`, `lineChecks`)
   are global, written with `patchPayGlobal()`. Leaving Settings / switching tab with unsaved figures asks first.
   Lost figures can be read back from a backup file without a full restore ("Recuperar valores de uma cópia de segurança",

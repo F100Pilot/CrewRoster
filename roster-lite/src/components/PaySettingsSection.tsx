@@ -80,9 +80,11 @@ export default function PaySettingsSection({ userId, onDirtyChange }: { userId: 
     // take the other figures shown in the form.
     const draft = s as unknown as Record<string, unknown>;
     const was = loaded as unknown as Record<string, unknown>;
-    const values = { ...(target ? getPaySettingsFor(userId, target) : getPaySettings(userId)) } as unknown as Record<string, unknown>;
-    for (const k of Object.keys(draft)) if (JSON.stringify(draft[k]) !== JSON.stringify(was[k])) values[k] = draft[k];
-    savePayVersion(userId, target, values as unknown as PaySettings, only);
+    const edited: Record<string, unknown> = {};
+    for (const k of Object.keys(draft)) if (JSON.stringify(draft[k]) !== JSON.stringify(was[k])) edited[k] = draft[k];
+    const values = { ...(target ? getPaySettingsFor(userId, target) : getPaySettings(userId)), ...edited } as unknown as PaySettings;
+    // From a payslip on: only the edited fields reach the later payslips, each keeping its own other figures.
+    savePayVersion(userId, target, values, only, only ? undefined : (edited as Partial<PaySettings>));
     load();
     setSavedNote(only ? `Guardado só para o ${payslipOf(viewed)}. Os outros recibos ficam como estavam.`
       : !from ? 'Guardado para todos os meses.'
@@ -467,7 +469,7 @@ export default function PaySettingsSection({ userId, onDirtyChange }: { userId: 
                 )}
                 <Typography variant="caption" color="text.secondary">
                   {only ? 'Os outros recibos, antes e depois, ficam como estavam.'
-                    : from ? 'Os recibos anteriores ficam como estavam.' : 'Todos os recibos passam a ter estes valores.'}
+                    : from ? 'Os recibos anteriores ficam como estavam.' : 'Vale para todos os recibos.'}
                   {' '}Só mudam os valores que alteraste.
                 </Typography>
               </Stack>

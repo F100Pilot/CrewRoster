@@ -25,6 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
+- **0.9.3.51** — Vencimento: guardar "a partir de um recibo" ou "todos os meses" muda só os valores alterados. Os recibos com valores só seus deixam de ser repostos.
 - **0.9.3.50** — Vencimento: no recibo de janeiro, o IRS do variável de dezembro (ano anterior) é retido à parte, com a sua própria taxa, como no recibo.
 - **0.9.3.49** — Vencimento: o subsídio de gabinete paga só os dias GAB do mês entre o "a partir do" e o "até ao" (por exemplo, do 3.º ao 7.º), definidos nas Definições.
 - **0.9.3.48** — Vencimento: linha "Instrução em terra" (sessões FP…_INST × valor por hora). Esses dias saem do duty-pay. As horas são provisórias, contadas pelas sessões da escala; falta confirmar como a empresa as conta.
