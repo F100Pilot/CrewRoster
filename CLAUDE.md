@@ -482,8 +482,10 @@ Things learned over this collaboration that should persist across sessions:
   C08, MAN: "teria de assumir as ajudas de lá"; "aquele do prevenir é especial"). Open: per diem for an IO normal
   alone at base. Without a report, the roster shows APT / assistência / PLS instead of IO. **APT = assistência no aeroporto**
   (user, 0.9.3.18): parsed as `Standby Airport` / code APT, timed like the IO — 50% duty (pilots), per diem A, RAACO 4.5.5.5.
-- **PDF history** (since 0.9.3, user request): `/pdfs` groups the saved PDFs in tabs by year → month of the DOWNLOAD
-  (local time), newest first, each named by its download day/time; deleting asks first (the PDFs replay planned vs
+- **PDF history** (since 0.9.3, user request): `/pdfs` groups the saved PDFs in tabs by year → month, newest first, each
+  named by its download day/time. The month is the ROSTER's when a closed range was asked for (`pdfMonth()` in
+  `rosterWindow.ts`, the middle of begin–end; user, 0.9.3.47: December 2025 alone, downloaded in November 2026, landed
+  under November 2026), else the download month (the usual week-back → server-max download, hand imports); deleting asks first (the PDFs replay planned vs
   flown and the IO prevenir).
 - **Backlog:** the rest of the AE items (folgas check, ES/LF/ND, per diem, duty-pay/block-pay
   credits, holiday counter), PWA local reminders, crosswind (runway DB). See `EXPERIMENTAL.md`
