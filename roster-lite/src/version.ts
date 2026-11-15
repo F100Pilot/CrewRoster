@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.3.56';
+export const APP_VERSION = '0.9.3.57';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -20,6 +20,13 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.9.3.57',
+    date: '2026-11-15',
+    highlights: [
+      'Vencimento: as horas de instrução em terra de cada mês podem ser corrigidas no cartão (✎). As horas pagas não seguem a escala; escreve as do recibo, e "Repor a escala" volta às sessões FP…_INST.',
+    ],
+  },
   {
     version: '0.9.3.56',
     date: '2026-11-15',

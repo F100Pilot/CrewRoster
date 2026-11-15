@@ -254,7 +254,10 @@ Things learned over this collaboration that should persist across sessions:
   user, from a January 2026 payslip: hours × the pilot's hourly fee `groundInstructionHour`, decimal hours to 2 places)
   **and left out of the duty-pay plafonds** (`isGroundInstruction` in `payEstimate.ts`; still duty for the AE limits).
   Hours = the FP…_INST sessions as printed, lunch out — PROVISIONAL: that payslip paid 51,37 h where the sessions give
-  54h50 and the [DT] 62h20; the user is asking a specialist how they are counted. Line training as instructor = days
+  54h50 and the [DT] 62h20; the user is asking a specialist how they are counted. Since 0.9.3.57 the pilot corrects
+  the month's hours on the pay card (✎ → typed decimal hours, `instructionHours['yyyy-MM']`, global like `lineChecks`;
+  "Repor a escala" drops it): Dec–Apr 2026 paid 51,37 / 0 / 6,33 / 6,17 / 2 h against 54,83 / 7 / 5,83 / 12 / 10 h
+  of sessions — no rule found. Line training as instructor = days
   with a flight marked LIFUS_INS or FAM_INS (mark in its own sub-column just left of its leg; the
   parser attaches it to the nearest flight sub-column on its right), paid once per day. Variable items
   paid the month after. Since 0.8.34: office days ("Subs. gabinete", per GAB day, `officeDay` typed by the

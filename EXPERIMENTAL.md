@@ -25,6 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
+- **0.9.3.57** — Vencimento: as horas de instrução em terra do mês corrigem-se no cartão (✎), pelas do recibo.
 - **0.9.3.56** — Vencimento: até março de 2026, os abonos das deslocações de simulador não são tributados e o per diem "T" é tributado por inteiro (bate com os recibos de janeiro a abril). Taskforce: o próprio check e o dia a seguir não contam como sessão paga.
 - **0.9.3.55** — Vencimento: "A partir de um recibo" propõe o recibo aberto no Vencimento, e não o próximo.
 - **0.9.3.54** — Vencimento: até janeiro de 2026, o per diem das deslocações de simulador é tributado por inteiro ("A … T"). Fevereiro a abril ainda por confirmar.

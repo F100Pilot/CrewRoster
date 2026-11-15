@@ -216,7 +216,7 @@ export function setPaySettings(userId: string, s: PaySettings): void {
 export interface PayVersion { from: string; s: PaySettings }
 const PAY_HISTORY_PREFIX = 'crewroster.payHistory.';
 // Card notes and the switch: one value for all months, never part of a version.
-const PAY_GLOBAL = ['enabled', 'holidayPay', 'lineChecks'] as const;
+const PAY_GLOBAL = ['enabled', 'holidayPay', 'lineChecks', 'instructionHours'] as const;
 
 const valuesKey = (s: PaySettings) => {
   const v: Record<string, unknown> = { ...s };

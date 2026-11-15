@@ -69,6 +69,10 @@ export interface PaySettings {
   allSimsPaid: boolean;
   lineTrainingDay: number; // € per day of flights flown as instructor (LIFUS_INS / FAM_INS)
   groundInstructionHour: number; // € per hour of ground training given (FP…_INST, "Instrução em terra")
+  // The pilot's correction of the month's hours ('yyyy-MM' → decimal hours, as the payslip's quantity), typed on the pay
+  // card: the hours paid don't follow the roster (user, 0.9.3.57 — Dec–Apr 2026: 54,83/51,37, 7/0, 5,83/6,33, 12/6,17,
+  // 10/2 h). Absent = the roster's sessions.
+  instructionHours: Record<string, number>;
   // € per line check ("LCC_Line Check" on the payslip), one per day of flights marked W_INS (the
   // examiner's mark; the day's own code is W_PNT). `lineChecks` ('yyyy-MM' → count) is the pilot's
   // correction on the pay card, when the roster's count is wrong; absent = the roster's.
@@ -102,7 +106,7 @@ export interface PaySettings {
 
 export const DEFAULT_PAY_SETTINGS: PaySettings = {
   enabled: false, category: 'OP3', vb: 0, ve: 0, veCommand: 0, vs: 0, extras: 0, chiefBonus: 0,
-  perDiemA: AE_PER_DIEM.OP.a, perDiemB: AE_PER_DIEM.OP.b, instructorSession: 0, allSimsPaid: false, lineTrainingDay: 0, groundInstructionHour: 0, lineCheck: 0, lineChecks: {},
+  perDiemA: AE_PER_DIEM.OP.a, perDiemB: AE_PER_DIEM.OP.b, instructorSession: 0, allSimsPaid: false, lineTrainingDay: 0, groundInstructionHour: 0, instructionHours: {}, lineCheck: 0, lineChecks: {},
   // The meal-card value of a real 2026 payslip (10,46 € a day, = the card's tax-free limit); office
   // days are paid at a rate the pilot types.
   officeDay: 0, officeDayFrom: 1, officeDayTo: 0, mealTicket: 10.46,
@@ -279,7 +283,8 @@ export interface PayEstimate {
   lineTrainingDays: number;
   lineTrainingValue: number;
   groundInstructionMinutes: number; // FP…_INST sessions of the month
-  groundInstructionHours: number; // as the payslip's quantity: decimal hours, 2 places
+  groundInstructionHours: number; // as the payslip's quantity: decimal hours, 2 places (the pilot's figure when typed)
+  groundInstructionHoursAuto: number; // the roster's sessions, in the same decimal hours
   groundInstructionValue: number;
   lineChecks: number;
   lineChecksAuto: number; // the roster's count (days with W_INS flights)
@@ -606,7 +611,9 @@ export function payEstimate(
 
   // ── Ground training given ("Instrução em terra"), per hour, apart from the plafonds ──
   const groundInstructionMinutes = duties.filter((d) => inMonth(d.date) && isGroundInstruction(d)).reduce((a, d) => a + sessionMinutesOf(d), 0);
-  const groundInstructionHours = Math.round((groundInstructionMinutes / 60) * 100) / 100;
+  const groundInstructionHoursAuto = Math.round((groundInstructionMinutes / 60) * 100) / 100;
+  const typedHours = s.instructionHours?.[month];
+  const groundInstructionHours = typedHours === undefined ? groundInstructionHoursAuto : Math.max(0, typedHours);
   const groundInstructionValue = cents(groundInstructionHours * (s.groundInstructionHour || 0));
 
   // ── Line checks: days with W_INS flights, unless the pilot corrected the month's count ──
@@ -685,6 +692,7 @@ export function payEstimate(
     lineTrainingValue,
     groundInstructionMinutes,
     groundInstructionHours,
+    groundInstructionHoursAuto,
     groundInstructionValue,
     lineChecks,
     lineChecksAuto,

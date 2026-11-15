@@ -1,7 +1,7 @@
 import InfoCollapse from './InfoCollapse';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Alert, Box, Card, CardContent, Checkbox, FormControlLabel, IconButton, Stack, Typography } from '@mui/material';
-import { Add, ChevronLeft, ChevronRight, ExpandLess, ExpandMore, Payments, Remove } from '@mui/icons-material';
+import { Alert, Box, Button, Card, CardContent, Checkbox, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, IconButton, InputAdornment, Stack, TextField, Typography } from '@mui/material';
+import { Add, ChevronLeft, ChevronRight, Edit, ExpandLess, ExpandMore, Payments, Remove } from '@mui/icons-material';
 import { netEstimate, payEstimate, type Credit } from '../domain/payEstimate';
 import { depth } from '../theme';
 import { getPaySettingsFor, patchPayGlobal } from '../storage/settings';
@@ -10,6 +10,9 @@ import { ExperimentalChip } from './AeDisclaimer';
 import { formatDuration } from '../utils/duration';
 import type { ParsedDuty } from '../domain/types';
 import { todayISO } from '../domain/rosterWindow';
+import { evalExpression } from '../utils/calc';
+
+const hoursText = (h: number) => h.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 const MONTHS_LONG = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto',
   'setembro', 'outubro', 'novembro', 'dezembro'];
@@ -60,6 +63,17 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
     if (n === r.lineChecksAuto) delete lineChecks[month]; else lineChecks[month] = Math.max(0, n);
     patchPayGlobal(userId, { lineChecks });
   };
+  // Ground instruction hours: the roster's sessions unless the pilot typed the payslip's quantity for the month.
+  const [editHours, setEditHours] = useState(false);
+  const [hoursInput, setHoursText] = useState('');
+  const saveHours = (value: number | null) => {
+    const instructionHours = { ...(settings.instructionHours ?? {}) };
+    if (value === null || Math.round(value * 100) === Math.round(r.groundInstructionHoursAuto * 100)) delete instructionHours[month];
+    else instructionHours[month] = Math.max(0, Math.round(value * 100) / 100);
+    patchPayGlobal(userId, { instructionHours });
+    setEditHours(false);
+  };
+  const typedHours = evalExpression(hoursInput);
   if (!settings.enabled) return null;
   const subsidyCount = (r.holidaySubsidy > 0 ? 1 : 0) + (r.christmasSubsidy > 0 ? 1 : 0);
   const subsidyNames = [r.holidaySubsidy > 0 && 'subsídio de férias', r.christmasSubsidy > 0 && 'subsídio de Natal'].filter(Boolean).join(' e ');
@@ -165,11 +179,17 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                     value={r.lineTrainingValue}
                   />
                 )}
-                {r.groundInstructionMinutes > 0 && (
-                  <Row
-                    label={`Instrução em terra: ${r.groundInstructionHours.toLocaleString('pt-PT', { minimumFractionDigits: 2 })} h (sessões FP…_INST)${settings.groundInstructionHour ? '' : ' · falta o valor nas Definições'}`}
-                    value={r.groundInstructionValue}
-                  />
+                {/* The hours paid don't follow the roster: the pilot types the payslip's figure (✎), back to the roster's with "Repor". */}
+                {(r.groundInstructionHoursAuto > 0 || settings.instructionHours?.[month] !== undefined) && (
+                  <Box display="flex" alignItems="center" gap={0.5}>
+                    <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1, minWidth: 0 }}>
+                      Instrução em terra: {hoursText(r.groundInstructionHours)} h
+                      {settings.instructionHours?.[month] !== undefined ? ` · corrigido (escala: ${hoursText(r.groundInstructionHoursAuto)} h)` : ' · pelas sessões FP…_INST'}
+                      {settings.groundInstructionHour ? '' : ' · falta o valor nas Definições'}
+                    </Typography>
+                    <IconButton size="small" aria-label="Corrigir as horas de instrução em terra" onClick={() => { setHoursText(hoursText(r.groundInstructionHours)); setEditHours(true); }}><Edit fontSize="small" /></IconButton>
+                    <Typography variant="body2" fontWeight={600} sx={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>{EUR.format(r.groundInstructionValue)}</Typography>
+                  </Box>
                 )}
                 {(r.lineChecks > 0 || r.lineChecksAuto > 0 || settings.lineCheck > 0) && (
                   <Box display="flex" alignItems="center" gap={0.5}>
@@ -250,6 +270,23 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
           </>
         )}
       </CardContent>
+      <Dialog open={editHours} onClose={() => setEditHours(false)} fullWidth maxWidth="xs">
+        <DialogTitle sx={{ pb: 1 }}>Horas de instrução em terra</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+            Trabalho de {monthName(month)}. Escreve as horas que o recibo paga (ex.: 6,17). Pela escala: {hoursText(r.groundInstructionHoursAuto)} h.
+          </Typography>
+          <TextField
+            fullWidth size="small" label="Horas" value={hoursInput} onChange={(e) => setHoursText(e.target.value)}
+            inputProps={{ inputMode: 'decimal' }} InputProps={{ endAdornment: <InputAdornment position="end">h</InputAdornment> }}
+            error={hoursInput.trim() !== '' && typedHours === null}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button color="inherit" onClick={() => saveHours(null)}>Repor a escala</Button>
+          <Button variant="contained" disabled={typedHours === null} onClick={() => saveHours(typedHours)}>Guardar</Button>
+        </DialogActions>
+      </Dialog>
     </Card>
   );
 }

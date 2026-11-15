@@ -415,3 +415,18 @@ describe('abonos das viagens de simulador não tributados (até março de 2026)'
     expect(Object.keys(r.abonosByDate)).toHaveLength(0);
   });
 });
+
+// The hours of ground instruction paid don't follow the roster (Dec 2025–Apr 2026 payslips): the pilot types the
+// payslip's figure for the month on the pay card.
+describe('horas de instrução em terra corrigidas pelo piloto', () => {
+  const inst = duty('2026-04-14', 'Training', { dutyCode: 'FP1_INST', departureAirport: 'LIS', departureTime: '07:30', arrivalTime: '11:30' });
+  it('uses the typed hours for that month only', () => {
+    const s = { ...S, groundInstructionHour: 60, instructionHours: { '2026-04': 2 } };
+    const r = payEstimate([inst], '2026-04', s, '2026-04-30');
+    expect(r.groundInstructionHoursAuto).toBe(4);
+    expect(r.groundInstructionHours).toBe(2);
+    expect(r.groundInstructionValue).toBe(120);
+    const other = payEstimate([{ ...inst, date: '2026-03-14' }], '2026-03', s, '2026-03-31');
+    expect(other.groundInstructionHours).toBe(4);
+  });
+});
