@@ -25,6 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
+- **0.9.3.55** — Vencimento: "A partir de um recibo" propõe o recibo aberto no Vencimento, e não o próximo.
 - **0.9.3.54** — Vencimento: até janeiro de 2026, o per diem das deslocações de simulador é tributado por inteiro ("A … T"). Fevereiro a abril ainda por confirmar.
 - **0.9.3.53** — Calendário: os dias com simulador e outro serviço ficam com a tecla dividida na diagonal, nas cores dos dois serviços.
 - **0.9.3.52** — Vencimento: opção "Todas as sessões de simulador são pagas" (taskforce). Calendário: marca "SIM" nos dias com simulador e DHC.

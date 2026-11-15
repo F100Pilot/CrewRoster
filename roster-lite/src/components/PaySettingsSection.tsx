@@ -29,6 +29,8 @@ const shiftMonth = (key: string, by: number) => {
   const idx = Number(key.slice(0, 4)) * 12 + Number(key.slice(5, 7)) - 1 + by;
   return `${Math.floor(idx / 12)}-${String((idx % 12) + 1).padStart(2, '0')}`;
 };
+const monthsBetween = (a: string, b: string) =>
+  (Number(b.slice(0, 4)) - Number(a.slice(0, 4))) * 12 + Number(b.slice(5, 7)) - Number(a.slice(5, 7));
 // A version is keyed by the WORK month (the pay card's "Trabalho de …"); the crew think in payslips,
 // so it's named by the payslip that work is paid on — the month after.
 const payslipOf = (workMonth: string) => {
@@ -51,7 +53,9 @@ export default function PaySettingsSection({ userId, onDirtyChange }: { userId: 
   // The text of each money field as typed, so "1234," doesn't jump while editing.
   const [text, setText] = useState<Record<MoneyField, string>>(() => toText(loaded));
   const [dirty, setDirty] = useState(false);
-  const [from, setFrom] = useState(thisMonth);
+  // "A partir de um recibo" starts at the payslip open on the Vencimento page (user, 0.9.3.55: saved from the next payslip
+  // by default, a switch turned on for January never reached January).
+  const [from, setFrom] = useState(viewed);
   // Guardar for that payslip alone (the default when another payslip than the next is open), or
   // from a chosen payslip on. Chosen in a dialog, so nothing sits over the field being typed.
   const [only, setOnly] = useState(viewed !== thisMonth);
@@ -65,7 +69,7 @@ export default function PaySettingsSection({ userId, onDirtyChange }: { userId: 
     setS(next);
     setText(toText(next));
     setDirty(false);
-    setFrom(thisMonth);
+    setFrom(v);
     setOnly(v !== thisMonth);
     setAskSave(false);
   };
@@ -471,7 +475,7 @@ export default function PaySettingsSection({ userId, onDirtyChange }: { userId: 
                 </ToggleButtonGroup>
                 {!only && (
                   <TextField select size="small" fullWidth label="Aplicar a partir do" value={from} onChange={(e) => setFrom(e.target.value)}>
-                    {Array.from({ length: 16 }, (_, i) => shiftMonth(thisMonth, 3 - i)).map((m) => (
+                    {Array.from({ length: Math.max(16, monthsBetween(viewed, thisMonth) + 4) }, (_, i) => shiftMonth(thisMonth, 3 - i)).map((m) => (
                       <MenuItem key={m} value={m}>{payslipOf(m)}{m === thisMonth ? ' (o próximo)' : ''}</MenuItem>
                     ))}
                     <MenuItem value="">Todos os meses (corrigir um engano)</MenuItem>
