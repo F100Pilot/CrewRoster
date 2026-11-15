@@ -268,8 +268,12 @@ Things learned over this collaboration that should persist across sessions:
   `storage/settings.ts`; `crewroster.pay.<user>` stays the current set. **"Só este recibo"** (user, 0.9.3.46: "tem de ser
   possível a gravação só naquele mês"): a toggle beside the month on the Guardar panel — `savePayVersion(…, onlyThisMonth)`
   replaces only that month's version and adds one for the month after with the figures it was using (unless it has its
-  own); only the fields edited in the draft change, on top of that month's own figures (`getPaySettingsFor`). The form
-  then shows the figures of the months to come again, and its caption says that month has figures of its own. NEVER let a change rewrite earlier months (user:
+  own); only the fields edited in the draft change, on top of that month's own figures (`getPaySettingsFor`). Since
+  0.9.3.47 (user: the change went to the next payslip, the box covered the field, no month list for "só este"): the form
+  loads the payslip open on the Vencimento page (`setViewedPayMonth` in `settingsEvents.ts`, written by
+  `PayEstimateCard`; else the next one), the sticky bar is one line (Descartar · Guardar) and Guardar opens a dialog:
+  "Só o recibo de …" (that payslip, no month list; default when it isn't the next one) or "A partir de um recibo" (the
+  month list, "Todos os meses" included). Either way only the edited fields change, on the target month's figures. NEVER let a change rewrite earlier months (user:
   "nunca pode alterar os valores anteriores"). The on/off switch and the card's per-month notes (`holidayPay`, `lineChecks`)
   are global, written with `patchPayGlobal()`. Leaving Settings / switching tab with unsaved figures asks first.
   Lost figures can be read back from a backup file without a full restore ("Recuperar valores de uma cópia de segurança",

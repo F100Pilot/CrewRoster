@@ -25,7 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(vazio — tudo promovido em 0.9.3.46)_
+- **0.9.3.47** — Vencimento: as Definições abrem com os valores do recibo que está aberto no Vencimento, e "Só este recibo" grava nele. A barra de guardar passou a uma linha, e a escolha do recibo está numa janela que abre ao Guardar.
 
 ---
 

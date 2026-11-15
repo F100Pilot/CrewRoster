@@ -5,6 +5,7 @@ import { Add, ChevronLeft, ChevronRight, ExpandLess, ExpandMore, Payments, Remov
 import { netEstimate, payEstimate, type Credit } from '../domain/payEstimate';
 import { depth } from '../theme';
 import { getPaySettingsFor, patchPayGlobal } from '../storage/settings';
+import { setViewedPayMonth } from './settingsEvents';
 import { ExperimentalChip } from './AeDisclaimer';
 import { formatDuration } from '../utils/duration';
 import type { ParsedDuty } from '../domain/types';
@@ -37,6 +38,8 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
     window.addEventListener('pay-settings-updated', reload);
     return () => window.removeEventListener('pay-settings-updated', reload);
   }, [userId, month]);
+  // Settings → Vencimento edits the payslip open here.
+  useEffect(() => { setViewedPayMonth(month); return () => setViewedPayMonth(null); }, [month]);
   const [showDays, setShowDays] = useState(false);
   const r = useMemo(() => payEstimate(duties, month, settings, today, base), [duties, month, settings, today, base]);
   const n = useMemo(() => netEstimate(r, settings), [r, settings]);

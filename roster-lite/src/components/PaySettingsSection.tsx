@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  Accordion, AccordionDetails, AccordionSummary, Alert, Box, Button, IconButton, InputAdornment, MenuItem, Paper, Stack, Switch, TextField,
+  Accordion, AccordionDetails, AccordionSummary, Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, InputAdornment, MenuItem, Paper, Stack, Switch, TextField,
   ToggleButton, ToggleButtonGroup, Typography,
 } from '@mui/material';
 import { Calculate, ExpandMore } from '@mui/icons-material';
 import CalculatorDialog from './CalculatorDialog';
 import { evalExpression, isExpression } from '../utils/calc';
-import { getPayHistory, getPaySettings, getPaySettingsFor, patchPayGlobal, samePayValues, savePayVersion } from '../storage/settings';
+import { getPayHistory, getPaySettings, getPaySettingsFor, patchPayGlobal, savePayVersion } from '../storage/settings';
+import { getViewedPayMonth } from './settingsEvents';
 import { payFiguresFromBackup, readBackupFile } from '../storage/backup';
 import { DEFAULT_PAY_SETTINGS } from '../domain/payEstimate';
 import { PAY_CATEGORIES, pensionLines, perDiemDefaults, unionBaseAuto, unionFee, type PayCategory, type PaySettings } from '../domain/payEstimate';
@@ -39,52 +40,52 @@ const payslipOf = (workMonth: string) => {
 // botão de salvar"), and each Guardar is a version from a chosen payslip on — the months before keep
 // the figures they had (user: "nunca pode alterar os valores anteriores").
 export default function PaySettingsSection({ userId, onDirtyChange }: { userId: string; onDirtyChange?: (dirty: boolean) => void }) {
-  const [s, setS] = useState<PaySettings>(() => getPaySettings(userId));
-  // The text of each money field as typed, so "1234," doesn't jump while editing.
-  const [text, setText] = useState<Record<MoneyField, string>>(() => toText(getPaySettings(userId)));
-  const [dirty, setDirty] = useState(false);
   const thisMonth = new Date().toISOString().slice(0, 7);
+  // The payslip the form shows: the one open on the Vencimento page, else the next one. Its own
+  // figures are loaded (an older payslip may have had others), and Guardar applies only the fields
+  // edited here (user, 0.9.3.47: "quando altero um valor específico num recibo do mês, não está a gravar").
+  const [viewed, setViewed] = useState(() => getViewedPayMonth() ?? thisMonth);
+  const [loaded, setLoaded] = useState<PaySettings>(() => getPaySettingsFor(userId, viewed));
+  const [s, setS] = useState<PaySettings>(loaded);
+  // The text of each money field as typed, so "1234," doesn't jump while editing.
+  const [text, setText] = useState<Record<MoneyField, string>>(() => toText(loaded));
+  const [dirty, setDirty] = useState(false);
   const [from, setFrom] = useState(thisMonth);
-  // Guardar for the chosen payslip on (default), or for that payslip alone.
-  const [only, setOnly] = useState(false);
+  // Guardar for that payslip alone (the default when another payslip than the next is open), or
+  // from a chosen payslip on. Chosen in a dialog, so nothing sits over the field being typed.
+  const [only, setOnly] = useState(viewed !== thisMonth);
+  const [askSave, setAskSave] = useState(false);
   const [savedNote, setSavedNote] = useState<string | null>(null);
-  const reset = () => {
-    const next = getPaySettings(userId);
+  const load = () => {
+    const v = getViewedPayMonth() ?? thisMonth;
+    const next = getPaySettingsFor(userId, v);
+    setViewed(v);
+    setLoaded(next);
     setS(next);
     setText(toText(next));
     setDirty(false);
     setFrom(thisMonth);
-    setOnly(false);
+    setOnly(v !== thisMonth);
+    setAskSave(false);
   };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(reset, [userId]);
+  useEffect(load, [userId]);
   useEffect(() => { onDirtyChange?.(dirty); }, [dirty, onDirtyChange]);
 
   const save = (next: PaySettings) => { setS(next); setDirty(true); setSavedNote(null); };
   const commit = () => {
-    const one = only && !!from;
-    // For one payslip, only the fields edited here change, on that month's own figures — an older
-    // month must not take the other figures of today.
-    let values = s;
-    if (one) {
-      const base = getPaySettings(userId) as unknown as Record<string, unknown>;
-      const draft = s as unknown as Record<string, unknown>;
-      const month = { ...getPaySettingsFor(userId, from) } as unknown as Record<string, unknown>;
-      for (const k of Object.keys(draft)) if (JSON.stringify(draft[k]) !== JSON.stringify(base[k])) month[k] = draft[k];
-      values = month as unknown as PaySettings;
-    }
-    savePayVersion(userId, from, values, one);
-    setDirty(false);
-    setSavedNote(!from ? 'Guardado para todos os meses.'
-      : one ? `Guardado só para o ${payslipOf(from)}. Os outros recibos ficam como estavam.`
+    const target = only ? viewed : from;
+    // Only the fields edited here change, on the target's own figures — another payslip must not
+    // take the other figures shown in the form.
+    const draft = s as unknown as Record<string, unknown>;
+    const was = loaded as unknown as Record<string, unknown>;
+    const values = { ...(target ? getPaySettingsFor(userId, target) : getPaySettings(userId)) } as unknown as Record<string, unknown>;
+    for (const k of Object.keys(draft)) if (JSON.stringify(draft[k]) !== JSON.stringify(was[k])) values[k] = draft[k];
+    savePayVersion(userId, target, values as unknown as PaySettings, only);
+    load();
+    setSavedNote(only ? `Guardado só para o ${payslipOf(viewed)}. Os outros recibos ficam como estavam.`
+      : !from ? 'Guardado para todos os meses.'
         : `Guardado: vale a partir do ${payslipOf(from)}. Os recibos anteriores ficam como estavam.`);
-    if (one) {
-      // The form shows the figures of the months to come again, which this save didn't touch.
-      const next = getPaySettings(userId);
-      setS(next);
-      setText(toText(next));
-    }
-    setOnly(false);
   };
   // Recover figures lost to an overwrite from a backup file — into the draft, never saved by itself.
   const backupInput = useRef<HTMLInputElement>(null);
@@ -106,10 +107,7 @@ export default function PaySettingsSection({ userId, onDirtyChange }: { userId: 
     }
   };
   const history = getPayHistory(userId);
-  const inForce = [...history].reverse().find((v) => v.from <= thisMonth) ?? history[0];
-  // The form shows the current set (the latest version). When this month's payslip was saved on its
-  // own ("Só este recibo"), say so instead of dating the figures below by it.
-  const ownMonth = !!inForce.from && !samePayValues(inForce.s, getPaySettings(userId)) ? inForce.from : null;
+  const inForce = [...history].reverse().find((v) => v.from <= viewed) ?? history[0];
   // The two halves of the section: what is paid, and what the payslip takes off.
   const [part, setPart] = useState<'valores' | 'descontos'>('valores');
 
@@ -248,8 +246,8 @@ export default function PaySettingsSection({ userId, onDirtyChange }: { userId: 
       {s.enabled && (
         <>
           <Typography variant="caption" color="text.secondary">
-            {ownMonth ? `O ${payslipOf(ownMonth)} tem valores só seus; abaixo estão os dos recibos seguintes`
-              : inForce.from ? `Valores em vigor desde o ${payslipOf(inForce.from)}` : 'Valores em vigor para todos os meses'}
+            {`Valores do ${payslipOf(viewed)}${viewed === thisMonth ? ' (o próximo)' : ''}`}
+            {inForce.from ? ` · em vigor desde o ${payslipOf(inForce.from)}` : ''}
             {history.length > 1 ? ` · ${history.length - 1} ${history.length === 2 ? 'versão anterior guardada' : 'versões anteriores guardadas'} (os recibos antigos usam-nas)` : ''}.
             {' '}Alterações só contam depois de Guardar.
           </Typography>
@@ -417,32 +415,47 @@ export default function PaySettingsSection({ userId, onDirtyChange }: { userId: 
             </Stack>
           )}
 
-          {/* Nothing is saved until here. The version applies from the chosen payslip on; the payslips
-              before keep their own figures. "Todos os meses" is there to fix a typo everywhere. */}
+          {/* Nothing is saved until here. One slim bar, so it never covers the field being typed (user,
+              0.9.3.47); where the figures apply is chosen in the dialog Guardar opens. */}
           {dirty && (
-            <Paper elevation={0} sx={{ position: 'sticky', bottom: 0, zIndex: 2, p: 1.5, borderRadius: '16px', boxShadow: '0 -8px 20px -8px rgba(0,0,0,.35)' }}>
-              <TextField select size="small" fullWidth label={only && from ? 'Aplicar só ao' : 'Aplicar a partir do'} value={from} onChange={(e) => setFrom(e.target.value)}>
-                {Array.from({ length: 16 }, (_, i) => shiftMonth(thisMonth, 3 - i)).map((m) => (
-                  <MenuItem key={m} value={m}>{payslipOf(m)}{m === thisMonth ? ' (o próximo)' : ''}</MenuItem>
-                ))}
-                <MenuItem value="">Todos os meses (corrigir um engano)</MenuItem>
-              </TextField>
-              {from && (
-                <ToggleButtonGroup
-                  exclusive size="small" fullWidth value={only ? 'only' : 'on'} sx={{ mt: 1 }}
-                  onChange={(_, v) => { if (v) setOnly(v === 'only'); }}
-                  aria-label="Meses a que se aplica"
-                >
-                  <ToggleButton value="on">Deste recibo em diante</ToggleButton>
-                  <ToggleButton value="only">Só este recibo</ToggleButton>
-                </ToggleButtonGroup>
-              )}
-              <Box display="flex" gap={1} mt={1.25} justifyContent="flex-end">
-                <Button color="inherit" onClick={reset}>Descartar</Button>
-                <Button variant="contained" onClick={commit}>Guardar</Button>
-              </Box>
+            <Paper elevation={0} sx={{ position: 'sticky', bottom: 0, zIndex: 2, px: 1.5, py: 1, borderRadius: '16px', boxShadow: '0 -8px 20px -8px rgba(0,0,0,.35)', display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="caption" color="text.secondary" sx={{ flexGrow: 1, lineHeight: 1.3 }}>Alterações por guardar</Typography>
+              <Button color="inherit" size="small" onClick={load}>Descartar</Button>
+              <Button variant="contained" size="small" onClick={() => setAskSave(true)}>Guardar</Button>
             </Paper>
           )}
+          <Dialog open={askSave} onClose={() => setAskSave(false)} fullWidth maxWidth="xs">
+            <DialogTitle sx={{ pb: 1 }}>Guardar valores</DialogTitle>
+            <DialogContent>
+              <Stack spacing={1.5} sx={{ pt: 0.5 }}>
+                <ToggleButtonGroup
+                  exclusive size="small" fullWidth orientation="vertical" value={only ? 'only' : 'on'}
+                  onChange={(_, v) => { if (v) setOnly(v === 'only'); }}
+                  aria-label="Recibos a que se aplica"
+                >
+                  <ToggleButton value="only">Só o {payslipOf(viewed)}</ToggleButton>
+                  <ToggleButton value="on">A partir de um recibo</ToggleButton>
+                </ToggleButtonGroup>
+                {!only && (
+                  <TextField select size="small" fullWidth label="Aplicar a partir do" value={from} onChange={(e) => setFrom(e.target.value)}>
+                    {Array.from({ length: 16 }, (_, i) => shiftMonth(thisMonth, 3 - i)).map((m) => (
+                      <MenuItem key={m} value={m}>{payslipOf(m)}{m === thisMonth ? ' (o próximo)' : ''}</MenuItem>
+                    ))}
+                    <MenuItem value="">Todos os meses (corrigir um engano)</MenuItem>
+                  </TextField>
+                )}
+                <Typography variant="caption" color="text.secondary">
+                  {only ? 'Os outros recibos, antes e depois, ficam como estavam.'
+                    : from ? 'Os recibos anteriores ficam como estavam.' : 'Todos os recibos passam a ter estes valores.'}
+                  {' '}Só mudam os valores que alteraste.
+                </Typography>
+              </Stack>
+            </DialogContent>
+            <DialogActions>
+              <Button color="inherit" onClick={() => setAskSave(false)}>Cancelar</Button>
+              <Button variant="contained" onClick={commit}>Guardar</Button>
+            </DialogActions>
+          </Dialog>
         </>
       )}
     </Stack>

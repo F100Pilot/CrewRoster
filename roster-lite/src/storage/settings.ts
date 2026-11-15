@@ -224,9 +224,6 @@ const valuesKey = (s: PaySettings) => {
   return JSON.stringify(Object.keys(v).sort().map((k) => [k, v[k]]));
 };
 
-// Two sets with the same figures (the card's notes and the switch left aside).
-export const samePayValues = (a: PaySettings, b: PaySettings): boolean => valuesKey({ ...DEFAULT_PAY_SETTINGS, ...a }) === valuesKey({ ...DEFAULT_PAY_SETTINGS, ...b });
-
 export function getPayHistory(userId: string): PayVersion[] {
   try {
     const raw = localStorage.getItem(PAY_HISTORY_PREFIX + userId);

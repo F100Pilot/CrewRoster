@@ -297,7 +297,8 @@ export default function SettingsDialog({ open, onClose: close }: { open: boolean
       >
         {tabs.map((t) => <Tab key={t.id} value={t.id} icon={t.icon} label={t.label} aria-label={t.name ?? t.label} iconPosition="top" />)}
       </Tabs>
-      <DialogContent sx={{ pt: 2 }}>
+      {/* The pay tab's unsaved-changes bar is sticky at the bottom: a focused field scrolls above it. */}
+      <DialogContent sx={{ pt: 2, scrollPaddingBottom: 72 }}>
         {shownTab === 'perfil' && (
           <Stack spacing={2}>
             {activeUser && (
