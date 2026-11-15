@@ -299,3 +299,28 @@ describe('instrução em terra (FP…_INST)', () => {
     expect(r.duty.credited).toBe(265);
   });
 });
+
+// "Subs. gabinete": which GAB days of the month are paid, by their order (user: with one chief bonus the 1st and 2nd
+// aren't paid, the 3rd to the 7th are, from the 8th none). Synthetic fee.
+describe('subsídio de gabinete por ordem do dia', () => {
+  const gab = (day: number) => duty(`2026-05-${String(day).padStart(2, '0')}`, 'Office Duty', { dutyCode: 'GAB1', departureAirport: 'LIS', reportingTime: '09:30', departureTime: '09:30', arrivalTime: '13:00' });
+  const seven = [11, 12, 15, 18, 21, 22, 29].map(gab);
+
+  it('pays only the 3rd to the 7th GAB day', () => {
+    const r = payEstimate(seven, '2026-05', { ...S, officeDay: 100, officeDayFrom: 3, officeDayTo: 7 }, '2026-05-31');
+    expect(r.officeDays).toBe(7);
+    expect(r.officePaidDays).toBe(5);
+    expect(r.officeValue).toBe(500);
+  });
+
+  it('pays nothing for two GAB days from the 3rd on', () => {
+    const r = payEstimate(seven.slice(0, 2), '2026-05', { ...S, officeDay: 100, officeDayFrom: 3, officeDayTo: 7 }, '2026-05-31');
+    expect(r.officePaidDays).toBe(0);
+    expect(r.officeValue).toBe(0);
+  });
+
+  it('pays every GAB day by default', () => {
+    const r = payEstimate(seven, '2026-05', { ...S, officeDay: 100 }, '2026-05-31');
+    expect(r.officePaidDays).toBe(7);
+  });
+});

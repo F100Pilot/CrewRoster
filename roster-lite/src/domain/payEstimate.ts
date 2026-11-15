@@ -72,6 +72,10 @@ export interface PaySettings {
   lineCheck: number;
   lineChecks: Record<string, number>;
   officeDay: number; // € per office day ("Subs. gabinete" on the payslip — GAB days), the pilot's own figure
+  // Which GAB days of the month are paid, by their order (user, 0.9.3.49: with one chief bonus the 1st and 2nd aren't
+  // paid, the 3rd to the 7th are, from the 8th none; with a higher one, none — typed by the pilot, like the fee).
+  officeDayFrom: number; // the first paid GAB day of the month (1 = from the first)
+  officeDayTo: number; // the last paid one (0 = no limit)
   mealTicket: number; // € per day of ground duty at base ("Sub. alimentação tickets", paid to the meal card)
   // ── For the net estimate ──
   irsTable: IrsTable;
@@ -98,7 +102,7 @@ export const DEFAULT_PAY_SETTINGS: PaySettings = {
   perDiemA: AE_PER_DIEM.OP.a, perDiemB: AE_PER_DIEM.OP.b, instructorSession: 0, lineTrainingDay: 0, groundInstructionHour: 0, lineCheck: 0, lineChecks: {},
   // The meal-card value of a real 2026 payslip (10,46 € a day, = the card's tax-free limit); office
   // days are paid at a rate the pilot types.
-  officeDay: 0, mealTicket: 10.46,
+  officeDay: 0, officeDayFrom: 1, officeDayTo: 0, mealTicket: 10.46,
   irsTable: 'I', dependents: 0, nonTaxableFixed: 0, fixedDeductions: 0,
   // Per diem paid for a day away is partly exempt (as ajudas de custo); per diem for days at base
   // (simulator, training, office — "Perdiem … T" on payslips) is taxed in full. The limit is per
@@ -262,6 +266,7 @@ export interface PayEstimate {
   lineChecksAuto: number; // the roster's count (days with W_INS flights)
   lineCheckValue: number;
   officeDays: number; // GAB days
+  officePaidDays: number; // the ones paid (officeDayFrom … officeDayTo)
   officeValue: number;
   mealTicketDays: number; // per diem B days at base (ground duty): one meal ticket each
   mealTicketValue: number; // tax-free, loaded onto the meal card (and taken off the transfer)
@@ -551,7 +556,10 @@ export function payEstimate(
 
   // ── Office days ("Subs. gabinete"): the GAB days of the month, at the pilot's rate ──
   const officeDays = new Set(duties.filter((d) => inMonth(d.date) && d.dutyType === 'Office Duty' && /^GAB/i.test(d.dutyCode)).map((d) => d.date)).size;
-  const officeValue = officeDays * (s.officeDay || 0);
+  const fromDay = Math.max(1, s.officeDayFrom || 1);
+  const toDay = s.officeDayTo && s.officeDayTo > 0 ? s.officeDayTo : Infinity;
+  const officePaidDays = Math.max(0, Math.min(officeDays, toDay) - fromDay + 1);
+  const officeValue = officePaidDays * (s.officeDay || 0);
   const mealTicketValue = cents(mealTicketDays * (s.mealTicket || 0));
 
   // ── RAACO meal allowances (paid apart; only their tax is on the payslip) ──
@@ -618,6 +626,7 @@ export function payEstimate(
     lineChecksAuto,
     lineCheckValue,
     officeDays,
+    officePaidDays,
     officeValue,
     mealTicketDays,
     mealTicketValue,

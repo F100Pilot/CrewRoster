@@ -5,6 +5,7 @@ import {
 } from '@mui/material';
 import { Calculate, ExpandMore } from '@mui/icons-material';
 import CalculatorDialog from './CalculatorDialog';
+import InfoCollapse from './InfoCollapse';
 import { evalExpression, isExpression } from '../utils/calc';
 import { getPayHistory, getPaySettings, getPaySettingsFor, patchPayGlobal, savePayVersion } from '../storage/settings';
 import { getViewedPayMonth } from './settingsEvents';
@@ -339,13 +340,31 @@ export default function PaySettingsSection({ userId, onDirtyChange }: { userId: 
                 {money('officeDay', 'Subs. gabinete (dia GAB)')}
                 {money('mealTicket', 'Sub. alimentação (dia)')}
               </Box>
-              <Typography variant="caption" color="text.secondary">
+              {/* Which GAB days of the month are paid, by their order — some chief bonuses pay only the 3rd to the 7th. */}
+              <Box display="grid" gridTemplateColumns="1fr 1fr" gap={1.5}>
+                <TextField
+                  select size="small" fullWidth label="GAB pago do" value={s.officeDayFrom ?? 1}
+                  onChange={(e) => save({ ...s, officeDayFrom: Number(e.target.value) })}
+                >
+                  {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => <MenuItem key={n} value={n}>{n}.º dia</MenuItem>)}
+                </TextField>
+                <TextField
+                  select size="small" fullWidth label="Até ao" value={s.officeDayTo ?? 0}
+                  onChange={(e) => save({ ...s, officeDayTo: Number(e.target.value) })}
+                >
+                  <MenuItem value={0}>Sem limite</MenuItem>
+                  {Array.from({ length: 20 }, (_, i) => i + 1).map((n) => <MenuItem key={n} value={n}>{n}.º dia</MenuItem>)}
+                </TextField>
+              </Box>
+              <InfoCollapse title="Como se conta o variável" card={false}>
+                <Typography variant="caption" color="text.secondary">
                 Per diem pela tabela A2.2 do AE ("sujeito a confirmação"). Instrutor: sessões OPC_INS / LPC_INS e o
                 2.º dia do check; line training por dia com voos LIFUS_INS ou FAM_INS; instrução em terra por hora das sessões
                 FP…_INST (fora do duty-pay); line check por dia com voos W_INS
                 (corrige a contagem no cartão do Vencimento). 0 se não és instrutor.
-                Gabinete por dia GAB; subsídio de alimentação por dia em terra na base (isento, vai para o cartão-refeição).
-              </Typography>
+                Gabinete por dia GAB, só os dias do mês entre o "GAB pago do" e o "Até ao" (ex.: do 3.º ao 7.º); subsídio de alimentação por dia em terra na base (isento, vai para o cartão-refeição).
+                </Typography>
+              </InfoCollapse>
             </Stack>
           ) : (
             <Stack spacing={1.5}>

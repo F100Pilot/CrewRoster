@@ -183,7 +183,7 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                 )}
                 {r.officeDays > 0 && (
                   <Row
-                    label={`Subsídio de gabinete: ${r.officeDays} ${r.officeDays === 1 ? 'dia' : 'dias'} GAB${settings.officeDay ? '' : ' · falta o valor nas Definições'}`}
+                    label={`Subsídio de gabinete: ${r.officeDays} ${r.officeDays === 1 ? 'dia' : 'dias'} GAB${r.officePaidDays !== r.officeDays ? ` · ${r.officePaidDays} ${r.officePaidDays === 1 ? 'pago' : 'pagos'}` : ''}${settings.officeDay ? '' : ' · falta o valor nas Definições'}`}
                     value={r.officeValue}
                   />
                 )}
