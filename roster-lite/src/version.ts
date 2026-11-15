@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.3.63';
+export const APP_VERSION = '0.9.3.64';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -20,6 +20,14 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.9.3.64',
+    date: '2026-11-15',
+    highlights: [
+      'Estatísticas: o botão Bloco / Serviço da evolução mensal passa a mudar também os totais "Por ano". Em Serviço, cada ano mostra as horas de serviço, contadas como nos limites, e os dias de serviço. Só contam os meses com escala guardada, e o cartão diz quantos são.',
+      'Vencimento: quando o subsídio de gabinete não tem valor, a linha diz "não pagos", em vez de pedir o valor nas Definições.',
+    ],
+  },
   {
     version: '0.9.3.63',
     date: '2026-11-15',

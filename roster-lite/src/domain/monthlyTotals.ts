@@ -44,6 +44,22 @@ export function monthlyTotals(
   }));
 }
 
+// Duty per calendar year, for the "Por ano" card when the chart shows duty (user, 0.9.3.64): counted like the limits,
+// and only over the months a stored roster covers — `months` says how many, so a year seen in part reads as such.
+export interface YearDuty { minutes: number; days: number; months: number }
+export function dutyByYear(duties: ParsedDuty[], rules: DutyRules): Map<string, YearDuty> {
+  const out = new Map<string, YearDuty>();
+  const get = (y: string) => out.get(y) ?? out.set(y, { minutes: 0, days: 0, months: 0 }).get(y)!;
+  for (const m of new Set(duties.map((d) => d.date.slice(0, 7)))) get(m.slice(0, 4)).months++;
+  for (const d of dutyDays(duties, rules)) {
+    if (d.minutes <= 0) continue;
+    const y = get(d.date.slice(0, 4));
+    y.minutes += d.minutes;
+    y.days++;
+  }
+  return out;
+}
+
 // A clean axis top for a maximum in minutes: whole hours, stepped 10/20/25/50/100 h so the
 // gridlines land on round numbers. Returns the top and the step (both minutes).
 export function niceHourAxis(maxMinutes: number): { top: number; step: number } {

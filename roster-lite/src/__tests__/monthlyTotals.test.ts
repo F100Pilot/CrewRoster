@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { lastMonths, monthlyTotals, niceHourAxis } from '../domain/monthlyTotals';
+import { dutyByYear, lastMonths, monthlyTotals, niceHourAxis } from '../domain/monthlyTotals';
 import { PGA_PILOT_RULES } from '../domain/dutyTime';
 import type { LogbookRow, ParsedDuty } from '../domain/types';
 
@@ -25,6 +25,15 @@ describe('monthlyTotals', () => {
     expect(out[1].duty).toBeNull();
     // Covered by the roster, but nothing countable in it: 0, not unknown.
     expect(out[2]).toEqual({ month: '2026-10', block: 60, duty: 0 });
+  });
+
+  it('sums duty per year over the months a roster covers (the "Por ano" card in Serviço)', () => {
+    const gab = (date: string) => duty(date, 'Office Duty', { dutyCode: 'GAB1', departureAirport: 'LIS', departureTime: '08:00', arrivalTime: '12:00' });
+    const duties = [duty('2025-12-30', 'Day Off'), gab('2025-12-31'), gab('2026-01-05'), gab('2026-02-02'), duty('2026-02-03', 'Day Off')];
+    const out = dutyByYear(duties, PGA_PILOT_RULES);
+    expect(out.get('2025')).toEqual({ minutes: 240, days: 1, months: 1 });
+    expect(out.get('2026')).toEqual({ minutes: 480, days: 2, months: 2 });
+    expect(out.has('2024')).toBe(false);
   });
 
   it('picks round axis steps', () => {

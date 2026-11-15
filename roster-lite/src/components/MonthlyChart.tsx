@@ -8,7 +8,7 @@ const MONTHS_LONG = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho',
   'setembro', 'outubro', 'novembro', 'dezembro'];
 const monthIdx = (k: string) => Number(k.slice(5, 7)) - 1;
 
-type Measure = 'block' | 'duty';
+export type Measure = 'block' | 'duty';
 
 // Chart geometry (px). One series, so no legend: the toggle names what's plotted.
 const H = 150;
@@ -39,9 +39,14 @@ const ORANGE: Hue = { id: 'mc-orange', light: '#FDBA74', dark: '#EA580C', top: '
 
 // Block or duty per month over the last year, as columns. Tap a column to read it; the current
 // month is selected to start with.
-export default function MonthlyChart({ months }: { months: MonthTotal[] }) {
+// The page can hold the toggle (`measure` + `onMeasureChange`) so other cards follow it (the yearly totals).
+export default function MonthlyChart({ months, measure: shown, onMeasureChange }: {
+  months: MonthTotal[]; measure?: Measure; onMeasureChange?: (m: Measure) => void;
+}) {
   const theme = useTheme();
-  const [measure, setMeasure] = useState<Measure>('block');
+  const [own, setOwn] = useState<Measure>('block');
+  const measure = shown ?? own;
+  const setMeasure = (m: Measure) => { setOwn(m); onMeasureChange?.(m); };
   const [selected, setSelected] = useState(months.length - 1);
 
   const boxRef = useRef<HTMLDivElement>(null);
