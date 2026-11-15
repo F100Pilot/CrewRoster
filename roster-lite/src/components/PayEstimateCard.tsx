@@ -180,7 +180,7 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                   />
                 )}
                 {/* The pilot types the hours done or planned for the month (✎) — the roster's sessions by default; "Repor" goes back. */}
-                {(r.groundInstructionHoursAuto > 0 || settings.instructionHours?.[month] !== undefined) && (
+                {(r.groundInstructionHoursAuto > 0 || settings.instructionHours?.[month] !== undefined || settings.groundInstructionHour > 0) && (
                   <Box display="flex" alignItems="center" gap={0.5}>
                     <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1, minWidth: 0 }}>
                       Instrução em terra: {hoursText(r.groundInstructionHours)} h

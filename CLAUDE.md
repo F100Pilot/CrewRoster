@@ -258,7 +258,7 @@ Things learned over this collaboration that should persist across sessions:
   the month's hours on the pay card — the ones done or planned, to see the pay coming (user: the dialog just says "Horas
   de instrução em terra", never "what the payslip shows") — ✎ → decimal hours, `instructionHours['yyyy-MM']`, global like
   `lineChecks`; "Repor a escala" drops it: Dec–Apr 2026 paid 51,37 / 0 / 6,33 / 6,17 / 2 h against 54,83 / 7 / 5,83 / 12 / 10 h
-  of sessions — no rule found. Line training as instructor = days
+  of sessions — no rule found. Since 0.9.3.61 the row shows whenever the pilot has an hourly fee, even with no sessions on the roster (the July 2026 payslip paid 1 h of a June without any). Line training as instructor = days
   with a flight marked LIFUS_INS or FAM_INS (mark in its own sub-column just left of its leg; the
   parser attaches it to the nearest flight sub-column on its right), paid once per day. Variable items
   paid the month after. Since 0.8.34: office days ("Subs. gabinete", per GAB day, `officeDay` typed by the
