@@ -25,6 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
+- **0.9.3.63** — Vencimento: dia GAB reduz os plafonds como um dia de férias; feriado só no duty-pay (block-pay de junho de 2026 bate com o recibo de julho).
 - **0.9.3.62** — Vencimento: IRS como no recibo — o do mês sobre o fixo, o do mês anterior refeito com o variável (menos o já retido).
 - **0.9.3.61** — Vencimento: a linha "Instrução em terra" aparece sempre que há valor por hora, para escrever horas de meses sem sessões na escala.
 - **0.9.3.60** — Vencimento: FAM_INS + LIFUS_INS no mesmo voo = line check (recibo de junho de 2026); a escala lia mal as duas marcas juntas.

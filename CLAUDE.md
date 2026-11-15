@@ -266,7 +266,9 @@ Things learned over this collaboration that should persist across sessions:
   one chief bonus the 1st–2nd aren't paid, the 3rd–7th are, from the 8th none; with a higher one none — the tiers and
   amounts are typed by each pilot, never in the code; since 0.9.3.59 GAB days are OUT of the duty-pay plafonds too —
   `isOfficeDay` / `paidApart` in `payEstimate.ts`, like FP…_INST: the March and June 2026 payslips paid no duty-pay where
-  the app had 1817,94 € / 6171,71 €, all of it from the 3 / 7 GAB days; still duty for the AE limits) and meal tickets ("Sub. alimentação tickets", one per per-diem-B day at base, `mealTicket` 10,46 €,
+  the app had 1817,94 € / 6171,71 €, all of it from the 3 / 7 GAB days; still duty for the AE limits; since 0.9.3.63 each GAB day also CUTS the plafonds like a day of holidays — user: "um dia
+  de gabinete descontava para plafond de horas como se fosse um dia de férias"; `officeCutDays`; June 2026: 6 GAB + 1 F → block
+  L1 46h, the app 46h13, the payslip paid 0,25 h; open: February 2026 gives 50h38 against 50h and the payslip paid nothing) and meal tickets ("Sub. alimentação tickets", one per per-diem-B day at base, `mealTicket` 10,46 €,
   tax-free, taken off the net as "Cartão-refeição"; NOT on a medical-only day, which still pays per diem B — October
   payslip, user-confirmed, since 0.8.37.1). Line checks (payslip "LCC_Line Check") since 0.8.36: the fee is typed by the pilot (`lineCheck`); since
   0.8.36.1 counted from the roster — one per day with flights marked **W_INS** (the examiner; the day's code is
@@ -339,8 +341,9 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
   payslip to the cent (user wants it automatic); a typed `unionBase` still overrides, under Avançado.
 - **Night / holiday premiums — the alíneas of RRRGS cl. 12.2 are SUMMED** (a colleague, Nov 2026: "as alíneas devem ser
   somadas, o que está dentro delas não"; cl. 12.3 keeps only the highest WITHIN one alínea): a positioning's 50% (a.iv)
-  + night 25% (c) + holiday 100% (d), never a share of them. Block-pay adds 100% of the flight time between 00:00 and 23:59
-  Lisbon of the holiday only (a sector crossing midnight counts its part). Since 0.9.3.43 (colleagues): the BASE's
+  + night 25% (c) + holiday 100% (d), never a share of them. The holiday 100% is on DUTY-PAY only (the time between 00:00
+  and 23:59 Lisbon of the holiday; a duty crossing midnight counts its part) — since 0.9.3.63 NOT on block-pay (user decision
+  from the July 2026 payslip: June's 0,25 h of block-pay matches only without it; February's Carnival agrees). Since 0.9.3.43 (colleagues): the BASE's
   municipal holiday counts (`baseHolidays()` — 13/06 LIS, 24/06 OPO, by the profile's base) and a standby on a holiday is
   doubled (its counted share again for the part on the holiday, outside the work window: 10 h home = 2h30 → 5h00).
   Since 0.9.3.44 Carnival (Shrove Tuesday, Easter − 47) counts too (user: "Carnaval é para considerar como feriado") —

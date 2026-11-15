@@ -312,6 +312,7 @@ export interface PayEstimate {
   holidayPayMonth: number | null; // the payslip month that carries the holiday subsidy, if known
   holidayPayAuto: boolean; // that month comes from the roster, not from the pilot's tick
   holidayDays: number; // days of holidays taken, which cut the plafonds
+  officeCutDays: number; // office (GAB) days, which cut them the same way
   variable: number; // everything above the RB, paid the month after
   includesPlanned: boolean; // the month isn't over yet
 }
@@ -460,9 +461,10 @@ export function payEstimate(
 
   // ── Block-pay credit ──
   // Operated sectors and simulator in full; a positioning sector in full when the same day has
-  // an operated one (extra-crew next to a working sector, cl. 12.2.a.iii), else at 50%; plus 100% of the flight time
-  // between 00:00 and 23:59 (Lisbon) of a holiday (cl. 12.2.d) — summed with alínea a, and only that part of a sector
-  // that crosses midnight (it used to double the whole sector by its UTC date).
+  // an operated one (extra-crew next to a working sector, cl. 12.2.a.iii), else at 50%. NO holiday 100% here (user,
+  // 0.9.3.63): the July 2026 payslip paid 0,25 h of June's block-pay, which matches only without it (46h13 against 46h00
+  // — with Corpus Christi and 13 June doubled it would have been 7h31 over); February's Carnival agrees. The holiday stays
+  // in the duty-pay credit.
   let blockCredited = 0;
   for (const [date, day] of days) {
     if (!inMonth(date) || offDayDates.has(date)) continue;
@@ -470,21 +472,18 @@ export function payEstimate(
     for (const x of day) {
       if (!FLYING.has(x.dutyType) || !x.departureTime || !x.arrivalTime) continue;
       let min = diffMinutes(x.departureTime, x.arrivalTime);
-      const off = Date.parse(`${date}T${x.departureTime}:00Z`);
-      const on = off + min * MIN;
       if (x.dutyType === 'Positioning' && !operatedDay) min *= 0.5;
-      let holiday = 0;
-      for (const iso of [nextDate(date, -1), date, nextDate(date)]) {
-        if (holidays.has(iso)) holiday += overlap(off, on, lisbonMidnightUtc(iso), lisbonMidnightUtc(nextDate(iso)));
-      }
-      blockCredited += min + (holiday / MIN) * HOLIDAY_SHARE;
+      blockCredited += min;
     }
   }
 
-  // ── Plafonds, cut by the holidays taken in the month ──
+  // ── Plafonds, cut by the holidays taken in the month — and by the office days ──
+  // A GAB day cuts them like a day of holidays (user, 0.9.3.63: "um dia de gabinete descontava para plafond de horas como
+  // se fosse um dia de férias"); its hours are out of the credits and paid apart (subsídio de gabinete).
   const holidayDays = [...days].filter(([date, day]) => inMonth(date) && day.some(isHoliday)).length;
+  const officeCutDays = [...days].filter(([date, day]) => inMonth(date) && !day.some(isHoliday) && day.some(isOfficeDay)).length;
   const p = MONTH_PLAFONDS[daysInMonth(month)];
-  const cut = (v: number, perDay: number) => Math.max(0, v - perDay * holidayDays);
+  const cut = (v: number, perDay: number) => Math.max(0, v - perDay * (holidayDays + officeCutDays));
   const dutyL1 = cut(p.dutyL1, PLAFOND_CUT_PER_DAY.dutyL1);
   const dutyL2 = cut(p.dutyL2, PLAFOND_CUT_PER_DAY.dutyL2);
   const blockL1 = cut(p.blockL1, PLAFOND_CUT_PER_DAY.blockL1);
@@ -721,6 +720,7 @@ export function payEstimate(
     holidayPayMonth: holidayPayMonth || null,
     holidayPayAuto: ticked === null,
     holidayDays,
+    officeCutDays,
     variable,
     includesPlanned: todayISO < lastDay,
   };

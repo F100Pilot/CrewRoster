@@ -101,7 +101,7 @@ describe('payEstimate', () => {
     // 1 Dec is a holiday: a 06:15–08:30 duty counts twice.
     const hol = payEstimate([leg('2026-12-01', 'LIS', 'OPO', '07:00', '08:00', '06:15')], '2026-12', S, '2026-12-31');
     expect(hol.duty.credited).toBe(2 * (105 + 30));
-    expect(hol.block.credited).toBe(120);
+    expect(hol.block.credited).toBe(60); // block-pay: no holiday 100% (July 2026 payslip, user 0.9.3.63)
   });
 
   // RRRGS cl. 12.2 counts "o somatório das percentagens previstas nas seguintes alíneas" and cl. 12.3 only keeps the
@@ -111,25 +111,27 @@ describe('payEstimate', () => {
     const dh = { ...leg('2026-12-01', 'LIS', 'OPO', '07:00', '08:00', '06:15'), dutyType: 'Positioning' } as ParsedDuty;
     const r = payEstimate([dh], '2026-12', S, '2026-12-31');
     expect(Math.abs(r.duty.credited - (105 * 0.5 + 105))).toBeLessThanOrEqual(0.5); // credits are whole minutes
-    expect(r.block.credited).toBeCloseTo(60 * 0.5 + 60, 5);
+    expect(r.block.credited).toBeCloseTo(60 * 0.5, 5); // the holiday only on duty-pay
   });
 
   // Colleagues, Nov 2026: the base's municipal holiday counts — 13 June from Lisbon, 24 June from Porto ("se for porto e
   // apanhar o dia 24 paga, se não for não; em Lisboa igual") — and a standby on a holiday too ("se for de 10 horas, são
   // 2.5 (25%), como é a dobrar são 5 horas").
   it('adds the base\'s municipal holiday: 13 June from Lisbon, 24 June from Porto', () => {
+    // Duty 06:00–08:30z = 150 min; on the holiday twice (the holiday counts on duty-pay only).
     const lis13 = payEstimate([leg('2026-06-13', 'LIS', 'OPO', '07:00', '08:00', '06:00')], '2026-06', S, '2026-06-30', 'LIS');
-    expect(lis13.block.credited).toBe(120);
+    expect(lis13.duty.credited).toBe(300);
+    expect(lis13.block.credited).toBe(60);
     const opo13 = payEstimate([leg('2026-06-13', 'OPO', 'LIS', '07:00', '08:00', '06:00')], '2026-06', S, '2026-06-30', 'OPO');
-    expect(opo13.block.credited).toBe(60);
+    expect(opo13.duty.credited).toBe(150);
     const opo24 = payEstimate([leg('2026-06-24', 'OPO', 'LIS', '07:00', '08:00', '06:00')], '2026-06', S, '2026-06-30', 'OPO');
-    expect(opo24.block.credited).toBe(120);
+    expect(opo24.duty.credited).toBe(300);
   });
 
   it('adds Carnival (Shrove Tuesday, Easter − 47 days) as a holiday — user, Nov 2026', () => {
     // Easter 2027 = 28 Mar → Carnival = 9 Feb 2027 (winter: Lisbon = UTC).
     const r = payEstimate([leg('2027-02-09', 'LIS', 'OPO', '07:00', '08:00', '06:00')], '2027-02', S, '2027-02-28');
-    expect(r.block.credited).toBe(120);
+    expect(r.duty.credited).toBe(300);
   });
 
   it('doubles a home standby on a holiday: 10 h at 25% = 2h30, on a holiday 5 h', () => {
@@ -140,10 +142,12 @@ describe('payEstimate', () => {
     expect(payEstimate([plain], '2026-12', S, '2026-12-31').duty.credited).toBe(150);
   });
 
-  it('adds the holiday 100% only to the flight time between 00:00 and 23:59 of the holiday (Lisbon)', () => {
-    // 14 Aug 22:30–23:50z = 23:30–00:50 in Lisbon (summer): 50 min fall on 15 Aug (holiday).
+  it('adds the holiday 100% only to the time between 00:00 and 23:59 of the holiday (Lisbon), on duty-pay only', () => {
+    // 14 Aug, duty 21:30–00:20z = 22:30–01:20 in Lisbon (summer): its last 80 min fall on 15 Aug (holiday).
     const r = payEstimate([leg('2026-08-14', 'FNC', 'LIS', '22:30', '23:50', '21:30')], '2026-08', S, '2026-08-31');
-    expect(r.block.credited).toBe(80 + 50);
+    const plain = payEstimate([leg('2026-08-10', 'FNC', 'LIS', '22:30', '23:50', '21:30')], '2026-08', S, '2026-08-31');
+    expect(r.duty.credited - plain.duty.credited).toBe(80);
+    expect(r.block.credited).toBe(80);
   });
 
   it('cuts the plafonds by the holidays taken and picks the more favourable credit', () => {
@@ -155,6 +159,17 @@ describe('payEstimate', () => {
     expect(r.overtime).toBeNull();
     expect(r.covered).toBe(true);
     expect(payEstimate(duties, '2026-10', S, '2026-11-30').covered).toBe(false);
+  });
+
+  it('cuts the plafonds by each office (GAB) day like a day of holidays — user, 0.9.3.63', () => {
+    const gab = (date: string) => duty(date, 'Office Duty', { dutyCode: 'GAB1', departureAirport: 'LIS', departureTime: '08:30', arrivalTime: '12:00' });
+    // June 2026: 6 GAB days + 1 day of holidays → block Limite 1 = 60h − 7 × 2h = 46h (the July payslip paid 13 min over).
+    const duties = [gab('2026-06-02'), gab('2026-06-03'), gab('2026-06-12'), gab('2026-06-19'), gab('2026-06-25'), gab('2026-06-29'),
+      duty('2026-06-20', 'Vacation')];
+    const r = payEstimate(duties, '2026-06', S, '2026-11-30');
+    expect(r).toMatchObject({ holidayDays: 1, officeCutDays: 6 });
+    expect(r.block.l1).toBe(46 * 60);
+    expect(r.duty.l1).toBe(MONTH_PLAFONDS[30].dutyL1 - 7 * 217);
   });
 
   it('pays per diem B on FP sessions and office duty, A on the simulator', () => {
