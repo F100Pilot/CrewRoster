@@ -430,3 +430,18 @@ describe('horas de instrução em terra corrigidas pelo piloto', () => {
     expect(other.groundInstructionHours).toBe(4);
   });
 });
+
+// The March and June 2026 payslips: no duty-pay where the office days alone took the month over limit 1 — GAB days are
+// paid apart ("Subs. gabinete") and stay out of the plafonds.
+describe('gabinete fora do duty-pay', () => {
+  const gab = (date: string, code: string, from: string, to: string) =>
+    duty(date, 'Office Duty', { dutyCode: code, departureAirport: 'LIS', reportingTime: from, departureTime: from, arrivalTime: to });
+  it('credits nothing for a GAB day and only the flying on a mixed day', () => {
+    const duties = [
+      gab('2026-05-11', 'GAB1', '08:30', '12:00'), gab('2026-05-11', 'GAB2', '13:00', '16:30'),
+      leg('2026-05-12', 'LIS', 'OPO', '10:00', '11:00', '09:00'),
+    ];
+    const r = payEstimate(duties, '2026-05', S, '2026-05-31');
+    expect(r.duty.credited).toBe(120 + 30);
+  });
+});

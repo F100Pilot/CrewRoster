@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.3.58';
+export const APP_VERSION = '0.9.3.59';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -20,6 +20,13 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.9.3.59',
+    date: '2026-11-15',
+    highlights: [
+      'Vencimento (experimental): os dias de gabinete (GAB) deixam de contar para o duty-pay, porque são pagos à parte com o subsídio de gabinete. Os recibos de março e junho de 2026 não pagaram duty-pay, e sem os GAB o mês fica abaixo do Limite 1. Continuam a contar nos limites do AE.',
+    ],
+  },
   {
     version: '0.9.3.58',
     date: '2026-11-15',

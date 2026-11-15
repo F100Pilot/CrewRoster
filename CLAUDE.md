@@ -264,7 +264,9 @@ Things learned over this collaboration that should persist across sessions:
   paid the month after. Since 0.8.34: office days ("Subs. gabinete", per GAB day, `officeDay` typed by the
   pilot; since 0.9.3.49 only the GAB days of the month from `officeDayFrom` to `officeDayTo` by their order — user: with
   one chief bonus the 1st–2nd aren't paid, the 3rd–7th are, from the 8th none; with a higher one none — the tiers and
-  amounts are typed by each pilot, never in the code) and meal tickets ("Sub. alimentação tickets", one per per-diem-B day at base, `mealTicket` 10,46 €,
+  amounts are typed by each pilot, never in the code; since 0.9.3.59 GAB days are OUT of the duty-pay plafonds too —
+  `isOfficeDay` / `paidApart` in `payEstimate.ts`, like FP…_INST: the March and June 2026 payslips paid no duty-pay where
+  the app had 1817,94 € / 6171,71 €, all of it from the 3 / 7 GAB days; still duty for the AE limits) and meal tickets ("Sub. alimentação tickets", one per per-diem-B day at base, `mealTicket` 10,46 €,
   tax-free, taken off the net as "Cartão-refeição"; NOT on a medical-only day, which still pays per diem B — October
   payslip, user-confirmed, since 0.8.37.1). Line checks (payslip "LCC_Line Check") since 0.8.36: the fee is typed by the pilot (`lineCheck`); since
   0.8.36.1 counted from the roster — one per day with flights marked **W_INS** (the examiner; the day's code is

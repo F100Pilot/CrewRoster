@@ -25,6 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
+- **0.9.3.59** — Vencimento: os dias de gabinete (GAB) saem do duty-pay, como a instrução em terra (recibos de março e junho de 2026).
 - **0.9.3.58** — Vencimento: a janela das horas de instrução diz só "Horas de instrução em terra".
 - **0.9.3.57** — Vencimento: as horas de instrução em terra do mês escrevem-se no cartão (✎), as feitas ou as previstas.
 - **0.9.3.56** — Vencimento: até março de 2026, os abonos das deslocações de simulador não são tributados e o per diem "T" é tributado por inteiro (bate com os recibos de janeiro a abril). Taskforce: o próprio check e o dia a seguir não contam como sessão paga.

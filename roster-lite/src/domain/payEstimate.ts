@@ -180,6 +180,11 @@ export const isLineCheckFlight = (d: ParsedDuty) =>
 // printed, the lunch between them left out — an assumption: that payslip paid 51,37 h where the sessions give 54h50
 // and the [DT] 62h20, and the user is asking how the company counts them.
 export const isGroundInstruction = (d: ParsedDuty): boolean => d.dutyType === 'Training' && /_INST$/i.test(d.dutyCode);
+// Office days (GAB) are paid apart too ("Subs. gabinete") and are not in the duty-pay plafonds (user, 0.9.3.59: the March
+// and June 2026 payslips paid no duty-pay where the app had 1817,94 € and 6171,71 € — without the 3 and 7 GAB days the
+// month is under limit 1). Still duty for the AE limits, like the CrewLink [DT].
+export const isOfficeDay = (d: ParsedDuty): boolean => d.dutyType === 'Office Duty' && /^GAB/i.test(d.dutyCode);
+const paidApart = (d: ParsedDuty): boolean => isGroundInstruction(d) || isOfficeDay(d);
 const sessionMinutesOf = (d: ParsedDuty): number => {
   if (!d.departureTime || !d.arrivalTime) return 0;
   const t = (x: string) => Number(x.slice(0, 2)) * 60 + Number(x.slice(3, 5));
@@ -404,10 +409,11 @@ export function payEstimate(
   for (const d of dutyDays(duties, PGA_PILOT_RULES)) {
     if (!inMonth(d.date) || offDayDates.has(d.date)) continue;
     const day = days.get(d.date) ?? [];
-    // Ground training given is paid apart (isGroundInstruction): a day of it alone credits nothing; beside other work
-    // the sessions come off the day's credit.
-    const instruction = day.filter(isGroundInstruction).reduce((a, x) => a + sessionMinutesOf(x), 0);
-    if (instruction && day.every((x) => isGroundInstruction(x) || x.dutyType === 'Day Off')) continue;
+    // Work paid apart stays out of the plafonds: ground training given (isGroundInstruction, "Instrução em terra") and
+    // office days (isOfficeDay, "Subs. gabinete"). A day of it alone credits nothing; beside other work its sessions come
+    // off the day's credit.
+    const instruction = day.filter(paidApart).reduce((a, x) => a + sessionMinutesOf(x), 0);
+    if (instruction && day.every((x) => paidApart(x) || x.dutyType === 'Day Off')) continue;
     const positioningOnly = day.some((x) => x.dutyType === 'Positioning')
       && !day.some((x) => x.dutyType === 'Flight Duty' || x.dutyType === 'Simulator');
     let credit = Math.max(0, d.minutes - instruction) * (positioningOnly ? 0.5 : 1);
