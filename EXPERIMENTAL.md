@@ -25,6 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
+- **0.9.3.48** — Vencimento: linha "Instrução em terra" (sessões FP…_INST × valor por hora). Esses dias saem do duty-pay. As horas são provisórias, contadas pelas sessões da escala; falta confirmar como a empresa as conta.
 - **0.9.3.47** — Vencimento: as Definições abrem com os valores do recibo que está aberto no Vencimento, e "Só este recibo" grava nele. A barra de guardar passou a uma linha, e a escolha do recibo está numa janela que abre ao Guardar.
 
 ---

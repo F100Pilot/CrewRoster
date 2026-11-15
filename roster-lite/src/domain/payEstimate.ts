@@ -65,6 +65,7 @@ export interface PaySettings {
   perDiemB: number;
   instructorSession: number; // € per session given as an instructor; 0 if not an instructor
   lineTrainingDay: number; // € per day of flights flown as instructor (LIFUS_INS / FAM_INS)
+  groundInstructionHour: number; // € per hour of ground training given (FP…_INST, "Instrução em terra")
   // € per line check ("LCC_Line Check" on the payslip), one per day of flights marked W_INS (the
   // examiner's mark; the day's own code is W_PNT). `lineChecks` ('yyyy-MM' → count) is the pilot's
   // correction on the pay card, when the roster's count is wrong; absent = the roster's.
@@ -94,7 +95,7 @@ export interface PaySettings {
 
 export const DEFAULT_PAY_SETTINGS: PaySettings = {
   enabled: false, category: 'OP3', vb: 0, ve: 0, veCommand: 0, vs: 0, extras: 0, chiefBonus: 0,
-  perDiemA: AE_PER_DIEM.OP.a, perDiemB: AE_PER_DIEM.OP.b, instructorSession: 0, lineTrainingDay: 0, lineCheck: 0, lineChecks: {},
+  perDiemA: AE_PER_DIEM.OP.a, perDiemB: AE_PER_DIEM.OP.b, instructorSession: 0, lineTrainingDay: 0, groundInstructionHour: 0, lineCheck: 0, lineChecks: {},
   // The meal-card value of a real 2026 payslip (10,46 € a day, = the card's tax-free limit); office
   // days are paid at a rate the pilot types.
   officeDay: 0, mealTicket: 10.46,
@@ -162,6 +163,18 @@ export const isLineCheckFlight = (d: ParsedDuty) =>
 // the next session, the check's second day, carries no mark and follows the first. Unmarked
 // sessions with no marked one before them stay unpaid — better to under-count than invent pay.
 // Checked against a real September: 6 simulator days, 4 paid as instructor, 2 his own OPC.
+// Ground training given (FP…_INST): paid apart as "Instrução em terra" — hours × the pilot's hourly fee — and left
+// out of the duty-pay plafonds (user, 0.9.3.48, from a January 2026 payslip: nine FP…_INST days in December 2025 and
+// no duty-pay — without them the month stays under limit 1; "não conta para duty pay"). The hours are the sessions as
+// printed, the lunch between them left out — an assumption: that payslip paid 51,37 h where the sessions give 54h50
+// and the [DT] 62h20, and the user is asking how the company counts them.
+export const isGroundInstruction = (d: ParsedDuty): boolean => d.dutyType === 'Training' && /_INST$/i.test(d.dutyCode);
+const sessionMinutesOf = (d: ParsedDuty): number => {
+  if (!d.departureTime || !d.arrivalTime) return 0;
+  const t = (x: string) => Number(x.slice(0, 2)) * 60 + Number(x.slice(3, 5));
+  return (t(d.arrivalTime) - t(d.departureTime) + 1440) % 1440;
+};
+
 export function instructorSimDates(duties: ParsedDuty[]): Set<string> {
   const out = new Set<string>();
   let prev: { date: string; instructor: boolean } | null = null;
@@ -242,6 +255,9 @@ export interface PayEstimate {
   instructorValue: number;
   lineTrainingDays: number;
   lineTrainingValue: number;
+  groundInstructionMinutes: number; // FP…_INST sessions of the month
+  groundInstructionHours: number; // as the payslip's quantity: decimal hours, 2 places
+  groundInstructionValue: number;
   lineChecks: number;
   lineChecksAuto: number; // the roster's count (days with W_INS flights)
   lineCheckValue: number;
@@ -354,9 +370,13 @@ export function payEstimate(
   for (const d of dutyDays(duties, PGA_PILOT_RULES)) {
     if (!inMonth(d.date) || offDayDates.has(d.date)) continue;
     const day = days.get(d.date) ?? [];
+    // Ground training given is paid apart (isGroundInstruction): a day of it alone credits nothing; beside other work
+    // the sessions come off the day's credit.
+    const instruction = day.filter(isGroundInstruction).reduce((a, x) => a + sessionMinutesOf(x), 0);
+    if (instruction && day.every((x) => isGroundInstruction(x) || x.dutyType === 'Day Off')) continue;
     const positioningOnly = day.some((x) => x.dutyType === 'Positioning')
       && !day.some((x) => x.dutyType === 'Flight Duty' || x.dutyType === 'Simulator');
-    let credit = d.minutes * (positioningOnly ? 0.5 : 1);
+    let credit = Math.max(0, d.minutes - instruction) * (positioningOnly ? 0.5 : 1);
     const w = workWindow(d.date, day, PGA_PILOT_RULES);
     if (w) {
       const a = w.start.getTime();
@@ -518,6 +538,11 @@ export function payEstimate(
   const lineTrainingDays = new Set(duties.filter((d) => inMonth(d.date) && isInstructorFlight(d)).map((d) => d.date)).size;
   const lineTrainingValue = lineTrainingDays * (s.lineTrainingDay || 0);
 
+  // ── Ground training given ("Instrução em terra"), per hour, apart from the plafonds ──
+  const groundInstructionMinutes = duties.filter((d) => inMonth(d.date) && isGroundInstruction(d)).reduce((a, d) => a + sessionMinutesOf(d), 0);
+  const groundInstructionHours = Math.round((groundInstructionMinutes / 60) * 100) / 100;
+  const groundInstructionValue = cents(groundInstructionHours * (s.groundInstructionHour || 0));
+
   // ── Line checks: days with W_INS flights, unless the pilot corrected the month's count ──
   const lineChecksAuto = new Set(duties.filter((d) => inMonth(d.date) && isLineCheckFlight(d)).map((d) => d.date)).size;
   const typed = s.lineChecks?.[month];
@@ -553,7 +578,7 @@ export function payEstimate(
   const christmasSubsidy = paidMonth === CHRISTMAS_PAY_MONTH ? cents(fixedPay) : 0;
 
   const variable = overtimeVal + perDiemValue + complementValue + extensionValue + reductionValue + offDayValue + instructorValue + lineTrainingValue
-    + lineCheckValue + officeValue + mealTicketValue;
+    + groundInstructionValue + lineCheckValue + officeValue + mealTicketValue;
   const lastDay = `${month}-${String(daysInMonth(month)).padStart(2, '0')}`;
   return {
     month,
@@ -586,6 +611,9 @@ export function payEstimate(
     instructorValue,
     lineTrainingDays,
     lineTrainingValue,
+    groundInstructionMinutes,
+    groundInstructionHours,
+    groundInstructionValue,
     lineChecks,
     lineChecksAuto,
     lineCheckValue,

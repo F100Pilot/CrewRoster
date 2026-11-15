@@ -267,3 +267,35 @@ describe('payEstimate', () => {
     expect(payEstimate(july, '2026-05', { ...S, holidayPay: { year: 2025, month: 8 } }, '2026-05-31')).toMatchObject({ holidaySubsidy: 7420, holidayPayAuto: true });
   });
 });
+
+// A January 2026 payslip (work of December 2025): the ground training given (FP…_INST) was paid apart as
+// "Instrução em terra" (hours × an hourly fee) and there was no duty-pay — those days stay out of the plafonds.
+describe('instrução em terra (FP…_INST)', () => {
+  const inst = (date: string, code: string, from: string, to: string) =>
+    duty(date, 'Training', { dutyCode: code, departureAirport: 'LIS', reportingTime: from, departureTime: from, arrivalTime: to });
+
+  it('pays the sessions by the hour and leaves the day out of the duty-pay credit', () => {
+    const duties = [
+      inst('2025-12-18', 'FP1_INST', '09:00', '13:10'),
+      inst('2025-12-18', 'FP2_INST', '14:10', '16:10'),
+      leg('2025-12-21', 'LIS', 'OPO', '16:00', '17:00', '15:00'),
+    ];
+    const r = payEstimate(duties, '2025-12', { ...S, groundInstructionHour: 60 }, '2025-12-31');
+    expect(r.groundInstructionMinutes).toBe(370); // 4h10 + 2h00, the lunch between them left out
+    expect(r.groundInstructionHours).toBe(6.17);
+    expect(r.groundInstructionValue).toBeCloseTo(370.2, 2);
+    expect(r.duty.credited).toBe(120 + 30); // only the flying day: report → on-blocks + 30 min
+  });
+
+  it('shows the hours with no fee typed, at 0 €', () => {
+    const r = payEstimate([inst('2025-12-03', 'FP1_INST', '09:00', '13:10')], '2025-12', S, '2025-12-31');
+    expect(r.groundInstructionHours).toBe(4.17);
+    expect(r.groundInstructionValue).toBe(0);
+  });
+
+  it('keeps ground training as a trainee (no _INST) in the duty-pay', () => {
+    const r = payEstimate([inst('2026-03-03', 'RGTC1', '08:30', '12:55')], '2026-03', S, '2026-03-31');
+    expect(r.groundInstructionMinutes).toBe(0);
+    expect(r.duty.credited).toBe(265);
+  });
+});

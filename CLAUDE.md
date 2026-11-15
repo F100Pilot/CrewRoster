@@ -246,7 +246,11 @@ Things learned over this collaboration that should persist across sessions:
   Medical days — verified day-for-day against a real roster + payslip. Simulator instructor sessions
   (paid at a per-session fee the pilot sets, not in the AE) = sims whose check mark (parsed into
   `observations`: OPC/LPC, or OPC_INS/LPC_INS as instructor) has `_INS`, plus the check's unmarked
-  2nd day; FP…_INST is ground training given, not a sim session. Line training as instructor = days
+  2nd day; FP…_INST is ground training given, not a sim session — **paid apart as "Instrução em terra"** (since 0.9.3.48,
+  user, from a January 2026 payslip: hours × the pilot's hourly fee `groundInstructionHour`, decimal hours to 2 places)
+  **and left out of the duty-pay plafonds** (`isGroundInstruction` in `payEstimate.ts`; still duty for the AE limits).
+  Hours = the FP…_INST sessions as printed, lunch out — PROVISIONAL: that payslip paid 51,37 h where the sessions give
+  54h50 and the [DT] 62h20; the user is asking a specialist how they are counted. Line training as instructor = days
   with a flight marked LIFUS_INS or FAM_INS (mark in its own sub-column just left of its leg; the
   parser attaches it to the nearest flight sub-column on its right), paid once per day. Variable items
   paid the month after. Since 0.8.34: office days ("Subs. gabinete", per GAB day, `officeDay` typed by the

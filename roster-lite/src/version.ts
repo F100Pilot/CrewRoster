@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.3.47';
+export const APP_VERSION = '0.9.3.48';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -20,6 +20,14 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.9.3.48',
+    date: '2026-11-15',
+    highlights: [
+      'Vencimento (experimental): nova linha "Instrução em terra". São as horas das sessões FP…_INST × o teu valor por hora (Definições → Vencimento → "Instrução em terra (hora)").',
+      'Os dias de instrução em terra deixam de contar para o duty-pay, porque são pagos à parte. Continuam a contar nos limites do AE. As horas contam-se pelas sessões da escala, sem o almoço; a forma de contar ainda está a ser confirmada.',
+    ],
+  },
   {
     version: '0.9.3.47',
     date: '2026-11-15',

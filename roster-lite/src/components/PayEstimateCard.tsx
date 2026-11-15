@@ -165,6 +165,12 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                     value={r.lineTrainingValue}
                   />
                 )}
+                {r.groundInstructionMinutes > 0 && (
+                  <Row
+                    label={`Instrução em terra: ${r.groundInstructionHours.toLocaleString('pt-PT', { minimumFractionDigits: 2 })} h (sessões FP…_INST)${settings.groundInstructionHour ? '' : ' · falta o valor nas Definições'}`}
+                    value={r.groundInstructionValue}
+                  />
+                )}
                 {(r.lineChecks > 0 || r.lineChecksAuto > 0 || settings.lineCheck > 0) && (
                   <Box display="flex" alignItems="center" gap={0.5}>
                     <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1, minWidth: 0 }}>
