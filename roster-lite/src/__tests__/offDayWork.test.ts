@@ -25,14 +25,12 @@ describe('flight on a planned day off (RRRGS cl. 13)', () => {
     expect(offDayChoice(trip('2026-09-29', { offDayPay: 'paid' }))).toBe('paid');
   });
 
-  it('pays 3% of the VB per DUTY hour of the day + 15% of the VB, and keeps those hours out of the plafonds', () => {
-    // The day's duty, not its FDP: a tester's August 2026 payslip paid "Med. Comp.PNT-Folgas Hora 7,12" for the 07:07
-    // of H.Duty of that day (FDP 6h37). Here FDP 5h00 + 30 min after on-blocks = 5h30.
+  it('pays 3% of the VB per FDP hour + 15% of the VB, and keeps those hours out of the plafonds', () => {
     const plain = payEstimate(trip('2026-09-29'), '2026-09', S, '2026-09-30');
     const off = payEstimate(trip('2026-09-29', { observations: 'VOO_OFF' }), '2026-09', S, '2026-09-30');
     expect(off.offDays).toBe(1);
-    expect(off.offDayMinutes).toBe(330);
-    expect(off.offDayValue).toBeCloseTo(5.5 * 0.03 * 5000 + 0.15 * 5000, 2); // 825 + 750
+    expect(off.offDayMinutes).toBe(300);
+    expect(off.offDayValue).toBeCloseTo(5 * 0.03 * 5000 + 0.15 * 5000, 2); // 750 + 750
     expect(plain.duty.credited).toBeGreaterThan(0);
     expect(off.duty.credited).toBe(0);
     expect(off.block.credited).toBe(0);

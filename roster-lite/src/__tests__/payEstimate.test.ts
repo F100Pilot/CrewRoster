@@ -161,18 +161,6 @@ describe('payEstimate', () => {
     expect(payEstimate(duties, '2026-10', S, '2026-11-30').covered).toBe(false);
   });
 
-  it('pays the band it stops in rounded up to the quarter hour, a full band to the minute', () => {
-    const vb = 6000; const h = (m: number) => (m / 60) * vb; // value per band rate below
-    const l1 = 113 * 60 + 37, l2 = 124 * 60;
-    // A tester's August 2026: 124h05 credited → Limite 1 = 10h23 in full, Limite 2 = 5 min → 0,25 h.
-    expect(overtimeValue(l2 + 5, l1, l2, vb)).toBeCloseTo(h(l2 - l1) * 0.03 + h(15) * 0.06, 6);
-    // 13 min over Limite 1 → 0,25 h (July 2026 payslip, block-pay of June).
-    expect(overtimeValue(l1 + 13, l1, l2, vb)).toBeCloseTo(h(15) * 0.03, 6);
-    expect(overtimeValue(l1 + 15, l1, l2, vb)).toBeCloseTo(h(15) * 0.03, 6);
-    expect(overtimeValue(l1, l1, l2, vb)).toBe(0);
-    expect(overtimeValue(l2 - 3, l1, l2, vb)).toBeCloseTo(h(l2 - l1) * 0.03, 6); // never past the band's end
-  });
-
   it('cuts the plafonds by each office (GAB) day like a day of holidays — user, 0.9.3.63', () => {
     const gab = (date: string) => duty(date, 'Office Duty', { dutyCode: 'GAB1', departureAirport: 'LIS', departureTime: '08:30', arrivalTime: '12:00' });
     // June 2026: 6 GAB days + 1 day of holidays → block Limite 1 = 60h − 7 × 2h = 46h (the July payslip paid 13 min over).

@@ -25,7 +25,6 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **0.9.3.70** — Vencimento: excesso acima do limite arredondado para cima ao quarto de hora; voo em folga pago pelas horas de duty (recibo + mapa de horas de um tester).
 - **0.9.3.69** — Calendário: dias X (folga fora da base) com cor própria e entrada na legenda (sugestão de um tester).
 - **0.9.3.68** — Céu "Realista" nos banners (nuvens volumétricas, sol com brilho, lua com textura, chuva/neve/nevoeiro/trovoada), à escolha em Definições → App; "Ilustrado" continua por omissão.
 

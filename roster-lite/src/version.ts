@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.3.70';
+export const APP_VERSION = '0.9.3.69';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -20,15 +20,6 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
-  {
-    version: '0.9.3.70',
-    date: '2026-11-15',
-    highlights: [
-      'Vencimento (experimental): as horas acima de um limite passam a ser arredondadas para cima ao quarto de hora, como no recibo. Um limite ultrapassado por inteiro conta ao minuto. Por exemplo, 5 min acima do Limite 2 são pagos como 0,25 h.',
-      'Vencimento: o voo em dia de folga é pago pelas horas de duty do dia, e não pelas de FDP, como no recibo de um colega (7,12 h para um duty de 7h07).',
-    ],
-    thanks: 'Obrigado ao colega que enviou o recibo e o mapa mensal de horas de agosto.',
-  },
   {
     version: '0.9.3.69',
     date: '2026-11-15',
