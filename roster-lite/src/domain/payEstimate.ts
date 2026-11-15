@@ -355,6 +355,9 @@ export function overtimeValue(credited: number, l1: number, l2: number, vb: numb
   return (band1 / 60) * RATE_L1 * vb + (band2 / 60) * RATE_L2 * vb;
 }
 
+// The last day a simulator trip's per diem was "… T" (taxed in full) on the payslips seen: January 2026 (see payEstimate).
+export const TRAINING_TRIP_TAXED_UNTIL = '2026-01-31';
+
 export function payEstimate(
   duties: ParsedDuty[], month: string, s: PaySettings, todayISO: string, base: string = HOME_BASE,
 ): PayEstimate {
@@ -473,8 +476,42 @@ export function payEstimate(
   const abroadOn = (day: ParsedDuty[], at: string) => [at, ...day.flatMap((x) => [x.departureAirport, x.arrivalAirport])]
     .filter((a): a is string => !!a)
     .some((a) => a.toUpperCase() !== base.toUpperCase() && countryOf(a) !== 'Portugal (fora da base)');
-  let where = base; // the airport the pilot is at, carried through the roster
   const dates = [...days.keys()].sort();
+  // Training trips — away from base with no flight duty (a DHC out, simulator sessions, a DHC home): their per diem is
+  // the payslip's "Perdiem A … T", taxed IN FULL even abroad (user, 0.9.3.54, January 2026 payslip: 11 "A T" days = the
+  // VIE and FRA simulator trips; December's 4 = the VIE one; only the flying days kept the exempt part). A simulator
+  // during a flying stay stays per diem A away, with its exempt part. LATER payslips changed it: the June–September 2026
+  // ones (work of May–August, matched to the cent in 0.8.33.1) pay the FRA simulator trips as per diem A away, not "T".
+  // So the rule holds up to TRAINING_TRIP_TAXED_UNTIL — February to April 2026 still to be checked against payslips.
+  const trainingTripDates = new Set<string>();
+  {
+    let at = base;
+    let trip: string[] = [];
+    let flies = false;
+    for (const date of dates) {
+      const day = days.get(date)!;
+      const leaving = at === base;
+      for (const x of [...day].sort((a, b) => (a.departureTime ?? '').localeCompare(b.departureTime ?? ''))) {
+        if ((x.dutyType === 'Flight Duty' || x.dutyType === 'Positioning') && x.arrivalAirport) {
+          if (at === base && x.departureAirport && x.departureAirport.toUpperCase() !== base.toUpperCase()) continue;
+          if (at === base) { trip = []; flies = false; }
+          at = x.arrivalAirport.toUpperCase();
+          if (x.dutyType === 'Flight Duty') flies = true;
+          if (!trip.includes(date)) trip.push(date);
+        }
+      }
+      if (!leaving || at !== base) { if (!trip.includes(date)) trip.push(date); }
+      if (day.some((x) => x.dutyType === 'Flight Duty')) flies = true;
+      if (at === base && trip.length) {
+        if (!flies && trip.some((d) => days.get(d)!.some((x) => x.dutyType === 'Simulator' || x.dutyType === 'Training'))) {
+          for (const d of trip) if (d <= TRAINING_TRIP_TAXED_UNTIL) trainingTripDates.add(d);
+        }
+        trip = [];
+        flies = false;
+      }
+    }
+  }
+  let where = base; // the airport the pilot is at, carried through the roster
   const carryOver = new Set<string>();
   for (const date of dates) {
     const day = days.get(date)!;
@@ -494,7 +531,7 @@ export function payEstimate(
       perDiemA++;
       perDiemDates.a.push(date);
       // Away counts too: a simulator in Frankfurt during a stay is per diem A away, not "… T".
-      if (travelling || awayAtStart) {
+      if ((travelling || awayAtStart) && !trainingTripDates.has(date)) {
         perDiemTravelDays++; perDiemTravelValue += s.perDiemA;
         perDiemTravel.push({ date, value: s.perDiemA, abroad: abroadOn(day, awayAtStart ? whereAtStart : base) });
       }
@@ -504,7 +541,7 @@ export function payEstimate(
       // A medical day pays per diem B "T" but no meal ticket (October payslip: 7 B T, 6 tickets —
       // the one without is the aeromedical exam, user-confirmed).
       if (!awayAtStart && !day.every((x) => x.dutyType === 'Medical' || !GROUND_B.has(x.dutyType))) mealTicketDays++;
-      if (awayAtStart) {
+      if (awayAtStart && !trainingTripDates.has(date)) {
         perDiemTravelDays++; perDiemTravelValue += s.perDiemB;
         perDiemTravel.push({ date, value: s.perDiemB, abroad: abroadOn(day, whereAtStart) });
       }

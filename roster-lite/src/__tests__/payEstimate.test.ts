@@ -368,3 +368,26 @@ describe('todas as sessões de simulador pagas (taskforce)', () => {
     expect(r.instructorValue).toBe(700);
   });
 });
+
+// The January and February 2026 payslips (work of December 2025 / January 2026) pay the per diem of the simulator trips
+// (a DHC out, the sessions, a DHC home) as "Perdiem A … T", taxed in full even abroad; the flying days keep the exempt
+// part. The June–September 2026 ones pay a FRA simulator trip as per diem A away (the May test above).
+describe('per diem "T" das deslocações de simulador (até janeiro de 2026)', () => {
+  const dh = (date: string, from: string, to: string) => ({ ...leg(date, from, to, '14:27', '17:43', '13:27'), dutyType: 'Positioning' });
+  const sim = (date: string) => duty(date, 'Simulator', { dutyCode: 'E90-VIE-1', departureAirport: 'VIE', departureTime: '09:45', arrivalTime: '13:45' });
+
+  it('taxes a simulator trip in full and leaves the flying days partly exempt', () => {
+    const duties = [
+      dh('2026-01-03', 'LIS', 'VIE'), sim('2026-01-04'), sim('2026-01-05'), dh('2026-01-06', 'VIE', 'LIS'),
+      leg('2026-01-15', 'LIS', 'CMN', '14:13', '15:27', '13:13'), leg('2026-01-15', 'CMN', 'LIS', '16:10', '17:37'),
+    ];
+    const r = payEstimate(duties, '2026-01', S, '2026-01-31');
+    expect(r.perDiemA).toBe(5);
+    expect(r.perDiemTravel.map((d) => d.date)).toEqual(['2026-01-15']);
+  });
+
+  it('keeps a simulator trip after January 2026 partly exempt', () => {
+    const duties = [dh('2026-05-03', 'LIS', 'FRA'), sim('2026-05-04'), dh('2026-05-05', 'FRA', 'LIS')];
+    expect(payEstimate(duties, '2026-05', S, '2026-05-31').perDiemTravel).toHaveLength(3);
+  });
+});

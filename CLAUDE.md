@@ -305,7 +305,10 @@ Things learned over this collaboration that should persist across sessions:
   cent; a load-time migration moves a saved 51,9 back), already reduced for the hotel the company pays; update with the State Budget), applied to that day's
   per diem + its RAACO abonos; the rest is taxed with the salary (the payslip's "Outros valores p/ impostos",
   which is INCLUDED in its "Sujeito a IRS" and in the next month's SS line); per diem for days at base ("… T") is
-  taxed in full. A SIM away (e.g. FRA during a stay) is per diem A away, not "… T". With the real abonos, IRS and SS
+  taxed in full. A SIM away (e.g. FRA during a stay) is per diem A away, not "… T". BUT up to January 2026 a SIMULATOR
+  TRIP (away with no flight duty: DHC out, sessions, DHC home) was "Perdiem A … T", taxed in full even abroad (Jan and Feb
+  2026 payslips; `TRAINING_TRIP_TAXED_UNTIL` in `payEstimate.ts`) — "T" is not "at base". The Jun–Sep 2026 payslips pay
+  the FRA sim trips as A away; February–April 2026 still to check. With the real abonos, IRS and SS
   of Jun–Sep 2026 match to the cent; the remaining error is the RAACO abonos estimate.
   Verified to within a few euros on two real payslips. **January is different** (since 0.9.3.50, a January 2026
   payslip): December's variable is income of the year before and is withheld apart — "IRS (Cat. A)" on the fixed pay
