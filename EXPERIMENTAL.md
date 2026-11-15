@@ -25,6 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
+- **0.9.3.60** — Vencimento: FAM_INS + LIFUS_INS no mesmo voo = line check (recibo de junho de 2026); a escala lia mal as duas marcas juntas.
 - **0.9.3.59** — Vencimento: os dias de gabinete (GAB) saem do duty-pay, como a instrução em terra (recibos de março e junho de 2026).
 - **0.9.3.58** — Vencimento: a janela das horas de instrução diz só "Horas de instrução em terra".
 - **0.9.3.57** — Vencimento: as horas de instrução em terra do mês escrevem-se no cartão (✎), as feitas ou as previstas.

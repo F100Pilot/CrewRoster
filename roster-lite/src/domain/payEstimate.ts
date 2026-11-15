@@ -166,8 +166,15 @@ export const isInstructorFlight = (d: ParsedDuty) =>
 
 // A flight on a line check given as the examiner: marked W_INS on each sector (user, Nov 2026,
 // from a CrewLine roster: a W_PNT day with W_INS on both legs). One line check per such day.
-export const isLineCheckFlight = (d: ParsedDuty) =>
-  (d.dutyType === 'Flight Duty' || d.dutyType === 'Positioning') && /\bW_INS\b/.test(d.observations ?? '');
+// FAM_INS and LIFUS_INS on the same leg is one too (0.9.3.60, the June 2026 payslip: May's only such
+// day paid "LCC Line Check", the two LIFUS_INS days "Line Training"; FAM_INS alone stays line
+// training — June and September 2026 paid it so). A line check day is not a line training day.
+// W_PNT on the pilot's own flights ("Pilot in Command, W_PNT") is HIS line check — nothing paid.
+export const isLineCheckFlight = (d: ParsedDuty) => {
+  if (d.dutyType !== 'Flight Duty' && d.dutyType !== 'Positioning') return false;
+  const obs = d.observations ?? '';
+  return /\bW_INS\b/.test(obs) || (/\bFAM_INS\b/.test(obs) && /\bLIFUS_INS\b/.test(obs));
+};
 
 // Simulator sessions given as an instructor. The roster marks the first day of a check with
 // "OPC" / "LPC" when the pilot is the one checked, or with "OPC_INS" / "LPC_INS" when he gives it;
@@ -292,7 +299,7 @@ export interface PayEstimate {
   groundInstructionHoursAuto: number; // the roster's sessions, in the same decimal hours
   groundInstructionValue: number;
   lineChecks: number;
-  lineChecksAuto: number; // the roster's count (days with W_INS flights)
+  lineChecksAuto: number; // the roster's count (days with line check flights — isLineCheckFlight)
   lineCheckValue: number;
   officeDays: number; // GAB days
   officePaidDays: number; // the ones paid (officeDayFrom … officeDayTo)
@@ -612,7 +619,8 @@ export function payEstimate(
   const instructorValue = instructorSessions * (s.instructorSession || 0);
 
   // ── Line training / familiarisation flown as instructor, per day ──
-  const lineTrainingDays = new Set(duties.filter((d) => inMonth(d.date) && isInstructorFlight(d)).map((d) => d.date)).size;
+  const lineCheckDates = new Set(duties.filter((d) => inMonth(d.date) && isLineCheckFlight(d)).map((d) => d.date));
+  const lineTrainingDays = new Set(duties.filter((d) => inMonth(d.date) && isInstructorFlight(d) && !lineCheckDates.has(d.date)).map((d) => d.date)).size;
   const lineTrainingValue = lineTrainingDays * (s.lineTrainingDay || 0);
 
   // ── Ground training given ("Instrução em terra"), per hour, apart from the plafonds ──
@@ -623,7 +631,7 @@ export function payEstimate(
   const groundInstructionValue = cents(groundInstructionHours * (s.groundInstructionHour || 0));
 
   // ── Line checks: days with W_INS flights, unless the pilot corrected the month's count ──
-  const lineChecksAuto = new Set(duties.filter((d) => inMonth(d.date) && isLineCheckFlight(d)).map((d) => d.date)).size;
+  const lineChecksAuto = lineCheckDates.size;
   const typed = s.lineChecks?.[month];
   const lineChecks = typed === undefined ? lineChecksAuto : Math.max(0, typed);
   const lineCheckValue = lineChecks * (s.lineCheck || 0);

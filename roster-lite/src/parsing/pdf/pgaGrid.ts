@@ -611,8 +611,9 @@ const toMinutes = (hhmm: string): number => {
 // instructor, or both ("OPC, OPC_INS"). The second day of a two-day check carries no mark.
 const CHECK_MARK = /^(?:OPC|LPC)(?:_INS)?(?:,\s*(?:OPC|LPC)(?:_INS)?)*$/;
 // A flight flown as the instructor — line training (LIFUS_INS) or familiarisation (FAM_INS). The
-// mark sits in its own sub-column just LEFT of its flight's, one per leg.
-const FLIGHT_INS_MARK = /^(?!OPC_|LPC_)[A-Z][A-Z0-9]*_INS$/;
+// mark sits in its own sub-column just LEFT of its flight's, one per leg. Two can share it
+// ("FAM_INS, LIFUS_INS" — a real May roster: a line check given, 0.9.3.60); each goes to the leg.
+const FLIGHT_INS_MARK = /^(?!OPC_|LPC_)[A-Z][A-Z0-9]*_INS(?:,\s*(?!OPC_|LPC_)[A-Z][A-Z0-9]*_INS)*$/;
 // FO_SAFETY — one of the first officers on board is the extra (safety) pilot — sits in its own
 // sub-column just BEFORE the flight it opens (larger x; a real November roster): it goes to the
 // next flight; the crew attach then moves it to the legs that really carry two first officers.
@@ -724,7 +725,7 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
       const mark = s.tokens.find((t) => CHECK_MARK.test(t.text.trim()));
       if (mark && !checkByDate.has(date)) checkByDate.set(date, mark.text.trim());
       const lone = s.tokens.length === 1 ? s.tokens[0].text.trim() : '';
-      if (FLIGHT_INS_MARK.test(lone)) flightMarks.push({ date, x: s.x, mark: lone });
+      if (FLIGHT_INS_MARK.test(lone)) for (const mark of lone.split(/,\s*/)) flightMarks.push({ date, x: s.x, mark });
       if (SAFETY_MARK.test(lone)) safetyMarks.push({ date, x: s.x, mark: lone });
       const dayMark = s.tokens.map((t) => t.text.trim()).find((t) => DAY_FLIGHT_MARK.test(t));
       if (dayMark) dayMarks.set(date, dayMark);

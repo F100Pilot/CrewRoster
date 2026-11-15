@@ -270,7 +270,10 @@ Things learned over this collaboration that should persist across sessions:
   tax-free, taken off the net as "Cartão-refeição"; NOT on a medical-only day, which still pays per diem B — October
   payslip, user-confirmed, since 0.8.37.1). Line checks (payslip "LCC_Line Check") since 0.8.36: the fee is typed by the pilot (`lineCheck`); since
   0.8.36.1 counted from the roster — one per day with flights marked **W_INS** (the examiner; the day's code is
-  W_PNT; user found it on a CrewLine roster) via `isLineCheckFlight`; −/+ on the pay card stores a per-month
+  W_PNT; user found it on a CrewLine roster) via `isLineCheckFlight`; since 0.9.3.60 also a day whose legs carry FAM_INS
+AND LIFUS_INS together (one sub-column "FAM_INS, LIFUS_INS", read since PARSE_VERSION 29; the June 2026 payslip paid it as
+"LCC Line Check" — that day is not a line training day; FAM_INS alone stays line training: Jul/Oct 2026 payslips; LT and LC
+counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on the pilot's own legs = HIS line check, nothing paid; −/+ on the pay card stores a per-month
   correction (`lineChecks['yyyy-MM']`, dropped when it equals the roster's count). Variable part.
 - **Pay figures are shown to the cent** (since 0.8.37.2, user: "não quero que faças arredondamentos"): no whole-euro
   formatting and no "≈" on the pay card; the maths was already in cents. The one rounding kept is the payroll's own:

@@ -194,7 +194,7 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                 {(r.lineChecks > 0 || r.lineChecksAuto > 0 || settings.lineCheck > 0) && (
                   <Box display="flex" alignItems="center" gap={0.5}>
                     <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1, minWidth: 0 }}>
-                      Line checks: {r.lineChecks}{r.lineChecks !== r.lineChecksAuto ? ` · corrigido (escala: ${r.lineChecksAuto})` : r.lineChecks > 0 ? ' · pela escala (W_INS)' : ''}{r.lineChecks > 0 && !settings.lineCheck ? ' · falta o valor nas Definições' : ''}
+                      Line checks: {r.lineChecks}{r.lineChecks !== r.lineChecksAuto ? ` · corrigido (escala: ${r.lineChecksAuto})` : r.lineChecks > 0 ? ' · pela escala' : ''}{r.lineChecks > 0 && !settings.lineCheck ? ' · falta o valor nas Definições' : ''}
                     </Typography>
                     <IconButton size="small" aria-label="Menos um line check" disabled={r.lineChecks === 0} onClick={() => setLineChecks(r.lineChecks - 1)}><Remove fontSize="small" /></IconButton>
                     <IconButton size="small" aria-label="Mais um line check" onClick={() => setLineChecks(r.lineChecks + 1)}><Add fontSize="small" /></IconButton>
@@ -261,7 +261,7 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                   O variável (per diem incluído) é pago no mês seguinte. IRS pelas tabelas de retenção de 2026 (continente); não
                   prevê acertos de meses anteriores. Noturno 23h–06h e feriados nacionais em hora de Lisboa, somados às outras
                   alíneas da cl. 12.2. Subsídios sobre todos os fixos: férias = 42 dias (fixos ÷ 30 × 42), Natal = um mês (cl. 7 e
-                  8), com IRS retido à parte, SS e fundo de pensões. Line checks: um por dia com voos W_INS — corrige com − / + se
+                  8), com IRS retido à parte, SS e fundo de pensões. Line checks: um por dia com voos W_INS, ou FAM_INS e LIFUS_INS juntos — corrige com − / + se
                   não bater. Voos em dia de folga (cl. 13) e reduções de repouso (cl. 2.8) contam quando marcados no dia. Não
                   inclui split-duty nem o acerto anual dos plafonds (março). Confirma sempre no recibo.
                 </Typography>

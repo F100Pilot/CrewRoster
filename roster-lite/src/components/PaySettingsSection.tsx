@@ -376,7 +376,7 @@ export default function PaySettingsSection({ userId, onDirtyChange }: { userId: 
                 <Typography variant="caption" color="text.secondary">
                 Per diem pela tabela A2.2 do AE ("sujeito a confirmação"). Instrutor: sessões OPC_INS / LPC_INS e o
                 2.º dia do check; line training por dia com voos LIFUS_INS ou FAM_INS; instrução em terra por hora das sessões
-                FP…_INST (fora do duty-pay); line check por dia com voos W_INS
+                FP…_INST (fora do duty-pay); line check por dia com voos W_INS, ou FAM_INS e LIFUS_INS juntos
                 (corrige a contagem no cartão do Vencimento). 0 se não és instrutor.
                 Gabinete por dia GAB, só os dias do mês entre o "GAB pago do" e o "Até ao" (ex.: do 3.º ao 7.º); subsídio de alimentação por dia em terra na base (isento, vai para o cartão-refeição).
                 </Typography>

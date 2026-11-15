@@ -213,6 +213,23 @@ describe('payEstimate', () => {
       .toMatchObject({ lineChecks: 3, lineChecksAuto: 2, lineCheckValue: 600 });
   });
 
+  it('counts FAM_INS + LIFUS_INS on the same legs as a line check, not line training (June 2026 payslip)', () => {
+    const mk = (date: string, from: string, to: string, off: string, on: string, mark: string | null) =>
+      ({ ...leg(date, from, to, off, on), observations: mark });
+    // May 2026: two LIFUS_INS days paid "Line Training" (2 × 130), the FAM_INS + LIFUS_INS day "LCC Line Check" (1 × 200).
+    const duties = [
+      mk('2026-05-02', 'LIS', 'BRU', '07:00', '09:20', 'LIFUS_INS, FO_SAFETY'),
+      mk('2026-05-16', 'LIS', 'RAK', '08:26', '10:01', 'FO_SAFETY, FAM_INS, LIFUS_INS'), mk('2026-05-16', 'RAK', 'LIS', '10:53', '12:30', 'FAM_INS, LIFUS_INS'),
+      mk('2026-05-23', 'LIS', 'OPO', '06:30', '07:25', 'LIFUS_INS'),
+    ];
+    expect(payEstimate(duties, '2026-05', { ...S, lineCheck: 200, lineTrainingDay: 130 }, '2026-11-30')).toMatchObject({
+      lineChecks: 1, lineCheckValue: 200, lineTrainingDays: 2, lineTrainingValue: 260,
+    });
+    // FAM_INS alone stays line training (June and September 2026 payslips).
+    const fam = [mk('2026-06-01', 'LIS', 'GVA', '07:52', '10:10', 'FAM_INS'), mk('2026-06-01', 'GVA', 'LIS', '11:09', '13:45', 'FAM_INS')];
+    expect(payEstimate(fam, '2026-06', { ...S, lineCheck: 200, lineTrainingDay: 130 }, '2026-11-30')).toMatchObject({ lineChecks: 0, lineTrainingDays: 1 });
+  });
+
   it('pays the line checks the pilot counted for the month', () => {
     const s = { ...S, lineCheck: 200, lineChecks: { '2026-09': 2 } };
     const sep = payEstimate([duty('2026-09-02', 'Day Off')], '2026-09', s, '2026-11-30');

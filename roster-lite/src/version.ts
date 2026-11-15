@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.3.59';
+export const APP_VERSION = '0.9.3.60';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -20,6 +20,13 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.9.3.60',
+    date: '2026-11-15',
+    highlights: [
+      'Vencimento (experimental): um dia com voos marcados FAM_INS e LIFUS_INS ao mesmo tempo conta como line check, e não como line training, como no recibo de junho de 2026. A app perdia estas marcas quando vinham juntas na escala. A escala guardada é relida sozinha. FAM_INS sozinho continua a contar como line training, como nos recibos de julho e outubro.',
+    ],
+  },
   {
     version: '0.9.3.59',
     date: '2026-11-15',
