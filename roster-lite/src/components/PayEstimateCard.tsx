@@ -55,6 +55,13 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
   }, [userId, month]);
   const n = useMemo(() => netEstimate(r, settings, prevSettings), [r, settings, prevSettings]);
   const pct = (part: number, of: number) => `${((of > 0 ? part / of : 0) * 100).toFixed(2).replace('.', ',')}%`;
+  // Flown days of the month the app only knows as flown (no roster printed before them): the report is then the actual
+  // departure − 1 h, later than the planned one after a delay, so the duty comes out shorter than the roster's [DT] and
+  // the duty-pay too (a tester's August 2026: 4h22 short; an expert: "sem a inicial não bate certo"; user, 0.9.3.70).
+  const noPlanDates = useMemo(() => [...new Set(duties
+    .filter((d) => d.date.startsWith(month) && (d.dutyType === 'Flight Duty' || d.dutyType === 'Positioning')
+      && !!d.flightNumber && d.settled && !d.planned && !d.planKnown)
+    .map((d) => d.date))].sort(), [duties, month]);
 
   // Tick: this payslip carries the holiday subsidy. Untick: not this one — back to the roster's
   // month if that's another one, otherwise "none seen yet" for the year.
@@ -137,6 +144,15 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                   Líquido <b>{EUR.format(n.net)}</b>
                 </Typography>
               </Box>
+            )}
+
+            {noPlanDates.length > 0 && (
+              <Alert severity="warning" sx={{ my: 0.75 }}>
+                <strong>Falta a escala do início do mês</strong> em {noPlanDates.length} {noPlanDates.length === 1 ? 'dia de voo' : 'dias de voo'}{' '}
+                ({noPlanDates.slice(0, 6).map((d) => `${d.slice(8, 10)}/${d.slice(5, 7)}`).join(', ')}{noPlanDates.length > 6 ? '…' : ''}).
+                A app só tem as horas voadas e conta a apresentação a partir da partida real, por isso o duty-pay pode estar
+                abaixo do real. Importa o PDF da escala tirado antes destes voos.
+              </Alert>
             )}
 
             <Stack spacing={0.75} mt={0.5}>

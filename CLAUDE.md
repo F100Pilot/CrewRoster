@@ -285,7 +285,10 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
   user's June block-pay, 13 min over → 0,25 h); (2) a flight on a day off paid by the day's DUTY hours, not FDP (that
   payslip's "Med. Comp.PNT-Folgas Hora 7,12" = the 07:07 of H.Duty of the company's "Mapa Mensal de Horas de Voo e
   Aterragens"). Also open: duty-pay from the roster's printed [DT] (≈ 15–20 min more per flight day than the app; the
-  tester's August gap 4h22) — waiting for that tester's August roster. ALWAYS ask the user before changing a pay rule.
+  tester's August gap 4h22) — EXPLAINED by an expert: "não pôs a inicial … sem a inicial não bate certo": without the roster
+  printed BEFORE the flights the app only has flown times (report = actual departure − 1 h); with it the planned report is
+  kept (0.8.32.2) and the duty matches the [DT]. Since 0.9.3.70 the pay card warns "Falta a escala do início do mês" for
+  flown days with no plan (settled && !planned && !planKnown — like RAACO's noPlan). ALWAYS ask the user before changing a pay rule.
 - **Pay figures are shown to the cent** (since 0.8.37.2, user: "não quero que faças arredondamentos"): no whole-euro
   formatting and no "≈" on the pay card; the maths was already in cents. The one rounding kept is the payroll's own:
   IRS withheld floored to the euro (the payslip shows 6 950,00 for 40,08 % × 17 341,22).
