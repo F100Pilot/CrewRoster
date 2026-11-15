@@ -25,6 +25,28 @@ describe('irsRetention (Despacho 233-A/2026, continente)', () => {
 });
 
 describe('netEstimate', () => {
+  it('withholds the payslip\'s IRS on its fixed pay and the variable on the month before, as the payroll does', () => {
+    // Payslips of Jun–Oct 2026: "IRS 07/2026" on July's fixed pay, "IRS 06/2026 −" given back, "IRS 06/2026" again on
+    // June's fixed pay + the variable of June paid in July.
+    const r = { rb: 10000, variable: 4000, perDiemTravelValue: 0, perDiemTravel: [], abonosByDate: {}, month: '2026-06' } as unknown as PayEstimate;
+    const s = { ...DEFAULT_PAY_SETTINGS, vb: 10000, irsTable: 'I' as const, dependents: 1 };
+    const prev = { ...s, vb: 2000 }; // a raise between the two payslips
+    const n = netEstimate(r, s, prev);
+    expect(n).toMatchObject({ irsBase: 10000, irs: irsRetention(10000, 'I', 1), prevIrsBase: 6000 });
+    expect(n.prevIrs).toBe(irsRetention(6000, 'I', 1));
+    expect(n.prevIrsWithheld).toBe(irsRetention(2000, 'I', 1));
+    const plain = netEstimate(r, s);
+    expect(plain.prevIrsBase).toBe(0);
+    expect(n.net - plain.net).toBeCloseTo(plain.irs - (n.irs + n.prevIrs - n.prevIrsWithheld));
+    expect(n.net).not.toBeCloseTo(plain.net); // the raise crosses brackets: one sum at one rate isn't the same
+    // The same fixed pay both months gives the same total as one sum: W(f) − W(f) + W(f + v).
+    const same = netEstimate(r, s, s);
+    expect(same.irs + same.prevIrs - same.prevIrsWithheld).toBe(plain.irs);
+    // December's variable (paid in January) stays withheld apart, the year before's.
+    const dec = netEstimate({ ...r, month: '2025-12' } as PayEstimate, s, prev);
+    expect(dec).toMatchObject({ prevIrsBase: 0, prevIrs: 0, priorYearIrsBase: 4000 });
+  });
+
   it('taxes per diem at base in full and only the non-exempt part of per diem away', () => {
     const r = {
       rb: 10000, variable: 1500, perDiemTravelValue: 600, perDiemTravelDays: 3,

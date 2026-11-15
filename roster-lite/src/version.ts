@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.3.61';
+export const APP_VERSION = '0.9.3.62';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -20,6 +20,13 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.9.3.62',
+    date: '2026-11-15',
+    highlights: [
+      'Vencimento (experimental): o IRS passa a ser retido como no recibo. O IRS do mês é calculado só sobre o fixo, e o do mês anterior é refeito com o variável que agora se paga, descontando o que já tinha sido retido. O cartão mostra as duas linhas. Só muda o valor quando o fixo mudou de um mês para o outro, como num aumento.',
+    ],
+  },
   {
     version: '0.9.3.61',
     date: '2026-11-15',

@@ -735,6 +735,13 @@ export interface NetEstimate {
   // table's rate for that amount alone ("Ded. fisc. per. ant." on the payslip). 0 in every other month.
   priorYearIrsBase: number;
   priorYearIrs: number;
+  // Every other month the payroll withholds the payslip's own IRS on its FIXED pay only, and the variable it pays is
+  // income of the month before: that month's IRS is withheld again on its fixed pay + this variable, less what it held
+  // then (payslips of Jun–Oct 2026: "IRS 07/2026 4624", "IRS 06/2026 4209−", "IRS 06/2026 7300"). Given only when the
+  // previous payslip's figures are known (netEstimate's `prev`); 0 otherwise, and `irs` is then one sum at one rate.
+  prevIrsBase: number; // the month before: its fixed pay + the variable paid now
+  prevIrs: number; // its IRS withheld again on that
+  prevIrsWithheld: number; // what its payslip held on its fixed pay alone, given back
   ssBase: number;
   ss: number;
   pensionDeposit: number;
@@ -753,10 +760,16 @@ export interface NetEstimate {
 // pay (in January, December's variable apart: it is the year before's); SS takes 11%. Both leave out the non-taxable fixed part, and the exempt share of the per
 // diem for days away; per diem for days at base is taxed in full. Checked against a real October
 // 2026 payslip: IRS and both SS lines to the cent.
-export function netEstimate(r: PayEstimate, s: PaySettings): NetEstimate {
+// The fixed pay subject to IRS: every fixed line but the non-taxable part (the PGA's pension contribution).
+const fixedTaxableOf = (s: PaySettings) => s.vb + s.ve + s.vs + s.extras - (s.nonTaxableFixed || 0);
+
+// `prev` = the figures of the payslip before (the work month before): with them the IRS is withheld as the payroll does,
+// the fixed pay of this payslip apart and the variable on the month before (user, 0.9.3.62: "recalcular o IRS dos meses
+// anteriores"). It only changes the sum when the fixed pay changed between the two (a raise, a new chief bonus).
+export function netEstimate(r: PayEstimate, s: PaySettings, prev?: PaySettings): NetEstimate {
   const gross = r.rb + r.variable;
   const pension = pensionLines(s);
-  const fixedTaxable = r.rb - (s.nonTaxableFixed || 0) - pension.contribution;
+  const fixedTaxable = r.rb - (s.nonTaxableFixed || 0) - pension.contribution; // = fixedTaxableOf(s)
   // Everything but the per diem for days away and the meal tickets (tax-free, on the meal card).
   const variableTaxed = r.variable - r.perDiemTravelValue - (r.mealTicketValue || 0);
   // Per day away: per diem + that day's abonos, less the day's limit (national or abroad); abonos
@@ -780,11 +793,17 @@ export function netEstimate(r: PayEstimate, s: PaySettings): NetEstimate {
   // app's tables give 4171 € to the euro and 2693 € for the payslip's 2692 €; one sum at one rate was ~846 € too much).
   const priorYear = (r.month ?? '').endsWith('-12');
   const variableIrsBase = variableTaxed + travelTaxable('irs');
-  const irsBase = priorYear ? fixedTaxable : fixedTaxable + variableIrsBase;
+  const withPrev = !priorYear && !!prev;
+  const irsBase = priorYear || withPrev ? fixedTaxable : fixedTaxable + variableIrsBase;
   const ssBase = fixedTaxable + variableTaxed + travelTaxable('ss');
   const irs = irsRetention(irsBase, s.irsTable || 'I', s.dependents || 0);
   const priorYearIrsBase = priorYear ? variableIrsBase : 0;
   const priorYearIrs = priorYear ? irsRetention(priorYearIrsBase, s.irsTable || 'I', s.dependents || 0) : 0;
+  // The month before, withheld again with the variable (its own table and dependants, as its payslip had them).
+  const prevFixed = withPrev ? fixedTaxableOf(prev!) : 0;
+  const prevIrsBase = withPrev ? prevFixed + variableIrsBase : 0;
+  const prevIrs = withPrev ? irsRetention(prevIrsBase, prev!.irsTable || 'I', prev!.dependents || 0) : 0;
+  const prevIrsWithheld = withPrev ? irsRetention(prevFixed, prev!.irsTable || 'I', prev!.dependents || 0) : 0;
   // Subsidies: SS like any pay, IRS withheld apart for each one, and the pension plan applies to
   // them too (it "incide 14 vezes por ano", RRRGS cl. 16.2): 6,5% / 7,5% of the subsidy itself —
   // the PGA's part as a non-taxable abono ("Fundo pensões contr. SF/SN"), the deposit taken off.
@@ -801,10 +820,11 @@ export function netEstimate(r: PayEstimate, s: PaySettings): NetEstimate {
   const pensionDeposit = cents(pension.deposit + subsidyPension.deposit);
   const grossAll = gross + subsidyTotal + subsidyPension.contribution;
   return {
-    gross: grossAll, irsBase, irs, irsRate: irsBase > 0 ? irs / irsBase : 0, priorYearIrsBase, priorYearIrs, ssBase, ss, pensionDeposit, union, fixedDeductions,
+    gross: grossAll, irsBase, irs, irsRate: irsBase > 0 ? irs / irsBase : 0, priorYearIrsBase, priorYearIrs,
+    prevIrsBase, prevIrs, prevIrsWithheld, ssBase, ss, pensionDeposit, union, fixedDeductions,
     subsidyIrs,
     subsidyPensionContribution: subsidyPension.contribution,
     mealCard: r.mealTicketValue || 0,
-    net: grossAll - irs - priorYearIrs - subsidyIrs - ss - pensionDeposit - union - fixedDeductions - (r.mealTicketValue || 0),
+    net: grossAll - irs - priorYearIrs - (prevIrs - prevIrsWithheld) - subsidyIrs - ss - pensionDeposit - union - fixedDeductions - (r.mealTicketValue || 0),
   };
 }

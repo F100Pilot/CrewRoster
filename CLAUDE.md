@@ -326,7 +326,12 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
   Verified to within a few euros on two real payslips. **January is different** (since 0.9.3.50, a January 2026
   payslip): December's variable is income of the year before and is withheld apart — "IRS (Cat. A)" on the fixed pay
   alone (37,37% = the app's table to the euro) + "Ded. fisc. per. ant." on that variable at its own table rate (34,20%;
-  the app gives 1 € more) — `NetEstimate.priorYearIrs` when the work month is a December. Pension plan (RRRGS cl. 16, `pensionAuto`):
+  the app gives 1 € more) — `NetEstimate.priorYearIrs` when the work month is a December. **Every other month the IRS is
+  split like the payslip** (since 0.9.3.62, user: "recalcular o IRS dos meses anteriores"; payslips of Jun–Oct 2026:
+  "IRS 07/2026 4614" on the fixed pay, "IRS 06/2026 −4209" given back, "IRS 06/2026 7300" on June's fixed + the variable paid
+  in July — table I with the pilot's dependants gives all three to the euro): `netEstimate(r, s, prev)` with `prev` = the
+  previous work month's settings (`getPaySettingsFor`) → `irs` on the fixed pay alone + `prevIrs − prevIrsWithheld`. Same
+  total as one sum while both fixed pays sit in the same bracket; it differs on a raise across brackets. Pension plan (RRRGS cl. 16, `pensionAuto`):
   PGA contribution 6,5% of VB+VE+VS paid as a non-taxable abono, SIPLA deposit 7,5% deducted — both
   matched the payslip to the cent. Union fee = `unionPct` (1%) of a base that (since 0.8.26.1)
   is automatic: `unionBaseAuto()` = all fixed pay minus the command lines "Anuid. técnica Comando"

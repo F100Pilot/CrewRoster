@@ -45,7 +45,16 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
   useEffect(() => { setViewedPayMonth(month); return () => setViewedPayMonth(null); }, [month]);
   const [showDays, setShowDays] = useState(false);
   const r = useMemo(() => payEstimate(duties, month, settings, today, base), [duties, month, settings, today, base]);
-  const n = useMemo(() => netEstimate(r, settings), [r, settings]);
+  // The payslip before's figures: the payroll withholds this payslip's IRS on its fixed pay and the variable on that month.
+  const [prevSettings, setPrevSettings] = useState(() => getPaySettingsFor(userId, shiftMonth(month, -1)));
+  useEffect(() => {
+    const reload = () => setPrevSettings(getPaySettingsFor(userId, shiftMonth(month, -1)));
+    reload();
+    window.addEventListener('pay-settings-updated', reload);
+    return () => window.removeEventListener('pay-settings-updated', reload);
+  }, [userId, month]);
+  const n = useMemo(() => netEstimate(r, settings, prevSettings), [r, settings, prevSettings]);
+  const pct = (part: number, of: number) => `${((of > 0 ? part / of : 0) * 100).toFixed(2).replace('.', ',')}%`;
 
   // Tick: this payslip carries the holiday subsidy. Untick: not this one — back to the roster's
   // month if that's another one, otherwise "none seen yet" for the year.
@@ -231,7 +240,17 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                 />
                 <Box sx={{ borderTop: 1, borderColor: 'divider', my: 0.5 }} />
                 <Row label="Bruto" value={n.gross} strong />
-                <Row label={`IRS (${(n.irsRate * 100).toFixed(2).replace('.', ',')}% de ${EUR.format(n.irsBase)})`} value={-n.irs} />
+                {n.prevIrsBase > 0 ? (
+                  <>
+                    <Row label={`IRS de ${monthName(shiftMonth(month, 1))}, só o fixo (${pct(n.irs, n.irsBase)} de ${EUR.format(n.irsBase)})`} value={-n.irs} />
+                    <Row
+                      label={`IRS de ${monthName(month)} refeito com o variável (${pct(n.prevIrs, n.prevIrsBase)} de ${EUR.format(n.prevIrsBase)}, menos ${EUR.format(n.prevIrsWithheld)} já retidos)`}
+                      value={-(n.prevIrs - n.prevIrsWithheld)}
+                    />
+                  </>
+                ) : (
+                  <Row label={`IRS (${(n.irsRate * 100).toFixed(2).replace('.', ',')}% de ${EUR.format(n.irsBase)})`} value={-n.irs} />
+                )}
                 {n.priorYearIrs > 0 && (
                   <Row
                     label={`IRS do variável de dezembro, ano anterior (${((n.priorYearIrs / n.priorYearIrsBase) * 100).toFixed(2).replace('.', ',')}% de ${EUR.format(n.priorYearIrsBase)})`}
@@ -258,8 +277,10 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
             <Box mt={0.75}>
               <InfoCollapse card={false} title="Como se calcula">
                 <Typography variant="caption" color="text.secondary" display="block" lineHeight={1.35}>
-                  O variável (per diem incluído) é pago no mês seguinte. IRS pelas tabelas de retenção de 2026 (continente); não
-                  prevê acertos de meses anteriores. Noturno 23h–06h e feriados nacionais em hora de Lisboa, somados às outras
+                  O variável (per diem incluído) é pago no mês seguinte. IRS pelas tabelas de retenção de 2026 (continente), como
+                  no recibo: o do mês só sobre o fixo, e o do mês anterior refeito com o variável que agora se paga (menos o
+                  que já tinha sido retido); em janeiro, o variável de dezembro à parte. Não prevê outras correções de meses
+                  passados. Noturno 23h–06h e feriados nacionais em hora de Lisboa, somados às outras
                   alíneas da cl. 12.2. Subsídios sobre todos os fixos: férias = 42 dias (fixos ÷ 30 × 42), Natal = um mês (cl. 7 e
                   8), com IRS retido à parte, SS e fundo de pensões. Line checks: um por dia com voos W_INS, ou FAM_INS e LIFUS_INS juntos — corrige com − / + se
                   não bater. Voos em dia de folga (cl. 13) e reduções de repouso (cl. 2.8) contam quando marcados no dia. Não
