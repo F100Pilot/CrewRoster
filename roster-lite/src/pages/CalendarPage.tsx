@@ -19,6 +19,15 @@ import { MealConfirmBanner, useMealsToConfirm } from '../components/MealConfirm'
 
 const WEEKDAYS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 
+// A day off away from base ("X", in a layover) has its own colour, apart from the W_OFF at home (a tester, 0.9.3.69:
+// "atribuir uma côr diferente entre os off days e os dia X"): a sky-blue key, light or dark with the theme.
+const isAwayOff = (d: ParsedDuty) => d.dutyType === 'Day Off' && d.dutyCode === 'X';
+const AWAY_OFF = {
+  legend: '#64B5F6',
+  light: { bg: 'linear-gradient(180deg, #D6EBFF, #B4D5F8)', edge: '#7DA7D9' },
+  dark: { bg: 'linear-gradient(180deg, #2F5F9E, #244D85)', edge: '#0F2747' },
+};
+
 // Short Portuguese labels for the colour legend, keyed by dutyType.
 const DUTY_LABELS: Record<string, string> = {
   'Flight Duty': 'Voo',
@@ -68,8 +77,8 @@ export default function CalendarPage() {
   const legend = useMemo(() => {
     const seen = new Map<string, string>(); // label → colour
     for (const d of monthDuties) {
-      const label = d.dutyCode === 'S.EXT.' ? 'Serviço externo' : DUTY_LABELS[d.dutyType] ?? d.dutyType;
-      if (!seen.has(label)) seen.set(label, dutyColor(d.dutyType));
+      const label = d.dutyCode === 'S.EXT.' ? 'Serviço externo' : isAwayOff(d) ? 'Folga fora da base (X)' : DUTY_LABELS[d.dutyType] ?? d.dutyType;
+      if (!seen.has(label)) seen.set(label, isAwayOff(d) ? AWAY_OFF.legend : dutyColor(d.dutyType));
     }
     return [...seen.entries()];
   }, [monthDuties]);
@@ -142,11 +151,13 @@ export default function CalendarPage() {
               ? dayDuties.find((x) => x.dutyType !== main.dutyType && x.dutyType !== 'Day Off') : undefined;
             const startOf = (x: ParsedDuty) => x.reportingTime ?? x.departureTime ?? '99:99';
             const [first, second] = other ? (startOf(other) < startOf(main!) ? [other, main!] : [main!, other]) : [];
-            const keyBg = off ? d3.keyLight
+            const awayOff = off && !!main && isAwayOff(main);
+            const awayKey = AWAY_OFF[theme.palette.mode === 'dark' ? 'dark' : 'light'];
+            const keyBg = awayOff ? awayKey.bg : off ? d3.keyLight
               : first && second
                 ? `linear-gradient(135deg, ${lighten(dutyColor(first.dutyType), 0.25)} 0%, ${dutyColor(first.dutyType)} 49.5%, ${dutyColor(second.dutyType)} 50.5%, ${darken(dutyColor(second.dutyType), 0.05)} 100%)`
                 : `linear-gradient(180deg, ${lighten(col, 0.25)}, ${darken(col, 0.05)})`;
-            const edge = off ? d3.keyEdge : darken(col, 0.4);
+            const edge = awayOff ? awayKey.edge : off ? d3.keyEdge : darken(col, 0.4);
             return (
               <Box
                 key={key}

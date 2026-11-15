@@ -6,6 +6,8 @@ import { baseOf } from '../domain/dutyStats';
 import { dayContext, skyAt, type Sky } from '../domain/dayPhase';
 import { bodyVisible, moonLitPath, moonPhase, type Condition } from '../domain/skyWeather';
 import type { CurrentWeather } from '../state/useCurrentWeather';
+import { useSkyStyle } from '../state/skyStyle';
+import SkyWeatherReal from './SkyWeatherReal';
 
 // The banners' sky: the time of day at the airport the crew member is at, with the weather over
 // it drawn on top — sun or moon (in its real phase), clouds, rain, snow, fog, lightning.
@@ -118,7 +120,13 @@ function Moon({ now }: { now: Date }) {
   );
 }
 
-export default function SkyWeather({ sky, wx, now, top = 46 }: {
+// The style is the crew member's choice in Settings → App (0.9.3.68): this drawing ("Ilustrado") or the
+// photographic sky of SkyWeatherReal ("Realista").
+export default function SkyWeather(props: { sky: Sky; wx: CurrentWeather | null; now: Date; top?: number }) {
+  return useSkyStyle() === 'realistic' ? <SkyWeatherReal {...props} /> : <SkyIllustrated {...props} />;
+}
+
+function SkyIllustrated({ sky, wx, now, top = 46 }: {
   sky: Sky; wx: CurrentWeather | null; now: Date; top?: number;
 }) {
   const c = wx?.condition ?? 'clear';

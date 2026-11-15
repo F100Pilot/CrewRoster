@@ -12,6 +12,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useColorMode } from '../state/colorMode';
+import { setSkyStyle, useSkyStyle, type SkyStyle } from '../state/skyStyle';
 import {
   API_KEY_PATTERN, getAeroDataBoxKey, setAeroDataBoxKey,
   CHECKIN_LEAD_OPTIONS, getCheckinLeadMinutes, setCheckinLeadMinutes,
@@ -68,6 +69,7 @@ export default function SettingsDialog({ open, onClose: close }: { open: boolean
   const onClose = () => guard(close);
   const { roster, clear, activeUser, setUserBase } = useRoster();
   const { mode, setMode } = useColorMode();
+  const skyStyle = useSkyStyle();
   const navigate = useNavigate();
   const [key, setKey] = useState('');
   // CrewLink credentials saved on this device (per profile) to pre-fill the download dialog.
@@ -426,6 +428,23 @@ export default function SettingsDialog({ open, onClose: close }: { open: boolean
                   <DarkMode fontSize="small" /> Escuro
                 </ToggleButton>
               </ToggleButtonGroup>
+            </Box>
+
+            <Box>
+              <Typography variant="subtitle2" gutterBottom>Céu e meteorologia dos banners</Typography>
+              <ToggleButtonGroup
+                size="small"
+                exclusive
+                fullWidth
+                value={skyStyle}
+                onChange={(_, v: SkyStyle | null) => { if (v) setSkyStyle(v); }}
+              >
+                <ToggleButton value="illustrated" sx={{ py: 1.25 }}>Ilustrado</ToggleButton>
+                <ToggleButton value="realistic" sx={{ py: 1.25 }}>Realista</ToggleButton>
+              </ToggleButtonGroup>
+              <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+                Realista: céu com nuvens volumétricas, sol com brilho, lua na fase real, chuva, neve e nevoeiro.
+              </Typography>
             </Box>
 
             <Divider />

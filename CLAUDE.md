@@ -279,6 +279,22 @@ AND LIFUS_INS together (one sub-column "FAM_INS, LIFUS_INS", read since PARSE_VE
 "LCC Line Check" — that day is not a line training day; FAM_INS alone stays line training: Jul/Oct 2026 payslips; LT and LC
 counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on the pilot's own legs = HIS line check, nothing paid; −/+ on the pay card stores a per-month
   correction (`lineChecks['yyyy-MM']`, dropped when it equals the roster's count). Variable part.
+- **Withdrawn, waiting for more evidence** (user, Nov 2026: "retirar ambas até sabermos mais informações" — 0.9.3.70 was
+  reverted on exp; it changed pay rules without asking first): (1) overtime paid by the quarter hour, rounded UP in the band
+  it stops in (a tester's August 2026: 124h05 credited → "Limite1 DutyPay 10,38" + "Limite2 DutyPay 0,25" for 5 min; the
+  user's June block-pay, 13 min over → 0,25 h); (2) a flight on a day off paid by the day's DUTY hours, not FDP (that
+  payslip's "Med. Comp.PNT-Folgas Hora 7,12" = the 07:07 of H.Duty of the company's "Mapa Mensal de Horas de Voo e
+  Aterragens"). Also open: duty-pay from the roster's printed [DT] (≈ 15–20 min more per flight day than the app; the
+  tester's August gap 4h22) — EXPLAINED by an expert: "não pôs a inicial … sem a inicial não bate certo": without the roster
+  printed BEFORE the flights the app only has flown times (report = actual departure − 1 h); with it the planned report is
+  kept (0.8.32.2) and the duty matches the [DT]. Since 0.9.3.70 the pay card warns "Falta a escala do início do mês" for
+  flown days with no plan (settled && !planned && !planKnown — like RAACO's noPlan). ALWAYS ask the user before changing a pay rule.
+- **Flight + ground training on one day: the gap doesn't count for duty-pay** (an expert, user-approved, 0.9.3.71: "a
+  diferença entre os 30 minutos depois de calços e o início da formação não conta … é o que vem no mapa de horas"):
+  `trainingGapMinutes()` in `payEstimate.ts` takes out the time between the flight duty's end (on-blocks + 30 min) and a
+  Training session after it (or the session's end and the report, when it comes first). Duty-pay only — the AE limits,
+  the roster's [DT] and the day's duty stay continuous. The same expert: **the roster's [DT] carries no premiums** (night,
+  holiday) — the company's map and the app add them, so the app's credited duty is above the summed [DT] by design.
 - **Pay figures are shown to the cent** (since 0.8.37.2, user: "não quero que faças arredondamentos"): no whole-euro
   formatting and no "≈" on the pay card; the maths was already in cents. The one rounding kept is the payroll's own:
   IRS withheld floored to the euro (the payslip shows 6 950,00 for 40,08 % × 17 341,22).
@@ -391,6 +407,11 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
   (real phase, `domain/skyWeather.ts`) / clouds / rain / snow / fog / lightning over the airport the crew
   member is at by the roster (`useHere()` → `dayContext().location`, not GPS), from Open-Meteo `current`
   (`state/useCurrentWeather.ts`, 15-min cache; ambience only — the briefing is METAR/TAF).
+  Two styles (since 0.9.3.68, user: "um novo layout para a meteo … realista e moderno" + a selector): Settings → App →
+  "Céu e meteorologia dos banners" = **Ilustrado** (the flat drawings, default) or **Realista** (`SkyWeatherReal.tsx`:
+  photographic gradient, SVG fractal-noise clouds shaded underneath, sun bloom / textured moon, rain in two depths,
+  scrims on the left and top so the white type reads); `state/skyStyle.ts` (`crewroster.skyStyle`, per device).
+  Clouds stay on the RIGHT — over the title they hid "2026" on the Lista hero.
   Cards follow the "Hoje" ones everywhere (since 0.8.31, user request): use `components/PassCard.tsx`
   (`PassCard` strip + overline + mono title + dashed `PassCells`; `TimelineRow`; `StatTile`; `PassBadge`)
   instead of a plain `Card` with chips. The Lista day card is `DayPass.tsx`.
