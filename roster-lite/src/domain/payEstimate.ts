@@ -182,6 +182,22 @@ const sessionMinutesOf = (d: ParsedDuty): number => {
   return (t(d.arrivalTime) - t(d.departureTime) + 1440) % 1440;
 };
 
+// The pilot's OWN checks: a session marked OPC / LPC with no _INS, and the unmarked one that follows it within 3 days
+// (the check's 2nd day). Even in the task force they aren't paid (April 2026 payslip: 6 of 8 March sessions — the LPC
+// of 10/03 and the day after left out; January's sessions received as training were paid).
+export function ownCheckDates(duties: ParsedDuty[]): Set<string> {
+  const out = new Set<string>();
+  let prev: { date: string; own: boolean } | null = null;
+  const sims = duties.filter((d) => d.dutyType === 'Simulator').sort((a, b) => a.date.localeCompare(b.date));
+  for (const d of sims) {
+    const mark = (d.observations ?? '').match(/\b(?:OPC|LPC)(?:_INS)?\b/g);
+    const own: boolean = mark ? !mark.some((m) => m.endsWith('_INS')) : !!prev && prev.own && daysBetween(prev.date, d.date) <= 3;
+    if (own) out.add(d.date);
+    prev = { date: d.date, own: mark ? own : false };
+  }
+  return out;
+}
+
 export function instructorSimDates(duties: ParsedDuty[]): Set<string> {
   const out = new Set<string>();
   let prev: { date: string; instructor: boolean } | null = null;
@@ -356,7 +372,9 @@ export function overtimeValue(credited: number, l1: number, l2: number, vb: numb
 }
 
 // The last day a simulator trip's per diem was "… T" (taxed in full) on the payslips seen: January 2026 (see payEstimate).
-export const TRAINING_TRIP_TAXED_UNTIL = '2026-01-31';
+// Moved to March 2026 with the April payslip (0.9.3.56): its "Outros valores p/ impostos" is 0 for a month of simulator
+// trips only, and the February / March ones reconcile to the cent with the RAACO abonos of those trips left untaxed.
+export const TRAINING_TRIP_TAXED_UNTIL = '2026-03-31';
 
 export function payEstimate(
   duties: ParsedDuty[], month: string, s: PaySettings, todayISO: string, base: string = HOME_BASE,
@@ -576,8 +594,9 @@ export function payEstimate(
   const offDayValue = (offDayMinutes / 60) * OFF_DAY_HOURLY * s.vb + offDayDates.size * OFF_DAY_BONUS * s.vb;
 
   // ── Simulator sessions as instructor (not in the AE; the pilot's own fee) ──
+  const ownChecks = ownCheckDates(duties);
   const instructorSessions = s.allSimsPaid
-    ? new Set(duties.filter((d) => inMonth(d.date) && d.dutyType === 'Simulator').map((d) => d.date)).size
+    ? new Set(duties.filter((d) => inMonth(d.date) && d.dutyType === 'Simulator' && !ownChecks.has(d.date)).map((d) => d.date)).size
     : [...instructorSimDates(duties)].filter(inMonth).length;
   const instructorValue = instructorSessions * (s.instructorSession || 0);
 
@@ -605,8 +624,11 @@ export function payEstimate(
   const mealTicketValue = cents(mealTicketDays * (s.mealTicket || 0));
 
   // ── RAACO meal allowances (paid apart; only their tax is on the payslip) ──
+  // The abonos of a simulator trip ("… T" days) are left out: the payslips tax none of them (user's Dec 2025–Mar 2026
+  // payslips, "Outros valores p/ impostos" to the cent: only the flying days' per diem and abonos over the limits; the
+  // 1275 € of January's trips taxed in February came back in March).
   const abonosByDate: Record<string, number> = {};
-  for (const d of raacoDays(duties, base).values()) if (inMonth(d.date) && d.total > 0) abonosByDate[d.date] = d.total;
+  for (const d of raacoDays(duties, base).values()) if (inMonth(d.date) && d.total > 0 && !trainingTripDates.has(d.date)) abonosByDate[d.date] = d.total;
   const abonos = Object.values(abonosByDate).reduce((a, v) => a + v, 0);
 
   const pension = pensionLines(s);

@@ -386,8 +386,32 @@ describe('per diem "T" das deslocações de simulador (até janeiro de 2026)', (
     expect(r.perDiemTravel.map((d) => d.date)).toEqual(['2026-01-15']);
   });
 
-  it('keeps a simulator trip after January 2026 partly exempt', () => {
+  it('keeps a simulator trip after March 2026 partly exempt', () => {
     const duties = [dh('2026-05-03', 'LIS', 'FRA'), sim('2026-05-04'), dh('2026-05-05', 'FRA', 'LIS')];
     expect(payEstimate(duties, '2026-05', S, '2026-05-31').perDiemTravel).toHaveLength(3);
+  });
+});
+
+// April 2026 payslip (work of March): with the task-force option, the pilot's own LPC (10/03, marked LPC without _INS)
+// and the day after aren't paid — 6 of 8 sessions.
+describe('taskforce: o próprio check não é pago', () => {
+  const sim = (date: string, obs: string | null = null) => duty(date, 'Simulator', { dutyCode: 'E90-FRA-1', departureAirport: 'FRA', departureTime: '09:40', arrivalTime: '13:40', observations: obs });
+  it('leaves the own LPC and its 2nd day out', () => {
+    const mar = [sim('2026-03-10', 'LPC'), sim('2026-03-11'), sim('2026-03-12', 'LPC, LPC_INS'), sim('2026-03-13'), sim('2026-03-17', 'LPC_INS'), sim('2026-03-18'), sim('2026-03-26', 'LPC_INS'), sim('2026-03-27')];
+    expect(payEstimate(mar, '2026-03', { ...S, instructorSession: 100, allSimsPaid: true }, '2026-03-31').instructorSessions).toBe(6);
+  });
+});
+
+// The abonos of a simulator trip aren't taxed (Dec 2025–Mar 2026 payslips, to the cent): only the flying days'.
+describe('abonos das viagens de simulador não tributados (até março de 2026)', () => {
+  it('drops the trip\'s abonos from the taxable ones', () => {
+    const duties = [
+      { ...leg('2026-03-09', 'LIS', 'FRA', '12:38', '15:39', '11:38'), dutyType: 'Positioning' },
+      duty('2026-03-10', 'Simulator', { dutyCode: 'E90-FRA-1', departureAirport: 'FRA', departureTime: '09:40', arrivalTime: '13:40' }),
+      { ...leg('2026-03-11', 'FRA', 'LIS', '12:37', '15:54', '11:37'), dutyType: 'Positioning' },
+    ];
+    const r = payEstimate(duties, '2026-03', S, '2026-03-31');
+    expect(r.perDiemTravel).toHaveLength(0);
+    expect(Object.keys(r.abonosByDate)).toHaveLength(0);
   });
 });

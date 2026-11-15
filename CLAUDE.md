@@ -246,7 +246,8 @@ Things learned over this collaboration that should persist across sessions:
   Medical days — verified day-for-day against a real roster + payslip. Simulator instructor sessions
   (paid at a per-session fee the pilot sets, not in the AE) = sims whose check mark (parsed into
   `observations`: OPC/LPC, or OPC_INS/LPC_INS as instructor) has `_INS`, plus the check's unmarked
-  2nd day — unless the pilot switches on `allSimsPaid` (since 0.9.3.52, user: in the task force every session is paid,
+  2nd day — unless the pilot switches on `allSimsPaid` (then every session but the pilot's OWN checks — OPC/LPC without
+  _INS and the day after, `ownCheckDates`; April 2026 payslip: 6 of 8) (since 0.9.3.52, user: in the task force every session is paid,
   "mesmo as que dizem instrução"; January 2026: 7 paid, 5 given + 2 received), then every simulator day counts; the
   calendar splits the key of a day with a simulator and another duty on the diagonal (earlier duty's colour top-left;
   user, 0.9.3.53 — it showed only the DHC home); FP…_INST is ground training given, not a sim session — **paid apart as "Instrução em terra"** (since 0.9.3.48,
@@ -308,8 +309,10 @@ Things learned over this collaboration that should persist across sessions:
   which is INCLUDED in its "Sujeito a IRS" and in the next month's SS line); per diem for days at base ("… T") is
   taxed in full. A SIM away (e.g. FRA during a stay) is per diem A away, not "… T". BUT up to January 2026 a SIMULATOR
   TRIP (away with no flight duty: DHC out, sessions, DHC home) was "Perdiem A … T", taxed in full even abroad (Jan and Feb
-  2026 payslips; `TRAINING_TRIP_TAXED_UNTIL` in `payEstimate.ts`) — "T" is not "at base". The Jun–Sep 2026 payslips pay
-  the FRA sim trips as A away; February–April 2026 still to check. With the real abonos, IRS and SS
+  2026 payslips; `TRAINING_TRIP_TAXED_UNTIL` in `payEstimate.ts`, March 2026 since 0.9.3.56) — "T" is not "at base" — and
+  the RAACO abonos of those trips are NOT taxed (Dec 2025–Mar 2026 "Outros valores p/ impostos" to the cent: IRS = flying
+  days' per diem + abonos − limits only; 1275 € of January's trip abonos taxed in February came back in March; SS the
+  same with the SS limits). The Jun–Sep 2026 payslips pay the FRA sim trips as A away; April–May 2026 still to check. With the real abonos, IRS and SS
   of Jun–Sep 2026 match to the cent; the remaining error is the RAACO abonos estimate.
   Verified to within a few euros on two real payslips. **January is different** (since 0.9.3.50, a January 2026
   payslip): December's variable is income of the year before and is withheld apart — "IRS (Cat. A)" on the fixed pay
