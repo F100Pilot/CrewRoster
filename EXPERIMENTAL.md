@@ -25,7 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(nada — 0.9.3.47 a 0.9.3.64 promovidas para produção em 2026-11-15)_
+- **0.9.3.65** — Aspeto: a aresta dos botões 3D passa para dentro do botão (inset); já não sai da borda de baixo.
 
 ---
 

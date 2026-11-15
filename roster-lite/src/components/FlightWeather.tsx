@@ -19,7 +19,7 @@ const LEVEL: Record<TurbulenceLevel, { label: string; color: string }> = {
 // (user, Nov 2026): the level's colour has to go on `background`, as a key of that colour.
 const levelSx = (c: string) => ({
   background: `linear-gradient(180deg, ${lighten(c, 0.18)}, ${c})`, color: '#fff', fontWeight: 700,
-  boxShadow: `0 2px 0 ${darken(c, 0.3)}, inset 0 1px 0 rgba(255,255,255,.35)`,
+  boxShadow: `inset 0 -2px 0 ${darken(c, 0.3)}, inset 0 1px 0 rgba(255,255,255,.35)`,
 });
 
 // Route weather for a single flight: a compact trigger chip in the day view that opens a

@@ -161,8 +161,8 @@ export default function CalendarPage() {
                   background: keyBg,
                   boxShadow: today
                     ? `0 0 0 3px ${theme.palette.background.paper}, 0 0 0 5px ${theme.palette.primary.main}, 0 10px 16px -6px ${alpha(theme.palette.primary.main, 0.7)}`
-                    : `0 3px 0 ${edge}, 0 8px 10px -6px rgba(15,27,45,.45), inset 0 1px 0 rgba(255,255,255,.45)`,
-                  '&:active': { transform: 'translateY(2px)' },
+                    : `inset 0 -3px 0 ${edge}, 0 8px 10px -6px rgba(15,27,45,.45), inset 0 1px 0 rgba(255,255,255,.45)`,
+                  '&:active': { transform: 'translateY(1px)' },
                 }}
               >
                 <Box component="span" sx={{ fontWeight: 800, fontSize: '0.9rem', lineHeight: 1.1 }}>{format(day, 'd')}</Box>

@@ -491,7 +491,8 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
   after Estatísticas. Cabin crew reach EASA limits from the "⋮" menu.
 - **3D look** (since 0.8.41, in production as **0.9.0**, from the user-approved sketch "banner em 3D, com sombras e noção de profundidade. Os
   botões também e os gráficos"): `theme.ts` exports `depth(mode)` (surface/card/well/keyLight/keyEdge…), `keyStyle` /
-  `keyPressed` (key-cap with a bottom edge that sinks on press). Cards are raised (no border), inputs/toggle groups/
+  `keyPressed` (key-cap with a bottom edge that sinks on press — since 0.9.3.65 the edge is an INSET shadow inside the key,
+  never `0 Npx 0` outside it: user, "os botões 3D saem um pouco de fora, na borda de baixo"). Cards are raised (no border), inputs/toggle groups/
   tabs/LinearProgress are sunken wells (progress = 12 px tube — don't set small `height` on LinearProgress), the bottom
   nav is a floating dock (root bottom padding `calc(100px + var(--sab))`), `PageHero` is a floating panel
   (`heroPanel`, `HeroHills`, `pillKey`, `glassKey` exported for reuse). Charts: 3D columns (MonthlyChart), tubes.

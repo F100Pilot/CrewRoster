@@ -574,11 +574,11 @@ function WeekStrip({ duties, base, p }: { duties: ParsedDuty[]; base: string; p:
                 background: p.dark
                   ? `linear-gradient(180deg, ${alpha(lighten(color, 0.1), 0.42)}, ${alpha(color, 0.26)})`
                   : `linear-gradient(180deg, ${lighten(color, 0.9)}, ${lighten(color, 0.74)})`,
-                boxShadow: `0 ${today ? 5 : 3}px 0 ${alpha(darken(color, 0.25), p.dark ? 0.8 : 0.45)}, 0 10px 14px -8px rgba(0,0,0,${p.dark ? 0.7 : 0.35}), inset 0 1px 0 rgba(255,255,255,${p.dark ? 0.15 : 0.8})`
+                boxShadow: `inset 0 -${today ? 4 : 3}px 0 ${alpha(darken(color, 0.25), p.dark ? 0.8 : 0.45)}, 0 10px 14px -8px rgba(0,0,0,${p.dark ? 0.7 : 0.35}), inset 0 1px 0 rgba(255,255,255,${p.dark ? 0.15 : 0.8})`
                   + (today ? `, 0 0 0 2px ${p.accent}` : ''),
                 transform: today ? 'translateY(-2px)' : undefined,
                 transition: 'transform .08s, box-shadow .08s',
-                '&:active': { transform: 'translateY(2px)', boxShadow: `0 1px 0 ${alpha(darken(color, 0.25), 0.5)}` },
+                '&:active': { transform: 'translateY(1px)', boxShadow: `inset 0 -1px 0 ${alpha(darken(color, 0.25), 0.5)}` },
               }}>
               <Typography sx={{ fontSize: '0.62rem', fontWeight: 700, color: p.soft }}>{weekday(date)}</Typography>
               <Typography sx={{ fontSize: '1.05rem', fontWeight: 800, lineHeight: 1 }}>{Number(date.slice(8, 10))}</Typography>
