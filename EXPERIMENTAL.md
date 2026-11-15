@@ -25,6 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
+- **0.9.3.53** — Calendário: os dias com simulador e outro serviço ficam com a tecla dividida na diagonal, nas cores dos dois serviços.
 - **0.9.3.52** — Vencimento: opção "Todas as sessões de simulador são pagas" (taskforce). Calendário: marca "SIM" nos dias com simulador e DHC.
 - **0.9.3.51** — Vencimento: guardar "a partir de um recibo" ou "todos os meses" muda só os valores alterados. Os recibos com valores só seus deixam de ser repostos.
 - **0.9.3.50** — Vencimento: no recibo de janeiro, o IRS do variável de dezembro (ano anterior) é retido à parte, com a sua própria taxa, como no recibo.
