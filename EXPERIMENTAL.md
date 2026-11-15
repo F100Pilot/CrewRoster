@@ -7,7 +7,7 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.9.3.67`
+- **Produção (`master`) está em:** `0.9.3.71`
 - **Próxima versão ao promover:** a da experimental (cada atualização sobe a 4.ª casa)
 
 ## Como promover tudo para produção (quando estiver pronto)
@@ -25,10 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **0.9.3.71** — Vencimento: num dia de voo com formação em terra (e-learning), o intervalo entre calços + 30 min e o início da formação (ou entre o fim da formação e a apresentação) não conta para o duty-pay, como no mapa de horas (especialista).
-- **0.9.3.70** — Vencimento: aviso "Falta a escala do início do mês" quando há voos feitos sem horas planeadas (o duty-pay pode estar abaixo).
-- **0.9.3.69** — Calendário: dias X (folga fora da base) com cor própria e entrada na legenda (sugestão de um tester).
-- **0.9.3.68** — Céu "Realista" nos banners (nuvens volumétricas, sol com brilho, lua com textura, chuva/neve/nevoeiro/trovoada), à escolha em Definições → App; "Ilustrado" continua por omissão.
+_(nada pendente)_
 
 ---
 
