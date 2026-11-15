@@ -243,7 +243,9 @@ Things learned over this collaboration that should persist across sessions:
   Per diem defaults are the AE's "sujeito a confirmação" values, editable — the CTE pair (229,50 /
   153,00) matched a real payslip; per diem A = flight/positioning/simulator/airport standby days, B =
   layover, Training (FP* = formação presencial, also as instructor), Office Duty (GAB, S.EXT.) and
-  Medical days — verified day-for-day against a real roster + payslip. Simulator instructor sessions
+  Medical days (an e-learning — FPE-LEARN — only when it is the refresher's: RGTC in its code or in its column, marked by
+  `pgaGrid` since PARSE_VERSION 30, `isPaidElearning`; a colleague: "se não for refrescamento não é pago", the user: "se for só
+  FPE-LEARN, não paga" — still duty) — verified day-for-day against a real roster + payslip. Simulator instructor sessions
   (paid at a per-session fee the pilot sets, not in the AE) = sims whose check mark (parsed into
   `observations`: OPC/LPC, or OPC_INS/LPC_INS as instructor) has `_INS`, plus the check's unmarked
   2nd day — unless the pilot switches on `allSimsPaid` (then every session but the pilot's OWN checks — OPC/LPC without

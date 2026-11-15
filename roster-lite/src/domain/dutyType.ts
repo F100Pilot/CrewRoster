@@ -18,6 +18,7 @@ export function inferDutyType(dutyCode: string): string {
   if (/_INST$/.test(code)) return 'Training'; // instruction, as instructor (FP1_INST, …)
   if (/^FP\d$/.test(code)) return 'Training'; // instruction, as trainee (FP1, FP2)
   if (/^RGTC\d*$/.test(code)) return 'Training'; // recurrent ground instruction (trainee)
+  if (/^(FP|RGTC)\w*-LEARN$/.test(code)) return 'Training'; // e-learning (FPE-LEARN, …)
   if (['OFD', 'OFFICE', 'GRD'].includes(code)) return 'Office Duty';
   if (/^S\.?EXT\.?$/.test(code)) return 'Office Duty'; // serviço externo
   if (['TRG', 'TRNG', 'TR'].includes(code)) return 'Training';

@@ -188,6 +188,8 @@ function classifyDuty(name: string): { dutyType: string; dutyCode: string } | nu
   // ("FP-Elearning CA-MEL ...") that sits in an adjacent sub-column is NOT mistaken
   // for a second training duty.
   if (/^FP\w*-LEARN$/.test(n)) return { dutyType: 'Training', dutyCode: n };
+  // An e-learning of the recurrent ground training (refrescamento) under its own code, if the roster prints one so.
+  if (/^RGTC\w*-LEARN$/.test(n)) return { dutyType: 'Training', dutyCode: n };
   // Falta (absence): FAL, or with a reason suffix in parentheses e.g. FAL(PD). Keep the full
   // code on the chip so the reason stays visible.
   if (/^FAL(\(.*\))?$/.test(n)) return { dutyType: 'Absence', dutyCode: n };
@@ -626,6 +628,8 @@ const DAY_FLIGHT_MARK = /^W_PNC_ST$/;
 // The remarks the roster prints under a sector, as a mark — or '' for a word of one still being
 // read ("Voo", "em", "Reducao"), undefined for anything else. `before` is the previous word.
 export const OFF_DAY_FLIGHT = 'VOO_OFF';
+// An e-learning session (FPE-LEARN, …), done at home or at the company.
+export const isElearning = (d: ParsedDuty) => d.dutyType === 'Training' && /LEARN/i.test(d.dutyCode);
 export const REST_REDUCED = 'RED_REP';
 function REMARK_MARK(w: string, before: string): string | undefined {
   const t = w.trim();
@@ -714,6 +718,10 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
   const safetyMarks: { date: string; x: number; mark: string }[] = [];
   const dayMarks = new Map<string, string>();
   const remarkMarks: { date: string; x: number; mark: string }[] = [];
+  // Days whose column mentions RGTC (the refrescamento) other than as a duty code (RGTC1, RGTC2): an e-learning that
+  // day is the refresher's — paid (per diem B); any other e-learning isn't (a colleague, Nov 2026: "se não for
+  // refrescamento não é pago"; the user: "uma forma de saber se é refrescamento é a app apanhar a palavra RGTC").
+  const rgtcDates = new Set<string>();
   for (const b of bands) {
     if (b.offset === undefined) continue;
     const { dateAt } = bandDays(b, calendar);
@@ -727,6 +735,7 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
       const lone = s.tokens.length === 1 ? s.tokens[0].text.trim() : '';
       if (FLIGHT_INS_MARK.test(lone)) for (const mark of lone.split(/,\s*/)) flightMarks.push({ date, x: s.x, mark });
       if (SAFETY_MARK.test(lone)) safetyMarks.push({ date, x: s.x, mark: lone });
+      if (s.tokens.some((t) => /RGTC/i.test(t.text) && !/^RGTC\d*$/.test(t.text.trim()))) rgtcDates.add(date);
       const dayMark = s.tokens.map((t) => t.text.trim()).find((t) => DAY_FLIGHT_MARK.test(t));
       if (dayMark) dayMarks.set(date, dayMark);
       const text = s.tokens.map((t) => t.text.trim()).join(' ');
@@ -768,6 +777,13 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
       .sort((a, b) => b.x - a.x)[0];
     for (const d of target?.duties ?? []) {
       if (!(d.observations ?? '').includes(m.mark)) d.observations = d.observations ? `${d.observations}, ${m.mark}` : m.mark;
+    }
+  }
+
+  // The refresher's e-learning carries RGTC as a mark (see rgtcDates).
+  for (const date of rgtcDates) {
+    for (const d of byDate.get(date) ?? []) {
+      if (isElearning(d) && !/\bRGTC\b/.test(d.observations ?? '')) d.observations = d.observations ? `${d.observations}, RGTC` : 'RGTC';
     }
   }
 
