@@ -7,7 +7,7 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.9.3.46`
+- **Produção (`master`) está em:** `0.9.3.64`
 - **Próxima versão ao promover:** a da experimental (cada atualização sobe a 4.ª casa)
 
 ## Como promover tudo para produção (quando estiver pronto)
@@ -25,24 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **0.9.3.64** — Estatísticas: Bloco / Serviço também muda os totais por ano (serviço = horas como nos limites, dias, meses com escala); Vencimento: gabinete sem valor = "não pagos".
-- **0.9.3.63** — Vencimento: dia GAB reduz os plafonds como um dia de férias; feriado só no duty-pay (block-pay de junho de 2026 bate com o recibo de julho).
-- **0.9.3.62** — Vencimento: IRS como no recibo — o do mês sobre o fixo, o do mês anterior refeito com o variável (menos o já retido).
-- **0.9.3.61** — Vencimento: a linha "Instrução em terra" aparece sempre que há valor por hora, para escrever horas de meses sem sessões na escala.
-- **0.9.3.60** — Vencimento: FAM_INS + LIFUS_INS no mesmo voo = line check (recibo de junho de 2026); a escala lia mal as duas marcas juntas.
-- **0.9.3.59** — Vencimento: os dias de gabinete (GAB) saem do duty-pay, como a instrução em terra (recibos de março e junho de 2026).
-- **0.9.3.58** — Vencimento: a janela das horas de instrução diz só "Horas de instrução em terra".
-- **0.9.3.57** — Vencimento: as horas de instrução em terra do mês escrevem-se no cartão (✎), as feitas ou as previstas.
-- **0.9.3.56** — Vencimento: até março de 2026, os abonos das deslocações de simulador não são tributados e o per diem "T" é tributado por inteiro (bate com os recibos de janeiro a abril). Taskforce: o próprio check e o dia a seguir não contam como sessão paga.
-- **0.9.3.55** — Vencimento: "A partir de um recibo" propõe o recibo aberto no Vencimento, e não o próximo.
-- **0.9.3.54** — Vencimento: até janeiro de 2026, o per diem das deslocações de simulador é tributado por inteiro ("A … T"). Fevereiro a abril ainda por confirmar.
-- **0.9.3.53** — Calendário: os dias com simulador e outro serviço ficam com a tecla dividida na diagonal, nas cores dos dois serviços.
-- **0.9.3.52** — Vencimento: opção "Todas as sessões de simulador são pagas" (taskforce). Calendário: marca "SIM" nos dias com simulador e DHC.
-- **0.9.3.51** — Vencimento: guardar "a partir de um recibo" ou "todos os meses" muda só os valores alterados. Os recibos com valores só seus deixam de ser repostos.
-- **0.9.3.50** — Vencimento: no recibo de janeiro, o IRS do variável de dezembro (ano anterior) é retido à parte, com a sua própria taxa, como no recibo.
-- **0.9.3.49** — Vencimento: o subsídio de gabinete paga só os dias GAB do mês entre o "a partir do" e o "até ao" (por exemplo, do 3.º ao 7.º), definidos nas Definições.
-- **0.9.3.48** — Vencimento: linha "Instrução em terra" (sessões FP…_INST × valor por hora). Esses dias saem do duty-pay. As horas são provisórias, contadas pelas sessões da escala; falta confirmar como a empresa as conta.
-- **0.9.3.47** — Vencimento: as Definições abrem com os valores do recibo que está aberto no Vencimento, e "Só este recibo" grava nele. A barra de guardar passou a uma linha, e a escolha do recibo está numa janela que abre ao Guardar.
+_(nada — 0.9.3.47 a 0.9.3.64 promovidas para produção em 2026-11-15)_
 
 ---
 
