@@ -483,7 +483,8 @@ Things learned over this collaboration that should persist across sessions:
   alone at base. Without a report, the roster shows APT / assistência / PLS instead of IO. **APT = assistência no aeroporto**
   (user, 0.9.3.18): parsed as `Standby Airport` / code APT, timed like the IO — 50% duty (pilots), per diem A, RAACO 4.5.5.5.
 - **PDF history** (since 0.9.3, user request): `/pdfs` groups the saved PDFs in tabs by year → month of the DOWNLOAD
-  (local time), newest first, each named by its download day/time; deleting asks first (the PDFs replay planned vs
+  (local time) — keep it so (user, Nov 2026: filing by the roster's month was tried as 0.9.3.47 and withdrawn, "algumas
+  escalas têm vários meses"), newest first, each named by its download day/time; deleting asks first (the PDFs replay planned vs
   flown and the IO prevenir).
 - **Backlog:** the rest of the AE items (folgas check, ES/LF/ND, per diem, duty-pay/block-pay
   credits, holiday counter), PWA local reminders, crosswind (runway DB). See `EXPERIMENTAL.md`
