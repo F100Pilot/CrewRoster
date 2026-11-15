@@ -25,6 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
+- **0.9.3.66** — Hoje: dia de falta (FAL) = "FALTA", dia de férias = "FÉRIAS" (era "FOLGA · Descansa."; reportado por um tester).
 - **0.9.3.65** — Aspeto: a aresta dos botões 3D passa para dentro do botão (inset); já não sai da borda de baixo.
 
 ---

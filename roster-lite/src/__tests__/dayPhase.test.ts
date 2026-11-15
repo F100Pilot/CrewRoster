@@ -61,6 +61,23 @@ describe('dayContext', () => {
   });
 });
 
+describe('dayContext — what a day without work is', () => {
+  // A tester, 0.9.3.66: on a FAL day the home screen read "FOLGA · Descansa.".
+  it('names an absence, holidays and a day off apart; null on a working day', () => {
+    const days = [
+      duty('2026-11-20', 'Absence', { dutyCode: 'FAL(PD)' }),
+      duty('2026-11-21', 'Vacation', { dutyCode: 'RLIC' }),
+      duty('2026-11-22', 'Day Off'),
+      leg('2026-11-23', 'LIS', 'OPO', '07:00', '07:55', '06:00'),
+    ];
+    expect(dayContext(days, at('2026-11-20T15:00:00Z'), 'LIS').todayOff).toBe('absence');
+    expect(dayContext(days, at('2026-11-21T15:00:00Z'), 'LIS').todayOff).toBe('vacation');
+    expect(dayContext(days, at('2026-11-22T10:00:00Z'), 'LIS').todayOff).toBe('dayoff');
+    expect(dayContext(days, at('2026-11-23T10:00:00Z'), 'LIS').todayOff).toBeNull();
+    expect(dayContext(days, at('2026-11-25T10:00:00Z'), 'LIS').todayOff).toBeNull(); // not on the roster
+  });
+});
+
 describe('dayPhase helpers', () => {
   it('rolls a leg past midnight into the next day', () => {
     const [l] = legsOf('2026-11-10', [leg('2026-11-10', 'LIS', 'FNC', '23:10', '00:55')]);

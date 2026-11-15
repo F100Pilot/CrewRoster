@@ -73,6 +73,9 @@ const TYPE_LABEL = DUTY_TYPE_LABEL;
 const PHASE_LABEL: Record<Phase, string> = {
   preflight: 'Antes do serviço', duty: 'Em serviço', standby: 'Assistência', layover: 'Estadia', off: 'Folga',
 };
+// Off duty, the pill names what today is: an absence or holidays aren't a day off.
+const OFF_LABEL = { dayoff: 'Folga', vacation: 'Férias', absence: 'Falta' } as const;
+const phaseLabel = (ctx: DayContext) => (ctx.phase === 'off' && ctx.todayOff ? OFF_LABEL[ctx.todayOff] : PHASE_LABEL[ctx.phase]);
 
 const DAY = 86_400_000;
 const isoOf = (d: Date) => d.toISOString().slice(0, 10);
@@ -173,7 +176,7 @@ function SkyHeader({ ctx, sky, sunrise, sunset, accent, base }: {
       </Box>
       <Box mt={1.5} position="relative">
         <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', height: 26, px: 1.4, borderRadius: 13, ...pillKey(accent), color: '#0B1222', fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.05em' }}>
-          {PHASE_LABEL[ctx.phase].toUpperCase()}
+          {phaseLabel(ctx).toUpperCase()}
         </Box>
         <Typography sx={{ mt: 1, fontSize: '0.95rem', color: c.soft }}>{over}</Typography>
         <Typography sx={{ fontSize: '2.6rem', fontWeight: 900, letterSpacing: '-0.03em', lineHeight: 1.05, fontVariantNumeric: 'tabular-nums', '&&': { textShadow: '0 2px 0 rgba(0,0,0,.2), 0 10px 22px rgba(0,0,0,.4)' } }}>{big}</Typography>
@@ -241,9 +244,13 @@ function headline(ctx: DayContext, base: string): { over: string; big: string; u
       };
     case 'off':
     default:
-      return ctx.window && ctx.date
-        ? { over: 'Próximo serviço em', big: countdown(ctx.window.start.getTime() - now), under: `${longDay(ctx.date)} · ${summary(ctx) ?? ''}` }
-        : { over: 'Folga', big: 'Descansa.', under: 'Sem serviços nos próximos dias.' };
+      if (ctx.window && ctx.date) {
+        return { over: 'Próximo serviço em', big: countdown(ctx.window.start.getTime() - now), under: `${longDay(ctx.date)} · ${summary(ctx) ?? ''}` };
+      }
+      // "Descansa." only on a day off: an absence (FAL…) or holidays say what they are.
+      if (ctx.todayOff === 'absence') return { over: 'Hoje', big: 'Falta.', under: 'Sem serviços nos próximos dias.' };
+      if (ctx.todayOff === 'vacation') return { over: 'Hoje', big: 'Férias.', under: 'Sem serviços nos próximos dias.' };
+      return { over: 'Folga', big: 'Descansa.', under: 'Sem serviços nos próximos dias.' };
   }
 }
 
@@ -598,6 +605,7 @@ function tileOf(date: string, day: ParsedDuty[], base: string): { code: string; 
   const d = day[0];
   if (d.dutyType === 'Day Off') return { code: 'FOL', type: d.dutyType };
   if (d.dutyType === 'Vacation') return { code: 'FÉR', type: d.dutyType };
+  if (d.dutyType === 'Absence') return { code: 'FAL', type: d.dutyType }; // FAL(PD) would cut to "FAL("
   if (d.dutyType === 'Simulator') return { code: 'SIM', type: d.dutyType };
   return { code: d.dutyCode.slice(0, 4), type: d.dutyType };
 }

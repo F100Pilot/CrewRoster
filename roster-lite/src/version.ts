@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.3.65';
+export const APP_VERSION = '0.9.3.66';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -20,6 +20,13 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.9.3.66',
+    date: '2026-11-15',
+    highlights: [
+      'Hoje: num dia de falta (FAL) o banner diz "FALTA", e num dia de férias diz "FÉRIAS". Antes aparecia "FOLGA" e "Descansa.", que só é para os dias de folga. Na fila dos próximos dias, a falta aparece como "FAL".',
+    ],
+  },
   {
     version: '0.9.3.65',
     date: '2026-11-15',
