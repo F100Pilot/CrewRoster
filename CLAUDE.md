@@ -279,6 +279,13 @@ AND LIFUS_INS together (one sub-column "FAM_INS, LIFUS_INS", read since PARSE_VE
 "LCC Line Check" — that day is not a line training day; FAM_INS alone stays line training: Jul/Oct 2026 payslips; LT and LC
 counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on the pilot's own legs = HIS line check, nothing paid; −/+ on the pay card stores a per-month
   correction (`lineChecks['yyyy-MM']`, dropped when it equals the roster's count). Variable part.
+- **Withdrawn, waiting for more evidence** (user, Nov 2026: "retirar ambas até sabermos mais informações" — 0.9.3.70 was
+  reverted on exp; it changed pay rules without asking first): (1) overtime paid by the quarter hour, rounded UP in the band
+  it stops in (a tester's August 2026: 124h05 credited → "Limite1 DutyPay 10,38" + "Limite2 DutyPay 0,25" for 5 min; the
+  user's June block-pay, 13 min over → 0,25 h); (2) a flight on a day off paid by the day's DUTY hours, not FDP (that
+  payslip's "Med. Comp.PNT-Folgas Hora 7,12" = the 07:07 of H.Duty of the company's "Mapa Mensal de Horas de Voo e
+  Aterragens"). Also open: duty-pay from the roster's printed [DT] (≈ 15–20 min more per flight day than the app; the
+  tester's August gap 4h22) — waiting for that tester's August roster. ALWAYS ask the user before changing a pay rule.
 - **Pay figures are shown to the cent** (since 0.8.37.2, user: "não quero que faças arredondamentos"): no whole-euro
   formatting and no "≈" on the pay card; the maths was already in cents. The one rounding kept is the payroll's own:
   IRS withheld floored to the euro (the payslip shows 6 950,00 for 40,08 % × 17 341,22).
