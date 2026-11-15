@@ -391,6 +391,11 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
   (real phase, `domain/skyWeather.ts`) / clouds / rain / snow / fog / lightning over the airport the crew
   member is at by the roster (`useHere()` → `dayContext().location`, not GPS), from Open-Meteo `current`
   (`state/useCurrentWeather.ts`, 15-min cache; ambience only — the briefing is METAR/TAF).
+  Two styles (since 0.9.3.68, user: "um novo layout para a meteo … realista e moderno" + a selector): Settings → App →
+  "Céu e meteorologia dos banners" = **Ilustrado** (the flat drawings, default) or **Realista** (`SkyWeatherReal.tsx`:
+  photographic gradient, SVG fractal-noise clouds shaded underneath, sun bloom / textured moon, rain in two depths,
+  scrims on the left and top so the white type reads); `state/skyStyle.ts` (`crewroster.skyStyle`, per device).
+  Clouds stay on the RIGHT — over the title they hid "2026" on the Lista hero.
   Cards follow the "Hoje" ones everywhere (since 0.8.31, user request): use `components/PassCard.tsx`
   (`PassCard` strip + overline + mono title + dashed `PassCells`; `TimelineRow`; `StatTile`; `PassBadge`)
   instead of a plain `Card` with chips. The Lista day card is `DayPass.tsx`.

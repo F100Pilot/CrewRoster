@@ -25,7 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(nada — 0.9.3.65 a 0.9.3.67 promovidas para produção em 2026-11-15)_
+- **0.9.3.68** — Céu "Realista" nos banners (nuvens volumétricas, sol com brilho, lua com textura, chuva/neve/nevoeiro/trovoada), à escolha em Definições → App; "Ilustrado" continua por omissão.
 
 ---
 

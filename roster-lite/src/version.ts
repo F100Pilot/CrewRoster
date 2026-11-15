@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.3.67';
+export const APP_VERSION = '0.9.3.68';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -20,6 +20,13 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.9.3.68',
+    date: '2026-11-15',
+    highlights: [
+      'Novo céu "Realista" nos banners. Tem nuvens com volume, sol com brilho, lua na fase real, chuva em profundidade, neve, nevoeiro e trovoada, conforme o tempo onde estás. Escolhe-o em Definições → App → "Céu e meteorologia dos banners". O "Ilustrado" de sempre continua disponível.',
+    ],
+  },
   {
     version: '0.9.3.67',
     date: '2026-11-15',
