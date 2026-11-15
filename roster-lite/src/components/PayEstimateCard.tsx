@@ -63,7 +63,7 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
     if (n === r.lineChecksAuto) delete lineChecks[month]; else lineChecks[month] = Math.max(0, n);
     patchPayGlobal(userId, { lineChecks });
   };
-  // Ground instruction hours: the roster's sessions unless the pilot typed the payslip's quantity for the month.
+  // Ground instruction hours: the roster's sessions unless the pilot typed the month's hours (done or planned).
   const [editHours, setEditHours] = useState(false);
   const [hoursInput, setHoursText] = useState('');
   const saveHours = (value: number | null) => {
@@ -179,7 +179,7 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                     value={r.lineTrainingValue}
                   />
                 )}
-                {/* The hours paid don't follow the roster: the pilot types the payslip's figure (✎), back to the roster's with "Repor". */}
+                {/* The pilot types the hours done or planned for the month (✎) — the roster's sessions by default; "Repor" goes back. */}
                 {(r.groundInstructionHoursAuto > 0 || settings.instructionHours?.[month] !== undefined) && (
                   <Box display="flex" alignItems="center" gap={0.5}>
                     <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1, minWidth: 0 }}>
@@ -272,10 +272,7 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
       </CardContent>
       <Dialog open={editHours} onClose={() => setEditHours(false)} fullWidth maxWidth="xs">
         <DialogTitle sx={{ pb: 1 }}>Horas de instrução em terra</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-            Trabalho de {monthName(month)}. Escreve as horas que o recibo paga (ex.: 6,17). Pela escala: {hoursText(r.groundInstructionHoursAuto)} h.
-          </Typography>
+        <DialogContent sx={{ pt: '8px !important' }}>
           <TextField
             fullWidth size="small" label="Horas" value={hoursInput} onChange={(e) => setHoursText(e.target.value)}
             inputProps={{ inputMode: 'decimal' }} InputProps={{ endAdornment: <InputAdornment position="end">h</InputAdornment> }}

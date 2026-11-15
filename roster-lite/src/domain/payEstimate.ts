@@ -69,9 +69,9 @@ export interface PaySettings {
   allSimsPaid: boolean;
   lineTrainingDay: number; // € per day of flights flown as instructor (LIFUS_INS / FAM_INS)
   groundInstructionHour: number; // € per hour of ground training given (FP…_INST, "Instrução em terra")
-  // The pilot's correction of the month's hours ('yyyy-MM' → decimal hours, as the payslip's quantity), typed on the pay
-  // card: the hours paid don't follow the roster (user, 0.9.3.57 — Dec–Apr 2026: 54,83/51,37, 7/0, 5,83/6,33, 12/6,17,
-  // 10/2 h). Absent = the roster's sessions.
+  // The month's hours as the pilot types them on the pay card ('yyyy-MM' → decimal hours): the ones done or planned, to
+  // see the pay coming (user, 0.9.3.57; the roster's sessions don't match what was paid — Dec–Apr 2026: 54,83/51,37,
+  // 7/0, 5,83/6,33, 12/6,17, 10/2 h). Absent = the roster's sessions.
   instructionHours: Record<string, number>;
   // € per line check ("LCC_Line Check" on the payslip), one per day of flights marked W_INS (the
   // examiner's mark; the day's own code is W_PNT). `lineChecks` ('yyyy-MM' → count) is the pilot's
