@@ -503,14 +503,18 @@ export function payEstimate(
     const day = homeAfterSession ? all : asCredited(dd.date, all);
     const d = instructorSims.has(dd.date) && !homeAfterSession ? dutyDays(day, PGA_PILOT_RULES)[0] : dd;
     if (!d) continue;
-    // Work paid apart stays out of the plafonds: ground training given (isGroundInstruction, "Instrução em terra") and
-    // office days (isOfficeDay, "Subs. gabinete"). A day of it alone credits nothing; beside other work its sessions come
-    // off the day's credit.
-    const instruction = day.filter(paidApart).reduce((a, x) => a + sessionMinutesOf(x), 0);
-    if (instruction && day.every((x) => paidApart(x) || x.dutyType === 'Day Off')) continue;
+    // Office days (isOfficeDay, "Subs. gabinete") stay out of the plafonds: a GAB day alone credits nothing, beside other
+    // work its sessions come off. Ground training given (FP…_INST) COUNTS since 0.9.3.82 — the company's monthly maps
+    // show it as "serviço de solo (100%)", the sessions only, lunch out (02/12/2025 FP1+FP2_INST → 07:20; user: "conta a
+    // instrução em terra no duty"); it is still paid apart by the hour as "Instrução em terra" too.
+    const office = day.filter(isOfficeDay).reduce((a, x) => a + sessionMinutesOf(x), 0);
+    if (office && day.every((x) => isOfficeDay(x) || x.dutyType === 'Day Off')) continue;
+    const groundOnly = day.some(isGroundInstruction) && day.every((x) => paidApart(x) || x.dutyType === 'Day Off');
     const positioningOnly = homeAfterSession || (day.some((x) => x.dutyType === 'Positioning')
       && !day.some((x) => x.dutyType === 'Flight Duty' || x.dutyType === 'Simulator'));
-    let credit = Math.max(0, d.minutes - instruction - trainingGapMinutes(d.date, day) - lunchMinutes(day)) * (positioningOnly ? 0.5 : 1);
+    let credit = groundOnly
+      ? day.filter(isGroundInstruction).reduce((a, x) => a + sessionMinutesOf(x), 0)
+      : Math.max(0, d.minutes - office - trainingGapMinutes(d.date, day) - lunchMinutes(day)) * (positioningOnly ? 0.5 : 1);
     // A trainee's DHC BEFORE the session, with nothing before it, stays at 50% (an expert, user-approved 0.9.3.74: "os
     // nossos DHC quando não tivemos atividade anterior é 50%, quando a gente vem a seguir ao simulador é contínuo, é 100%").
     if (!positioningOnly) credit -= dhcBeforeSessionMinutes(day) * 0.5;

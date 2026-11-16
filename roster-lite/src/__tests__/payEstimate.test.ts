@@ -374,7 +374,7 @@ describe('instrução em terra (FP…_INST)', () => {
   const inst = (date: string, code: string, from: string, to: string) =>
     duty(date, 'Training', { dutyCode: code, departureAirport: 'LIS', reportingTime: from, departureTime: from, arrivalTime: to });
 
-  it('pays the sessions by the hour and leaves the day out of the duty-pay credit', () => {
+  it('pays the sessions by the hour and counts them in the duty-pay credit, lunch out (company maps, 0.9.3.82)', () => {
     const duties = [
       inst('2025-12-18', 'FP1_INST', '09:00', '13:10'),
       inst('2025-12-18', 'FP2_INST', '14:10', '16:10'),
@@ -384,7 +384,7 @@ describe('instrução em terra (FP…_INST)', () => {
     expect(r.groundInstructionMinutes).toBe(370); // 4h10 + 2h00, the lunch between them left out
     expect(r.groundInstructionHours).toBe(6.17);
     expect(r.groundInstructionValue).toBeCloseTo(370.2, 2);
-    expect(r.duty.credited).toBe(120 + 30); // only the flying day: report → on-blocks + 30 min
+    expect(r.duty.credited).toBe(370 + 120 + 30); // the sessions (lunch out) + the flying day (report → on-blocks + 30)
   });
 
   it('shows the hours with no fee typed, at 0 €', () => {

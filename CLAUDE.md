@@ -255,7 +255,8 @@ Things learned over this collaboration that should persist across sessions:
   calendar splits the key of a day with a simulator and another duty on the diagonal (earlier duty's colour top-left;
   user, 0.9.3.53 — it showed only the DHC home); FP…_INST is ground training given, not a sim session — **paid apart as "Instrução em terra"** (since 0.9.3.48,
   user, from a January 2026 payslip: hours × the pilot's hourly fee `groundInstructionHour`, decimal hours to 2 places)
-  **and left out of the duty-pay plafonds** (`isGroundInstruction` in `payEstimate.ts`; still duty for the AE limits).
+  **and, from 0.9.3.59 to 0.9.3.81, left out of the duty-pay plafonds** (back in since 0.9.3.82 — see the instructor-sim
+  bullet: the company's maps count the sessions as duty).
   Hours = the FP…_INST sessions as printed, lunch out — PROVISIONAL: that payslip paid 51,37 h where the sessions give
   54h50 and the [DT] 62h20; the user is asking a specialist how they are counted. Since 0.9.3.57 the pilot types
   the month's hours on the pay card — the ones done or planned, to see the pay coming (user: the dialog just says "Horas
@@ -511,9 +512,14 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
   session but `ownCheckDates`; else `instructorSimDates`. The company's maps Dec 2025–Sep 2026 (the user's Drive folder
   "CrewRoster Files", 12 PDFs "Mapa Mensal de Horas de Voo e Aterragens") label every unmarked session "Instrução de
   Simulador" and the own LPC days "Simulador" (4h block, 6h duty) — the block matches all ten maps within 2 min.
-  Open (duty side): the maps count FP…_INST sessions (lunch out) as "serviço de solo (100%)" duty — Feb 05:50 for 23/02
-  — while the app keeps FP…_INST out of the duty-pay (0.9.3.59); GAB days do NOT appear in the maps' duty. Duty totals
-  differ by month (Dec 97:43 on the map vs 36h39); no payslip effect seen so far (all under the limit).
+  **FP…_INST counts in the duty-pay since 0.9.3.82** (user: "conta a instrução em terra no duty, se ficar tudo
+  correto"): the maps show it as "serviço de solo (100%)", the SESSIONS only, lunch out (02/12/2025 FP1+FP2_INST → 07:20)
+  — a ground-instruction-only day credits the session minutes (`groundOnly`); it is still paid apart by the hour. GAB
+  days stay out (the maps show no duty on them). Checked day by day against the ten maps: every FP…_INST day within
+  15 min; Jan 2026 duty 46h53 vs 46:55. Remaining duty gaps are other things, left open: DH days (map counts more, e.g.
+  27/12 03:18 vs 2h19), flight days 15–30 min short (the planned report — no initial roster), 31/12/2025 LIS-CMN-LIS
+  08:46 vs 5h34, and EBT days: the map gives 05:30 for BOTH LIS-EBT-1 and LIS-EBT-2 (the app 5h30 / 6h00 — the user's
+  0.9.3.25 rule keeps a 1-hour debriefing on EBT-2's duty; the map agrees with the 30 min he first said in 0.9.3.15).
 - **Flight on a day off & reduced rest** (since 0.9.3.19, colleagues' audios; pilots only): the roster's "Voo em Off" →
   mark `VOO_OFF`, "Reducao Repouso" → `RED_REP` (one token or word by word — a split "Off" must never start a day off nor
   trip the totals-box filter). Day page card "Folga e repouso": **Recebo / Gozo a folga** (RRRGS cl. 13 — paid by default

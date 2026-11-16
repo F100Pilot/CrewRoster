@@ -13,6 +13,13 @@ export interface ReleaseNote {
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.9.3.82',
+    date: '2026-11-16',
+    highlights: [
+      'Vencimento: a instrução em terra dada (FP…_INST) passa a contar no duty-pay, só as sessões e sem a hora de almoço, como nos mapas mensais de horas da empresa. Continua também a ser paga à parte por hora, como «Instrução em terra». Os dias de gabinete continuam fora do duty-pay.',
+    ],
+  },
+  {
     version: '0.9.3.81',
     date: '2026-11-16',
     highlights: [
