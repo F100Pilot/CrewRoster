@@ -399,6 +399,23 @@ export function overtimeValue(credited: number, l1: number, l2: number, vb: numb
 // "em formação, o intervalo para almoço desconta no duty (1 hora de almoço)" — always one hour, whatever the break the
 // roster prints, capped at that break). The roster's [DT], the AE limits and the day's duty keep the lunch (0.9.3.45).
 // Ground days only: a flying day's training gap is trainingGapMinutes'. Instruction given and GAB are paid apart already.
+// A trainee's session (instructor sessions are dropped before these run) and the DHCs around it, on one day's clock.
+const afterSession = (x: ParsedDuty, day: ParsedDuty[]): boolean =>
+  !!x.departureTime && day.some((s) => s.dutyType === 'Simulator' && !!s.arrivalTime && toMin(s.arrivalTime) <= toMin(x.departureTime!));
+function dhcBeforeSessionMinutes(day: ParsedDuty[]): number {
+  if (day.some((x) => x.dutyType === 'Flight Duty')) return 0;
+  const starts = day.filter((s) => s.dutyType === 'Simulator' && s.departureTime).map((s) => toMin(s.departureTime!));
+  if (!starts.length) return 0;
+  const first = Math.min(...starts);
+  let out = 0;
+  for (const x of day) {
+    if (x.dutyType !== 'Positioning' || !x.departureTime || !x.arrivalTime || toMin(x.arrivalTime) > first) continue;
+    const report = x.reportingTime ? toMin(x.reportingTime) : toMin(x.departureTime) - 60;
+    out += Math.max(0, toMin(x.arrivalTime) - report);
+  }
+  return out;
+}
+
 const LUNCH_MIN = 60;
 function lunchMinutes(day: ParsedDuty[]): number {
   if (day.some((x) => x.dutyType === 'Flight Duty' || x.dutyType === 'Positioning' || x.dutyType === 'Simulator')) return 0;
@@ -483,6 +500,9 @@ export function payEstimate(
     const positioningOnly = day.some((x) => x.dutyType === 'Positioning')
       && !day.some((x) => x.dutyType === 'Flight Duty' || x.dutyType === 'Simulator');
     let credit = Math.max(0, d.minutes - instruction - trainingGapMinutes(d.date, day) - lunchMinutes(day)) * (positioningOnly ? 0.5 : 1);
+    // A trainee's DHC BEFORE the session, with nothing before it, stays at 50% (an expert, user-approved 0.9.3.74: "os
+    // nossos DHC quando não tivemos atividade anterior é 50%, quando a gente vem a seguir ao simulador é contínuo, é 100%").
+    if (!positioningOnly) credit -= dhcBeforeSessionMinutes(day) * 0.5;
     const w = workWindow(d.date, day, PGA_PILOT_RULES);
     if (w) {
       const a = w.start.getTime();
@@ -529,15 +549,16 @@ export function payEstimate(
   for (const [date, all] of days) {
     if (!inMonth(date) || offDayDates.has(date)) continue;
     const day = asCredited(date, all);
-    // A DHC in full beside an operated sector or a session as trainee (cl. 12.2 a.ii–iii; user, 0.9.3.74: "para os
-    // instruendos, é tudo contínuo e conta"); alone, or beside a session given as instructor, at 50%.
-    const operatedDay = day.some((x) => x.dutyType === 'Flight Duty' || x.dutyType === 'Simulator');
+    // A DHC in full beside an operated sector (cl. 12.2 a.iii) or after a session as trainee (user, 0.9.3.74: "para os
+    // instruendos, é tudo contínuo e conta" — "quando a gente vem a seguir ao simulador … é 100%"); alone, before the
+    // session, or beside a session given as instructor (dropped by asCredited), at 50%.
+    const operatedDay = day.some((x) => x.dutyType === 'Flight Duty');
     for (const x of day) {
       if (!FLYING.has(x.dutyType) || !x.departureTime || !x.arrivalTime) continue;
       let min = diffMinutes(x.departureTime, x.arrivalTime);
       const off = Date.parse(`${date}T${x.departureTime}:00Z`);
       const on = off + min * MIN;
-      if (x.dutyType === 'Positioning' && !operatedDay) min *= 0.5;
+      if (x.dutyType === 'Positioning' && !operatedDay && !afterSession(x, day)) min *= 0.5;
       let holiday = 0;
       for (const iso of [nextDate(date, -1), date, nextDate(date)]) {
         if (holidays.has(iso)) holiday += overlap(off, on, lisbonMidnightUtc(iso), lisbonMidnightUtc(nextDate(iso)));

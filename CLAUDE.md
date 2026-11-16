@@ -493,8 +493,11 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
   day (OPC_INS / LPC_INS + the check's 2nd day — NOT the taskforce `allSimsPaid` set: a session received there is a
   trainee's) the Simulator duties are dropped from the duty-pay and block-pay credits (`asCredited` in `payEstimate.ts`),
   so the DHCs of the day count alone, at 50%; a trainee's sim day stays one continuous duty and a DHC beside the session
-  counts in full in the block too (`operatedDay` includes Simulator). AE limits and the day's duty unchanged. Open: a
-  DHC-only day of a trainee's trip (still 50%).
+  counts in full in the block too. Since 0.9.3.75 (the expert's audio, user chose "só depois da sessão"): only a DHC AFTER
+  the trainee's session counts in full (`afterSession`); one before it, with nothing before, stays at 50% in block and
+  duty (`dhcBeforeSessionMinutes`). A DHC beside a flight keeps cl. 12.2 a.iii (before or after = 100%). The expert also
+  confirmed the GAB cut ("deduzir … 3 horas e 37 a cada dia"). AE limits and the day's duty unchanged. Open (user is asking
+  the experts): a DH on a holiday — the expert said "50% … passa a 100%" (doubled), the app sums the alíneas (150%).
 - **Flight on a day off & reduced rest** (since 0.9.3.19, colleagues' audios; pilots only): the roster's "Voo em Off" →
   mark `VOO_OFF`, "Reducao Repouso" → `RED_REP` (one token or word by word — a split "Off" must never start a day off nor
   trip the totals-box filter). Day page card "Folga e repouso": **Recebo / Gozo a folga** (RRRGS cl. 13 — paid by default

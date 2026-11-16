@@ -25,6 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
+- **0.9.3.75** — Vencimento: DHC de instruendo só conta por inteiro depois da sessão; antes dela, a 50% (duty e block).
 - **0.9.3.74** — Vencimento: simulador como instrutor fora do duty-pay e do block-pay, DHC desse dia a 50%; como instruendo conta tudo, contínuo (DHC ao lado da sessão por inteiro).
 - **0.9.3.73** — Vencimento: dia de formação ou de exames médicos com duas sessões desconta 1 h de almoço no duty-pay (o [DT], os limites e o serviço do dia mantêm-no).
 
