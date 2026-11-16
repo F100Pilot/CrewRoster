@@ -7,7 +7,7 @@ import type { ParsedDuty } from '../types';
 describe('ebtBriefing', () => {
   it('day 1: 30-min briefing, 1-hour debriefing; day 2 the other way round', () => {
     expect(ebtBriefing({ dutyType: 'Simulator', dutyCode: 'LIS-EBT-1' })).toEqual({ day: 1, briefMin: 30, debriefMin: 60, dutyDebriefMin: 60 });
-    expect(ebtBriefing({ dutyType: 'Simulator', dutyCode: 'LIS-EBT-2' })).toEqual({ day: 2, briefMin: 60, debriefMin: 30, dutyDebriefMin: 60 });
+    expect(ebtBriefing({ dutyType: 'Simulator', dutyCode: 'LIS-EBT-2' })).toEqual({ day: 2, briefMin: 60, debriefMin: 30, dutyDebriefMin: 30 });
     expect(ebtBriefingText(ebtBriefing({ dutyType: 'Simulator', dutyCode: 'LIS-EBT-1' })!)).toBe('briefing 30 min · debriefing 1 h');
   });
 
@@ -31,9 +31,9 @@ describe('EBT duty = briefing + session + debriefing', () => {
     expect(asWorked(sim('2026-11-12', 'LIS-OTHER', '09:00', '13:00')).departureTime).toBe('09:00');
   });
 
-  it('counts 5h30 for a 4h EBT-1 session and 7h00 for a 5h EBT-2 one (the 30-min debriefing is information only)', () => {
+  it('counts 5h30 for a 4h EBT-1 session and 6h30 for a 5h EBT-2 one (30-min debriefing in the duty, as the company maps — 0.9.3.83)', () => {
     const days = dutyDays([sim('2026-11-12', 'LIS-EBT-1', '09:00', '13:00'), sim('2026-11-13', 'LIS-EBT-2', '09:00', '14:00')], PGA_PILOT_RULES);
-    expect(days.map((x) => x.minutes)).toEqual([330, 420]);
+    expect(days.map((x) => x.minutes)).toEqual([330, 390]);
     const w = workWindow('2026-11-12', [sim('2026-11-12', 'LIS-EBT-1', '09:00', '13:00')], PGA_PILOT_RULES)!;
     expect([w.start.toISOString(), w.end.toISOString()]).toEqual(['2026-11-12T08:30:00.000Z', '2026-11-12T14:00:00.000Z']);
   });
@@ -73,9 +73,9 @@ describe('APT (assistência no aeroporto)', () => {
     expect(dutyDays([apt], PGA_PILOT_RULES)[0].minutes).toBe(180);
   });
 
-  it('says the duty it counts: EBT-2 of 5 h = 7h00 (1 h + 5 h + 1 h), though the debriefing shown is 30 min', () => {
+  it('says the duty it counts: EBT-2 of 5 h = 6h30 (1 h + 5 h + 30 min)', () => {
     const b = ebtBriefing({ dutyType: 'Simulator', dutyCode: 'LIS-EBT-2' })!;
-    expect(ebtDutyMinutes(b, 300)).toBe(420);
+    expect(ebtDutyMinutes(b, 300)).toBe(390);
   });
 });
 

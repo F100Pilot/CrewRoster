@@ -7,8 +7,9 @@ import { diffMinutes, formatDuration } from '../utils/duration';
 // roster: "tem de ser 30 minutos" — 0.8.40.1 had made it 1 h after a colleague's November duty-pay). The roster's times stay as
 // printed (the session); the DUTY — limits, rest, duty-pay — runs from the briefing to the end of the
 // debriefing (user, Nov 2026: "o tempo de simulador conta o simulador mais o briefing e debriefing").
-// The 30-min day-2 debriefing is the pilot's information only (user, 0.9.3.25: "não é para mudar no duty, só na
-// informação ao piloto"): the duty keeps a 1-hour debriefing on both days, as since 0.8.40.1 (`dutyDebriefMin`).
+// The duty's debriefing (`dutyDebriefMin`) follows the company's monthly maps since 0.9.3.83: 05:30 on BOTH days (Sep 2026
+// map: LIS-EBT-1 and LIS-EBT-2, 04:00 block each), so day 2's 30-min debriefing counts in the duty too (user: "sim,
+// 5h30"; 0.9.3.25 to 0.9.3.82 kept 1 h there).
 export interface EbtBriefing { day: 1 | 2; briefMin: number; debriefMin: number; dutyDebriefMin: number }
 
 export function ebtBriefing(d: Pick<ParsedDuty, 'dutyType' | 'dutyCode'>): EbtBriefing | null {
@@ -17,7 +18,7 @@ export function ebtBriefing(d: Pick<ParsedDuty, 'dutyType' | 'dutyCode'>): EbtBr
   if (!m) return null;
   return m[1] === '1'
     ? { day: 1, briefMin: 30, debriefMin: 60, dutyDebriefMin: 60 }
-    : { day: 2, briefMin: 60, debriefMin: 30, dutyDebriefMin: 60 };
+    : { day: 2, briefMin: 60, debriefMin: 30, dutyDebriefMin: 30 };
 }
 
 export const briefLabel = (min: number) => (min < 60 ? `${min} min` : `${min / 60} h`);

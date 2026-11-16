@@ -25,6 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
+- **0.9.3.83** — EBT-2: 30 min de debriefing também no duty (5h30 numa sessão de 4h, como o mapa da empresa).
 - **0.9.3.82** — Vencimento: instrução em terra (FP…_INST) conta no duty-pay, só as sessões, sem almoço (mapas mensais da empresa).
 - **0.9.3.81** — Vencimento: na taskforce, todas as sessões menos os próprios checks contam como instrução no block e nos plafonds (block bate com os 10 mapas mensais da empresa).
 - **0.9.3.80** — Vencimento: dia de simulador como instrutor reduz os plafonds (−2h/−3h37); DHC de regresso a 100% no block, ida a 50%; duty do dia de regresso a 50% (mapas de fev. e jun. ao minuto).

@@ -13,6 +13,13 @@ export interface ReleaseNote {
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.9.3.83',
+    date: '2026-11-16',
+    highlights: [
+      'Simulador EBT: no 2.º dia (LIS-EBT-2), o serviço passa a contar 30 min de debriefing, como no mapa mensal de horas da empresa. Uma sessão de 4h dá 5h30 nos dois dias. Muda o duty-pay, os limites e o descanso.',
+    ],
+  },
+  {
     version: '0.9.3.82',
     date: '2026-11-16',
     highlights: [

@@ -477,7 +477,9 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
 - **EBT simulator briefing** (since 0.8.35, user rule): LIS-EBT-1 = briefing 30 min + debriefing 1 h, LIS-EBT-2 = briefing
   1 h + debriefing **30 min** (user, 0.9.3.15, from his own roster: "tem de ser 30 minutos" — 0.8.40.1 had made it 1 h
   after a colleague's November duty-pay) — but that 30 min is **information to the pilot only** (user, 0.9.3.25: "não é
-  para mudar no duty"): the DUTY keeps a 1-hour debriefing on both days (`dutyDebriefMin`, used by `asWorked`); the roster only prints the session (4h00/5h00).
+  para mudar no duty") the DUTY kept a 1-hour debriefing on both days — until 0.9.3.83: the company's Sep 2026 map gives
+  05:30 for BOTH LIS-EBT-1 and LIS-EBT-2 (4h sessions), so `dutyDebriefMin` is now 30 min on day 2 too (user: "sim,
+  5h30"); used by `asWorked`; the roster only prints the session (4h00/5h00).
   Since 0.9.3.35 the counted duty is SHOWN (`ebtDutyMinutes`, "serviço 7h00" on the day card, Lista and "Hoje") — a user
   added up the cells (briefing 1 h · sessão · debriefing 30 min) and reported the duty as 30 min short. `domain/simSession.ts`; shown as
   information on the day, Lista card and "Hoje". The roster's times are the session only (user confirmed); since 0.8.37
@@ -518,8 +520,7 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
   days stay out (the maps show no duty on them). Checked day by day against the ten maps: every FP…_INST day within
   15 min; Jan 2026 duty 46h53 vs 46:55. Remaining duty gaps are other things, left open: DH days (map counts more, e.g.
   27/12 03:18 vs 2h19), flight days 15–30 min short (the planned report — no initial roster), 31/12/2025 LIS-CMN-LIS
-  08:46 vs 5h34, and EBT days: the map gives 05:30 for BOTH LIS-EBT-1 and LIS-EBT-2 (the app 5h30 / 6h00 — the user's
-  0.9.3.25 rule keeps a 1-hour debriefing on EBT-2's duty; the map agrees with the 30 min he first said in 0.9.3.15).
+  08:46 vs 5h34. (EBT-2's duty now 5h30 like the map, 0.9.3.83.)
 - **Flight on a day off & reduced rest** (since 0.9.3.19, colleagues' audios; pilots only): the roster's "Voo em Off" →
   mark `VOO_OFF`, "Reducao Repouso" → `RED_REP` (one token or word by word — a split "Off" must never start a day off nor
   trip the totals-box filter). Day page card "Folga e repouso": **Recebo / Gozo a folga** (RRRGS cl. 13 — paid by default
