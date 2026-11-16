@@ -10,6 +10,7 @@
 import { addDays, format, isValid, parse as parseDate } from 'date-fns';
 import type { ParsedDuty } from '../../domain/types';
 import type { PositionedToken } from './extractText';
+import { toMinutes } from '../../utils/duration';
 
 const DOW = /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\d{2}$/;
 const PERIOD = /(\d{2})([A-Za-z]{3})(\d{2})/; // 15Jun26 (may have surrounding text)
@@ -603,10 +604,6 @@ function parseDutyPlanSummary(tokens: PositionedToken[], calendar: CalDay[]): Ma
   return out;
 }
 
-const toMinutes = (hhmm: string): number => {
-  const [h, m] = hhmm.split(':').map(Number);
-  return h * 60 + m;
-};
 
 // The check a simulator session is for, printed in its own sub-column under the session code:
 // "OPC" / "LPC" when the pilot is the one checked, "OPC_INS" / "LPC_INS" when he gives it as the

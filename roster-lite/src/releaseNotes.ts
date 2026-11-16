@@ -13,6 +13,13 @@ export interface ReleaseNote {
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.9.3.79',
+    date: '2026-11-16',
+    highlights: [
+      'A app arranca mais leve: as Definições e o download da escala só são carregados depois do arranque, e continuam a abrir de imediato. Arrumação interna do código, sem mudanças no que a app calcula.',
+    ],
+  },
+  {
     version: '0.9.3.78',
     date: '2026-11-16',
     highlights: [

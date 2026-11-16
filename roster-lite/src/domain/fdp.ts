@@ -4,6 +4,7 @@ import { HOME_BASE } from './dutyStats';
 import { lisbonLocalToUtc } from './standbyWindows';
 import { toLocalTime } from '../utils/localTime';
 import type { RestInfo } from './restPeriods';
+import { toMinutes } from '../utils/duration';
 
 // Maximum flight duty period (FDP / "período de serviço de voo") of a day, under the company
 // agreement — RUPT cl. 35, which adopts the legal (EASA ORO.FTL.205) table for acclimatised crew.
@@ -11,10 +12,6 @@ import type { RestInfo } from './restPeriods';
 // Lisbon. The FDP runs from the report to the last on-blocks (cl. 6, def. 31: the flight duty minus
 // the debriefing).
 
-const toMinutes = (hhmm: string): number => {
-  const [h, m] = hhmm.split(':').map(Number);
-  return h * 60 + m;
-};
 
 // Column "1–2 sectors" of the cl. 35.1 table, by the report time (Lisbon). Each band starts at
 // `from` (minutes after midnight) and runs until the next one.

@@ -2,6 +2,7 @@ import type { CrewRole, ParsedDuty } from './types';
 import { peakQuarter, peakWindow, trailingSum, type DayAmount, type PeakQuarter, type PeakWindow } from './limitWindows';
 import { standbyWindowUtc } from './standbyWindows';
 import { asWorked } from './simSession';
+import { toMinutes } from '../utils/duration';
 
 export type { PeakWindow } from './limitWindows';
 
@@ -78,10 +79,6 @@ export interface DutyDay {
   partial: boolean; // the day was standby / reserve only
 }
 
-function toMinutes(hhmm: string): number {
-  const [h, m] = hhmm.split(':').map(Number);
-  return h * 60 + m;
-}
 
 export interface DutyWindow {
   start: Date;

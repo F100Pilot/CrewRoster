@@ -583,9 +583,11 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
   password neste aparelho" (off by default, a warning when on; the crew code is always kept); the worker has two
   Cloudflare rate-limit bindings in `wrangler.toml` (`[[unsafe.bindings]]` type ratelimit — LOGIN_LIMITER 5/min per IP +
   crew code, API_LIMITER 120/min per IP on /api/*; `overLimit()` skips when a binding is absent; 429 "Demasiados
-  pedidos"); every GitHub action is pinned to a commit SHA (`# v4` comments — bump them by SHA). Still open: a custom
-  domain (would separate the app's storage from other f100pilot.github.io sites and from /exp/), lazy-loading the
-  Settings/Download dialogs, consolidating the ~10 HH:MM→minutes helpers.
+  pedidos"); every GitHub action is pinned to a commit SHA (`# v4` comments — bump them by SHA). 0.9.3.79: Settings and
+  Download dialogs are `lazy()` in Layout (prefetched 3 s after start, mounted from first open; main chunk 565 → 513 KB);
+  ONE `toMinutes()` in `utils/duration.ts` (use it — no new private HH:MM parsers), ONE `euro()` in `utils/money.ts`,
+  `todayISO()` from `domain/rosterWindow.ts`. Still open: a custom domain (would separate the app's storage from other
+  f100pilot.github.io sites and from /exp/).
 - **Backlog:** the rest of the AE items (folgas check, ES/LF/ND, per diem, duty-pay/block-pay
   credits, holiday counter), PWA local reminders, crosswind (runway DB). See `EXPERIMENTAL.md`
   (TODO/Backlog) and `roster-lite/TODO.md`.

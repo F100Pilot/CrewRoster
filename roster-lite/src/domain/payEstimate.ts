@@ -1,6 +1,6 @@
 import { dutyDays, isStandby, standbyInterval, workWindow, PGA_PILOT_RULES } from './dutyTime';
 import { isPrevenirIO } from './irregularity';
-import { diffMinutes } from '../utils/duration';
+import { diffMinutes, toMinutes as toMin } from '../utils/duration';
 import { lisbonMidnightUtc } from './standbyWindows';
 import { baseHolidays, nationalHolidays } from './holidaysPT';
 import { planVsFlown } from './planVsFlown';
@@ -194,8 +194,7 @@ export const isOfficeDay = (d: ParsedDuty): boolean => d.dutyType === 'Office Du
 const paidApart = (d: ParsedDuty): boolean => isGroundInstruction(d) || isOfficeDay(d);
 const sessionMinutesOf = (d: ParsedDuty): number => {
   if (!d.departureTime || !d.arrivalTime) return 0;
-  const t = (x: string) => Number(x.slice(0, 2)) * 60 + Number(x.slice(3, 5));
-  return (t(d.arrivalTime) - t(d.departureTime) + 1440) % 1440;
+  return (toMin(d.arrivalTime) - toMin(d.departureTime) + 1440) % 1440;
 };
 
 // The pilot's OWN checks: a session marked OPC / LPC with no _INS, and the unmarked one that follows it within 3 days
@@ -429,7 +428,6 @@ function lunchMinutes(day: ParsedDuty[]): number {
   for (let k = 1; k < sessions.length; k++) gap += Math.max(0, sessions[k][0] - sessions[k - 1][1]);
   return Math.min(LUNCH_MIN, gap);
 }
-const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
 
 // The last day a simulator trip's per diem was "… T" (taxed in full) on the payslips seen: January 2026 (see payEstimate).
 // Moved to March 2026 with the April payslip (0.9.3.56): its "Outros valores p/ impostos" is 0 for a month of simulator

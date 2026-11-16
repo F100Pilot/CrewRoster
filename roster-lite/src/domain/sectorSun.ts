@@ -1,6 +1,7 @@
 import { addDays, format, parseISO } from 'date-fns';
 import { AIRPORT_COORD, type Coord } from './airports';
 import { sunTimes, isDaylight, type SunTimes } from '../utils/sun';
+import { toMinutes as toMin } from '../utils/duration';
 
 // Daylight / night info for a flight sector: sun times at each airport and how much of the
 // block is flown at night — estimated by sampling positions (great-circle) AND times along the
@@ -19,10 +20,6 @@ export interface SectorSun {
 
 const RAD = Math.PI / 180;
 
-function toMin(hhmm: string): number {
-  const [h, m] = hhmm.split(':').map(Number);
-  return h * 60 + m;
-}
 
 function shiftDate(dateISO: string, days: number): string {
   return days ? format(addDays(parseISO(dateISO), days), 'yyyy-MM-dd') : dateISO;

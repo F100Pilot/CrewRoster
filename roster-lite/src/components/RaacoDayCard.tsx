@@ -8,6 +8,7 @@ import { MEAL_LABEL, raacoDays, type MealHow } from '../domain/raaco';
 import { TimelineRow, passOverline } from './PassCard';
 import { MealConfirmList } from './MealConfirm';
 import InfoCollapse from './InfoCollapse';
+import { euro } from '../utils/money';
 
 // The day's meals under the RAACO (ROV-PGA 4.5): which are due, how each is met — loaded on a
 // flight, on ground, as an allowance or in the stay — and what goes on the Abonos statement.
@@ -20,7 +21,6 @@ const HOW: Record<MealHow, { label: string; color: string }> = {
   stay: { label: 'estadia', color: '#0F766E' },
 };
 
-const euro = (v: number) => v.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 
 export default function RaacoDayCard({ date }: { date: string }) {
   const { roster, activeUser } = useRoster();

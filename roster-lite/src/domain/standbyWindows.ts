@@ -1,4 +1,5 @@
 import { toLocalTime } from '../utils/localTime';
+import { toMinutes } from '../utils/duration';
 
 // Clock windows of the standby ("assistência") and reserve codes, as published by the DOV in
 // "Netline | Atualização sobre Novos Códigos" (14 Feb 2025). The roster grid prints the code but
@@ -33,10 +34,6 @@ export const STANDBY_WINDOWS: Record<string, StandbyWindow> = {
   A8: { start: '18:00', minutes: 6 * 60 },
 };
 
-function toMinutes(hhmm: string): number {
-  const [h, m] = hhmm.split(':').map(Number);
-  return h * 60 + m;
-}
 
 const hhmm = (min: number): string => {
   const m = ((min % 1440) + 1440) % 1440;

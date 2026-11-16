@@ -1,4 +1,5 @@
 import type { ParsedDuty } from './types';
+import { toMinutes as minutesOf } from '../utils/duration';
 
 // IO — "irregularidade operacional": the roster puts it in place of the duty that was planned, with
 // the time the crew member was actually held (e.g. LIS 10:15–16:40).
@@ -25,7 +26,6 @@ const ioStart = (d: ParsedDuty) => d.reportingTime ?? d.departureTime;
 export const PREVENIR_TOLERANCE_MIN = 15;
 const POST_FLIGHT_MIN = 30;
 
-const minutesOf = (hhmm: string) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3, 5));
 const near = (a: number, b: number) => {
   const diff = Math.abs(a - b) % 1440;
   return Math.min(diff, 1440 - diff) <= PREVENIR_TOLERANCE_MIN;

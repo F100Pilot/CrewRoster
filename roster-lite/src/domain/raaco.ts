@@ -3,6 +3,7 @@ import { legsOf, type Leg } from './dayPhase';
 import { PGA_PILOT_RULES, standbyInterval, workWindow } from './dutyTime';
 import { ioInterval, isIO, isPrevenirIO } from './irregularity';
 import { airportTz, seasonPlanOffsetMinutes, tzOffsetMinutes } from '../utils/localTime';
+import { toMinutes as hm } from '../utils/duration';
 
 // RAACO — Regulamento de Alimentação e Ajudas de Custo Operacionais, absorbed into the ROV-PGA
 // (Revisão 01, cap. 4.5; values in Anexo 7.6, Tabelas 32–34). It covers every crew member — pilots
@@ -222,7 +223,6 @@ const blockMin = (l: Leg) => Math.round((l.on.getTime() - l.off.getTime()) / 600
 // The plan decides what is loaded; what is due follows the duty as it happened (user, 0.9.3.29: "se a escala não
 // previa alguma dessas refeições e o voo chegou dentro desse período, quer dizer que originalmente não embarcava, e
 // teve de ser pago" — 4.5.11.5).
-const hm = (s: string) => Number(s.slice(0, 2)) * 60 + Number(s.slice(3, 5));
 const moved = (now: string | null, plan: string | null | undefined) => {
   if (!now || !plan) return 0;
   const d = hm(plan) - hm(now);
