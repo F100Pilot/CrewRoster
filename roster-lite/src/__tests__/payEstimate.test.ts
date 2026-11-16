@@ -172,6 +172,20 @@ describe('payEstimate', () => {
     expect(both - alone).toBe(30); // was 46: the 16 min between 07:14 and 07:30 counted
   });
 
+  it('takes one hour of lunch off the duty-pay of a training or medical day with two sessions — user, 0.9.3.73', () => {
+    const fp = (code: string, a: string, b: string) => duty('2026-03-10', 'Training', { dutyCode: code, departureAirport: 'LIS', departureTime: a, arrivalTime: b });
+    // FP1 09:00–12:30 + FP2 13:30–17:00: the [DT] is 8h00 (lunch in); the duty-pay counts 7h00.
+    const r = payEstimate([fp('FP1', '09:00', '12:30'), fp('FP2', '13:30', '17:00')], '2026-03', S, '2026-03-31');
+    expect(r.duty.credited).toBe(7 * 60);
+    // Always one hour, even with a longer break printed: 09:00–12:00 + 13:30–17:00 = 8h00 − 1h.
+    expect(payEstimate([fp('FP1', '09:00', '12:00'), fp('FP2', '13:30', '17:00')], '2026-03', S, '2026-03-31').duty.credited).toBe(7 * 60);
+    // One session, no lunch.
+    expect(payEstimate([fp('FP1', '09:00', '12:30')], '2026-03', S, '2026-03-31').duty.credited).toBe(210);
+    // Medical: IM 08:00–12:00 + VIM 12:00–12:30 is one block (no break) — nothing off.
+    const med = (code: string, a: string, b: string) => duty('2026-03-11', 'Medical', { dutyCode: code, departureAirport: 'LIS', departureTime: a, arrivalTime: b });
+    expect(payEstimate([med('IM', '08:00', '12:00'), med('VIM', '12:00', '12:30')], '2026-03', S, '2026-03-31').duty.credited).toBe(240);
+  });
+
   it('cuts the plafonds by each office (GAB) day like a day of holidays — user, 0.9.3.63', () => {
     const gab = (date: string) => duty(date, 'Office Duty', { dutyCode: 'GAB1', departureAirport: 'LIS', departureTime: '08:30', arrivalTime: '12:00' });
     // June 2026: 6 GAB days + 1 day of holidays → block Limite 1 = 60h − 7 × 2h = 46h (the July payslip paid 13 min over).

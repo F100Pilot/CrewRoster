@@ -484,6 +484,10 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
   left as it is, an open question to the user. **Ground days (GAB, FP, medical) count from the first start to the last
   end, the lunch included, as the [DT]** (user, 0.9.3.45: GAB1 09:30–13:00 + GAB2 14:00–17:30 = DT 8h00); until then
   only the sessions counted.
+  **But the duty-pay takes one hour of lunch off** a training (FP, not _INST) or medical day with a break between two
+  sessions (user, 0.9.3.73: "em formação, o intervalo para almoço desconta no duty (1 hora de almoço)"; chose: duty-pay
+  only, training AND medical, always 1 h — capped at the printed break): `lunchMinutes()` in `payEstimate.ts`, ground days
+  only (no flight/DHC/sim that day). IM + VIM back to back has no break → nothing off.
 - **Flight on a day off & reduced rest** (since 0.9.3.19, colleagues' audios; pilots only): the roster's "Voo em Off" →
   mark `VOO_OFF`, "Reducao Repouso" → `RED_REP` (one token or word by word — a split "Off" must never start a day off nor
   trip the totals-box filter). Day page card "Folga e repouso": **Recebo / Gozo a folga** (RRRGS cl. 13 — paid by default

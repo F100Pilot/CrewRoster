@@ -395,6 +395,25 @@ export function overtimeValue(credited: number, l1: number, l2: number, vb: numb
   return (band1 / 60) * RATE_L1 * vb + (band2 / 60) * RATE_L2 * vb;
 }
 
+// A ground training or medical day with a lunch break between its sessions loses one hour of duty-pay (user, 0.9.3.73:
+// "em formação, o intervalo para almoço desconta no duty (1 hora de almoço)" — always one hour, whatever the break the
+// roster prints, capped at that break). The roster's [DT], the AE limits and the day's duty keep the lunch (0.9.3.45).
+// Ground days only: a flying day's training gap is trainingGapMinutes'. Instruction given and GAB are paid apart already.
+const LUNCH_MIN = 60;
+function lunchMinutes(day: ParsedDuty[]): number {
+  if (day.some((x) => x.dutyType === 'Flight Duty' || x.dutyType === 'Positioning' || x.dutyType === 'Simulator')) return 0;
+  const hasIm = day.some((x) => x.dutyCode === 'IM');
+  const sessions = day
+    .filter((x) => (x.dutyType === 'Training' || x.dutyType === 'Medical') && !paidApart(x) && x.departureTime && x.arrivalTime)
+    .filter((x) => !(hasIm && x.dutyCode === 'VIM'))
+    .map((x) => [toMin(x.departureTime!), toMin(x.arrivalTime!)] as const)
+    .sort((a, b) => a[0] - b[0]);
+  let gap = 0;
+  for (let k = 1; k < sessions.length; k++) gap += Math.max(0, sessions[k][0] - sessions[k - 1][1]);
+  return Math.min(LUNCH_MIN, gap);
+}
+const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+
 // The last day a simulator trip's per diem was "… T" (taxed in full) on the payslips seen: January 2026 (see payEstimate).
 // Moved to March 2026 with the April payslip (0.9.3.56): its "Outros valores p/ impostos" is 0 for a month of simulator
 // trips only, and the February / March ones reconcile to the cent with the RAACO abonos of those trips left untaxed.
@@ -454,7 +473,7 @@ export function payEstimate(
     if (instruction && day.every((x) => paidApart(x) || x.dutyType === 'Day Off')) continue;
     const positioningOnly = day.some((x) => x.dutyType === 'Positioning')
       && !day.some((x) => x.dutyType === 'Flight Duty' || x.dutyType === 'Simulator');
-    let credit = Math.max(0, d.minutes - instruction - trainingGapMinutes(d.date, day)) * (positioningOnly ? 0.5 : 1);
+    let credit = Math.max(0, d.minutes - instruction - trainingGapMinutes(d.date, day) - lunchMinutes(day)) * (positioningOnly ? 0.5 : 1);
     const w = workWindow(d.date, day, PGA_PILOT_RULES);
     if (w) {
       const a = w.start.getTime();
