@@ -191,10 +191,20 @@ describe('payEstimate', () => {
     const dh = duty('2026-03-04', 'Positioning', { flightNumber: 'TP9571', departureAirport: 'FRA', arrivalAirport: 'LIS', departureTime: '13:00', arrivalTime: '16:18', reportingTime: '12:00' });
     const dhAlone = payEstimate([dh], '2026-03', S, '2026-03-31');
     const ins = payEstimate([sim('LPC_INS'), dh], '2026-03', S, '2026-03-31');
-    expect(ins.duty.credited).toBe(dhAlone.duty.credited); // only the DHC, at 50%
-    expect(ins.block.credited).toBe(198 * 0.5);
+    // Since 0.9.3.80 (the company's Feb/Jun 2026 maps): the DHC home after the session counts 100% in the block, and the
+    // day's whole duty (session → arrival) at 50%; the day also cuts the plafonds like a GAB day (−2h block, −3h37 duty).
+    expect(ins.block.credited).toBe(198);
+    expect(ins.duty.credited).toBeGreaterThan(dhAlone.duty.credited);
+    expect(ins.simCutDays).toBe(1);
+    expect(ins.block.l1).toBe(dhAlone.block.l1 - 120);
+    expect(ins.duty.l1).toBe(dhAlone.duty.l1 - 217);
+    // Going out by DHC, nothing before it: 50%; a session-only day: nothing.
+    const out = duty('2026-03-03', 'Positioning', { flightNumber: 'TP9570', departureAirport: 'LIS', arrivalAirport: 'FRA', departureTime: '08:33', arrivalTime: '11:41', reportingTime: '07:33' });
+    const simOnly = { ...sim('LPC_INS'), date: '2026-03-04' } as ParsedDuty;
+    const trip = payEstimate([out, simOnly], '2026-03', S, '2026-03-31');
+    expect(trip.block.credited).toBe(188 * 0.5); // 01:34 on the map
     const trainee = payEstimate([sim('LPC'), dh], '2026-03', S, '2026-03-31');
-    expect(trainee.duty.credited).toBeGreaterThan(ins.duty.credited * 4); // one continuous duty from the session's briefing
+    expect(trainee.duty.credited).toBeGreaterThan(ins.duty.credited); // one continuous duty at 100%
     expect(trainee.block.credited).toBe(240 + 198); // session + DHC in full
     // A DHC BEFORE the session, with nothing before it, stays at 50% — duty and block ("quando não tivemos atividade
     // anterior é 50%"): DH 05:00–08:00 (report 04:00) then the session 10:00–14:00.

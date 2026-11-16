@@ -13,6 +13,14 @@ export interface ReleaseNote {
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.9.3.80',
+    date: '2026-11-16',
+    highlights: [
+      'Vencimento, simulador como instrutor: cada dia de simulador reduz os plafonds como um dia de gabinete (menos 2h no block e menos 3h37 no duty). O DHC de regresso, depois da sessão, conta 100% no block. O DHC de ida conta 50%. Nesse dia de regresso, o duty conta a 50% desde a sessão. Conferido ao minuto com os mapas mensais de horas da empresa de fevereiro e junho.',
+    ],
+    thanks: 'Obrigado ao colega especialista que encontrou a regra nos mapas mensais de horas.',
+  },
+  {
     version: '0.9.3.79',
     date: '2026-11-16',
     highlights: [

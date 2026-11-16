@@ -158,12 +158,13 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
             <Stack spacing={0.75} mt={0.5}>
               <CreditBar label="Duty-pay" c={r.duty} chosen={r.overtime === 'duty'} showValue={hasVb} />
               <CreditBar label="Block-pay" c={r.block} chosen={r.overtime === 'block'} showValue={hasVb} />
-              {r.holidayDays + r.officeCutDays > 0 && (
+              {r.holidayDays + r.officeCutDays + r.simCutDays > 0 && (
                 <Typography variant="caption" color="text.secondary">
                   Plafonds reduzidos por {[
                     r.holidayDays > 0 ? `${r.holidayDays} ${r.holidayDays === 1 ? 'dia' : 'dias'} de férias` : '',
                     r.officeCutDays > 0 ? `${r.officeCutDays} ${r.officeCutDays === 1 ? 'dia' : 'dias'} de gabinete` : '',
-                  ].filter(Boolean).join(' e ')}.
+                    r.simCutDays > 0 ? `${r.simCutDays} ${r.simCutDays === 1 ? 'dia' : 'dias'} de simulador como instrutor` : '',
+                  ].filter(Boolean).join(', ').replace(/, ([^,]*)$/, ' e $1')}.
                 </Typography>
               )}
             </Stack>

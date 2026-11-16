@@ -25,6 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
+- **0.9.3.80** — Vencimento: dia de simulador como instrutor reduz os plafonds (−2h/−3h37); DHC de regresso a 100% no block, ida a 50%; duty do dia de regresso a 50% (mapas de fev. e jun. ao minuto).
 - **0.9.3.79** — Definições e download carregados depois do arranque (513 KB no arranque); funções de horas, euro e data de hoje num só sítio.
 - **0.9.3.78** — Segurança: «Lembrar a password» opcional (desligado por defeito, com aviso); limite de pedidos no worker (só fica ativo quando o worker for publicado); ações do GitHub fixadas por SHA.
 - **0.9.3.77** — Revisão do código: correções (feriado 31/12→1/1, R24 de verão, voos depois da meia-noite, recência, redução de repouso desligada), memória do pdf.js, fila do re-parse, cache dos abonos, notas de versão fora do arranque, segurança (chave AeroDataBox fora das cópias, anti-framing, timeouts no worker, CI sem token persistido), código morto removido.

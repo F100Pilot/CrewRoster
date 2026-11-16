@@ -502,6 +502,13 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
   duty (`dhcBeforeSessionMinutes`). A DHC beside a flight keeps cl. 12.2 a.iii (before or after = 100%). The expert also
   confirmed the GAB cut ("deduzir … 3 horas e 37 a cada dia"). AE limits and the day's duty unchanged. A DH on a holiday
   is doubled since 0.9.3.76 (see the premiums bullet).
+  **Instructor sim days — checked to the minute on the company's monthly maps (Feb 2026 block 037:30, Jun 2026 038:15;
+  user-approved 0.9.3.80):** each `instructorSimDates` day CUTS the plafonds like a GAB day (−2h block, −3h37 duty;
+  `simCutDays`, not on a holiday/GAB day); a DHC AFTER the session counts 100% in the block for the instructor too
+  (`afterSession(x, all)`), the DHC out (nothing before) 50%; on the day home the whole duty from the session to the DHC's
+  arrival counts at 50% (`homeAfterSession`, a.iv; 17/02 → 11:50 on the map with Carnival); a session-only day counts
+  nothing. Open: the Feb map counts FP1_INST + FP2_INST (23/02) as 06:50 duty "serviço de solo (100%)" — the app keeps
+  FP…_INST out of the duty-pay (0.9.3.59); no payslip effect so far (duty far under the limit).
 - **Flight on a day off & reduced rest** (since 0.9.3.19, colleagues' audios; pilots only): the roster's "Voo em Off" →
   mark `VOO_OFF`, "Reducao Repouso" → `RED_REP` (one token or word by word — a split "Off" must never start a day off nor
   trip the totals-box filter). Day page card "Folga e repouso": **Recebo / Gozo a folga** (RRRGS cl. 13 — paid by default
