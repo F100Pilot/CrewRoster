@@ -491,10 +491,12 @@ export function payEstimate(
 
   // ── Block-pay credit ──
   // Operated sectors and simulator in full; a positioning sector in full when the same day has
-  // an operated one (extra-crew next to a working sector, cl. 12.2.a.iii), else at 50%. NO holiday 100% here (user,
-  // 0.9.3.63): the July 2026 payslip paid 0,25 h of June's block-pay, which matches only without it (46h13 against 46h00
-  // — with Corpus Christi and 13 June doubled it would have been 7h31 over); February's Carnival agrees. The holiday stays
-  // in the duty-pay credit.
+  // an operated one (extra-crew next to a working sector, cl. 12.2.a.iii), else at 50%; plus 100% of the flight time
+  // between 00:00 and 23:59 (Lisbon) of a holiday (cl. 12.2.d: "100% do tempo de voo e de trabalho") — summed with alínea
+  // a, and only that part of a sector that crosses midnight. 0.9.3.63 took it off the block-pay to match the July 2026
+  // payslip (June's 0,25 h; with Corpus Christi and 13 June doubled it is 7h31 over) and February's Carnival; the
+  // experts ("as horas block em feriado … tem que dobrar") and the AE text say otherwise, so it is back (user, 0.9.3.72).
+  // Those two payslips stay open.
   let blockCredited = 0;
   for (const [date, day] of days) {
     if (!inMonth(date) || offDayDates.has(date)) continue;
@@ -502,8 +504,14 @@ export function payEstimate(
     for (const x of day) {
       if (!FLYING.has(x.dutyType) || !x.departureTime || !x.arrivalTime) continue;
       let min = diffMinutes(x.departureTime, x.arrivalTime);
+      const off = Date.parse(`${date}T${x.departureTime}:00Z`);
+      const on = off + min * MIN;
       if (x.dutyType === 'Positioning' && !operatedDay) min *= 0.5;
-      blockCredited += min;
+      let holiday = 0;
+      for (const iso of [nextDate(date, -1), date, nextDate(date)]) {
+        if (holidays.has(iso)) holiday += overlap(off, on, lisbonMidnightUtc(iso), lisbonMidnightUtc(nextDate(iso)));
+      }
+      blockCredited += min + (holiday / MIN) * HOLIDAY_SHARE;
     }
   }
 

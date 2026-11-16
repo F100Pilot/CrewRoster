@@ -300,7 +300,7 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                   no recibo: o do mês só sobre o fixo, e o do mês anterior refeito com o variável que agora se paga (menos o
                   que já tinha sido retido); em janeiro, o variável de dezembro à parte. Não prevê outras correções de meses
                   passados. Noturno 23h–06h e feriados em hora de Lisboa, somados às outras
-                  alíneas da cl. 12.2 (o feriado só no duty-pay, como nos recibos). Cada dia de férias ou de gabinete reduz os plafonds. Subsídios sobre todos os fixos: férias = 42 dias (fixos ÷ 30 × 42), Natal = um mês (cl. 7 e
+                  alíneas da cl. 12.2 (o feriado a dobrar no duty-pay e no block-pay). Cada dia de férias ou de gabinete reduz os plafonds. Subsídios sobre todos os fixos: férias = 42 dias (fixos ÷ 30 × 42), Natal = um mês (cl. 7 e
                   8), com IRS retido à parte, SS e fundo de pensões. Line checks: um por dia com voos W_INS, ou FAM_INS e LIFUS_INS juntos — corrige com − / + se
                   não bater. Voos em dia de folga (cl. 13) e reduções de repouso (cl. 2.8) contam quando marcados no dia. Não
                   inclui split-duty nem o acerto anual dos plafonds (março). Confirma sempre no recibo.

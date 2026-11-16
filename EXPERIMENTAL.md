@@ -25,7 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(nada pendente)_
+- **0.9.3.72** — Vencimento: feriado volta a contar a dobrar no block-pay (AE cl. 12.2 d, especialistas); os recibos de junho e fevereiro de 2026 ficam em aberto.
 
 ---
 
