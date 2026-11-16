@@ -7,7 +7,7 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.9.3.72`
+- **Produção (`master`) está em:** `0.9.3.83`
 - **Próxima versão ao promover:** a da experimental (cada atualização sobe a 4.ª casa)
 
 ## Como promover tudo para produção (quando estiver pronto)
@@ -25,17 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **0.9.3.83** — EBT-2: 30 min de debriefing também no duty (5h30 numa sessão de 4h, como o mapa da empresa).
-- **0.9.3.82** — Vencimento: instrução em terra (FP…_INST) conta no duty-pay, só as sessões, sem almoço (mapas mensais da empresa).
-- **0.9.3.81** — Vencimento: na taskforce, todas as sessões menos os próprios checks contam como instrução no block e nos plafonds (block bate com os 10 mapas mensais da empresa).
-- **0.9.3.80** — Vencimento: dia de simulador como instrutor reduz os plafonds (−2h/−3h37); DHC de regresso a 100% no block, ida a 50%; duty do dia de regresso a 50% (mapas de fev. e jun. ao minuto).
-- **0.9.3.79** — Definições e download carregados depois do arranque (513 KB no arranque); funções de horas, euro e data de hoje num só sítio.
-- **0.9.3.78** — Segurança: «Lembrar a password» opcional (desligado por defeito, com aviso); limite de pedidos no worker (só fica ativo quando o worker for publicado); ações do GitHub fixadas por SHA.
-- **0.9.3.77** — Revisão do código: correções (feriado 31/12→1/1, R24 de verão, voos depois da meia-noite, recência, redução de repouso desligada), memória do pdf.js, fila do re-parse, cache dos abonos, notas de versão fora do arranque, segurança (chave AeroDataBox fora das cópias, anti-framing, timeouts no worker, CI sem token persistido), código morto removido.
-- **0.9.3.76** — Vencimento: DH num feriado conta a dobrar (50% → 100%) em vez de 150%, no duty-pay e no block-pay (especialistas).
-- **0.9.3.75** — Vencimento: DHC de instruendo só conta por inteiro depois da sessão; antes dela, a 50% (duty e block).
-- **0.9.3.74** — Vencimento: simulador como instrutor fora do duty-pay e do block-pay, DHC desse dia a 50%; como instruendo conta tudo, contínuo (DHC ao lado da sessão por inteiro).
-- **0.9.3.73** — Vencimento: dia de formação ou de exames médicos com duas sessões desconta 1 h de almoço no duty-pay (o [DT], os limites e o serviço do dia mantêm-no).
+_(nada pendente)_
 
 ---
 
