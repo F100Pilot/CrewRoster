@@ -158,12 +158,13 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
             <Stack spacing={0.75} mt={0.5}>
               <CreditBar label="Duty-pay" c={r.duty} chosen={r.overtime === 'duty'} showValue={hasVb} />
               <CreditBar label="Block-pay" c={r.block} chosen={r.overtime === 'block'} showValue={hasVb} />
-              {r.holidayDays + r.officeCutDays > 0 && (
+              {r.holidayDays + r.officeCutDays + r.simCutDays > 0 && (
                 <Typography variant="caption" color="text.secondary">
                   Plafonds reduzidos por {[
                     r.holidayDays > 0 ? `${r.holidayDays} ${r.holidayDays === 1 ? 'dia' : 'dias'} de férias` : '',
                     r.officeCutDays > 0 ? `${r.officeCutDays} ${r.officeCutDays === 1 ? 'dia' : 'dias'} de gabinete` : '',
-                  ].filter(Boolean).join(' e ')}.
+                    r.simCutDays > 0 ? `${r.simCutDays} ${r.simCutDays === 1 ? 'dia' : 'dias'} de simulador como instrutor` : '',
+                  ].filter(Boolean).join(', ').replace(/, ([^,]*)$/, ' e $1')}.
                 </Typography>
               )}
             </Stack>
@@ -300,7 +301,7 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                   no recibo: o do mês só sobre o fixo, e o do mês anterior refeito com o variável que agora se paga (menos o
                   que já tinha sido retido); em janeiro, o variável de dezembro à parte. Não prevê outras correções de meses
                   passados. Noturno 23h–06h e feriados em hora de Lisboa, somados às outras
-                  alíneas da cl. 12.2 (o feriado a dobrar no duty-pay e no block-pay). Cada dia de férias ou de gabinete reduz os plafonds. Subsídios sobre todos os fixos: férias = 42 dias (fixos ÷ 30 × 42), Natal = um mês (cl. 7 e
+                  alíneas da cl. 12.2 (o feriado a dobrar no duty-pay e no block-pay). Nos dias de formação ou de exames médicos com duas sessões desconta 1 h de almoço no duty-pay. O simulador dado como instrutor não conta no duty nem no block, e os DHC desse dia contam a 50%; como instruendo conta tudo. Cada dia de férias ou de gabinete reduz os plafonds. Subsídios sobre todos os fixos: férias = 42 dias (fixos ÷ 30 × 42), Natal = um mês (cl. 7 e
                   8), com IRS retido à parte, SS e fundo de pensões. Line checks: um por dia com voos W_INS, ou FAM_INS e LIFUS_INS juntos — corrige com − / + se
                   não bater. Voos em dia de folga (cl. 13) e reduções de repouso (cl. 2.8) contam quando marcados no dia. Não
                   inclui split-duty nem o acerto anual dos plafonds (março). Confirma sempre no recibo.

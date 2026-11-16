@@ -12,6 +12,7 @@ import InfoCollapse from '../components/InfoCollapse';
 import { passOverline } from '../components/PassCard';
 import { monthLabel } from '../utils/dates';
 import { APP_VERSION } from '../version';
+import { euro } from '../utils/money';
 
 // The same contact the app shows under Definições → Ajuda.
 const FEEDBACK_TO = 'pflm.bet@gmail.com';
@@ -20,7 +21,6 @@ const FEEDBACK_TO = 'pflm.bet@gmail.com';
 // statement lays them out — one line per day, the same columns — so the two can be compared line
 // by line. Paid apart from the salary, the month after.
 
-export const euro = (v: number) => v.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
 // In rem, so the header (smaller type) and the rows share the same column widths.
 // Início and the night stop share a column (user, Nov 2026: the flight number didn't fit with a large font size).
 const COLS = '2.8rem minmax(0, 1fr) repeat(4, 2.9rem)';

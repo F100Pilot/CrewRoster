@@ -56,7 +56,16 @@ export function legsOf(date: string, duties: ParsedDuty[]): Leg[] {
     if (on.getTime() < off.getTime()) on = new Date(on.getTime() + DAY);
     legs.push({ duty: d, off, on });
   }
-  // A leg departing "earlier" than the first one on the clock crossed midnight in the roster.
+  // A leg departing "earlier" than the duty's opening on the clock crossed midnight in the roster: it is the next day's
+  // (review, Nov 2026 — the comment said so but the code only sorted, so a 00:45 return came before the 22:00 departure).
+  // The opening on the 24-h circle is dutyWindow's (the start that keeps the whole duty shortest).
+  const w = dutyWindow(date, duties.filter((d) => FLIGHT.has(d.dutyType)));
+  if (w) {
+    const openAt = w.start.getTime();
+    for (const l of legs) {
+      if (l.off.getTime() < openAt) { l.off = new Date(l.off.getTime() + DAY); l.on = new Date(l.on.getTime() + DAY); }
+    }
+  }
   legs.sort((a, b) => a.off.getTime() - b.off.getTime());
   return legs;
 }

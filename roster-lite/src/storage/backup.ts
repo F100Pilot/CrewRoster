@@ -191,7 +191,9 @@ const LS_ALLOW_PREFIXES = [
 // Kept on the device only: the saved CrewLink login is neither exported nor restored, nor the Google
 // calendar the sync writes to — a crafted backup must not point the sync at another calendar (the
 // 0.8.28 audit; the calendar.app.created scope refuses others anyway, and the app then makes its own).
-const LS_NEVER_EXPORT = ['crewroster.cred.', 'crewroster.gcal.', 'crewroster.gcalSync.'];
+// Secrets never travel in a backup (it is shared by WhatsApp / e-mail): the CrewLink login, the Google calendar state and
+// the crew member's own AeroDataBox key (security review, Nov 2026 — it used to go out with the `crewroster.` prefix).
+const LS_NEVER_EXPORT = ['crewroster.cred.', 'crewroster.gcal.', 'crewroster.gcalSync.', 'crewroster.aerodataboxKey'];
 const LS_MAX_VALUE = 256 * 1024; // 256 KB per key
 
 function lsAllowed(key: string): boolean {

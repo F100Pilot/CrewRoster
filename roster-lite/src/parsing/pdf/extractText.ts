@@ -30,7 +30,19 @@ export interface ExtractedPdf {
 
 export async function extractPdf(data: ArrayBuffer): Promise<ExtractedPdf> {
   const pdfjs = await loadPdfjs();
-  const doc = await pdfjs.getDocument({ data, isEvalSupported: false }).promise;
+  // The loading task is always destroyed (review, Nov 2026): each import and every PDF of a re-parse used to leave its
+  // document alive in pdf.js' worker.
+  const task = pdfjs.getDocument({ data, isEvalSupported: false });
+  try {
+    return await readDocument(await task.promise);
+  } finally {
+    await task.destroy();
+  }
+}
+
+type PdfDoc = Awaited<ReturnType<Awaited<ReturnType<typeof loadPdfjs>>['getDocument']>['promise']>;
+
+async function readDocument(doc: PdfDoc): Promise<ExtractedPdf> {
   const tokens: PositionedToken[] = [];
   const rawLines: string[] = [];
 
@@ -62,6 +74,7 @@ export async function extractPdf(data: ArrayBuffer): Promise<ExtractedPdf> {
     }
     if (lineParts.length) rawLines.push(lineParts.join(' ').replace(/\s+/g, ' ').trim());
     rawLines.push(''); // page break
+    page.cleanup();
   }
 
   return {

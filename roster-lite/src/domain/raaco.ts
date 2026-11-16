@@ -3,6 +3,7 @@ import { legsOf, type Leg } from './dayPhase';
 import { PGA_PILOT_RULES, standbyInterval, workWindow } from './dutyTime';
 import { ioInterval, isIO, isPrevenirIO } from './irregularity';
 import { airportTz, seasonPlanOffsetMinutes, tzOffsetMinutes } from '../utils/localTime';
+import { toMinutes as hm } from '../utils/duration';
 
 // RAACO — Regulamento de Alimentação e Ajudas de Custo Operacionais, absorbed into the ROV-PGA
 // (Revisão 01, cap. 4.5; values in Anexo 7.6, Tabelas 32–34). It covers every crew member — pilots
@@ -222,7 +223,6 @@ const blockMin = (l: Leg) => Math.round((l.on.getTime() - l.off.getTime()) / 600
 // The plan decides what is loaded; what is due follows the duty as it happened (user, 0.9.3.29: "se a escala não
 // previa alguma dessas refeições e o voo chegou dentro desse período, quer dizer que originalmente não embarcava, e
 // teve de ser pago" — 4.5.11.5).
-const hm = (s: string) => Number(s.slice(0, 2)) * 60 + Number(s.slice(3, 5));
 const moved = (now: string | null, plan: string | null | undefined) => {
   if (!now || !plan) return 0;
   const d = hm(plan) - hm(now);
@@ -370,7 +370,21 @@ function stayLines(where: string, from: Date, to: Date, base: string, taken: Set
 // Longest stay counted after a duty that ends away, if the roster has nothing after it.
 const MAX_STAY_MS = 4 * 86_400_000;
 
+// One computation per roster array and base: the Lista, the calendar, the day card, /abonos and the pay estimate all ask
+// for the whole roster's days (review, Nov 2026: four separate full runs per render pass). Rosters are replaced, never
+// mutated in place, so the array is a safe key. Callers must treat the Map as read-only.
+const raacoCache = new WeakMap<ParsedDuty[], Map<string, Map<string, RaacoDay>>>();
 export function raacoDays(roster: ParsedDuty[], base: string): Map<string, RaacoDay> {
+  let byBase = raacoCache.get(roster);
+  if (!byBase) { byBase = new Map(); raacoCache.set(roster, byBase); }
+  const hit = byBase.get(base.toUpperCase());
+  if (hit) return hit;
+  const out = computeRaacoDays(roster, base);
+  byBase.set(base.toUpperCase(), out);
+  return out;
+}
+
+function computeRaacoDays(roster: ParsedDuty[], base: string): Map<string, RaacoDay> {
   const b = base.toUpperCase();
   // What is due follows the duty as it happened (the report stays the planned one — rosterMerge); where a meal is
   // loaded follows the Meal Plan, i.e. each sector's planned times (`asPlanned`, 4.5.10). A delayed flight that

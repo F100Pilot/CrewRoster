@@ -1,6 +1,6 @@
 import { dutyDays, isStandby, standbyInterval, workWindow, PGA_PILOT_RULES } from './dutyTime';
 import { isPrevenirIO } from './irregularity';
-import { diffMinutes } from '../utils/duration';
+import { diffMinutes, toMinutes as toMin } from '../utils/duration';
 import { lisbonMidnightUtc } from './standbyWindows';
 import { baseHolidays, nationalHolidays } from './holidaysPT';
 import { planVsFlown } from './planVsFlown';
@@ -194,8 +194,7 @@ export const isOfficeDay = (d: ParsedDuty): boolean => d.dutyType === 'Office Du
 const paidApart = (d: ParsedDuty): boolean => isGroundInstruction(d) || isOfficeDay(d);
 const sessionMinutesOf = (d: ParsedDuty): number => {
   if (!d.departureTime || !d.arrivalTime) return 0;
-  const t = (x: string) => Number(x.slice(0, 2)) * 60 + Number(x.slice(3, 5));
-  return (t(d.arrivalTime) - t(d.departureTime) + 1440) % 1440;
+  return (toMin(d.arrivalTime) - toMin(d.departureTime) + 1440) % 1440;
 };
 
 // The pilot's OWN checks: a session marked OPC / LPC with no _INS, and the unmarked one that follows it within 3 days
@@ -313,6 +312,7 @@ export interface PayEstimate {
   holidayPayAuto: boolean; // that month comes from the roster, not from the pilot's tick
   holidayDays: number; // days of holidays taken, which cut the plafonds
   officeCutDays: number; // office (GAB) days, which cut them the same way
+  simCutDays: number; // days with a simulator session given as instructor, which cut them too
   variable: number; // everything above the RB, paid the month after
   includesPlanned: boolean; // the month isn't over yet
 }
@@ -395,6 +395,41 @@ export function overtimeValue(credited: number, l1: number, l2: number, vb: numb
   return (band1 / 60) * RATE_L1 * vb + (band2 / 60) * RATE_L2 * vb;
 }
 
+// A ground training or medical day with a lunch break between its sessions loses one hour of duty-pay (user, 0.9.3.73:
+// "em formação, o intervalo para almoço desconta no duty (1 hora de almoço)" — always one hour, whatever the break the
+// roster prints, capped at that break). The roster's [DT], the AE limits and the day's duty keep the lunch (0.9.3.45).
+// Ground days only: a flying day's training gap is trainingGapMinutes'. Instruction given and GAB are paid apart already.
+// A trainee's session (instructor sessions are dropped before these run) and the DHCs around it, on one day's clock.
+const afterSession = (x: ParsedDuty, day: ParsedDuty[]): boolean =>
+  !!x.departureTime && day.some((s) => s.dutyType === 'Simulator' && !!s.arrivalTime && toMin(s.arrivalTime) <= toMin(x.departureTime!));
+function dhcBeforeSessionMinutes(day: ParsedDuty[]): number {
+  if (day.some((x) => x.dutyType === 'Flight Duty')) return 0;
+  const starts = day.filter((s) => s.dutyType === 'Simulator' && s.departureTime).map((s) => toMin(s.departureTime!));
+  if (!starts.length) return 0;
+  const first = Math.min(...starts);
+  let out = 0;
+  for (const x of day) {
+    if (x.dutyType !== 'Positioning' || !x.departureTime || !x.arrivalTime || toMin(x.arrivalTime) > first) continue;
+    const report = x.reportingTime ? toMin(x.reportingTime) : toMin(x.departureTime) - 60;
+    out += Math.max(0, toMin(x.arrivalTime) - report);
+  }
+  return out;
+}
+
+const LUNCH_MIN = 60;
+function lunchMinutes(day: ParsedDuty[]): number {
+  if (day.some((x) => x.dutyType === 'Flight Duty' || x.dutyType === 'Positioning' || x.dutyType === 'Simulator')) return 0;
+  const hasIm = day.some((x) => x.dutyCode === 'IM');
+  const sessions = day
+    .filter((x) => (x.dutyType === 'Training' || x.dutyType === 'Medical') && !paidApart(x) && x.departureTime && x.arrivalTime)
+    .filter((x) => !(hasIm && x.dutyCode === 'VIM'))
+    .map((x) => [toMin(x.departureTime!), toMin(x.arrivalTime!)] as const)
+    .sort((a, b) => a[0] - b[0]);
+  let gap = 0;
+  for (let k = 1; k < sessions.length; k++) gap += Math.max(0, sessions[k][0] - sessions[k - 1][1]);
+  return Math.min(LUNCH_MIN, gap);
+}
+
 // The last day a simulator trip's per diem was "… T" (taxed in full) on the payslips seen: January 2026 (see payEstimate).
 // Moved to March 2026 with the April payslip (0.9.3.56): its "Outros valores p/ impostos" is 0 for a month of simulator
 // trips only, and the February / March ones reconcile to the cent with the RAACO abonos of those trips left untaxed.
@@ -431,7 +466,8 @@ export function payEstimate(
   const inMonth = (iso: string) => iso.startsWith(month);
   const holidays = new Set([
     ...baseHolidays(Number(month.slice(0, 4)), base), // national + the base's municipal one (13/06 LIS, 24/06 OPO)
-    ...baseHolidays(Number(month.slice(0, 4)) - 1, base), // a 31 Dec duty can run into 1 Jan
+    ...baseHolidays(Number(month.slice(0, 4)) - 1, base), // a January duty that started on 31 Dec
+    ...baseHolidays(Number(month.slice(0, 4)) + 1, base), // a 31 Dec duty running into 1 Jan (review, Nov 2026: was missing)
   ]);
 
   // ── Duty-pay credit (cl. 12.2) ──
@@ -443,18 +479,45 @@ export function payEstimate(
   // delas não"): a positioning's 50% (a.iv) + the night's 25% (c) + the holiday's 100% (d) — not a share of them.
   // Flights on a day off paid under cl. 13 stay out of the plafonds (cl. 13.5): paid on their own.
   const offDayDates = new Set([...days].filter(([date, day]) => inMonth(date) && offDayChoice(day) === 'paid').map(([date]) => date));
+  // A simulator session given as instructor counts neither duty nor block for the plafonds — it is paid apart per
+  // session — and the DHCs of that day count at 50% (user, 0.9.3.74: "para os instrutores, o simulador não conta duty, nem
+  // bloco. Os DHC são a 50% no duty e block. Para os instruendos, é tudo contínuo e conta"). The trainee's day stays one
+  // duty, the DHC beside the session in full. The AE limits are unchanged.
+  // Which sessions are the instructor's: the same set the pay uses. In the task force (allSimsPaid) every session but
+  // the pilot's own checks — the company's monthly maps label all of them "Instrução de Simulador" and the OPC/LPC days
+  // "Simulador" with their block (Dec 2025–Sep 2026: the block matches all ten maps within 2 min; 0.9.3.81).
+  const ownChecksForCredit = ownCheckDates(duties);
+  const instructorSims = s.allSimsPaid
+    ? new Set(duties.filter((d) => d.dutyType === 'Simulator' && !ownChecksForCredit.has(d.date)).map((d) => d.date))
+    : instructorSimDates(duties);
+  const asCredited = (date: string, day: ParsedDuty[]) =>
+    instructorSims.has(date) ? day.filter((x) => x.dutyType !== 'Simulator') : day;
   let dutyCredited = 0;
-  for (const d of dutyDays(duties, PGA_PILOT_RULES)) {
-    if (!inMonth(d.date) || offDayDates.has(d.date)) continue;
-    const day = days.get(d.date) ?? [];
-    // Work paid apart stays out of the plafonds: ground training given (isGroundInstruction, "Instrução em terra") and
-    // office days (isOfficeDay, "Subs. gabinete"). A day of it alone credits nothing; beside other work its sessions come
-    // off the day's credit.
-    const instruction = day.filter(paidApart).reduce((a, x) => a + sessionMinutesOf(x), 0);
-    if (instruction && day.every((x) => paidApart(x) || x.dutyType === 'Day Off')) continue;
-    const positioningOnly = day.some((x) => x.dutyType === 'Positioning')
-      && !day.some((x) => x.dutyType === 'Flight Duty' || x.dutyType === 'Simulator');
-    let credit = Math.max(0, d.minutes - instruction - trainingGapMinutes(d.date, day)) * (positioningOnly ? 0.5 : 1);
+  for (const dd of dutyDays(duties, PGA_PILOT_RULES)) {
+    if (!inMonth(dd.date) || offDayDates.has(dd.date)) continue;
+    const all = days.get(dd.date) ?? [];
+    // An instructor's day that comes home by DHC after the session counts its whole duty — from the session to the DHC's
+    // arrival — at 50% (cl. 12.2 a.iv; the company's monthly maps of Feb and Jun 2026: 17/02 03:30–15:25 → 5h57, doubled by
+    // Carnival = 11h50 on the map; an expert: "o IV de duty 50%", user-approved 0.9.3.80). Otherwise the session is dropped.
+    const homeAfterSession = instructorSims.has(dd.date) && all.some((x) => x.dutyType === 'Positioning' && afterSession(x, all));
+    const day = homeAfterSession ? all : asCredited(dd.date, all);
+    const d = instructorSims.has(dd.date) && !homeAfterSession ? dutyDays(day, PGA_PILOT_RULES)[0] : dd;
+    if (!d) continue;
+    // Office days (isOfficeDay, "Subs. gabinete") stay out of the plafonds: a GAB day alone credits nothing, beside other
+    // work its sessions come off. Ground training given (FP…_INST) COUNTS since 0.9.3.82 — the company's monthly maps
+    // show it as "serviço de solo (100%)", the sessions only, lunch out (02/12/2025 FP1+FP2_INST → 07:20; user: "conta a
+    // instrução em terra no duty"); it is still paid apart by the hour as "Instrução em terra" too.
+    const office = day.filter(isOfficeDay).reduce((a, x) => a + sessionMinutesOf(x), 0);
+    if (office && day.every((x) => isOfficeDay(x) || x.dutyType === 'Day Off')) continue;
+    const groundOnly = day.some(isGroundInstruction) && day.every((x) => paidApart(x) || x.dutyType === 'Day Off');
+    const positioningOnly = homeAfterSession || (day.some((x) => x.dutyType === 'Positioning')
+      && !day.some((x) => x.dutyType === 'Flight Duty' || x.dutyType === 'Simulator'));
+    let credit = groundOnly
+      ? day.filter(isGroundInstruction).reduce((a, x) => a + sessionMinutesOf(x), 0)
+      : Math.max(0, d.minutes - office - trainingGapMinutes(d.date, day) - lunchMinutes(day)) * (positioningOnly ? 0.5 : 1);
+    // A trainee's DHC BEFORE the session, with nothing before it, stays at 50% (an expert, user-approved 0.9.3.74: "os
+    // nossos DHC quando não tivemos atividade anterior é 50%, quando a gente vem a seguir ao simulador é contínuo, é 100%").
+    if (!positioningOnly) credit -= dhcBeforeSessionMinutes(day) * 0.5;
     const w = workWindow(d.date, day, PGA_PILOT_RULES);
     if (w) {
       const a = w.start.getTime();
@@ -468,7 +531,9 @@ export function payEstimate(
         night += overlap(a, b, nextMidnight - 60 * MIN, nextMidnight + 6 * 60 * MIN);
         if (holidays.has(iso)) holiday += overlap(a, b, midnight, nextMidnight);
       }
-      credit += (night / MIN) * NIGHT_SHARE + (holiday / MIN) * HOLIDAY_SHARE;
+      // The holiday doubles what the work already counts (colleagues, 0.9.3.76: "uma assistência, são 10 horas, conta a 25%
+      // que são 02:30, em feriado são 5. O mesmo é no DH"): a DHC-only day 50% → 100%, not 50% + 100%.
+      credit += (night / MIN) * NIGHT_SHARE + (holiday / MIN) * HOLIDAY_SHARE * (positioningOnly ? 0.5 : 1);
     }
     // A standby on a holiday is doubled too (colleagues: "se for de 10 horas, são 2.5 (25%), como é a dobrar são 5 horas"):
     // its counted share again for the part on the holiday, outside the work window (that part is counted as work above).
@@ -498,20 +563,26 @@ export function payEstimate(
   // experts ("as horas block em feriado … tem que dobrar") and the AE text say otherwise, so it is back (user, 0.9.3.72).
   // Those two payslips stay open.
   let blockCredited = 0;
-  for (const [date, day] of days) {
+  for (const [date, all] of days) {
     if (!inMonth(date) || offDayDates.has(date)) continue;
+    const day = asCredited(date, all);
+    // A DHC in full beside an operated sector (cl. 12.2 a.iii) or AFTER a simulator session — given or received (user,
+    // 0.9.3.74/75; for the instructor too since 0.9.3.80: "o block a ida para simulador de instrutores é 50% … e a vinda
+    // block a 100%", checked to the minute on the Feb and Jun 2026 maps: 037:30 and 038:15); alone or before the
+    // session, at 50%. The instructor's session itself is dropped by asCredited.
     const operatedDay = day.some((x) => x.dutyType === 'Flight Duty');
     for (const x of day) {
       if (!FLYING.has(x.dutyType) || !x.departureTime || !x.arrivalTime) continue;
       let min = diffMinutes(x.departureTime, x.arrivalTime);
       const off = Date.parse(`${date}T${x.departureTime}:00Z`);
       const on = off + min * MIN;
-      if (x.dutyType === 'Positioning' && !operatedDay) min *= 0.5;
+      const share = x.dutyType === 'Positioning' && !operatedDay && !afterSession(x, all) ? 0.5 : 1;
+      min *= share;
       let holiday = 0;
       for (const iso of [nextDate(date, -1), date, nextDate(date)]) {
         if (holidays.has(iso)) holiday += overlap(off, on, lisbonMidnightUtc(iso), lisbonMidnightUtc(nextDate(iso)));
       }
-      blockCredited += min + (holiday / MIN) * HOLIDAY_SHARE;
+      blockCredited += min + (holiday / MIN) * HOLIDAY_SHARE * share; // doubled: a DHC at 50% → 100% (0.9.3.76)
     }
   }
 
@@ -520,8 +591,13 @@ export function payEstimate(
   // se fosse um dia de férias"); its hours are out of the credits and paid apart (subsídio de gabinete).
   const holidayDays = [...days].filter(([date, day]) => inMonth(date) && day.some(isHoliday)).length;
   const officeCutDays = [...days].filter(([date, day]) => inMonth(date) && !day.some(isHoliday) && day.some(isOfficeDay)).length;
+  // Each day with a simulator session given as instructor cuts them too, like a GAB day (an expert, Nov 2026: "eles
+  // descontam duas horas de bloco por cada dia que tem simulador e por cada gabinete … de duty 3 horas e 37"; the June
+  // 2026 map: 6 GAB + 1 F + 4 sim days = 11 → block L1 38h00, 038:15 credited, 0,25 h paid). User-approved 0.9.3.80.
+  const simCutDays = [...days].filter(([date, day]) =>
+    inMonth(date) && instructorSims.has(date) && !day.some(isHoliday) && !day.some(isOfficeDay)).length;
   const p = MONTH_PLAFONDS[daysInMonth(month)];
-  const cut = (v: number, perDay: number) => Math.max(0, v - perDay * (holidayDays + officeCutDays));
+  const cut = (v: number, perDay: number) => Math.max(0, v - perDay * (holidayDays + officeCutDays + simCutDays));
   const dutyL1 = cut(p.dutyL1, PLAFOND_CUT_PER_DAY.dutyL1);
   const dutyL2 = cut(p.dutyL2, PLAFOND_CUT_PER_DAY.dutyL2);
   const blockL1 = cut(p.blockL1, PLAFOND_CUT_PER_DAY.blockL1);
@@ -634,7 +710,9 @@ export function payEstimate(
   // A cut the pilot typed for a day replaces the planned-vs-flown one for that day.
   const restByDate = new Map(restPeriods(duties, 'pilot', base).map((r) => [r.date, r]));
   const typedCuts = [...days].filter(([date]) => inMonth(date)).map(([date, day]) => [date, restCutOf(day, restByDate.get(date))] as const)
-    .filter((x): x is readonly [string, number] => x[1] !== null && x[1] > 0);
+    .filter((x): x is readonly [string, number] => x[1] !== null);
+  // Every day with a figure of its own — 0 included: the day page's switch turned off over "Reducao Repouso" means no
+  // cut at all, so the planned-vs-flown one must not come back (review, Nov 2026: it used to).
   const typedCutDates = new Set(typedCuts.map(([date]) => date));
   const reducedMinutes = pvf.reductions.filter((r) => !typedCutDates.has(r.date)).reduce((sum, r) => sum + r.cut, 0)
     + typedCuts.reduce((sum, [, m]) => sum + m, 0);
@@ -759,8 +837,9 @@ export function payEstimate(
     holidayPayAuto: ticked === null,
     holidayDays,
     officeCutDays,
+    simCutDays,
     variable,
-    includesPlanned: todayISO < lastDay,
+    includesPlanned: todayISO <= lastDay, // on the month's last day its flights may still be ahead
   };
 }
 

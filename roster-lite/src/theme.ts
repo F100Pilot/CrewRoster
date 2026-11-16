@@ -44,13 +44,13 @@ export function depth(mode: ColorMode): Depth {
 // A coloured key: lit gradient, darker edge along its foot, a coloured glow below. The edge is drawn INSIDE the key
 // (inset) so the key keeps its own outline (user, 0.9.3.65: the edges drawn under the keys "saem um pouco de fora,
 // na borda de baixo").
-export function keyStyle(main: string) {
+function keyStyle(main: string) {
   return {
     background: `linear-gradient(180deg, ${lighten(main, 0.22)} 0%, ${main} 100%)`,
     boxShadow: `inset 0 -3px 0 ${darken(main, 0.35)}, 0 10px 16px -8px ${alpha(main, 0.7)}, inset 0 1px 0 rgba(255,255,255,.4)`,
   };
 }
-export const keyPressed = (main: string) => ({
+const keyPressed = (main: string) => ({
   transform: 'translateY(1px)',
   boxShadow: `inset 0 -1px 0 ${darken(main, 0.35)}, 0 4px 8px -4px ${alpha(main, 0.6)}, inset 0 2px 4px rgba(0,0,0,.25)`,
 });
@@ -276,7 +276,7 @@ export function createAppTheme(mode: ColorMode): Theme {
 }
 
 // Duty type -> color, ported from the original pages. Used by chips and the calendar.
-export const DUTY_COLORS: Record<string, string> = {
+const DUTY_COLORS: Record<string, string> = {
   'Flight Duty': '#1976d2',
   'Standby Airport': '#f57c00',
   'Standby Home': '#ff9800',

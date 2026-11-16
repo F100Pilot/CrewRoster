@@ -7,13 +7,13 @@ import { MEAL_LABEL, raacoDays, type MealLine, type RaacoDay } from '../domain/r
 import { dayLabel } from '../utils/dates';
 import { passOverline } from './PassCard';
 import { MEAL_ICON } from './MealIcon';
+import { euro } from '../utils/money';
+import { todayISO } from '../domain/rosterWindow';
 
 // The crew's word on the meals the Meal Plan is about (user, Nov 2026): on a past flight day, each meal the app
 // counts as loaded — or pays because nothing carried it — can be marked "Havia a bordo" / "Não havia", and the abonos
 // follow it (raaco.ts). Only those meals, never every flight: the calendar shows 🍽 on such days.
 
-const euro = (v: number) => v.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
-const todayISO = () => format(new Date(), 'yyyy-MM-dd');
 
 /** The RAACO days with meals to confirm (askable, already flown). */
 export function useMealsToConfirm(): Map<string, RaacoDay> {

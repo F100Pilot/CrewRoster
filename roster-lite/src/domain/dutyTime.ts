@@ -2,6 +2,7 @@ import type { CrewRole, ParsedDuty } from './types';
 import { peakQuarter, peakWindow, trailingSum, type DayAmount, type PeakQuarter, type PeakWindow } from './limitWindows';
 import { standbyWindowUtc } from './standbyWindows';
 import { asWorked } from './simSession';
+import { toMinutes } from '../utils/duration';
 
 export type { PeakWindow } from './limitWindows';
 
@@ -78,10 +79,6 @@ export interface DutyDay {
   partial: boolean; // the day was standby / reserve only
 }
 
-function toMinutes(hhmm: string): number {
-  const [h, m] = hhmm.split(':').map(Number);
-  return h * 60 + m;
-}
 
 export interface DutyWindow {
   start: Date;
@@ -149,13 +146,14 @@ export function workWindow(date: string, duties: ParsedDuty[], rules: DutyRules)
 // A standby duty's own window in UTC — start and length — or null when it can't be timed. Times
 // the roster printed win; otherwise the code's window from the DOV table (the grid usually shows
 // no end for a standby).
-function standbySlot(d: ParsedDuty): { start: string | null; minutes: number } | null {
+function standbySlot(d: ParsedDuty): { start: string | null; minutes: number; prevDay?: boolean } | null {
   if (d.departureTime && d.arrivalTime) {
     return { start: d.departureTime, minutes: (toMinutes(d.arrivalTime) - toMinutes(d.departureTime) + 1440) % 1440 };
   }
   const known = standbyWindowUtc(d.dutyCode, d.date);
   if (!known) return null;
-  return { start: d.reportingTime ?? d.departureTime ?? known.start, minutes: known.minutes };
+  const own = d.reportingTime ?? d.departureTime;
+  return own ? { start: own, minutes: known.minutes } : { start: known.start, minutes: known.minutes, prevDay: known.prevDay };
 }
 
 // A standby's occupied interval as real instants, or null when it can't be timed. Used where a
@@ -163,7 +161,7 @@ function standbySlot(d: ParsedDuty): { start: string | null; minutes: number } |
 export function standbyInterval(d: ParsedDuty): { start: Date; end: Date } | null {
   const slot = standbySlot(d);
   if (!slot?.start) return null;
-  const start = new Date(`${d.date}T${slot.start}:00Z`);
+  const start = new Date(Date.parse(`${d.date}T${slot.start}:00Z`) - (slot.prevDay ? 86_400_000 : 0));
   return { start, end: new Date(start.getTime() + slot.minutes * 60000) };
 }
 

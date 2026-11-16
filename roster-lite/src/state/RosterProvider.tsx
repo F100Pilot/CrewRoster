@@ -83,6 +83,18 @@ export function RosterProvider({ children }: { children: ReactNode }) {
   activeUserRef.current = activeUser;
   // Serializes imports so concurrent merges don't clobber each other.
   const importLock = useRef<Promise<unknown>>(Promise.resolve());
+  // The background re-parse (a parser upgrade) runs in the same queue as imports and re-reads the stored roster first:
+  // run outside it, it could save a roster built from the old copy over a download that landed meanwhile (review,
+  // Nov 2026). Shows the result only if that profile is still the active one.
+  const reparseInBackground = useCallback((userId: string) => {
+    const run = importLock.current.then(async () => {
+      const fresh = await loadRoster(userId);
+      if (!fresh) return;
+      const updated = await reparseStoredRoster(fresh, userId);
+      if (updated !== fresh && activeUserRef.current?.id === userId) setRoster(updated);
+    });
+    importLock.current = run.catch(() => {});
+  }, []);
 
   // Set/clear the CrewLink session for whoever is active right now.
   const setSessionToken = useCallback((token: string | null) => {
@@ -117,11 +129,7 @@ export function RosterProvider({ children }: { children: ReactNode }) {
         setRoster(r ?? null);
         // Re-parse the stored PDF(s) if they predate the current parser. Runs in the background
         // so startup isn't blocked; the roster refreshes in place once it resolves.
-        if (r) {
-          reparseStoredRoster(r, active.id).then((updated) => {
-            if (updated !== r && activeUserRef.current?.id === active.id) setRoster(updated);
-          });
-        }
+        if (r) reparseInBackground(active.id);
       } catch (e) {
         // A failed IndexedDB read must NOT look like a first launch (which would prompt
         // re-onboarding over unreadable-this-session data). Surface a recoverable error.
@@ -131,7 +139,7 @@ export function RosterProvider({ children }: { children: ReactNode }) {
       }
     }
     init();
-  }, []);
+  }, [reparseInBackground]); // stable (useCallback with no deps): still runs once
 
   // Keep the permanent logbook in sync with the active roster centrally — so Statistics, Map and
   // Documents have data even when the Diário (logbook) page was never opened (it used to be the
@@ -173,12 +181,8 @@ export function RosterProvider({ children }: { children: ReactNode }) {
     // Guard against a stale load: if the user switched again while we awaited, don't
     // clobber the now-active user's view with this (older) result.
     if (activeUserRef.current?.id === userId) setRoster(r ?? null);
-    if (r) {
-      reparseStoredRoster(r, userId).then((updated) => {
-        if (updated !== r && activeUserRef.current?.id === userId) setRoster(updated);
-      });
-    }
-  }, [users]);
+    if (r) reparseInBackground(userId);
+  }, [users, reparseInBackground]);
 
   const createUser = useCallback(async (name: string, crewCode?: string, role: CrewRole = 'pilot'): Promise<UserProfile> => {
     const user: UserProfile = {
@@ -202,13 +206,9 @@ export function RosterProvider({ children }: { children: ReactNode }) {
     setWarnings([]);
     const r = await loadRoster(user.id);
     setRoster(r ?? null);
-    if (r) {
-      reparseStoredRoster(r, user.id).then((updated) => {
-        if (updated !== r && activeUserRef.current?.id === user.id) setRoster(updated);
-      });
-    }
+    if (r) reparseInBackground(user.id);
     return user;
-  }, []);
+  }, [reparseInBackground]);
 
   const renameUser = useCallback(async (userId: string, name: string, crewCode?: string, role?: CrewRole) => {
     const user = users.find((u) => u.id === userId);
@@ -237,23 +237,19 @@ export function RosterProvider({ children }: { children: ReactNode }) {
     await deleteUserDB(userId);
     setCredentials(userId, null); // drop this profile's saved CrewLink credentials too
     sessionsByUser.current.delete(userId);
-    setUsers((prev) => {
-      const updated = prev.filter((u) => u.id !== userId);
-      if (activeUser?.id === userId) {
-        const next = updated[0] ?? null;
-        setActiveUserId(next?.id ?? null);
-        setActiveUser(next);
-        activeUserRef.current = next;
-        setSessionTokenState(next ? sessionsByUser.current.get(next.id) ?? null : null);
-        if (next) {
-          loadRoster(next.id).then((r) => setRoster(r ?? null));
-        } else {
-          setRoster(null);
-        }
-      }
-      return updated;
-    });
-  }, [activeUser]);
+    // Side effects stay out of the state updater (StrictMode runs updaters twice; review, Nov 2026).
+    setUsers((prev) => prev.filter((u) => u.id !== userId));
+    if (activeUser?.id !== userId) return;
+    const next = users.find((u) => u.id !== userId) ?? null;
+    setActiveUserId(next?.id ?? null);
+    setActiveUser(next);
+    activeUserRef.current = next;
+    setSessionTokenState(next ? sessionsByUser.current.get(next.id) ?? null : null);
+    if (!next) { setRoster(null); return; }
+    loadRoster(next.id)
+      .then((r) => { if (activeUserRef.current?.id === next.id) setRoster(r ?? null); })
+      .catch(() => setRoster(null));
+  }, [activeUser, users]);
 
   const importFile = useCallback(async (file: File) => {
     if (!activeUser) return;

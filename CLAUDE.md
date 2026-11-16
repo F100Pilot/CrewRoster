@@ -127,7 +127,8 @@ cross-origin. Endpoints: `POST /api/login`, `/api/roster`, `/api/flightinfo`,
 - **Versioning** (`src/version.ts`): `0.<major>.<centesimal>.<milésima>` — 0.9.x since the 3D look (user asked
   for 0.9.0 Beta on promotion). **Every update bumps the 4th place** (user rule, Nov 2026: "o bump é aumentado na
   quarta casa"): `0.9.3.2 → 0.9.3.3`, features and fixes alike. The 3rd place and the minor (0.8 → 0.9) move only
-  when the user asks. **Add a `RELEASE_NOTES` entry for every bump** (pt-PT) — the
+  when the user asks. **Add a `RELEASE_NOTES` entry for every bump** (pt-PT, in `src/releaseNotes.ts` since 0.9.3.77 —
+  split from version.ts and loaded on demand by WhatsNewDialog, 74 KB out of the first paint) — the
   "Novidades" pop-up shows it after an update.
 - **Match the surrounding code:** comment density, naming, idioms. Comments explain
   *why*, in the existing style.
@@ -254,7 +255,8 @@ Things learned over this collaboration that should persist across sessions:
   calendar splits the key of a day with a simulator and another duty on the diagonal (earlier duty's colour top-left;
   user, 0.9.3.53 — it showed only the DHC home); FP…_INST is ground training given, not a sim session — **paid apart as "Instrução em terra"** (since 0.9.3.48,
   user, from a January 2026 payslip: hours × the pilot's hourly fee `groundInstructionHour`, decimal hours to 2 places)
-  **and left out of the duty-pay plafonds** (`isGroundInstruction` in `payEstimate.ts`; still duty for the AE limits).
+  **and, from 0.9.3.59 to 0.9.3.81, left out of the duty-pay plafonds** (back in since 0.9.3.82 — see the instructor-sim
+  bullet: the company's maps count the sessions as duty).
   Hours = the FP…_INST sessions as printed, lunch out — PROVISIONAL: that payslip paid 51,37 h where the sessions give
   54h50 and the [DT] 62h20; the user is asking a specialist how they are counted. Since 0.9.3.57 the pilot types
   the month's hours on the pay card — the ones done or planned, to see the pay coming (user: the dialog just says "Horas
@@ -359,7 +361,10 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
   payslip to the cent (user wants it automatic); a typed `unionBase` still overrides, under Avançado.
 - **Night / holiday premiums — the alíneas of RRRGS cl. 12.2 are SUMMED** (a colleague, Nov 2026: "as alíneas devem ser
   somadas, o que está dentro delas não"; cl. 12.3 keeps only the highest WITHIN one alínea): a positioning's 50% (a.iv)
-  + night 25% (c) + holiday 100% (d), never a share of them. The holiday 100% is on duty-pay AND block-pay (cl. 12.2 d:
+  + night 25% (c), never a share of them. BUT the holiday DOUBLES what the work already counts (colleagues, user-approved
+  0.9.3.76: "uma assistência, são 10 horas, conta a 25% que são 02:30, em feriado são 5. O mesmo é no DH"): a DHC at 50%
+  → 100% on a holiday (0.9.3.41–75 gave 150%); a flight 100% → 200% either way. Still open: night on a DHC (50% + 25% kept).
+  The holiday premium is on duty-pay AND block-pay (cl. 12.2 d:
   "100% do tempo de voo e de trabalho" between 00:00 and 23:59 Lisbon of the holiday; a duty or sector crossing midnight
   counts its part). 0.9.3.63 took it off the block-pay to match the July 2026 payslip (June's 0,25 h) and February's
   Carnival; the experts said "as horas block em feriado … tem que dobrar" and the user chose to put it back (0.9.3.72) —
@@ -472,7 +477,9 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
 - **EBT simulator briefing** (since 0.8.35, user rule): LIS-EBT-1 = briefing 30 min + debriefing 1 h, LIS-EBT-2 = briefing
   1 h + debriefing **30 min** (user, 0.9.3.15, from his own roster: "tem de ser 30 minutos" — 0.8.40.1 had made it 1 h
   after a colleague's November duty-pay) — but that 30 min is **information to the pilot only** (user, 0.9.3.25: "não é
-  para mudar no duty"): the DUTY keeps a 1-hour debriefing on both days (`dutyDebriefMin`, used by `asWorked`); the roster only prints the session (4h00/5h00).
+  para mudar no duty") the DUTY kept a 1-hour debriefing on both days — until 0.9.3.83: the company's Sep 2026 map gives
+  05:30 for BOTH LIS-EBT-1 and LIS-EBT-2 (4h sessions), so `dutyDebriefMin` is now 30 min on day 2 too (user: "sim,
+  5h30"); used by `asWorked`; the roster only prints the session (4h00/5h00).
   Since 0.9.3.35 the counted duty is SHOWN (`ebtDutyMinutes`, "serviço 7h00" on the day card, Lista and "Hoje") — a user
   added up the cells (briefing 1 h · sessão · debriefing 30 min) and reported the duty as 30 min short. `domain/simSession.ts`; shown as
   information on the day, Lista card and "Hoje". The roster's times are the session only (user confirmed); since 0.8.37
@@ -484,6 +491,36 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
   left as it is, an open question to the user. **Ground days (GAB, FP, medical) count from the first start to the last
   end, the lunch included, as the [DT]** (user, 0.9.3.45: GAB1 09:30–13:00 + GAB2 14:00–17:30 = DT 8h00); until then
   only the sessions counted.
+  **But the duty-pay takes one hour of lunch off** a training (FP, not _INST) or medical day with a break between two
+  sessions (user, 0.9.3.73: "em formação, o intervalo para almoço desconta no duty (1 hora de almoço)"; chose: duty-pay
+  only, training AND medical, always 1 h — capped at the printed break): `lunchMinutes()` in `payEstimate.ts`, ground days
+  only (no flight/DHC/sim that day). IM + VIM back to back has no break → nothing off.
+  **Simulator as instructor vs trainee in the plafonds** (user, 0.9.3.74: "para os instrutores, o simulador não conta duty,
+  nem bloco. Os DHC são a 50% no duty e block. Para os instruendos, é tudo continuo e conta"): on an `instructorSimDates`
+  day (OPC_INS / LPC_INS + the check's 2nd day — NOT the taskforce `allSimsPaid` set: a session received there is a
+  trainee's) the Simulator duties are dropped from the duty-pay and block-pay credits (`asCredited` in `payEstimate.ts`),
+  so the DHCs of the day count alone, at 50%; a trainee's sim day stays one continuous duty and a DHC beside the session
+  counts in full in the block too. Since 0.9.3.75 (the expert's audio, user chose "só depois da sessão"): only a DHC AFTER
+  the trainee's session counts in full (`afterSession`); one before it, with nothing before, stays at 50% in block and
+  duty (`dhcBeforeSessionMinutes`). A DHC beside a flight keeps cl. 12.2 a.iii (before or after = 100%). The expert also
+  confirmed the GAB cut ("deduzir … 3 horas e 37 a cada dia"). AE limits and the day's duty unchanged. A DH on a holiday
+  is doubled since 0.9.3.76 (see the premiums bullet).
+  **Instructor sim days — checked to the minute on the company's monthly maps (Feb 2026 block 037:30, Jun 2026 038:15;
+  user-approved 0.9.3.80):** each `instructorSimDates` day CUTS the plafonds like a GAB day (−2h block, −3h37 duty;
+  `simCutDays`, not on a holiday/GAB day); a DHC AFTER the session counts 100% in the block for the instructor too
+  (`afterSession(x, all)`), the DHC out (nothing before) 50%; on the day home the whole duty from the session to the DHC's
+  arrival counts at 50% (`homeAfterSession`, a.iv; 17/02 → 11:50 on the map with Carnival); a session-only day counts
+  nothing. **Which sessions are the instructor's = the pay's set** (0.9.3.81): with `allSimsPaid` (task force) every
+  session but `ownCheckDates`; else `instructorSimDates`. The company's maps Dec 2025–Sep 2026 (the user's Drive folder
+  "CrewRoster Files", 12 PDFs "Mapa Mensal de Horas de Voo e Aterragens") label every unmarked session "Instrução de
+  Simulador" and the own LPC days "Simulador" (4h block, 6h duty) — the block matches all ten maps within 2 min.
+  **FP…_INST counts in the duty-pay since 0.9.3.82** (user: "conta a instrução em terra no duty, se ficar tudo
+  correto"): the maps show it as "serviço de solo (100%)", the SESSIONS only, lunch out (02/12/2025 FP1+FP2_INST → 07:20)
+  — a ground-instruction-only day credits the session minutes (`groundOnly`); it is still paid apart by the hour. GAB
+  days stay out (the maps show no duty on them). Checked day by day against the ten maps: every FP…_INST day within
+  15 min; Jan 2026 duty 46h53 vs 46:55. Remaining duty gaps are other things, left open: DH days (map counts more, e.g.
+  27/12 03:18 vs 2h19), flight days 15–30 min short (the planned report — no initial roster), 31/12/2025 LIS-CMN-LIS
+  08:46 vs 5h34. (EBT-2's duty now 5h30 like the map, 0.9.3.83.)
 - **Flight on a day off & reduced rest** (since 0.9.3.19, colleagues' audios; pilots only): the roster's "Voo em Off" →
   mark `VOO_OFF`, "Reducao Repouso" → `RED_REP` (one token or word by word — a split "Off" must never start a day off nor
   trip the totals-box filter). Day page card "Folga e repouso": **Recebo / Gozo a folga** (RRRGS cl. 13 — paid by default
@@ -555,6 +592,21 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
   (local time) — keep it so (user, Nov 2026: filing by the roster's month was tried as 0.9.3.47 and withdrawn, "algumas
   escalas têm vários meses"), newest first, each named by its download day/time; deleting asks first (the PDFs replay planned vs
   flown and the IO prevenir).
+- **Code review of Nov 2026 (0.9.3.77)** — fixed: pdf.js documents destroyed after each read (`extractPdf`), the
+  background re-parse queued on `importLock` and re-reading the stored roster (`reparseInBackground`), raacoDays cached
+  per roster array (WeakMap — rosters must be replaced, never mutated in place), worker upstream timeouts (30 s,
+  `upstreamFetch`), CI checkout `persist-credentials: false`, no AeroDataBox key in backups, frame-busting in `main.tsx`,
+  holiday set includes the next year (31 Dec → 1 Jan), summer R24 start on the day before (`prevDay`), `legsOf` rolls
+  after-midnight legs, recency `validUntil` = 3rd landing + 89 days, a switched-off rest cut drops the planned-vs-flown
+  one. Then (user: "faz o 1, 2 e 3", 0.9.3.78): the CrewLink password is kept only behind Settings → Perfil "Lembrar a
+  password neste aparelho" (off by default, a warning when on; the crew code is always kept); the worker has two
+  Cloudflare rate-limit bindings in `wrangler.toml` (`[[unsafe.bindings]]` type ratelimit — LOGIN_LIMITER 5/min per IP +
+  crew code, API_LIMITER 120/min per IP on /api/*; `overLimit()` skips when a binding is absent; 429 "Demasiados
+  pedidos"); every GitHub action is pinned to a commit SHA (`# v4` comments — bump them by SHA). 0.9.3.79: Settings and
+  Download dialogs are `lazy()` in Layout (prefetched 3 s after start, mounted from first open; main chunk 565 → 513 KB);
+  ONE `toMinutes()` in `utils/duration.ts` (use it — no new private HH:MM parsers), ONE `euro()` in `utils/money.ts`,
+  `todayISO()` from `domain/rosterWindow.ts`. Still open: a custom domain (would separate the app's storage from other
+  f100pilot.github.io sites and from /exp/).
 - **Backlog:** the rest of the AE items (folgas check, ES/LF/ND, per diem, duty-pay/block-pay
   credits, holiday counter), PWA local reminders, crosswind (runway DB). See `EXPERIMENTAL.md`
   (TODO/Backlog) and `roster-lite/TODO.md`.

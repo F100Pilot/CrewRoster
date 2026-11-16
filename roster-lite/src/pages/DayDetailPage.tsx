@@ -159,7 +159,8 @@ export default function DayDetailPage() {
 
       {duties.map((duty, i) => (
         <Card
-          key={i}
+          // A stable key per duty, so moving to another day never reuses a card's state (flight info, METAR).
+          key={`${duty.date}-${duty.dutyType}-${duty.flightNumber ?? duty.dutyCode}-${duty.departureTime ?? ''}-${i}`}
           variant="outlined"
           ref={(el: HTMLDivElement | null) => { cardRefs.current[i] = el; }}
           sx={{ overflow: 'hidden', ...(i === focusIdx ? { borderColor: 'primary.main', borderWidth: 2 } : {}) }}

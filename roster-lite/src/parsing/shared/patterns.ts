@@ -1,10 +1,9 @@
 // Shared text patterns, centralized from backend/src/services/icsParser.ts (parseSummary).
 // PGA / TAP Express flights use TP and NI prefixes.
 
-export const ROUTE_RE = /^([A-Z]{3})-([A-Z]{3})$/; // e.g. LIS-OPO
-export const FLIGHT_RE = /^([A-Z]{2}\d{1,4}[A-Z]?)$/i; // e.g. TP1920, NI453
-export const TIME_RE = /^([0-2]?\d[:.h][0-5]\d)$/; // 06:30, 06.30, 06h30
-export const DUTY_CODE_RE = /^([A-Z]{2,5})$/;
+const ROUTE_RE = /^([A-Z]{3})-([A-Z]{3})$/; // e.g. LIS-OPO
+const FLIGHT_RE = /^([A-Z]{2}\d{1,4}[A-Z]?)$/i; // e.g. TP1920, NI453
+const DUTY_CODE_RE = /^([A-Z]{2,5})$/;
 
 // Normalize a time token to HH:MM, or return null if it isn't a time.
 export function normalizeTime(token: string | null | undefined): string | null {

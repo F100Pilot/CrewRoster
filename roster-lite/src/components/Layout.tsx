@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { lazy, type ReactNode, Suspense, useEffect, useRef, useState } from 'react';
 import {
   AppBar, Box, Container, IconButton, ListItemIcon, ListItemText, Menu, MenuItem, Paper,
   Toolbar, Tooltip, Typography, BottomNavigation, BottomNavigationAction,
@@ -11,14 +11,18 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import { APP_NAME, APP_VERSION_LABEL } from '../version';
 import UserSwitcher from './UserSwitcher';
-import DownloadRosterDialog from './DownloadRosterDialog';
 import NotificationBanner from './NotificationBanner';
-import SettingsDialog from './SettingsDialog';
 import WhatsNewDialog from './WhatsNewDialog';
 import DisclaimerDialog from './DisclaimerDialog';
 import { getPaySettings, getTourSeen } from '../storage/settings';
 import { OPEN_SETTINGS_EVENT } from './settingsEvents';
 // The guided tour (driver.js, ~20 KB) loads only when it runs.
+// The two big dialogs are their own chunks (review, Nov 2026): Settings brings the pay form, the calculator and the
+// Google sync, Download the CrewLink flow — none of it is needed for the first paint. They are fetched a few seconds
+// after start, so the first tap still opens them at once, and mounted from their first opening on.
+const SettingsDialog = lazy(() => import('./SettingsDialog'));
+const DownloadRosterDialog = lazy(() => import('./DownloadRosterDialog'));
+
 const startTour = () => { void import('../tour').then((m) => m.startTour()); };
 
 interface NavItem { label: string; icon: ReactNode; path: string }
@@ -72,6 +76,14 @@ export default function Layout({ children }: { children: ReactNode }) {
   }, [current, NAV.length]);
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [downloadUsed, setDownloadUsed] = useState(false);
+  const [settingsUsed, setSettingsUsed] = useState(false);
+  useEffect(() => { if (downloadOpen) setDownloadUsed(true); }, [downloadOpen]);
+  useEffect(() => { if (settingsOpen) setSettingsUsed(true); }, [settingsOpen]);
+  useEffect(() => {
+    const t = window.setTimeout(() => { void import('./SettingsDialog'); void import('./DownloadRosterDialog'); }, 3000);
+    return () => window.clearTimeout(t);
+  }, []);
   // Pages can ask for Settings on a given tab (see settingsEvents.ts).
   useEffect(() => {
     const open = () => setSettingsOpen(true);
@@ -170,8 +182,10 @@ export default function Layout({ children }: { children: ReactNode }) {
         <NotificationBanner />
         {children}
       </Container>
-      <DownloadRosterDialog open={downloadOpen} onClose={() => setDownloadOpen(false)} />
-      <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <Suspense fallback={null}>
+        {(downloadOpen || downloadUsed) && <DownloadRosterDialog open={downloadOpen} onClose={() => setDownloadOpen(false)} />}
+        {(settingsOpen || settingsUsed) && <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)} />}
+      </Suspense>
       <WhatsNewDialog />
       <DisclaimerDialog />
       {/* Seven to nine tabs don't fit a phone width, so the bar scrolls horizontally. */}

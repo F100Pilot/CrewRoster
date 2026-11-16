@@ -104,14 +104,14 @@ describe('payEstimate', () => {
     expect(hol.block.credited).toBe(120); // the flight time too (cl. 12.2.d; experts, user 0.9.3.72)
   });
 
-  // RRRGS cl. 12.2 counts "o somatório das percentagens previstas nas seguintes alíneas" and cl. 12.3 only keeps the
-  // highest WITHIN an alínea (a colleague, Nov 2026: "as alíneas devem ser somadas, o que está dentro delas não"). So a
-  // positioning on a holiday is 50% (a.iv) + 100% (d) = 150% — not 50% of 200%.
-  it('adds the holiday 100% to a positioning\'s 50% (alíneas are summed)', () => {
+  // The holiday DOUBLES what the work already counts (colleagues, 0.9.3.76: "uma assistência, são 10 horas, conta a 25% que
+  // são 02:30, em feriado são 5. O mesmo é no DH"): a positioning on a holiday is 50% → 100%, not 50% + 100% = 150% (the
+  // reading of 0.9.3.41). Night stays summed (50% + 25%) until the experts answer that one.
+  it('doubles a positioning\'s 50% on a holiday (100%, not 150%)', () => {
     const dh = { ...leg('2026-12-01', 'LIS', 'OPO', '07:00', '08:00', '06:15'), dutyType: 'Positioning' } as ParsedDuty;
     const r = payEstimate([dh], '2026-12', S, '2026-12-31');
-    expect(Math.abs(r.duty.credited - (105 * 0.5 + 105))).toBeLessThanOrEqual(0.5); // credits are whole minutes
-    expect(r.block.credited).toBeCloseTo(60 * 0.5 + 60, 5);
+    expect(Math.abs(r.duty.credited - 105)).toBeLessThanOrEqual(0.5); // credits are whole minutes
+    expect(r.block.credited).toBeCloseTo(60, 5);
   });
 
   // Colleagues, Nov 2026: the base's municipal holiday counts — 13 June from Lisbon, 24 June from Porto ("se for porto e
@@ -170,6 +170,63 @@ describe('payEstimate', () => {
     const alone = payEstimate([flight], '2026-06', S, '2026-06-30').duty.credited;
     const both = payEstimate([flight, learn], '2026-06', S, '2026-06-30').duty.credited;
     expect(both - alone).toBe(30); // was 46: the 16 min between 07:14 and 07:30 counted
+  });
+
+  it('takes one hour of lunch off the duty-pay of a training or medical day with two sessions — user, 0.9.3.73', () => {
+    const fp = (code: string, a: string, b: string) => duty('2026-03-10', 'Training', { dutyCode: code, departureAirport: 'LIS', departureTime: a, arrivalTime: b });
+    // FP1 09:00–12:30 + FP2 13:30–17:00: the [DT] is 8h00 (lunch in); the duty-pay counts 7h00.
+    const r = payEstimate([fp('FP1', '09:00', '12:30'), fp('FP2', '13:30', '17:00')], '2026-03', S, '2026-03-31');
+    expect(r.duty.credited).toBe(7 * 60);
+    // Always one hour, even with a longer break printed: 09:00–12:00 + 13:30–17:00 = 8h00 − 1h.
+    expect(payEstimate([fp('FP1', '09:00', '12:00'), fp('FP2', '13:30', '17:00')], '2026-03', S, '2026-03-31').duty.credited).toBe(7 * 60);
+    // One session, no lunch.
+    expect(payEstimate([fp('FP1', '09:00', '12:30')], '2026-03', S, '2026-03-31').duty.credited).toBe(210);
+    // Medical: IM 08:00–12:00 + VIM 12:00–12:30 is one block (no break) — nothing off.
+    const med = (code: string, a: string, b: string) => duty('2026-03-11', 'Medical', { dutyCode: code, departureAirport: 'LIS', departureTime: a, arrivalTime: b });
+    expect(payEstimate([med('IM', '08:00', '12:00'), med('VIM', '12:00', '12:30')], '2026-03', S, '2026-03-31').duty.credited).toBe(240);
+  });
+
+  it('leaves a session given as instructor out of duty and block, its DHC at 50%; the trainee\'s day counts in full — user, 0.9.3.74', () => {
+    const sim = (mark: string) => duty('2026-03-04', 'Simulator', { dutyCode: 'E90-FRA-1', departureAirport: 'FRA', departureTime: '05:35', arrivalTime: '09:35', observations: mark });
+    const dh = duty('2026-03-04', 'Positioning', { flightNumber: 'TP9571', departureAirport: 'FRA', arrivalAirport: 'LIS', departureTime: '13:00', arrivalTime: '16:18', reportingTime: '12:00' });
+    const dhAlone = payEstimate([dh], '2026-03', S, '2026-03-31');
+    const ins = payEstimate([sim('LPC_INS'), dh], '2026-03', S, '2026-03-31');
+    // Since 0.9.3.80 (the company's Feb/Jun 2026 maps): the DHC home after the session counts 100% in the block, and the
+    // day's whole duty (session → arrival) at 50%; the day also cuts the plafonds like a GAB day (−2h block, −3h37 duty).
+    expect(ins.block.credited).toBe(198);
+    expect(ins.duty.credited).toBeGreaterThan(dhAlone.duty.credited);
+    expect(ins.simCutDays).toBe(1);
+    expect(ins.block.l1).toBe(dhAlone.block.l1 - 120);
+    expect(ins.duty.l1).toBe(dhAlone.duty.l1 - 217);
+    // Going out by DHC, nothing before it: 50%; a session-only day: nothing.
+    const out = duty('2026-03-03', 'Positioning', { flightNumber: 'TP9570', departureAirport: 'LIS', arrivalAirport: 'FRA', departureTime: '08:33', arrivalTime: '11:41', reportingTime: '07:33' });
+    const simOnly = { ...sim('LPC_INS'), date: '2026-03-04' } as ParsedDuty;
+    const trip = payEstimate([out, simOnly], '2026-03', S, '2026-03-31');
+    expect(trip.block.credited).toBe(188 * 0.5); // 01:34 on the map
+    const trainee = payEstimate([sim('LPC'), dh], '2026-03', S, '2026-03-31');
+    expect(trainee.duty.credited).toBeGreaterThan(ins.duty.credited); // one continuous duty at 100%
+    expect(trainee.block.credited).toBe(240 + 198); // session + DHC in full
+    // A DHC BEFORE the session, with nothing before it, stays at 50% — duty and block ("quando não tivemos atividade
+    // anterior é 50%"): DH 05:00–08:00 (report 04:00) then the session 10:00–14:00.
+    const dhOut = duty('2026-03-05', 'Positioning', { flightNumber: 'TP9570', departureAirport: 'LIS', arrivalAirport: 'FRA', departureTime: '05:00', arrivalTime: '08:00', reportingTime: '04:00' });
+    const sim2 = duty('2026-03-05', 'Simulator', { dutyCode: 'E90-FRA-1', departureAirport: 'FRA', departureTime: '10:00', arrivalTime: '14:00', observations: 'LPC' });
+    const before = payEstimate([dhOut, sim2], '2026-03', S, '2026-03-31');
+    expect(before.block.credited).toBe(240 + 180 * 0.5);
+    const full = payEstimate([{ ...dhOut, dutyType: 'Flight Duty' } as ParsedDuty, sim2], '2026-03', S, '2026-03-31');
+    expect(full.duty.credited - before.duty.credited).toBeCloseTo(240 * 0.5, 0); // its 4 h (report → arrival) at half
+  });
+
+  it('treats every task-force session but the pilot\'s own checks as given (allSimsPaid) — company maps, 0.9.3.81', () => {
+    const sim = (date: string, mark: string | null = null) => duty(date, 'Simulator', { dutyCode: 'E90-FRA-1', departureAirport: 'FRA', departureTime: '05:35', arrivalTime: '09:35', observations: mark });
+    const taskforce = { ...S, allSimsPaid: true };
+    // An unmarked session: the instructor's in the task force (no block, a plafond cut), a trainee's otherwise.
+    expect(payEstimate([sim('2026-03-04')], '2026-03', taskforce, '2026-03-31')).toMatchObject({ simCutDays: 1 });
+    expect(payEstimate([sim('2026-03-04')], '2026-03', taskforce, '2026-03-31').block.credited).toBe(0);
+    expect(payEstimate([sim('2026-03-04')], '2026-03', S, '2026-03-31').block.credited).toBe(240);
+    // The pilot's own check (LPC, no _INS) and the day after stay his: 4h of block each, no cut ("Simulador" on the map).
+    const own = payEstimate([sim('2026-03-10', 'LPC'), sim('2026-03-11')], '2026-03', taskforce, '2026-03-31');
+    expect(own.block.credited).toBe(480);
+    expect(own.simCutDays).toBe(0);
   });
 
   it('cuts the plafonds by each office (GAB) day like a day of holidays — user, 0.9.3.63', () => {
@@ -317,7 +374,7 @@ describe('instrução em terra (FP…_INST)', () => {
   const inst = (date: string, code: string, from: string, to: string) =>
     duty(date, 'Training', { dutyCode: code, departureAirport: 'LIS', reportingTime: from, departureTime: from, arrivalTime: to });
 
-  it('pays the sessions by the hour and leaves the day out of the duty-pay credit', () => {
+  it('pays the sessions by the hour and counts them in the duty-pay credit, lunch out (company maps, 0.9.3.82)', () => {
     const duties = [
       inst('2025-12-18', 'FP1_INST', '09:00', '13:10'),
       inst('2025-12-18', 'FP2_INST', '14:10', '16:10'),
@@ -327,7 +384,7 @@ describe('instrução em terra (FP…_INST)', () => {
     expect(r.groundInstructionMinutes).toBe(370); // 4h10 + 2h00, the lunch between them left out
     expect(r.groundInstructionHours).toBe(6.17);
     expect(r.groundInstructionValue).toBeCloseTo(370.2, 2);
-    expect(r.duty.credited).toBe(120 + 30); // only the flying day: report → on-blocks + 30 min
+    expect(r.duty.credited).toBe(370 + 120 + 30); // the sessions (lunch out) + the flying day (report → on-blocks + 30)
   });
 
   it('shows the hours with no fee typed, at 0 €', () => {

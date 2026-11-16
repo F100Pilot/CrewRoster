@@ -1,4 +1,5 @@
 import { AIRPORT_COORD, midpoint, type Coord } from '../domain/airports';
+import { toMinutes as toMin } from './duration';
 
 // Route turbulence estimate — a free, browser-only approximation, NOT an official turbulence
 // product. It samples SEVERAL points along the great-circle route (not just the midpoint) at a
@@ -58,10 +59,6 @@ function uv(speedMs: number, dirDeg: number): [number, number] {
   return [-speedMs * Math.sin(dirDeg * RAD), -speedMs * Math.cos(dirDeg * RAD)];
 }
 
-function toMin(hhmm: string): number {
-  const [h, m] = hhmm.split(':').map(Number);
-  return h * 60 + m;
-}
 
 // The whole hour nearest the middle of the flight, as "HH:00".
 function midHour(depUtc: string | null, arrUtc: string | null): string {

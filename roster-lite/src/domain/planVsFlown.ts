@@ -2,6 +2,7 @@ import { fdpForDay } from './fdp';
 import { restPeriods } from './restPeriods';
 import { HOME_BASE } from './dutyStats';
 import type { ParsedDuty } from './types';
+import { toMinutes as toMin } from '../utils/duration';
 
 // What was flown against what was planned, for the pilot's pay check. The plan of each sector
 // is kept by `mergeDuties` when a sync after the day brings the flown times; from the pair this
@@ -54,10 +55,6 @@ export interface PlanVsFlown {
   reductions: RestReduction[];
 }
 
-const toMin = (t: string) => {
-  const [h, m] = t.split(':').map(Number);
-  return h * 60 + m;
-};
 // Signed difference between two clock times, folded into ±12h so a delay across midnight reads
 // as a delay and not as 23 hours early.
 const signedDiff = (from: string, to: string) => ((toMin(to) - toMin(from) + 720 + 1440) % 1440) - 720;

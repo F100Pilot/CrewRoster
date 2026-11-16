@@ -45,7 +45,9 @@ describe('recencyStatus', () => {
     ], '2026-06-10');
     expect(r.current).toBe(true);
     expect(r.landings90).toBe(3);
-    expect(r.validUntil).toBe('2026-08-30'); // 3rd-most-recent (Jun 1) + 90d
+    expect(r.validUntil).toBe('2026-08-29'); // the last day the 90-day window still holds Jun 1 (Jun 1 + 89)
+    expect(recencyStatus([row({ date: '2026-06-01' }), row({ date: '2026-06-05' }), row({ date: '2026-06-09' })], '2026-08-29').current).toBe(true);
+    expect(recencyStatus([row({ date: '2026-06-01' }), row({ date: '2026-06-05' }), row({ date: '2026-06-09' })], '2026-08-30').current).toBe(false);
   });
   it('is not current below 3 landings', () => {
     const r = recencyStatus([row({ date: '2026-06-01' })], '2026-06-10');

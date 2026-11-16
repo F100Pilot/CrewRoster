@@ -3,6 +3,13 @@
 // All schedule times are UTC "HH:mm" strings (see localTime.ts). A flight that lands
 // "before" it departs has crossed midnight, so negative spans wrap into the next day.
 
+// Minutes since midnight of a "HH:mm" time — the one helper for it (review, Nov 2026: ten private copies, some reading
+// "9:05" differently).
+export function toMinutes(hhmm: string): number {
+  const [h, m] = hhmm.split(':').map(Number);
+  return h * 60 + m;
+}
+
 // Whole minutes between two "HH:mm" times, wrapping past midnight (max one day).
 export function diffMinutes(start: string, end: string): number {
   const [sh, sm] = start.split(':').map(Number);
