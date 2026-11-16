@@ -4,7 +4,7 @@
 // Versioning — 0.9.<centesimal>.<milésima>: every update bumps the 4th place (user rule, Nov 2026), and adds a
 // RELEASE_NOTES entry in releaseNotes.ts so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.3.80';
+export const APP_VERSION = '0.9.3.81';
 const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 

@@ -507,8 +507,13 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
   `simCutDays`, not on a holiday/GAB day); a DHC AFTER the session counts 100% in the block for the instructor too
   (`afterSession(x, all)`), the DHC out (nothing before) 50%; on the day home the whole duty from the session to the DHC's
   arrival counts at 50% (`homeAfterSession`, a.iv; 17/02 → 11:50 on the map with Carnival); a session-only day counts
-  nothing. Open: the Feb map counts FP1_INST + FP2_INST (23/02) as 06:50 duty "serviço de solo (100%)" — the app keeps
-  FP…_INST out of the duty-pay (0.9.3.59); no payslip effect so far (duty far under the limit).
+  nothing. **Which sessions are the instructor's = the pay's set** (0.9.3.81): with `allSimsPaid` (task force) every
+  session but `ownCheckDates`; else `instructorSimDates`. The company's maps Dec 2025–Sep 2026 (the user's Drive folder
+  "CrewRoster Files", 12 PDFs "Mapa Mensal de Horas de Voo e Aterragens") label every unmarked session "Instrução de
+  Simulador" and the own LPC days "Simulador" (4h block, 6h duty) — the block matches all ten maps within 2 min.
+  Open (duty side): the maps count FP…_INST sessions (lunch out) as "serviço de solo (100%)" duty — Feb 05:50 for 23/02
+  — while the app keeps FP…_INST out of the duty-pay (0.9.3.59); GAB days do NOT appear in the maps' duty. Duty totals
+  differ by month (Dec 97:43 on the map vs 36h39); no payslip effect seen so far (all under the limit).
 - **Flight on a day off & reduced rest** (since 0.9.3.19, colleagues' audios; pilots only): the roster's "Voo em Off" →
   mark `VOO_OFF`, "Reducao Repouso" → `RED_REP` (one token or word by word — a split "Off" must never start a day off nor
   trip the totals-box filter). Day page card "Folga e repouso": **Recebo / Gozo a folga** (RRRGS cl. 13 — paid by default

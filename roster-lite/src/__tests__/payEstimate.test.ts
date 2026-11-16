@@ -216,6 +216,19 @@ describe('payEstimate', () => {
     expect(full.duty.credited - before.duty.credited).toBeCloseTo(240 * 0.5, 0); // its 4 h (report → arrival) at half
   });
 
+  it('treats every task-force session but the pilot\'s own checks as given (allSimsPaid) — company maps, 0.9.3.81', () => {
+    const sim = (date: string, mark: string | null = null) => duty(date, 'Simulator', { dutyCode: 'E90-FRA-1', departureAirport: 'FRA', departureTime: '05:35', arrivalTime: '09:35', observations: mark });
+    const taskforce = { ...S, allSimsPaid: true };
+    // An unmarked session: the instructor's in the task force (no block, a plafond cut), a trainee's otherwise.
+    expect(payEstimate([sim('2026-03-04')], '2026-03', taskforce, '2026-03-31')).toMatchObject({ simCutDays: 1 });
+    expect(payEstimate([sim('2026-03-04')], '2026-03', taskforce, '2026-03-31').block.credited).toBe(0);
+    expect(payEstimate([sim('2026-03-04')], '2026-03', S, '2026-03-31').block.credited).toBe(240);
+    // The pilot's own check (LPC, no _INS) and the day after stay his: 4h of block each, no cut ("Simulador" on the map).
+    const own = payEstimate([sim('2026-03-10', 'LPC'), sim('2026-03-11')], '2026-03', taskforce, '2026-03-31');
+    expect(own.block.credited).toBe(480);
+    expect(own.simCutDays).toBe(0);
+  });
+
   it('cuts the plafonds by each office (GAB) day like a day of holidays — user, 0.9.3.63', () => {
     const gab = (date: string) => duty(date, 'Office Duty', { dutyCode: 'GAB1', departureAirport: 'LIS', departureTime: '08:30', arrivalTime: '12:00' });
     // June 2026: 6 GAB days + 1 day of holidays → block Limite 1 = 60h − 7 × 2h = 46h (the July payslip paid 13 min over).

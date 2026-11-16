@@ -13,6 +13,13 @@ export interface ReleaseNote {
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.9.3.81',
+    date: '2026-11-16',
+    highlights: [
+      'Vencimento, simulador na taskforce (com «todas as sessões pagas» ligado): todas as sessões, exceto os teus próprios checks, contam como instrução, também para o block-pay e os plafonds. Conferido com os mapas mensais de horas da empresa de dezembro de 2025 a setembro de 2026: o block bate em todos os meses, com no máximo 2 minutos de diferença.',
+    ],
+  },
+  {
     version: '0.9.3.80',
     date: '2026-11-16',
     highlights: [

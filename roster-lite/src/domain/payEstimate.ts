@@ -483,7 +483,13 @@ export function payEstimate(
   // session — and the DHCs of that day count at 50% (user, 0.9.3.74: "para os instrutores, o simulador não conta duty, nem
   // bloco. Os DHC são a 50% no duty e block. Para os instruendos, é tudo contínuo e conta"). The trainee's day stays one
   // duty, the DHC beside the session in full. The AE limits are unchanged.
-  const instructorSims = instructorSimDates(duties);
+  // Which sessions are the instructor's: the same set the pay uses. In the task force (allSimsPaid) every session but
+  // the pilot's own checks — the company's monthly maps label all of them "Instrução de Simulador" and the OPC/LPC days
+  // "Simulador" with their block (Dec 2025–Sep 2026: the block matches all ten maps within 2 min; 0.9.3.81).
+  const ownChecksForCredit = ownCheckDates(duties);
+  const instructorSims = s.allSimsPaid
+    ? new Set(duties.filter((d) => d.dutyType === 'Simulator' && !ownChecksForCredit.has(d.date)).map((d) => d.date))
+    : instructorSimDates(duties);
   const asCredited = (date: string, day: ParsedDuty[]) =>
     instructorSims.has(date) ? day.filter((x) => x.dutyType !== 'Simulator') : day;
   let dutyCredited = 0;

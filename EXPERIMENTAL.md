@@ -25,6 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
+- **0.9.3.81** — Vencimento: na taskforce, todas as sessões menos os próprios checks contam como instrução no block e nos plafonds (block bate com os 10 mapas mensais da empresa).
 - **0.9.3.80** — Vencimento: dia de simulador como instrutor reduz os plafonds (−2h/−3h37); DHC de regresso a 100% no block, ida a 50%; duty do dia de regresso a 50% (mapas de fev. e jun. ao minuto).
 - **0.9.3.79** — Definições e download carregados depois do arranque (513 KB no arranque); funções de horas, euro e data de hoje num só sítio.
 - **0.9.3.78** — Segurança: «Lembrar a password» opcional (desligado por defeito, com aviso); limite de pedidos no worker (só fica ativo quando o worker for publicado); ações do GitHub fixadas por SHA.
