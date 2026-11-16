@@ -6,6 +6,7 @@ import type { ParsedDuty, Roster } from '../domain/types';
 import { diffMinutes } from './duration';
 import { getCheckinLeadMinutes } from '../storage/settings';
 import { checkInTimeLabel } from './localTime';
+import { downloadBlob } from './download';
 
 function pad(n: number): string {
   return String(n).padStart(2, '0');
@@ -134,15 +135,9 @@ export function buildIcs(roster: Roster): string {
   return buildIcsFor(roster.duties);
 }
 
-// Trigger a download of the roster as a .ics file in the browser.
+// Download the roster as a .ics file — through downloadBlob, so iOS gets the share sheet and the URL isn't revoked
+// before Safari reads it.
 export function downloadIcs(roster: Roster): void {
   const blob = new Blob([buildIcs(roster)], { type: 'text/calendar;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `crewroster-${roster.fileName.replace(/\.[^.]+$/, '') || 'escala'}.ics`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
+  downloadBlob(blob, `crewroster-${roster.fileName.replace(/\.[^.]+$/, '') || 'escala'}.ics`);
 }

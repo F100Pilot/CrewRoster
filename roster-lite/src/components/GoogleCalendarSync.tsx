@@ -6,7 +6,7 @@ import {
   googleCalendarAvailable, lastGoogleSync, syncToGoogleCalendar, type SyncResult,
 } from '../services/googleCalendar';
 
-export function syncSummary(r: SyncResult): string {
+function syncSummary(r: SyncResult): string {
   const parts = [r.added && `${r.added} novos`, r.updated && `${r.updated} alterados`, r.removed && `${r.removed} apagados`].filter(Boolean);
   return parts.length ? `Google Calendar atualizado: ${parts.join(', ')}.` : 'O Google Calendar já estava igual à escala.';
 }

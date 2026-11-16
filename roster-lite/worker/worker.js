@@ -32,6 +32,11 @@
  */
 
 // --- Configuração ----------------------------------------------------------
+// Every upstream call gives up after 30 s (security review, Nov 2026): a hanging NetLine / FLIC / AWC used to hold the
+// request open with no limit. The router's catch turns the TimeoutError into a 502 the app already handles.
+const UPSTREAM_TIMEOUT_MS = 30_000;
+const upstreamFetch = (url, init = {}) => fetch(url, { ...init, signal: init.signal ?? AbortSignal.timeout(UPSTREAM_TIMEOUT_MS) });
+
 const CREWLINK_BASE = 'https://netline.pga.pt';
 const ALLOWED_ORIGINS = [
   'https://f100pilot.github.io',
@@ -158,7 +163,7 @@ async function handleLogin(request) {
   {
     let current = loginPageUrl;
     for (let i = 0; i < 4; i++) {
-      const res = await fetch(current, {
+      const res = await upstreamFetch(current, {
         method: 'GET',
         headers: {
           'User-Agent': userAgent,
@@ -178,7 +183,7 @@ async function handleLogin(request) {
   // POST das credenciais com o cookie de priming (e Referer da página de login, como
   // um browser). A operação é loadMainFrameSet: em sucesso o servidor devolve/redireciona
   // para o frameset da app; em falha devolve a página de login outra vez.
-  const upstream = await fetch(`${CREWLINK_BASE}${CREWLINK_APP_PATH}`, {
+  const upstream = await upstreamFetch(`${CREWLINK_BASE}${CREWLINK_APP_PATH}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -205,7 +210,7 @@ async function handleLogin(request) {
     } else {
       for (let i = 0; i < 5 && loc && status >= 300 && status < 400; i++) {
         finalUrl = resolveLoc(loc);
-        const res = await fetch(finalUrl, {
+        const res = await upstreamFetch(finalUrl, {
           method: 'GET',
           headers: {
             'User-Agent': userAgent,
@@ -472,7 +477,7 @@ async function handleRoster(request) {
 
   // Abrir o serviço "Individual Duty Plan" (como clicar no menu).
   const openDutyPlan = async () => {
-    const response = await fetch(`${CREWLINK_BASE}${CREWLINK_APP_PATH}`, {
+    const response = await upstreamFetch(`${CREWLINK_BASE}${CREWLINK_APP_PATH}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -518,7 +523,7 @@ async function handleRoster(request) {
     const isGet = (ackForm.method || 'POST').toUpperCase() === 'GET';
     const ackBody = buildFormBody(ackForm);
     const ackUrl = resolveUrl(ackForm.action);
-    const ackRes = await fetch(isGet ? `${ackUrl}?${ackBody}` : ackUrl, {
+    const ackRes = await upstreamFetch(isGet ? `${ackUrl}?${ackBody}` : ackUrl, {
       method: isGet ? 'GET' : 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -568,7 +573,7 @@ async function handleRoster(request) {
     if (pdfUrl.startsWith('/')) pdfUrl = `${CREWLINK_BASE}${pdfUrl}`;
     else if (!pdfUrl.startsWith('http')) pdfUrl = `${CREWLINK_BASE}/crewlink/${pdfUrl}`;
     if (!isCrewlinkUrl(pdfUrl)) return null; // the roster PDF only ever comes from NetLine
-    const pdfResponse = await fetch(pdfUrl, {
+    const pdfResponse = await upstreamFetch(pdfUrl, {
       headers: { 'User-Agent': userAgent, Cookie: sessionCookie, Referer: `${CREWLINK_BASE}/crewlink/` },
     });
     if (pdfResponse.ok && (pdfResponse.headers.get('Content-Type') ?? '').includes('application/pdf')) {
@@ -581,7 +586,7 @@ async function handleRoster(request) {
   // ou { html, pdfUrl? } com a página HTML para inspeção. Reutilizável: corre uma vez
   // por tentativa, incluindo depois de obter uma notificação pendente.
   const runReport = async () => {
-    const reportResponse = await fetch(`${CREWLINK_BASE}${CREWLINK_APP_PATH}`, {
+    const reportResponse = await upstreamFetch(`${CREWLINK_BASE}${CREWLINK_APP_PATH}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -607,7 +612,7 @@ async function handleRoster(request) {
       const fullRedirectUrl = reportLocation.startsWith('http')
         ? reportLocation
         : `${CREWLINK_BASE}${reportLocation.startsWith('/') ? '' : '/crewlink/'}${reportLocation}`;
-      const redirectResponse = await fetch(fullRedirectUrl, {
+      const redirectResponse = await upstreamFetch(fullRedirectUrl, {
         headers: { 'User-Agent': userAgent, ...sessionFor(fullRedirectUrl, sessionCookie), Referer: `${CREWLINK_BASE}/crewlink/` },
       });
       updateCookie(redirectResponse);
@@ -670,7 +675,7 @@ async function handleRoster(request) {
   //     confirmação da página e só então gerar o duty plan.
   if (needsNotification(result.html)) {
     const getHtml = async (url, referer = `${CREWLINK_BASE}/crewlink/`) => {
-      const res = await fetch(url, {
+      const res = await upstreamFetch(url, {
         headers: { 'User-Agent': userAgent, ...sessionFor(url, sessionCookie), Referer: referer },
         redirect: 'follow',
       });
@@ -682,7 +687,7 @@ async function handleRoster(request) {
       const isGet = (form.method || 'POST').toUpperCase() === 'GET';
       const fbody = buildFormBody(form);
       const fUrl = resolveUrl(form.action);
-      const res = await fetch(isGet ? `${fUrl}?${fbody}` : fUrl, {
+      const res = await upstreamFetch(isGet ? `${fUrl}?${fbody}` : fUrl, {
         method: isGet ? 'GET' : 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -815,7 +820,7 @@ async function handleFlightInfo(request, env) {
 
   let upstream;
   try {
-    upstream = await fetch(url, { headers: { 'x-rapidapi-key': key, 'x-rapidapi-host': host } });
+    upstream = await upstreamFetch(url, { headers: { 'x-rapidapi-key': key, 'x-rapidapi-host': host } });
   } catch {
     return jsonResponse({ configured: true, flights: [], error: 'upstream_unreachable' }, 200, request);
   }
@@ -853,7 +858,7 @@ async function handleMetar(request) {
   const ua = 'CrewRoster/1.0 (+https://github.com/f100pilot/crewroster)';
   const awc = async (kind) => {
     try {
-      const r = await fetch(`${AWC}/${kind}?ids=${encodeURIComponent(ids)}&format=json`, { headers: { 'User-Agent': ua } });
+      const r = await upstreamFetch(`${AWC}/${kind}?ids=${encodeURIComponent(ids)}&format=json`, { headers: { 'User-Agent': ua } });
       if (!r.ok) return [];
       const j = await r.json();
       return Array.isArray(j) ? j : [];
@@ -972,7 +977,7 @@ async function handleFlic(request) {
   if (!FLIC_IDS.has(id)) return jsonResponse({ error: 'invalid board id' }, 400, request);
 
   try {
-    const r = await fetch(`${FLIC_BASE}${encodeURIComponent(id)}`, {
+    const r = await upstreamFetch(`${FLIC_BASE}${encodeURIComponent(id)}`, {
       headers: {
         'User-Agent': BROWSER_UA,
         Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -1027,7 +1032,7 @@ async function handleAcPos(request) {
   outer: for (const make of ACPOS_SOURCES) {
     for (const rf of regForms) {
       try {
-        const r = await fetch(make(rf), {
+        const r = await upstreamFetch(make(rf), {
           headers: { 'User-Agent': BROWSER_UA, Accept: 'application/json' },
           redirect: 'follow',
         });

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { versionGreater, notesSince, RELEASE_NOTES, APP_VERSION } from '../version';
+import { versionGreater, APP_VERSION } from '../version';
+import { notesSince, RELEASE_NOTES } from '../releaseNotes';
 
 describe('versionGreater', () => {
   it('compares dotted numeric versions', () => {

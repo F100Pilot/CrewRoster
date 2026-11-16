@@ -78,7 +78,11 @@ export function lisbonLocalToUtc(dateISO: string, localHHMM: string): string {
 
 // The window of a standby code on a date, in UTC: its start and duration. Null for a code the
 // notice doesn't list.
-export function standbyWindowUtc(code: string, dateISO: string): { start: string; minutes: number } | null {
+// `prevDay`: the UTC start falls on the day before (an R24 from 00:00 local in summer is 23:00Z the day before — it used
+// to be placed 24 h late; review, Nov 2026).
+export function standbyWindowUtc(code: string, dateISO: string): { start: string; minutes: number; prevDay: boolean } | null {
   const w = STANDBY_WINDOWS[code.toUpperCase()];
-  return w ? { start: lisbonLocalToUtc(dateISO, w.start), minutes: w.minutes } : null;
+  return w
+    ? { start: lisbonLocalToUtc(dateISO, w.start), minutes: w.minutes, prevDay: toMinutes(w.start) - lisbonOffsetMinutes(dateISO) < 0 }
+    : null;
 }

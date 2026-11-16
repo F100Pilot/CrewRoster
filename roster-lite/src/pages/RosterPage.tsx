@@ -106,13 +106,13 @@ export default function RosterPage() {
     if (!activeUser || !roster || !getAeroDataBoxKey()) return;
     const userId = activeUser.id;
     const stampKey = `crewroster.autoreg.${userId}`;
-    if (localStorage.getItem(stampKey) === today) return;
+    try { if (localStorage.getItem(stampKey) === today) return; } catch { return; }
     // Guard against duplicate concurrent runs on remount, but only mark "done for today"
     // once it actually resolves — a transient failure should be retried, not skipped.
     if (autoRegInFlight.has(userId)) return;
     autoRegInFlight.add(userId);
     autoCaptureRecent(userId, roster.duties)
-      .then(() => localStorage.setItem(stampKey, today))
+      .then(() => { try { localStorage.setItem(stampKey, today); } catch { /* retried next time */ } })
       .catch(() => {})
       .finally(() => autoRegInFlight.delete(userId));
   }, [activeUser, roster, today]);

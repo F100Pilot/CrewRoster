@@ -4,7 +4,8 @@ import {
   ListItemIcon, ListItemText, Typography,
 } from '@mui/material';
 import { Celebration, CheckCircleOutline } from '@mui/icons-material';
-import { APP_VERSION, APP_VERSION_LABEL, notesSince, RELEASE_NOTES, type ReleaseNote } from '../version';
+import { APP_VERSION, APP_VERSION_LABEL } from '../version';
+import type { ReleaseNote } from '../releaseNotes';
 import { getLastSeenVersion, setLastSeenVersion } from '../storage/settings';
 
 // Shows a one-time "what's new" pop-up after the app updates to a newer version. The
@@ -23,9 +24,15 @@ export default function WhatsNewDialog() {
       return;
     }
     if (seen !== APP_VERSION) {
-      const since = notesSince(seen);
-      setNotes(since.length ? since : RELEASE_NOTES.slice(0, 1));
-      setOpen(true);
+      // The notes are their own chunk, fetched only now (they used to weigh 74 KB on every start).
+      let alive = true;
+      import('../releaseNotes').then(({ notesSince, RELEASE_NOTES }) => {
+        if (!alive) return;
+        const since = notesSince(seen);
+        setNotes(since.length ? since : RELEASE_NOTES.slice(0, 1));
+        setOpen(true);
+      }).catch(() => { /* offline on a stale cache: no pop-up this time, seen stays behind */ });
+      return () => { alive = false; };
     }
   }, []);
 

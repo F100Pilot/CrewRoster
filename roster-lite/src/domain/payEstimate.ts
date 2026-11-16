@@ -467,7 +467,8 @@ export function payEstimate(
   const inMonth = (iso: string) => iso.startsWith(month);
   const holidays = new Set([
     ...baseHolidays(Number(month.slice(0, 4)), base), // national + the base's municipal one (13/06 LIS, 24/06 OPO)
-    ...baseHolidays(Number(month.slice(0, 4)) - 1, base), // a 31 Dec duty can run into 1 Jan
+    ...baseHolidays(Number(month.slice(0, 4)) - 1, base), // a January duty that started on 31 Dec
+    ...baseHolidays(Number(month.slice(0, 4)) + 1, base), // a 31 Dec duty running into 1 Jan (review, Nov 2026: was missing)
   ]);
 
   // ── Duty-pay credit (cl. 12.2) ──
@@ -689,7 +690,9 @@ export function payEstimate(
   // A cut the pilot typed for a day replaces the planned-vs-flown one for that day.
   const restByDate = new Map(restPeriods(duties, 'pilot', base).map((r) => [r.date, r]));
   const typedCuts = [...days].filter(([date]) => inMonth(date)).map(([date, day]) => [date, restCutOf(day, restByDate.get(date))] as const)
-    .filter((x): x is readonly [string, number] => x[1] !== null && x[1] > 0);
+    .filter((x): x is readonly [string, number] => x[1] !== null);
+  // Every day with a figure of its own — 0 included: the day page's switch turned off over "Reducao Repouso" means no
+  // cut at all, so the planned-vs-flown one must not come back (review, Nov 2026: it used to).
   const typedCutDates = new Set(typedCuts.map(([date]) => date));
   const reducedMinutes = pvf.reductions.filter((r) => !typedCutDates.has(r.date)).reduce((sum, r) => sum + r.cut, 0)
     + typedCuts.reduce((sum, [, m]) => sum + m, 0);
@@ -815,7 +818,7 @@ export function payEstimate(
     holidayDays,
     officeCutDays,
     variable,
-    includesPlanned: todayISO < lastDay,
+    includesPlanned: todayISO <= lastDay, // on the month's last day its flights may still be ahead
   };
 }
 

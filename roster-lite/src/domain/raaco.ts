@@ -370,7 +370,21 @@ function stayLines(where: string, from: Date, to: Date, base: string, taken: Set
 // Longest stay counted after a duty that ends away, if the roster has nothing after it.
 const MAX_STAY_MS = 4 * 86_400_000;
 
+// One computation per roster array and base: the Lista, the calendar, the day card, /abonos and the pay estimate all ask
+// for the whole roster's days (review, Nov 2026: four separate full runs per render pass). Rosters are replaced, never
+// mutated in place, so the array is a safe key. Callers must treat the Map as read-only.
+const raacoCache = new WeakMap<ParsedDuty[], Map<string, Map<string, RaacoDay>>>();
 export function raacoDays(roster: ParsedDuty[], base: string): Map<string, RaacoDay> {
+  let byBase = raacoCache.get(roster);
+  if (!byBase) { byBase = new Map(); raacoCache.set(roster, byBase); }
+  const hit = byBase.get(base.toUpperCase());
+  if (hit) return hit;
+  const out = computeRaacoDays(roster, base);
+  byBase.set(base.toUpperCase(), out);
+  return out;
+}
+
+function computeRaacoDays(roster: ParsedDuty[], base: string): Map<string, RaacoDay> {
   const b = base.toUpperCase();
   // What is due follows the duty as it happened (the report stays the planned one — rosterMerge); where a meal is
   // loaded follows the Meal Plan, i.e. each sector's planned times (`asPlanned`, 4.5.10). A delayed flight that

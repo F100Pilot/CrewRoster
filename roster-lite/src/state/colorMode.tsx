@@ -14,14 +14,15 @@ const ColorModeContext = createContext<ColorModeState | null>(null);
 
 // Reads the saved preference, else follows the OS setting on first run.
 function initialMode(): ColorMode {
-  const saved = localStorage.getItem(STORAGE_KEY);
+  let saved: string | null = null;
+  try { saved = localStorage.getItem(STORAGE_KEY); } catch { /* storage blocked (private mode): follow the OS */ }
   if (saved === 'light' || saved === 'dark') return saved;
   return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
 export function ColorModeProvider({ children }: { children: ReactNode }) {
   const [mode, setMode] = useState<ColorMode>(initialMode);
-  useEffect(() => { localStorage.setItem(STORAGE_KEY, mode); }, [mode]);
+  useEffect(() => { try { localStorage.setItem(STORAGE_KEY, mode); } catch { /* not persisted */ } }, [mode]);
 
   const theme = useMemo(() => createAppTheme(mode), [mode]);
   const ctx = useMemo<ColorModeState>(

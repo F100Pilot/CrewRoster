@@ -57,7 +57,7 @@ function UserAvatar({ user, size = 32 }: { user: UserProfile; size?: number }) {
 
 // ── Create-user dialog ───────────────────────────────────────────────────────────
 
-export function CreateUserDialog({
+function CreateUserDialog({
   open,
   onClose,
   title = 'Novo utilizador',

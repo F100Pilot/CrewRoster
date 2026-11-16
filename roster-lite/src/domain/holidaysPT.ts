@@ -1,6 +1,6 @@
 // Portuguese national public holidays (Código do Trabalho, art. 234.º), for the pay estimate:
-// the RRRGS (cl. 12.2.d) pays flight and duty time on a holiday at +100%. Municipal holidays
-// (Lisbon 13 June, Porto 24 June) and Carnival are optional by law and left out.
+// the RRRGS (cl. 12.2.d) pays flight and duty time on a holiday at +100%. The municipal holiday of the
+// base (Lisbon 13 June, Porto 24 June) and Carnival are added by baseHolidays() (colleagues, 0.9.3.43/44).
 
 const FIXED = ['01-01', '04-25', '05-01', '06-10', '08-15', '10-05', '11-01', '12-01', '12-08', '12-25'];
 

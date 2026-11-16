@@ -4,7 +4,7 @@ export const DUTY_TYPE_LABEL: Record<string, string> = {
   'Standby Home': 'Assistência em casa', Reserve: 'Reserva', 'Office Duty': 'Gabinete', Training: 'Formação',
   Simulator: 'Simulador', Medical: 'Médico', Absence: 'Ausência', Vacation: 'Férias', 'Day Off': 'Folga', Other: 'Serviço',
 };
-export const dutyTypeLabel = (t: string): string => DUTY_TYPE_LABEL[t] ?? t;
+const dutyTypeLabel = (t: string): string => DUTY_TYPE_LABEL[t] ?? t;
 
 // A duty's own word where its code says more than its type: S.EXT. is filed as office duty (it pays
 // and counts like one) but it is an external service, not the office (user); IO is the irregularity.

@@ -17,7 +17,7 @@ export interface HeroStat { label: string; value: string }
 // controls and the tiles as glass keys.
 
 // Glass keys on the sky: round icon buttons and outlined buttons.
-export const glassKey = {
+const glassKey = {
   background: 'linear-gradient(180deg, rgba(255,255,255,.28), rgba(255,255,255,.08))',
   boxShadow: 'inset 0 1px 0 rgba(255,255,255,.5), inset 0 -3px 0 rgba(4,14,40,.45), 0 8px 12px -6px rgba(0,0,0,.5)',
   '&:active': { transform: 'translateY(1px)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,.4), inset 0 -1px 0 rgba(4,14,40,.45)' },

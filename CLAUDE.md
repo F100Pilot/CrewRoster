@@ -127,7 +127,8 @@ cross-origin. Endpoints: `POST /api/login`, `/api/roster`, `/api/flightinfo`,
 - **Versioning** (`src/version.ts`): `0.<major>.<centesimal>.<milésima>` — 0.9.x since the 3D look (user asked
   for 0.9.0 Beta on promotion). **Every update bumps the 4th place** (user rule, Nov 2026: "o bump é aumentado na
   quarta casa"): `0.9.3.2 → 0.9.3.3`, features and fixes alike. The 3rd place and the minor (0.8 → 0.9) move only
-  when the user asks. **Add a `RELEASE_NOTES` entry for every bump** (pt-PT) — the
+  when the user asks. **Add a `RELEASE_NOTES` entry for every bump** (pt-PT, in `src/releaseNotes.ts` since 0.9.3.77 —
+  split from version.ts and loaded on demand by WhatsNewDialog, 74 KB out of the first paint) — the
   "Novidades" pop-up shows it after an update.
 - **Match the surrounding code:** comment density, naming, idioms. Comments explain
   *why*, in the existing style.
@@ -572,6 +573,15 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
   (local time) — keep it so (user, Nov 2026: filing by the roster's month was tried as 0.9.3.47 and withdrawn, "algumas
   escalas têm vários meses"), newest first, each named by its download day/time; deleting asks first (the PDFs replay planned vs
   flown and the IO prevenir).
+- **Code review of Nov 2026 (0.9.3.77)** — fixed: pdf.js documents destroyed after each read (`extractPdf`), the
+  background re-parse queued on `importLock` and re-reading the stored roster (`reparseInBackground`), raacoDays cached
+  per roster array (WeakMap — rosters must be replaced, never mutated in place), worker upstream timeouts (30 s,
+  `upstreamFetch`), CI checkout `persist-credentials: false`, no AeroDataBox key in backups, frame-busting in `main.tsx`,
+  holiday set includes the next year (31 Dec → 1 Jan), summer R24 start on the day before (`prevDay`), `legsOf` rolls
+  after-midnight legs, recency `validUntil` = 3rd landing + 89 days, a switched-off rest cut drops the planned-vs-flown
+  one. Left for the user to decide: CrewLink password stored in plain localStorage on the shared f100pilot.github.io
+  origin (a custom domain / opt-in "remember" would fix it), worker rate limiting (Cloudflare binding), pinning
+  third-party actions to SHAs, lazy-loading Settings/Download dialogs, consolidating the ~10 HH:MM→minutes helpers.
 - **Backlog:** the rest of the AE items (folgas check, ES/LF/ND, per diem, duty-pay/block-pay
   credits, holiday counter), PWA local reminders, crosswind (runway DB). See `EXPERIMENTAL.md`
   (TODO/Backlog) and `roster-lite/TODO.md`.

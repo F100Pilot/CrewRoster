@@ -8,7 +8,7 @@ export type SkyStyle = 'illustrated' | 'realistic';
 const KEY = 'crewroster.skyStyle';
 const EVENT = 'sky-style-changed';
 
-export function getSkyStyle(): SkyStyle {
+function getSkyStyle(): SkyStyle {
   try {
     return localStorage.getItem(KEY) === 'realistic' ? 'realistic' : 'illustrated';
   } catch {

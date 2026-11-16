@@ -3,6 +3,14 @@ import ReactDOM from 'react-dom/client';
 import { ColorModeProvider } from './state/colorMode';
 import App from './App';
 
+// Never run inside another site's frame (clickjacking: a hostile page could overlay the app and steer taps onto
+// "Apagar" or a backup download). GitHub Pages sends no X-Frame-Options and a <meta> CSP can't carry frame-ancestors,
+// so the check lives here (security review, Nov 2026).
+if (window.top !== window.self) {
+  document.body.textContent = 'O CrewRoster só abre na sua própria janela.';
+  throw new Error('framed');
+}
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ColorModeProvider>

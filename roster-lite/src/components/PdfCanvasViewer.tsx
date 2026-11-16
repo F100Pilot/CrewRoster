@@ -105,7 +105,7 @@ export default function PdfCanvasViewer({ blob }: { blob: Blob }) {
         const data = await blob.arrayBuffer();
         if (cancelled) return;
         const doc = await (await loadPdfjs()).getDocument({ data, isEvalSupported: false }).promise;
-        if (cancelled) return;
+        if (cancelled) { void doc.destroy(); return; }
         docRef.current = doc;
         fitWidthRef.current = scrollRef.current?.clientWidth || 320;
         zoomRef.current = 1;

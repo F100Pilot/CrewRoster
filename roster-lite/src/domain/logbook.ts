@@ -215,7 +215,7 @@ export function recencyStatus(rows: LogbookRow[], refISO: string, required = 3, 
   let validUntil: string | null = null;
   if (current) {
     const third = new Date(`${landings[required - 1]}T00:00:00Z`);
-    third.setUTCDate(third.getUTCDate() + days);
+    third.setUTCDate(third.getUTCDate() + days - 1); // the last day the window [ref − (days − 1), ref] still holds it
     validUntil = third.toISOString().slice(0, 10);
   }
   return { landings90, current, validUntil };
