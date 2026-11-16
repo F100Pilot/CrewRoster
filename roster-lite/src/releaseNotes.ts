@@ -13,6 +13,14 @@ export interface ReleaseNote {
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.9.3.78',
+    date: '2026-11-16',
+    highlights: [
+      'Segurança: a password do CrewLink só fica guardada neste aparelho se ligares «Lembrar a password» em Definições → Perfil, e aparece um aviso quando está ligado. Desligado, o código de tripulante continua preenchido e só escreves a password em cada download. Quem já a tinha guardada continua com a opção ligada.',
+      'Segurança: o servidor de apoio passa a limitar os pedidos (5 logins por minuto por tripulante), para que ninguém o possa usar para tentar adivinhar passwords no CrewLink.',
+    ],
+  },
+  {
     version: '0.9.3.77',
     date: '2026-11-16',
     highlights: [

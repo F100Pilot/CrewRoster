@@ -128,7 +128,7 @@ function extractSessionId(response) {
 }
 
 // --- POST /api/login -------------------------------------------------------
-async function handleLogin(request) {
+async function handleLogin(request, env) {
   let body;
   try {
     body = await request.json();
@@ -138,6 +138,9 @@ async function handleLogin(request) {
 
   if (!body.crewCode || !body.password) {
     return jsonResponse({ error: 'crewCode and password are required' }, 400, request);
+  }
+  if (await overLimit(env, 'LOGIN_LIMITER', `${clientIp(request)}:${String(body.crewCode).trim().toUpperCase()}`)) {
+    return tooMany(request);
   }
 
   const formData = formEncode({
@@ -1082,6 +1085,26 @@ async function handleAcPos(request) {
   return jsonResponse(data, 200, request);
 }
 
+// --- Rate limits -----------------------------------------------------------
+// The Origin check only stops browsers: any script can send our Origin header (security review, Nov 2026). Two Cloudflare
+// rate-limit bindings (wrangler.toml) cap the abuse: /api/login per IP + crew code (credential stuffing against NetLine
+// would lock crew accounts out), and every /api/* call per IP (the AeroDataBox quota, the relays). Without the bindings
+// (the file pasted into the dashboard) nothing is limited.
+async function overLimit(env, name, key) {
+  const limiter = env && env[name];
+  if (!limiter || typeof limiter.limit !== 'function') return false;
+  try {
+    const { success } = await limiter.limit({ key });
+    return !success;
+  } catch {
+    return false; // a limiter hiccup must never block the crew
+  }
+}
+
+const clientIp = (request) => request.headers.get('CF-Connecting-IP') || 'unknown';
+const tooMany = (request) =>
+  jsonResponse({ error: 'Demasiados pedidos. Espera um minuto e tenta outra vez.' }, 429, request);
+
 // --- Router ----------------------------------------------------------------
 export default {
   async fetch(request, env) {
@@ -1109,10 +1132,13 @@ async function route(request, env) {
     if (url.pathname.startsWith('/api/') && !originAllowed(request)) {
       return jsonResponse({ error: 'Forbidden' }, 403, request);
     }
+    if (url.pathname.startsWith('/api/') && await overLimit(env, 'API_LIMITER', clientIp(request))) {
+      return tooMany(request);
+    }
 
     switch (url.pathname) {
       case '/api/login':
-        return handleLogin(request);
+        return handleLogin(request, env);
       case '/api/roster':
         return handleRoster(request);
       case '/api/flightinfo':

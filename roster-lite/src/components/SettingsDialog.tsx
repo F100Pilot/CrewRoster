@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
 import {
   Alert, Avatar, Box, Button, Chip, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle,
   Divider, IconButton, InputAdornment, Link, List, ListItemButton, ListItemIcon, ListItemText,
-  Snackbar, Stack, Tab, Tabs, TextField, ToggleButton, ToggleButtonGroup, Typography,
+  FormControlLabel, Snackbar, Stack, Switch, Tab, Tabs, TextField, ToggleButton, ToggleButtonGroup, Typography,
 } from '@mui/material';
 import {
   Close, Visibility, VisibilityOff, CheckCircle, Science, CalendarMonth, DeleteOutline, BugReport,
@@ -76,6 +76,9 @@ export default function SettingsDialog({ open, onClose: close }: { open: boolean
   const [credCode, setCredCode] = useState('');
   const [credPassword, setCredPassword] = useState('');
   const [showCred, setShowCred] = useState(false);
+  // The password is kept only when the crew member asks for it (security review, Nov 2026): it sits unencrypted in this
+  // browser's storage, on an origin shared with the experimental build. Off by default; on for whoever had one saved.
+  const [rememberPw, setRememberPw] = useState(false);
   // EASA logbook: which function (PIC / co-pilot) the printable logbook assigns block time to.
   const [logbookFn, setLogbookFn] = useState<LogbookFunction>('COPILOT');
   const [show, setShow] = useState(false);
@@ -145,6 +148,7 @@ export default function SettingsDialog({ open, onClose: close }: { open: boolean
       const cred = activeUser ? getCredentials(activeUser.id) : null;
       setCredCode(cred?.crewCode ?? activeUser?.crewCode ?? '');
       setCredPassword(cred?.password ?? '');
+      setRememberPw(!!cred?.password);
       setLogbookFn(activeUser ? getLogbookFunction(activeUser.id) : 'COPILOT');
       // A page may have asked for a specific tab (openSettings), so re-read it on every open.
       setTab(readTab());
@@ -207,7 +211,7 @@ export default function SettingsDialog({ open, onClose: close }: { open: boolean
     setAeroDataBoxKey(trimmed);
     // Prefer the live DOM value so a password-manager fill (no onChange) is still captured.
     const code = (credCodeRef.current?.value ?? credCode).trim();
-    const pw = credPasswordRef.current?.value ?? credPassword;
+    const pw = rememberPw ? credPasswordRef.current?.value ?? credPassword : '';
     if (activeUser) {
       setCredentials(activeUser.id, { crewCode: code, password: pw });
       setLogbookFunction(activeUser.id, logbookFn);
@@ -216,15 +220,15 @@ export default function SettingsDialog({ open, onClose: close }: { open: boolean
     if (code !== credCode) setCredCode(code);
     if (pw !== credPassword) setCredPassword(pw);
     setSaved(true);
-    if (code || pw) {
-      setSnack('Credenciais do CrewLink guardadas neste dispositivo.');
-    }
+    if (pw) setSnack('Código e password do CrewLink guardados neste dispositivo.');
+    else if (code) setSnack('Código de tripulante guardado neste dispositivo.');
   }
 
   function handleForgetCredentials() {
     if (activeUser) setCredentials(activeUser.id, null);
     setCredCode('');
     setCredPassword('');
+    setRememberPw(false);
     setSaved(true);
     setSnack('Credenciais removidas deste dispositivo.');
   }
@@ -360,7 +364,8 @@ export default function SettingsDialog({ open, onClose: close }: { open: boolean
               <Typography variant="subtitle2" gutterBottom>Acesso ao CrewLink</Typography>
               <Typography variant="body2" color="text.secondary" gutterBottom>
                 Preenche o download da escala (ícone <CloudDownload sx={{ fontSize: 14, verticalAlign: 'text-bottom' }} />)
-                automaticamente. Fica guardado <strong>só neste dispositivo</strong>.
+                automaticamente. Fica guardado <strong>só neste dispositivo</strong>. A password só é guardada se ligares
+                «Lembrar a password».
               </Typography>
               <Stack spacing={1.5} sx={{ mt: 0.5 }}>
                 <TextField
@@ -372,25 +377,37 @@ export default function SettingsDialog({ open, onClose: close }: { open: boolean
                   size="small"
                   fullWidth
                 />
-                <TextField
-                  label="Password"
-                  type={showCred ? 'text' : 'password'}
-                  value={credPassword}
-                  onChange={(e) => setCredPassword(e.target.value)}
-                  inputRef={credPasswordRef}
-                  autoComplete="current-password"
-                  size="small"
-                  fullWidth
-                  InputProps={{
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton size="small" onClick={() => setShowCred((s) => !s)} edge="end" aria-label="Mostrar ou ocultar password">
-                          {showCred ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
+                <FormControlLabel
+                  control={<Switch checked={rememberPw} onChange={(e) => setRememberPw(e.target.checked)} />}
+                  label="Lembrar a password neste aparelho"
                 />
+                {rememberPw && (
+                  <>
+                    <TextField
+                      label="Password"
+                      type={showCred ? 'text' : 'password'}
+                      value={credPassword}
+                      onChange={(e) => setCredPassword(e.target.value)}
+                      inputRef={credPasswordRef}
+                      autoComplete="current-password"
+                      size="small"
+                      fullWidth
+                      InputProps={{
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton size="small" onClick={() => setShowCred((s) => !s)} edge="end" aria-label="Mostrar ou ocultar password">
+                              {showCred ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                    <Alert severity="warning" sx={{ py: 0 }}>
+                      A password fica guardada sem cifra neste aparelho. Liga só num telemóvel que seja só teu e com
+                      bloqueio de ecrã. Desligado, escreves a password em cada download.
+                    </Alert>
+                  </>
+                )}
                 {(credCode || credPassword) && (
                   <Box>
                     <Button size="small" color="error" onClick={handleForgetCredentials} startIcon={<DeleteOutline />}>

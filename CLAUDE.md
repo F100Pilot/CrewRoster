@@ -579,9 +579,13 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
   `upstreamFetch`), CI checkout `persist-credentials: false`, no AeroDataBox key in backups, frame-busting in `main.tsx`,
   holiday set includes the next year (31 Dec → 1 Jan), summer R24 start on the day before (`prevDay`), `legsOf` rolls
   after-midnight legs, recency `validUntil` = 3rd landing + 89 days, a switched-off rest cut drops the planned-vs-flown
-  one. Left for the user to decide: CrewLink password stored in plain localStorage on the shared f100pilot.github.io
-  origin (a custom domain / opt-in "remember" would fix it), worker rate limiting (Cloudflare binding), pinning
-  third-party actions to SHAs, lazy-loading Settings/Download dialogs, consolidating the ~10 HH:MM→minutes helpers.
+  one. Then (user: "faz o 1, 2 e 3", 0.9.3.78): the CrewLink password is kept only behind Settings → Perfil "Lembrar a
+  password neste aparelho" (off by default, a warning when on; the crew code is always kept); the worker has two
+  Cloudflare rate-limit bindings in `wrangler.toml` (`[[unsafe.bindings]]` type ratelimit — LOGIN_LIMITER 5/min per IP +
+  crew code, API_LIMITER 120/min per IP on /api/*; `overLimit()` skips when a binding is absent; 429 "Demasiados
+  pedidos"); every GitHub action is pinned to a commit SHA (`# v4` comments — bump them by SHA). Still open: a custom
+  domain (would separate the app's storage from other f100pilot.github.io sites and from /exp/), lazy-loading the
+  Settings/Download dialogs, consolidating the ~10 HH:MM→minutes helpers.
 - **Backlog:** the rest of the AE items (folgas check, ES/LF/ND, per diem, duty-pay/block-pay
   credits, holiday counter), PWA local reminders, crosswind (runway DB). See `EXPERIMENTAL.md`
   (TODO/Backlog) and `roster-lite/TODO.md`.
