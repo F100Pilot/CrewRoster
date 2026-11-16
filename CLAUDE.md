@@ -359,9 +359,11 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
   payslip to the cent (user wants it automatic); a typed `unionBase` still overrides, under Avançado.
 - **Night / holiday premiums — the alíneas of RRRGS cl. 12.2 are SUMMED** (a colleague, Nov 2026: "as alíneas devem ser
   somadas, o que está dentro delas não"; cl. 12.3 keeps only the highest WITHIN one alínea): a positioning's 50% (a.iv)
-  + night 25% (c) + holiday 100% (d), never a share of them. The holiday 100% is on DUTY-PAY only (the time between 00:00
-  and 23:59 Lisbon of the holiday; a duty crossing midnight counts its part) — since 0.9.3.63 NOT on block-pay (user decision
-  from the July 2026 payslip: June's 0,25 h of block-pay matches only without it; February's Carnival agrees). Since 0.9.3.43 (colleagues): the BASE's
+  + night 25% (c) + holiday 100% (d), never a share of them. The holiday 100% is on duty-pay AND block-pay (cl. 12.2 d:
+  "100% do tempo de voo e de trabalho" between 00:00 and 23:59 Lisbon of the holiday; a duty or sector crossing midnight
+  counts its part). 0.9.3.63 took it off the block-pay to match the July 2026 payslip (June's 0,25 h) and February's
+  Carnival; the experts said "as horas block em feriado … tem que dobrar" and the user chose to put it back (0.9.3.72) —
+  those two payslips stay open. Since 0.9.3.43 (colleagues): the BASE's
   municipal holiday counts (`baseHolidays()` — 13/06 LIS, 24/06 OPO, by the profile's base) and a standby on a holiday is
   doubled (its counted share again for the part on the holiday, outside the work window: 10 h home = 2h30 → 5h00).
   Since 0.9.3.44 Carnival (Shrove Tuesday, Easter − 47) counts too (user: "Carnaval é para considerar como feriado") —
