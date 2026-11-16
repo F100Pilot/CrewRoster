@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.3.75';
+export const APP_VERSION = '0.9.3.76';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -20,6 +20,14 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.9.3.76',
+    date: '2026-11-16',
+    highlights: [
+      'Vencimento: num feriado, um DH conta a dobrar, de 50% para 100%, no duty-pay e no block-pay, como a assistência (25% para 50%). Antes contava 150% (50% mais 100%). Os voos não mudam: contam a dobrar como antes.',
+    ],
+    thanks: 'Obrigado aos colegas especialistas que esclareceram a conta do feriado.',
+  },
   {
     version: '0.9.3.75',
     date: '2026-11-16',

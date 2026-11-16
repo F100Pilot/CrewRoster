@@ -104,14 +104,14 @@ describe('payEstimate', () => {
     expect(hol.block.credited).toBe(120); // the flight time too (cl. 12.2.d; experts, user 0.9.3.72)
   });
 
-  // RRRGS cl. 12.2 counts "o somatório das percentagens previstas nas seguintes alíneas" and cl. 12.3 only keeps the
-  // highest WITHIN an alínea (a colleague, Nov 2026: "as alíneas devem ser somadas, o que está dentro delas não"). So a
-  // positioning on a holiday is 50% (a.iv) + 100% (d) = 150% — not 50% of 200%.
-  it('adds the holiday 100% to a positioning\'s 50% (alíneas are summed)', () => {
+  // The holiday DOUBLES what the work already counts (colleagues, 0.9.3.76: "uma assistência, são 10 horas, conta a 25% que
+  // são 02:30, em feriado são 5. O mesmo é no DH"): a positioning on a holiday is 50% → 100%, not 50% + 100% = 150% (the
+  // reading of 0.9.3.41). Night stays summed (50% + 25%) until the experts answer that one.
+  it('doubles a positioning\'s 50% on a holiday (100%, not 150%)', () => {
     const dh = { ...leg('2026-12-01', 'LIS', 'OPO', '07:00', '08:00', '06:15'), dutyType: 'Positioning' } as ParsedDuty;
     const r = payEstimate([dh], '2026-12', S, '2026-12-31');
-    expect(Math.abs(r.duty.credited - (105 * 0.5 + 105))).toBeLessThanOrEqual(0.5); // credits are whole minutes
-    expect(r.block.credited).toBeCloseTo(60 * 0.5 + 60, 5);
+    expect(Math.abs(r.duty.credited - 105)).toBeLessThanOrEqual(0.5); // credits are whole minutes
+    expect(r.block.credited).toBeCloseTo(60, 5);
   });
 
   // Colleagues, Nov 2026: the base's municipal holiday counts — 13 June from Lisbon, 24 June from Porto ("se for porto e

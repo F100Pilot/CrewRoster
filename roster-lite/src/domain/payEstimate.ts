@@ -516,7 +516,9 @@ export function payEstimate(
         night += overlap(a, b, nextMidnight - 60 * MIN, nextMidnight + 6 * 60 * MIN);
         if (holidays.has(iso)) holiday += overlap(a, b, midnight, nextMidnight);
       }
-      credit += (night / MIN) * NIGHT_SHARE + (holiday / MIN) * HOLIDAY_SHARE;
+      // The holiday doubles what the work already counts (colleagues, 0.9.3.76: "uma assistência, são 10 horas, conta a 25%
+      // que são 02:30, em feriado são 5. O mesmo é no DH"): a DHC-only day 50% → 100%, not 50% + 100%.
+      credit += (night / MIN) * NIGHT_SHARE + (holiday / MIN) * HOLIDAY_SHARE * (positioningOnly ? 0.5 : 1);
     }
     // A standby on a holiday is doubled too (colleagues: "se for de 10 horas, são 2.5 (25%), como é a dobrar são 5 horas"):
     // its counted share again for the part on the holiday, outside the work window (that part is counted as work above).
@@ -558,12 +560,13 @@ export function payEstimate(
       let min = diffMinutes(x.departureTime, x.arrivalTime);
       const off = Date.parse(`${date}T${x.departureTime}:00Z`);
       const on = off + min * MIN;
-      if (x.dutyType === 'Positioning' && !operatedDay && !afterSession(x, day)) min *= 0.5;
+      const share = x.dutyType === 'Positioning' && !operatedDay && !afterSession(x, day) ? 0.5 : 1;
+      min *= share;
       let holiday = 0;
       for (const iso of [nextDate(date, -1), date, nextDate(date)]) {
         if (holidays.has(iso)) holiday += overlap(off, on, lisbonMidnightUtc(iso), lisbonMidnightUtc(nextDate(iso)));
       }
-      blockCredited += min + (holiday / MIN) * HOLIDAY_SHARE;
+      blockCredited += min + (holiday / MIN) * HOLIDAY_SHARE * share; // doubled: a DHC at 50% → 100% (0.9.3.76)
     }
   }
 

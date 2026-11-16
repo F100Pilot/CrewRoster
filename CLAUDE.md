@@ -359,7 +359,10 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
   payslip to the cent (user wants it automatic); a typed `unionBase` still overrides, under Avançado.
 - **Night / holiday premiums — the alíneas of RRRGS cl. 12.2 are SUMMED** (a colleague, Nov 2026: "as alíneas devem ser
   somadas, o que está dentro delas não"; cl. 12.3 keeps only the highest WITHIN one alínea): a positioning's 50% (a.iv)
-  + night 25% (c) + holiday 100% (d), never a share of them. The holiday 100% is on duty-pay AND block-pay (cl. 12.2 d:
+  + night 25% (c), never a share of them. BUT the holiday DOUBLES what the work already counts (colleagues, user-approved
+  0.9.3.76: "uma assistência, são 10 horas, conta a 25% que são 02:30, em feriado são 5. O mesmo é no DH"): a DHC at 50%
+  → 100% on a holiday (0.9.3.41–75 gave 150%); a flight 100% → 200% either way. Still open: night on a DHC (50% + 25% kept).
+  The holiday premium is on duty-pay AND block-pay (cl. 12.2 d:
   "100% do tempo de voo e de trabalho" between 00:00 and 23:59 Lisbon of the holiday; a duty or sector crossing midnight
   counts its part). 0.9.3.63 took it off the block-pay to match the July 2026 payslip (June's 0,25 h) and February's
   Carnival; the experts said "as horas block em feriado … tem que dobrar" and the user chose to put it back (0.9.3.72) —
@@ -496,8 +499,8 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
   counts in full in the block too. Since 0.9.3.75 (the expert's audio, user chose "só depois da sessão"): only a DHC AFTER
   the trainee's session counts in full (`afterSession`); one before it, with nothing before, stays at 50% in block and
   duty (`dhcBeforeSessionMinutes`). A DHC beside a flight keeps cl. 12.2 a.iii (before or after = 100%). The expert also
-  confirmed the GAB cut ("deduzir … 3 horas e 37 a cada dia"). AE limits and the day's duty unchanged. Open (user is asking
-  the experts): a DH on a holiday — the expert said "50% … passa a 100%" (doubled), the app sums the alíneas (150%).
+  confirmed the GAB cut ("deduzir … 3 horas e 37 a cada dia"). AE limits and the day's duty unchanged. A DH on a holiday
+  is doubled since 0.9.3.76 (see the premiums bullet).
 - **Flight on a day off & reduced rest** (since 0.9.3.19, colleagues' audios; pilots only): the roster's "Voo em Off" →
   mark `VOO_OFF`, "Reducao Repouso" → `RED_REP` (one token or word by word — a split "Off" must never start a day off nor
   trip the totals-box filter). Day page card "Folga e repouso": **Recebo / Gozo a folga** (RRRGS cl. 13 — paid by default
