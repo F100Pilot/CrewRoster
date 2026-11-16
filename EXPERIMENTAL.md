@@ -7,7 +7,7 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.9.3.71`
+- **Produção (`master`) está em:** `0.9.3.72`
 - **Próxima versão ao promover:** a da experimental (cada atualização sobe a 4.ª casa)
 
 ## Como promover tudo para produção (quando estiver pronto)
@@ -25,7 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **0.9.3.72** — Vencimento: feriado volta a contar a dobrar no block-pay (AE cl. 12.2 d, especialistas); os recibos de junho e fevereiro de 2026 ficam em aberto.
+_(nada pendente)_
 
 ---
 
