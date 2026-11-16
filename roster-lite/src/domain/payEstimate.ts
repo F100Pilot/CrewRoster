@@ -462,10 +462,19 @@ export function payEstimate(
   // delas não"): a positioning's 50% (a.iv) + the night's 25% (c) + the holiday's 100% (d) — not a share of them.
   // Flights on a day off paid under cl. 13 stay out of the plafonds (cl. 13.5): paid on their own.
   const offDayDates = new Set([...days].filter(([date, day]) => inMonth(date) && offDayChoice(day) === 'paid').map(([date]) => date));
+  // A simulator session given as instructor counts neither duty nor block for the plafonds — it is paid apart per
+  // session — and the DHCs of that day count at 50% (user, 0.9.3.74: "para os instrutores, o simulador não conta duty, nem
+  // bloco. Os DHC são a 50% no duty e block. Para os instruendos, é tudo contínuo e conta"). The trainee's day stays one
+  // duty, the DHC beside the session in full. The AE limits are unchanged.
+  const instructorSims = instructorSimDates(duties);
+  const asCredited = (date: string, day: ParsedDuty[]) =>
+    instructorSims.has(date) ? day.filter((x) => x.dutyType !== 'Simulator') : day;
   let dutyCredited = 0;
-  for (const d of dutyDays(duties, PGA_PILOT_RULES)) {
-    if (!inMonth(d.date) || offDayDates.has(d.date)) continue;
-    const day = days.get(d.date) ?? [];
+  for (const dd of dutyDays(duties, PGA_PILOT_RULES)) {
+    if (!inMonth(dd.date) || offDayDates.has(dd.date)) continue;
+    const day = asCredited(dd.date, days.get(dd.date) ?? []);
+    const d = instructorSims.has(dd.date) ? dutyDays(day, PGA_PILOT_RULES)[0] : dd;
+    if (!d) continue;
     // Work paid apart stays out of the plafonds: ground training given (isGroundInstruction, "Instrução em terra") and
     // office days (isOfficeDay, "Subs. gabinete"). A day of it alone credits nothing; beside other work its sessions come
     // off the day's credit.
@@ -517,9 +526,12 @@ export function payEstimate(
   // experts ("as horas block em feriado … tem que dobrar") and the AE text say otherwise, so it is back (user, 0.9.3.72).
   // Those two payslips stay open.
   let blockCredited = 0;
-  for (const [date, day] of days) {
+  for (const [date, all] of days) {
     if (!inMonth(date) || offDayDates.has(date)) continue;
-    const operatedDay = day.some((x) => x.dutyType === 'Flight Duty');
+    const day = asCredited(date, all);
+    // A DHC in full beside an operated sector or a session as trainee (cl. 12.2 a.ii–iii; user, 0.9.3.74: "para os
+    // instruendos, é tudo contínuo e conta"); alone, or beside a session given as instructor, at 50%.
+    const operatedDay = day.some((x) => x.dutyType === 'Flight Duty' || x.dutyType === 'Simulator');
     for (const x of day) {
       if (!FLYING.has(x.dutyType) || !x.departureTime || !x.arrivalTime) continue;
       let min = diffMinutes(x.departureTime, x.arrivalTime);

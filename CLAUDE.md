@@ -488,6 +488,13 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
   sessions (user, 0.9.3.73: "em formação, o intervalo para almoço desconta no duty (1 hora de almoço)"; chose: duty-pay
   only, training AND medical, always 1 h — capped at the printed break): `lunchMinutes()` in `payEstimate.ts`, ground days
   only (no flight/DHC/sim that day). IM + VIM back to back has no break → nothing off.
+  **Simulator as instructor vs trainee in the plafonds** (user, 0.9.3.74: "para os instrutores, o simulador não conta duty,
+  nem bloco. Os DHC são a 50% no duty e block. Para os instruendos, é tudo continuo e conta"): on an `instructorSimDates`
+  day (OPC_INS / LPC_INS + the check's 2nd day — NOT the taskforce `allSimsPaid` set: a session received there is a
+  trainee's) the Simulator duties are dropped from the duty-pay and block-pay credits (`asCredited` in `payEstimate.ts`),
+  so the DHCs of the day count alone, at 50%; a trainee's sim day stays one continuous duty and a DHC beside the session
+  counts in full in the block too (`operatedDay` includes Simulator). AE limits and the day's duty unchanged. Open: a
+  DHC-only day of a trainee's trip (still 50%).
 - **Flight on a day off & reduced rest** (since 0.9.3.19, colleagues' audios; pilots only): the roster's "Voo em Off" →
   mark `VOO_OFF`, "Reducao Repouso" → `RED_REP` (one token or word by word — a split "Off" must never start a day off nor
   trip the totals-box filter). Day page card "Folga e repouso": **Recebo / Gozo a folga** (RRRGS cl. 13 — paid by default

@@ -6,7 +6,7 @@
 //   • small fixes  → bump the MILÉSIMA (4th part):   0.8.2 → 0.8.2.1
 // Add a RELEASE_NOTES entry for every bump so the "Novidades" pop-up can announce it.
 export const APP_NAME = 'CrewRoster';
-export const APP_VERSION = '0.9.3.73';
+export const APP_VERSION = '0.9.3.74';
 export const APP_STAGE = 'Beta';
 export const APP_VERSION_LABEL = `${APP_VERSION} ${APP_STAGE}`;
 
@@ -20,6 +20,13 @@ export interface ReleaseNote {
 
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
+  {
+    version: '0.9.3.74',
+    date: '2026-11-16',
+    highlights: [
+      'Vencimento: o simulador dado como instrutor (OPC_INS / LPC_INS) deixa de contar no duty-pay e no block-pay, porque é pago à parte por sessão. Os DHC desse dia contam a 50%. Como instruendo, o dia conta todo, sem interrupções, e o DHC ao lado da sessão conta por inteiro. Os limites do AE não mudam.',
+    ],
+  },
   {
     version: '0.9.3.73',
     date: '2026-11-16',

@@ -186,6 +186,18 @@ describe('payEstimate', () => {
     expect(payEstimate([med('IM', '08:00', '12:00'), med('VIM', '12:00', '12:30')], '2026-03', S, '2026-03-31').duty.credited).toBe(240);
   });
 
+  it('leaves a session given as instructor out of duty and block, its DHC at 50%; the trainee\'s day counts in full — user, 0.9.3.74', () => {
+    const sim = (mark: string) => duty('2026-03-04', 'Simulator', { dutyCode: 'E90-FRA-1', departureAirport: 'FRA', departureTime: '05:35', arrivalTime: '09:35', observations: mark });
+    const dh = duty('2026-03-04', 'Positioning', { flightNumber: 'TP9571', departureAirport: 'FRA', arrivalAirport: 'LIS', departureTime: '13:00', arrivalTime: '16:18', reportingTime: '12:00' });
+    const dhAlone = payEstimate([dh], '2026-03', S, '2026-03-31');
+    const ins = payEstimate([sim('LPC_INS'), dh], '2026-03', S, '2026-03-31');
+    expect(ins.duty.credited).toBe(dhAlone.duty.credited); // only the DHC, at 50%
+    expect(ins.block.credited).toBe(198 * 0.5);
+    const trainee = payEstimate([sim('LPC'), dh], '2026-03', S, '2026-03-31');
+    expect(trainee.duty.credited).toBeGreaterThan(ins.duty.credited * 4); // one continuous duty from the session's briefing
+    expect(trainee.block.credited).toBe(240 + 198); // session + DHC in full
+  });
+
   it('cuts the plafonds by each office (GAB) day like a day of holidays — user, 0.9.3.63', () => {
     const gab = (date: string) => duty(date, 'Office Duty', { dutyCode: 'GAB1', departureAirport: 'LIS', departureTime: '08:30', arrivalTime: '12:00' });
     // June 2026: 6 GAB days + 1 day of holidays → block Limite 1 = 60h − 7 × 2h = 46h (the July payslip paid 13 min over).
