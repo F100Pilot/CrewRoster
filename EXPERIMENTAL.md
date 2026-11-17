@@ -7,7 +7,7 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.9.3.85`
+- **Produção (`master`) está em:** `0.9.3.87`
 - **Próxima versão ao promover:** a da experimental (cada atualização sobe a 4.ª casa)
 
 ## Como promover tudo para produção (quando estiver pronto)
@@ -25,10 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **0.9.3.86** — Céu realista: nublado / chuva / nevoeiro de dia mais claros (cinzento prateado), a pedido do utilizador
-  ("mesmo de dia, a imagem realista do weather está escura").
-- **0.9.3.87** — AE: «Assistências e reservas» com as reservas (R24) contadas à parte; RSV24 / RES / R24H lidos como
-  reserva (PARSE_VERSION 32). Um tester achou que as reservas não contavam.
+_(nada pendente)_
 
 ---
 
