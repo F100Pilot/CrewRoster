@@ -54,7 +54,7 @@ export function mergeDuties(previous: ParsedDuty[], incoming: ParsedDuty[], asOf
 
   const incomingDates = new Set([...incoming.map((d) => d.date), ...blankDates]);
   const kept = previous.filter((d) => !incomingDates.has(d.date));
-  const next = carryIoPlans(previous, asOfISO ? carryPlans(previous, incoming, asOfISO) : incoming);
+  const next = carryStandbyPlans(previous, carryIoPlans(previous, asOfISO ? carryPlans(previous, incoming, asOfISO) : incoming));
 
   return [...kept, ...next].sort((a, b) =>
     a.date < b.date ? -1 : a.date > b.date ? 1 : 0,
@@ -116,5 +116,26 @@ function carryIoPlans(previous: ParsedDuty[], incoming: ParsedDuty[]): ParsedDut
       .sort((a, b) => ((a.departureTime ?? '') < (b.departureTime ?? '') ? -1 : 1)).pop() ?? work[0];
     const dutyMinutes = before.find((p) => p.rosterDt !== undefined)?.rosterDt ?? null;
     return { ...d, planned: { reportingTime: work[0].reportingTime, departureTime: work[0].departureTime, arrivalTime: last.arrivalTime, dutyMinutes } };
+  });
+}
+
+// A standby (or R24 reserve) the roster had for a day and a later roster replaced — called out to fly, or changed to
+// something else before the day — stays on that day as `plannedStandby`: RUPT cl. 19.24 counts the standbys and reserves
+// "publicadas por ano civil em planeamento" (24), so one that was used still counts (a tester, Nov 2026: "conta do
+// planeado... não depois do realizado"). The code a day already carried wins, then the replaced duty's own.
+export const isStandbyDuty = (d: ParsedDuty) =>
+  d.dutyType === 'Standby Home' || d.dutyType === 'Standby Airport' || d.dutyType === 'Reserve';
+
+function carryStandbyPlans(previous: ParsedDuty[], incoming: ParsedDuty[]): ParsedDuty[] {
+  const was = new Map<string, string>();
+  for (const p of previous) {
+    const code = p.plannedStandby ?? (isStandbyDuty(p) ? p.dutyCode : undefined);
+    if (code && !was.has(p.date)) was.set(p.date, code);
+  }
+  if (!was.size) return incoming;
+  const standbyNow = new Set(incoming.filter(isStandbyDuty).map((d) => d.date));
+  return incoming.map((d) => {
+    const code = was.get(d.date);
+    return code && !standbyNow.has(d.date) && !d.plannedStandby ? { ...d, plannedStandby: code } : d;
   });
 }

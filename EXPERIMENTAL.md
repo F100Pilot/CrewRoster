@@ -28,6 +28,9 @@ produção, em vez de promover uma a uma.
 - **0.9.3.84** — Vencimento: IRS das horas a mais (Limite1/Limite2 DutyPay/BlockPay) retido à parte, a metade da taxa do
   mês (CIRS art. 99.º-C n.º 8), sem entrar na base nem subir o escalão (sugestão de um tester; conferido ao euro com o
   recibo de julho de 2026).
+- **0.9.3.85** — AE: cartão «Assistências» (24 por ano / 6 por mês, RUPT cl. 19.24 e 19.16, contadas pelo planeado — o
+  merge guarda a assistência substituída em `plannedStandby`, PARSE_VERSION 31) e verificação «Folgas no ano» (111, cl.
+  21.1). Estatísticas: quadro folgas / PLS / férias por mês e ano; calendário com os três separados (sugestões dos testers).
 
 ---
 
