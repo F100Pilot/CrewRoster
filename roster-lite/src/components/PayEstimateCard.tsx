@@ -277,6 +277,9 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                     value={-n.priorYearIrs}
                   />
                 )}
+                {n.overtimeIrs > 0 && (
+                  <Row label={`IRS das horas a mais, à parte (metade da taxa, sobre ${EUR.format(n.overtimeIrsBase)})`} value={-n.overtimeIrs} />
+                )}
                 {n.subsidyIrs > 0 && <Row label="IRS dos subsídios (retenção à parte)" value={-n.subsidyIrs} />}
                 <Row label="Segurança Social (11%)" value={-n.ss} />
                 {n.pensionDeposit > 0 && <Row label="Depósito f. pensões SIPLA (7,5%)" value={-n.pensionDeposit} />}
@@ -299,7 +302,7 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                 <Typography variant="caption" color="text.secondary" display="block" lineHeight={1.35}>
                   O variável (per diem incluído) é pago no mês seguinte. IRS pelas tabelas de retenção de 2026 (continente), como
                   no recibo: o do mês só sobre o fixo, e o do mês anterior refeito com o variável que agora se paga (menos o
-                  que já tinha sido retido); em janeiro, o variável de dezembro à parte. Não prevê outras correções de meses
+                  que já tinha sido retido); em janeiro, o variável de dezembro à parte. As horas a mais (excesso aos plafonds) não entram nessas contas nem sobem o escalão: são retidas à parte, a metade da taxa do mês. Não prevê outras correções de meses
                   passados. Noturno 23h–06h e feriados em hora de Lisboa, somados às outras
                   alíneas da cl. 12.2 (o feriado a dobrar no duty-pay e no block-pay). Nos dias de formação ou de exames médicos com duas sessões desconta 1 h de almoço no duty-pay. O simulador dado como instrutor não conta no duty nem no block, e os DHC desse dia contam a 50%; como instruendo conta tudo. Cada dia de férias ou de gabinete reduz os plafonds. Subsídios sobre todos os fixos: férias = 42 dias (fixos ÷ 30 × 42), Natal = um mês (cl. 7 e
                   8), com IRS retido à parte, SS e fundo de pensões. Line checks: um por dia com voos W_INS, ou FAM_INS e LIFUS_INS juntos — corrige com − / + se

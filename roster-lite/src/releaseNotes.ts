@@ -13,6 +13,13 @@ export interface ReleaseNote {
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.9.3.84',
+    date: '2026-11-17',
+    highlights: [
+      'Vencimento, IRS das horas a mais (excesso aos plafonds de duty-pay ou block-pay): deixam de se somar ao resto e já não sobem o escalão. São retidas à parte, a metade da taxa do vencimento do mês, como manda a lei para o trabalho suplementar (CIRS art. 99.º-C). Conferido ao euro com um recibo real.',
+    ],
+  },
+  {
     version: '0.9.3.83',
     date: '2026-11-16',
     highlights: [

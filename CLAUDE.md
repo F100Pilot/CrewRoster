@@ -353,7 +353,11 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
   "IRS 07/2026 4614" on the fixed pay, "IRS 06/2026 −4209" given back, "IRS 06/2026 7300" on June's fixed + the variable paid
   in July — table I with the pilot's dependants gives all three to the euro): `netEstimate(r, s, prev)` with `prev` = the
   previous work month's settings (`getPaySettingsFor`) → `irs` on the fixed pay alone + `prevIrs − prevIrsWithheld`. Same
-  total as one sum while both fixed pays sit in the same bracket; it differs on a raise across brackets. Pension plan (RRRGS cl. 16, `pensionAuto`):
+  total as one sum while both fixed pays sit in the same bracket; it differs on a raise across brackets. **The hours above the plafonds
+  are overtime for the IRS** (since 0.9.3.84, a tester: "não pode aumentar o escalão"; user: "jogar pelo seguro"): left out
+  of every base and withheld apart at HALF the effective rate of the payslip's fixed pay (CIRS art. 99.º-C n.º 8,
+  Despacho 233-A/2026), floored with that line — `NetEstimate.overtimeIrs`; checked to the euro on the July 2026 payslip
+  (June's hours out of "IRS 06/2026", July's line = fixed IRS + hours × rate × 50%). SS unchanged. Pension plan (RRRGS cl. 16, `pensionAuto`):
   PGA contribution 6,5% of VB+VE+VS paid as a non-taxable abono, SIPLA deposit 7,5% deducted — both
   matched the payslip to the cent. Union fee = `unionPct` (1%) of a base that (since 0.8.26.1)
   is automatic: `unionBaseAuto()` = all fixed pay minus the command lines "Anuid. técnica Comando"

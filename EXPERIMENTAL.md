@@ -25,7 +25,9 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(nada pendente)_
+- **0.9.3.84** — Vencimento: IRS das horas a mais (Limite1/Limite2 DutyPay/BlockPay) retido à parte, a metade da taxa do
+  mês (CIRS art. 99.º-C n.º 8), sem entrar na base nem subir o escalão (sugestão de um tester; conferido ao euro com o
+  recibo de julho de 2026).
 
 ---
 

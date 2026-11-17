@@ -859,6 +859,13 @@ export interface NetEstimate {
   prevIrsBase: number; // the month before: its fixed pay + the variable paid now
   prevIrs: number; // its IRS withheld again on that
   prevIrsWithheld: number; // what its payslip held on its fixed pay alone, given back
+  // The hours above the plafonds (Limite1/Limite2 DutyPay/BlockPay) are overtime for the IRS: withheld apart, at HALF the
+  // effective rate of this payslip's monthly pay (CIRS art. 99.º-C n.º 8, Despacho 233-A/2026), never added to a base, so
+  // they don't raise the bracket (a colleague, Nov 2026: "não pode aumentar o escalão"). Checked on a July 2026 payslip to
+  // the euro: June's hours were left out of June's IRS withheld again, and July's own line was the fixed pay's IRS plus
+  // the hours at half its rate, in one line.
+  overtimeIrsBase: number;
+  overtimeIrs: number; // what they add to the payslip's own IRS line (the payroll floors the line to the euro)
   ssBase: number;
   ss: number;
   pensionDeposit: number;
@@ -877,6 +884,8 @@ export interface NetEstimate {
 // pay (in January, December's variable apart: it is the year before's); SS takes 11%. Both leave out the non-taxable fixed part, and the exempt share of the per
 // diem for days away; per diem for days at base is taxed in full. Checked against a real October
 // 2026 payslip: IRS and both SS lines to the cent.
+// Overtime is withheld at half the monthly pay's rate (CIRS art. 99.º-C n.º 8; the July 2026 payslip agrees to the euro).
+const OVERTIME_IRS_SHARE = 0.5;
 // The fixed pay subject to IRS: every fixed line but the non-taxable part (the PGA's pension contribution).
 const fixedTaxableOf = (s: PaySettings) => s.vb + s.ve + s.vs + s.extras - (s.nonTaxableFixed || 0);
 
@@ -909,11 +918,15 @@ export function netEstimate(r: PayEstimate, s: PaySettings, prev?: PaySettings):
   // payslip: "IRS (Cat. A)" 37,37% on the fixed pay alone and "Ded. fisc. per. ant." 34,20% on December's variable — the
   // app's tables give 4171 € to the euro and 2693 € for the payslip's 2692 €; one sum at one rate was ~846 € too much).
   const priorYear = (r.month ?? '').endsWith('-12');
-  const variableIrsBase = variableTaxed + travelTaxable('irs');
+  // The hours above the plafonds leave every base: they are withheld apart (overtimeIrs). SS takes them like any pay.
+  const overtimeIrsBase = Math.max(0, r.overtimeValue || 0);
+  const variableIrsBase = variableTaxed + travelTaxable('irs') - overtimeIrsBase;
   const withPrev = !priorYear && !!prev;
   const irsBase = priorYear || withPrev ? fixedTaxable : fixedTaxable + variableIrsBase;
   const ssBase = fixedTaxable + variableTaxed + travelTaxable('ss');
   const irs = irsRetention(irsBase, s.irsTable || 'I', s.dependents || 0);
+  const overtimeIrs = overtimeIrsBase > 0 && irsBase > 0
+    ? Math.floor(irs + overtimeIrsBase * (irs / irsBase) * OVERTIME_IRS_SHARE) - irs : 0;
   const priorYearIrsBase = priorYear ? variableIrsBase : 0;
   const priorYearIrs = priorYear ? irsRetention(priorYearIrsBase, s.irsTable || 'I', s.dependents || 0) : 0;
   // The month before, withheld again with the variable (its own table and dependants, as its payslip had them).
@@ -938,10 +951,10 @@ export function netEstimate(r: PayEstimate, s: PaySettings, prev?: PaySettings):
   const grossAll = gross + subsidyTotal + subsidyPension.contribution;
   return {
     gross: grossAll, irsBase, irs, irsRate: irsBase > 0 ? irs / irsBase : 0, priorYearIrsBase, priorYearIrs,
-    prevIrsBase, prevIrs, prevIrsWithheld, ssBase, ss, pensionDeposit, union, fixedDeductions,
+    prevIrsBase, prevIrs, prevIrsWithheld, overtimeIrsBase, overtimeIrs, ssBase, ss, pensionDeposit, union, fixedDeductions,
     subsidyIrs,
     subsidyPensionContribution: subsidyPension.contribution,
     mealCard: r.mealTicketValue || 0,
-    net: grossAll - irs - priorYearIrs - (prevIrs - prevIrsWithheld) - subsidyIrs - ss - pensionDeposit - union - fixedDeductions - (r.mealTicketValue || 0),
+    net: grossAll - irs - overtimeIrs - priorYearIrs - (prevIrs - prevIrsWithheld) - subsidyIrs - ss - pensionDeposit - union - fixedDeductions - (r.mealTicketValue || 0),
   };
 }
