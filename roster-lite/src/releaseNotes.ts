@@ -13,6 +13,13 @@ export interface ReleaseNote {
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.9.3.90',
+    date: '2026-11-17',
+    highlights: [
+      'Hoje: no banner, a «Nova apresentação» de um voo atribuído durante a assistência aparece a negrito e a amarelo, para se ver logo.',
+    ],
+  },
+  {
     version: '0.9.3.89',
     date: '2026-11-17',
     highlights: [

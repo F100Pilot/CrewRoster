@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState, type ReactNode } from 'react';
 import { Box, Button, ButtonBase, Stack, Typography } from '@mui/material';
 import { ChevronRight, FlightTakeoff, Login } from '@mui/icons-material';
 import { alpha, createTheme, darken, lighten, ThemeProvider } from '@mui/material/styles';
@@ -198,7 +198,12 @@ function summary(ctx: DayContext): string | undefined {
   return d ? `${TYPE_LABEL[d.dutyType] ?? d.dutyType} · ${d.dutyCode}` : undefined;
 }
 
-function headline(ctx: DayContext, base: string): { over: string; big: string; under?: string } {
+// "Nova apresentação" stands out in bold amber over the sky (user, 0.9.3.89: "deve ficar a bold e de outra cor").
+const NewReport = ({ children }: { children: ReactNode }) => (
+  <Box component="span" sx={{ fontWeight: 800, color: '#FCD34D' }}>{children}</Box>
+);
+
+function headline(ctx: DayContext, base: string): { over: ReactNode; big: string; under?: ReactNode } {
   const now = ctx.now.getTime();
   const first = ctx.legs[0];
   switch (ctx.phase) {
@@ -214,7 +219,7 @@ function headline(ctx: DayContext, base: string): { over: string; big: string; u
         return {
           over: `Início do serviço ${dayWord(ctx.date!)} às ${localAt(report, base)} · ${sby.dutyCode}`,
           big: countdown(report.getTime() - now),
-          under: `Nova apresentação às ${localAt(flightReport, at)} · ${summary(ctx) ?? ''}`,
+          under: <><NewReport>Nova apresentação às {localAt(flightReport, at)}</NewReport> · {summary(ctx) ?? ''}</>,
         };
       }
       return {
@@ -239,7 +244,7 @@ function headline(ctx: DayContext, base: string): { over: string; big: string; u
         const nextReport = new Date(ctx.nextLeg.off.getTime() - 60 * 60000);
         if (sby && ctx.nextLeg === first && now < nextReport.getTime()) {
           return {
-            over: `${sby.dutyCode} · nova apresentação às`,
+            over: <>{sby.dutyCode} · <NewReport>Nova apresentação às</NewReport></>,
             big: localAt(nextReport, ctx.nextLeg.duty.departureAirport ?? ctx.location),
             under: `${ctx.nextLeg.duty.flightNumber ?? ''} para ${cityName(ctx.nextLeg.duty.arrivalAirport ?? '')} às ${localAt(ctx.nextLeg.off, ctx.nextLeg.duty.departureAirport)} · daqui a ${countdown(nextReport.getTime() - now)}`,
           };
