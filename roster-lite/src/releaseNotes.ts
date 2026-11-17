@@ -13,6 +13,13 @@ export interface ReleaseNote {
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.9.3.89',
+    date: '2026-11-17',
+    highlights: [
+      'Hoje: num dia de assistência em que já foi atribuído um voo, o banner mostra a hora em que o serviço começa (a da assistência, e a contagem continua a ser para essa hora) e a nova apresentação do voo (1 h antes da partida). Durante a assistência, mostra a nova apresentação.',
+    ],
+  },
+  {
     version: '0.9.3.88',
     date: '2026-11-17',
     highlights: [

@@ -25,7 +25,8 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(nada pendente)_
+- **0.9.3.89** — Hoje: assistência com voo atribuído → «Início do serviço … às 09:00 · H9+» + «Nova apresentação às 11:30»;
+  durante a assistência, «H9+ · nova apresentação às 11:30» (testers; o duty conta desde o início da assistência).
 
 ---
 

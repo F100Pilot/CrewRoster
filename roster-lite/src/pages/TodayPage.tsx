@@ -204,6 +204,19 @@ function headline(ctx: DayContext, base: string): { over: string; big: string; u
   switch (ctx.phase) {
     case 'preflight': {
       const report = ctx.window!.start;
+      // Called out from a home standby (H9+ at 09:00, then a flight given for 12:30): the duty starts with the standby —
+      // the countdown stays on it — and the flight has its own, later report (testers, Nov 2026: "início de duty" e
+      // "nova apresentação"; the time from the standby's start to the report counts at 25%, RUPT cl. 19.7 b).
+      const sby = ctx.duties.find((d) => d.dutyType === 'Standby Home' || d.dutyType === 'Reserve');
+      const flightReport = first ? new Date(first.off.getTime() - 60 * 60000) : null; // the report rule: departure − 1 h
+      if (sby && first && flightReport && flightReport.getTime() > report.getTime()) {
+        const at = first.duty.departureAirport ?? ctx.location;
+        return {
+          over: `Início do serviço ${dayWord(ctx.date!)} às ${localAt(report, base)} · ${sby.dutyCode}`,
+          big: countdown(report.getTime() - now),
+          under: `Nova apresentação às ${localAt(flightReport, at)} · ${summary(ctx) ?? ''}`,
+        };
+      }
       return {
         over: `Apresentação ${dayWord(ctx.date!)} às ${localAt(report, first?.duty.departureAirport ?? ctx.location)}`,
         big: countdown(report.getTime() - now),
@@ -221,6 +234,16 @@ function headline(ctx: DayContext, base: string): { over: string; big: string; u
         };
       }
       if (ctx.nextLeg) {
+        // Still on the standby the flight came from (nothing flown yet): the next thing is the flight's own report.
+        const sby = ctx.duties.find((d) => d.dutyType === 'Standby Home' || d.dutyType === 'Reserve');
+        const nextReport = new Date(ctx.nextLeg.off.getTime() - 60 * 60000);
+        if (sby && ctx.nextLeg === first && now < nextReport.getTime()) {
+          return {
+            over: `${sby.dutyCode} · nova apresentação às`,
+            big: localAt(nextReport, ctx.nextLeg.duty.departureAirport ?? ctx.location),
+            under: `${ctx.nextLeg.duty.flightNumber ?? ''} para ${cityName(ctx.nextLeg.duty.arrivalAirport ?? '')} às ${localAt(ctx.nextLeg.off, ctx.nextLeg.duty.departureAirport)} · daqui a ${countdown(nextReport.getTime() - now)}`,
+          };
+        }
         return {
           over: `Em terra em ${cityName(ctx.location)} · próximo voo`,
           big: localAt(ctx.nextLeg.off, ctx.nextLeg.duty.departureAirport),
