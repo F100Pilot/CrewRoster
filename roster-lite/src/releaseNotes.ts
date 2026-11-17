@@ -13,6 +13,13 @@ export interface ReleaseNote {
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.9.3.88',
+    date: '2026-11-17',
+    highlights: [
+      'Estatísticas e calendário: o dia X (folga fora da base) deixa de contar como folga, porque a folga é gozada na base (RUPT cl. 6.ª n.º 11). Nas Estatísticas tem uma coluna própria «X». No calendário aparece por baixo das folgas, como «+N X».',
+    ],
+  },
+  {
     version: '0.9.3.87',
     date: '2026-11-17',
     highlights: [

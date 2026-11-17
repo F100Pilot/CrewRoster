@@ -13,6 +13,7 @@ interface Props {
 interface Stat {
   value: string;
   label: string;
+  note?: string;
 }
 
 // Tier 2 — at-a-glance monthly totals: block time, flights, duty days, standby, nights away, then folgas / PLS / holidays.
@@ -39,7 +40,8 @@ export default function MonthStatsCard({ duties }: Props) {
       { value: String(dutyDays), label: 'Serviço' },
       { value: String(standby), label: 'Assist.' },
       { value: String(nightsAway), label: 'Fora' },
-      { value: String(free.folga), label: 'Folgas' },
+      // An X (day off away from base) isn't a folga (RUPT cl. 6.ª n.º 11): apart, under the folgas.
+      { value: String(free.folga), label: 'Folgas', note: free.x ? `+${free.x} X` : undefined },
       { value: String(free.pls), label: 'PLS' },
       { value: String(free.ferias), label: 'Férias' },
     ];
@@ -49,7 +51,7 @@ export default function MonthStatsCard({ duties }: Props) {
   // (user: the month's tiles read better with the text in the middle).
   return (
     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(4, minmax(0, 1fr))', sm: 'repeat(8, minmax(0, 1fr))' }, gap: 1 }}>
-      {stats.map((s) => <StatTile key={s.label} center label={s.label.toUpperCase()} value={s.value} />)}
+      {stats.map((s) => <StatTile key={s.label} center label={s.label.toUpperCase()} value={s.value} note={s.note} />)}
     </Box>
   );
 }

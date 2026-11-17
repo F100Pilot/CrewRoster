@@ -25,7 +25,8 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(nada pendente)_
+- **0.9.3.88** — Folgas / X / PLS / férias: o X (folga fora da base) à parte das folgas, nas Estatísticas (coluna X) e no
+  calendário («+N X» sob as folgas). Um tester: "dia x estão a contar como folga" (RUPT cl. 6.ª n.º 11).
 
 ---
 

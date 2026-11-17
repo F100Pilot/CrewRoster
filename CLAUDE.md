@@ -220,7 +220,8 @@ Things learned over this collaboration that should persist across sessions:
   `StandbyLimitCard` on `/limites` (pilots; since 0.9.3.87 "Assistências e reservas", the R24 reserves shown apart — a
   tester thought they weren't counted; RSV24 / RES / R24H also read as Reserve, PARSE_VERSION 32). Only seen if a roster printed before the change was saved. Also "Folgas no ano"
   (cl. 21.1: 111 a calendar year, −2 per 7 days of the pilot's own absence, 21.14) in `aeCompliance`, and folgas / PLS /
-  férias apart (`freeDayCounts` in `dutyStats.ts`): `FreeDaysCard` on Estatísticas, the calendar's month tiles.
+  férias apart (`freeDayCounts` in `dutyStats.ts`): `FreeDaysCard` on Estatísticas, the calendar's month tiles. The X (day
+  off AWAY from base) is NOT a folga (RUPT cl. 6.11; a tester, 0.9.3.88) — its own column / "+N X", like `aeCompliance`.
 - **AE analysis is labelled experimental everywhere it shows** (user request): `AeDisclaimer.tsx`.
   Limits / compliance / holidays live on `/limites`; the roster list only has a one-line summary
   (user wants the first page light).

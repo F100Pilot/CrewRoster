@@ -8,7 +8,7 @@ const d = (date: string, dutyCode: string, dutyType: string): ParsedDuty => ({
 });
 
 describe('freeDayCounts', () => {
-  it('splits folgas, PLS and holidays by day', () => {
+  it('splits folgas, X days, PLS and holidays by day', () => {
     const c = freeDayCounts([
       d('2026-12-01', 'W_OFF', 'Day Off'),
       d('2026-12-02', 'OFF_RQST', 'Day Off'),
@@ -21,6 +21,6 @@ describe('freeDayCounts', () => {
       d('2026-12-08', 'W_OFF', 'Day Off'), d('2026-12-08', 'TP9001', 'Flight Duty'),
       d('2026-12-09', 'FAL', 'Absence'),
     ]);
-    expect(c).toEqual({ folga: 3, pls: 1, ferias: 2 });
+    expect(c).toEqual({ folga: 2, x: 1, pls: 1, ferias: 2 }); // the X (away from base) is not a folga
   });
 });
