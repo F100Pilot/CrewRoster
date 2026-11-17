@@ -61,3 +61,29 @@ export function dayStats(duties: ParsedDuty[]): DayStats | null {
   const lastArrival = flights[flights.length - 1].arrivalTime!;
   return { blockMinutes, dutyMinutes: diffMinutes(checkIn, lastArrival), checkIn };
 }
+
+// Days free of service, split the way crew count them (a tester, Nov 2026: "separar e mostrar o que é férias / folgas /
+// PLS"): a PLS_* (período livre de serviço) apart from the ordinary folgas (W_OFF, OFF, the requested ones, an X away from
+// base), and the holidays (F, PLIC, SLIC, RLIC, VAC). By distinct date; a day with any service on it counts as none.
+export type FreeDayKind = 'folga' | 'pls' | 'ferias';
+export function freeDayKind(day: ParsedDuty[]): FreeDayKind | null {
+  if (!day.length) return null;
+  if (day.some((d) => d.dutyType === 'Vacation')) return 'ferias';
+  if (day.some((d) => d.dutyType !== 'Day Off')) return null;
+  return day.some((d) => /^PLS_/i.test(d.dutyCode)) ? 'pls' : 'folga';
+}
+
+export interface FreeDayCounts { folga: number; pls: number; ferias: number }
+export function freeDayCounts(duties: ParsedDuty[]): FreeDayCounts {
+  const byDate = new Map<string, ParsedDuty[]>();
+  for (const d of duties) {
+    if (!byDate.has(d.date)) byDate.set(d.date, []);
+    byDate.get(d.date)!.push(d);
+  }
+  const out: FreeDayCounts = { folga: 0, pls: 0, ferias: 0 };
+  for (const day of byDate.values()) {
+    const k = freeDayKind(day);
+    if (k) out[k] += 1;
+  }
+  return out;
+}

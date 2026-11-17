@@ -17,7 +17,7 @@ import { lisbonLocal, lisbonMidnightUtc } from './standbyWindows';
 export type CheckStatus = 'ok' | 'warn' | 'na';
 
 export interface ComplianceCheck {
-  id: 'folgas-mes' | 'intervalo-folgas' | 'folgas-72-96' | 'fim-de-semana' | 'descanso-semanal' | 'es-lf-nd';
+  id: 'folgas-mes' | 'folgas-ano' | 'intervalo-folgas' | 'folgas-72-96' | 'fim-de-semana' | 'descanso-semanal' | 'es-lf-nd';
   label: string;
   clause: string;
   status: CheckStatus;
@@ -133,6 +133,27 @@ function checkMonthly(days: Day[], fromISO: string): ComplianceCheck {
   if (!short.length) return { ...base, status: 'ok', detail: months.map(describe).join(' · ') };
   const course = short.some((m) => involvesCourse(days, `${m.month}-01`, `${m.month}-31`));
   return { ...base, status: 'warn', detail: short.map(describe).join(' · '), note: course ? COURSE_NOTE : undefined };
+}
+
+// ── cl. 21.1 / 21.14 — at least 111 folga days per calendar year, reduced by 2 for every 7 days of sickness or the pilot's
+// own absence (holidays reduce only the monthly ones, 21.15). A tester (Nov 2026): "ver os limites mensais e anuais".
+// The roster only reaches a month or two ahead, so the year is judged only once it is covered to 31 Dec; before that the
+// count so far is shown.
+export const FOLGAS_PER_YEAR = 111;
+function checkYearly(days: Day[], refISO: string): ComplianceCheck {
+  const base = { id: 'folgas-ano' as const, label: 'Folgas no ano', clause: 'RUPT cl. 21.1' };
+  const year = refISO.slice(0, 4);
+  const inYear = days.filter((d) => d.date.startsWith(year));
+  if (!inYear.length) return { ...base, status: 'na', detail: 'Sem escala deste ano.' };
+  const count = inYear.filter((d) => d.kind === 'folga').length;
+  const absence = inYear.filter((d) => d.duties.some((x) => x.dutyType === 'Absence')).length;
+  const required = Math.max(0, FOLGAS_PER_YEAR - 2 * Math.floor(absence / 7));
+  const last = inYear[inYear.length - 1].date;
+  const whole = inYear[0].date === `${year}-01-01` && last === `${year}-12-31` && !inYear.some((d) => d.kind === 'unknown');
+  const so = `${count} folgas de ${inYear[0].date.slice(8, 10)}/${inYear[0].date.slice(5, 7)} a ${last.slice(8, 10)}/${last.slice(5, 7)}`;
+  if (whole) return { ...base, status: count < required ? 'warn' : 'ok', detail: `${year}: ${count} (mín. ${required})` };
+  const left = Math.max(0, required - count);
+  return { ...base, status: 'ok', detail: `${so} · mín. ${required} no ano${left ? `, faltam ${left}` : ' — cumprido'}` };
 }
 
 // ── cl. 21.4 — a month with exactly 10 folga days (and no leave) needs two folga periods of 72h
@@ -381,6 +402,7 @@ export function aeCompliance(duties: ParsedDuty[], refISO: string): ComplianceCh
   const fromISO = `${refISO.slice(0, 7)}-01`;
   return [
     checkMonthly(days, fromISO),
+    checkYearly(days, refISO),
     checkInterval(days, fromISO),
     checkLongFolgas(days, fromISO),
     checkWeekend(days, fromISO),

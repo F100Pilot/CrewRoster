@@ -110,3 +110,28 @@ describe('netEstimate', () => {
     expect(with1.net).toBeCloseTo(netEstimate(r, base).net - 50);
   });
 });
+
+describe('netEstimate — the hours above the plafonds', () => {
+  // CIRS art. 99.º-C n.º 8 (Despacho 233-A/2026): overtime is withheld apart, at half the effective rate of the payslip's
+  // monthly pay, and never added to a base — it doesn't raise the bracket. A real July 2026 payslip agrees to the euro.
+  const s = { ...DEFAULT_PAY_SETTINGS, vb: 10000, irsTable: 'I' as const, dependents: 1 };
+  const r = { rb: 10000, variable: 4100, overtimeValue: 100, perDiemTravelValue: 0, perDiemTravel: [], abonosByDate: {}, month: '2026-06' } as unknown as PayEstimate;
+
+  it('leaves the hours out of the month before\'s IRS and withholds them at half this payslip\'s rate', () => {
+    const n = netEstimate(r, s, s);
+    expect(n.prevIrsBase).toBe(10000 + 4000); // the variable without the hours
+    expect(n.irs).toBe(3650); // 36,50% of the fixed pay
+    expect(n.overtimeIrsBase).toBe(100);
+    expect(n.overtimeIrs).toBe(18); // ⌊3650 + 100 × 36,50% × 50%⌋ − 3650
+    const none = netEstimate({ ...r, variable: 4000, overtimeValue: 0 } as PayEstimate, s, s);
+    expect(none.overtimeIrs).toBe(0);
+    expect(n.net - none.net).toBeCloseTo(100 - 18 - 11); // the hours, less their IRS and SS (11%)
+  });
+
+  it('does the same without the month before\'s figures: the hours stay out of the one base', () => {
+    const n = netEstimate(r, s);
+    expect(n.irsBase).toBe(14000);
+    expect(n.overtimeIrs).toBe(Math.floor(n.irs + 100 * (n.irs / 14000) * 0.5) - n.irs);
+    expect(n.ssBase).toBe(14100); // SS takes them like any pay
+  });
+});

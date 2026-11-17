@@ -186,3 +186,14 @@ describe('textos dos avisos', () => {
     expect(check(roster('2026-06-01', 'TTTTTTTTOO'), 'descanso-semanal').note).toBeUndefined();
   });
 });
+
+describe('folgas no ano (RUPT cl. 21.1)', () => {
+  it('shows the count so far while the year is not covered, and judges a whole year', () => {
+    const c = check(roster('2026-06-01', 'FFOOFFFOOF'), 'folgas-ano');
+    expect(c.status).toBe('ok');
+    expect(c.detail).toBe('4 folgas de 01/06 a 10/06 · mín. 111 no ano, faltam 107');
+    // A whole year with 2 folgas every 7 days (104) falls short of 111.
+    const year = roster('2026-01-01', 'FFFFFOO'.repeat(53).slice(0, 365));
+    expect(check(year, 'folgas-ano')).toMatchObject({ status: 'warn', detail: '2026: 104 (mín. 111)' });
+  });
+});

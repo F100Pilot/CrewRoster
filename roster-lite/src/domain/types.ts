@@ -47,6 +47,10 @@ export interface ParsedDuty {
   /** A settled sector whose plan the app saw (from a roster printed before the day) — `planned` is only kept when it
    *  differs, so this tells "flown as planned" from "no plan known" (the abonos warn on the latter). */
   planKnown?: boolean;
+  /** The standby / reserve code this day was published with (H509, R24, APT…), kept when a later roster replaced it — a
+   *  standby used to fly. RUPT cl. 19.24 counts the standbys published in the planning, so it still counts. See
+   *  `mergeDuties`. */
+  plannedStandby?: string;
   /** Meals the crew member marked on the calendar's 🍽 banner, by meal key ("lunch:2026-10-02"): true = on board,
    *  false = not. Put on the flights / DHCs by RosterProvider; raaco.ts follows it. */
   mealOnboard?: Record<string, boolean>;

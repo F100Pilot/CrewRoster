@@ -13,6 +13,7 @@ import { todayISO } from '../domain/rosterWindow';
 import { formatDuration } from '../utils/duration';
 import type { LogbookRow } from '../domain/types';
 import PageHero from '../components/PageHero';
+import FreeDaysCard from '../components/FreeDaysCard';
 
 export default function StatsPage() {
   const { activeUser, roster } = useRoster();
@@ -65,6 +66,8 @@ export default function StatsPage() {
         <>
 
           <MonthlyChart months={months} measure={measure} onMeasureChange={setMeasure} />
+
+          {roster && roster.duties.length > 0 && <FreeDaysCard duties={roster.duties} />}
 
           {/* Per year */}
           <Card variant="outlined">

@@ -13,6 +13,23 @@ export interface ReleaseNote {
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.9.3.85',
+    date: '2026-11-17',
+    thanks: 'Obrigado aos testers pelas sugestões desta versão.',
+    highlights: [
+      'AE: novo cartão «Assistências» com as assistências e reservas do ano contra o limite de 24 (RUPT cl. 19.ª n.º 24) e as de cada mês contra o limite de 6 (n.º 16). Conta pelo planeado: uma assistência usada para voar continua a contar. A app só a reconhece se tiver guardado a escala impressa antes da mudança.',
+      'AE: nova verificação «Folgas no ano», com as folgas do ano até onde chega a escala, contra o mínimo de 111 (RUPT cl. 21.1).',
+      'Estatísticas: novo quadro com folgas, PLS e férias separados, mês a mês e no total do ano. O calendário também passa a mostrar folgas, PLS e férias em separado.',
+    ],
+  },
+  {
+    version: '0.9.3.84',
+    date: '2026-11-17',
+    highlights: [
+      'Vencimento, IRS das horas a mais (excesso aos plafonds de duty-pay ou block-pay): deixam de se somar ao resto e já não sobem o escalão. São retidas à parte, a metade da taxa do vencimento do mês, como manda a lei para o trabalho suplementar (CIRS art. 99.º-C). Conferido ao euro com um recibo real.',
+    ],
+  },
+  {
     version: '0.9.3.83',
     date: '2026-11-16',
     highlights: [
