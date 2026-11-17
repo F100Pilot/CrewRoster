@@ -16,7 +16,7 @@ export interface StandbyDay {
 }
 
 const kindOf = (code: string, dutyType?: string): StandbyDay['kind'] =>
-  /^R24$|^RSV$|^R$/i.test(code) || dutyType === 'Reserve' ? 'reserve'
+  /^(R24H?|RSV\d*|RES\d*|R)$/i.test(code) || dutyType === 'Reserve' ? 'reserve'
     : /^(APT|SBY(-A)?|STA)$/i.test(code) || dutyType === 'Standby Airport' ? 'airport' : 'home';
 
 // One per day (cl. 19.2: one standby period a day), the standby on the roster now or the one it was published with.

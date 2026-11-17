@@ -13,6 +13,20 @@ export interface ReleaseNote {
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.9.3.87',
+    date: '2026-11-17',
+    highlights: [
+      'AE: o cartão passa a chamar-se «Assistências e reservas» e mostra as duas em separado. As reservas de 24 horas (R24) já contavam para o limite de 24 por ano e continuam a contar. A app passa também a reconhecer a reserva escrita como RSV24, RES ou R24H.',
+    ],
+  },
+  {
+    version: '0.9.3.86',
+    date: '2026-11-17',
+    highlights: [
+      'Céu realista dos banners: com o céu nublado, de chuva ou de nevoeiro durante o dia, o fundo e as nuvens ficam num cinzento claro, como um dia encoberto, em vez de quase escuros.',
+    ],
+  },
+  {
     version: '0.9.3.85',
     date: '2026-11-17',
     thanks: 'Obrigado aos testers pelas sugestões desta versão.',

@@ -25,6 +25,9 @@ export function inferDutyType(dutyCode: string): string {
   if (['MED', 'MC', 'MEDICAL'].includes(code)) return 'Medical';
   if (/^FAL(\(.*\))?$/.test(code)) return 'Absence'; // Falta (ausência): FAL, FAL(PD), …
   if (['RSV', 'R'].includes(code)) return 'Reserve';
+  // Other spellings of the 24-hour reserve (RSV24, RES, RES24, R24H) — counted with the standbys of the year (RUPT cl.
+  // 19.24, a tester: "tens de contar as reservas também"). R24 itself stays above, with the pilots' standby codes.
+  if (/^(RSV|RES)\d*$/.test(code) || code === 'R24H') return 'Reserve';
   if (['POS', 'DH'].includes(code)) return 'Positioning';
   return 'Other';
 }

@@ -217,7 +217,8 @@ Things learned over this collaboration that should persist across sessions:
   reserves, ≤ 2 airport; airport ones given in operation count too, 19.23; exclusions 19.18 / 19.22 not modelled). Counted
   AS PLANNED (a tester: "conta do planeado... não depois do realizado"): `mergeDuties` keeps a standby a later roster
   replaced as `ParsedDuty.plannedStandby` (`carryStandbyPlans`, PARSE_VERSION 31), `domain/standbyLimit.ts`,
-  `StandbyLimitCard` on `/limites` (pilots). Only seen if a roster printed before the change was saved. Also "Folgas no ano"
+  `StandbyLimitCard` on `/limites` (pilots; since 0.9.3.87 "Assistências e reservas", the R24 reserves shown apart — a
+  tester thought they weren't counted; RSV24 / RES / R24H also read as Reserve, PARSE_VERSION 32). Only seen if a roster printed before the change was saved. Also "Folgas no ano"
   (cl. 21.1: 111 a calendar year, −2 per 7 days of the pilot's own absence, 21.14) in `aeCompliance`, and folgas / PLS /
   férias apart (`freeDayCounts` in `dutyStats.ts`): `FreeDaysCard` on Estatísticas, the calendar's month tiles.
 - **AE analysis is labelled experimental everywhere it shows** (user request): `AeDisclaimer.tsx`.
@@ -430,7 +431,8 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
   "Céu e meteorologia dos banners" = **Ilustrado** (the flat drawings, default) or **Realista** (`SkyWeatherReal.tsx`:
   photographic gradient, SVG fractal-noise clouds shaded underneath, sun bloom / textured moon, rain in two depths,
   scrims on the left and top so the white type reads); `state/skyStyle.ts` (`crewroster.skyStyle`, per device).
-  Clouds stay on the RIGHT — over the title they hid "2026" on the Lista hero.
+  Clouds stay on the RIGHT — over the title they hid "2026" on the Lista hero. An overcast DAY is a bright silver-grey
+  (0.9.3.86, user: "mesmo de dia … está escura"); only thunder stays dark by day.
   Cards follow the "Hoje" ones everywhere (since 0.8.31, user request): use `components/PassCard.tsx`
   (`PassCard` strip + overline + mono title + dashed `PassCells`; `TimelineRow`; `StatTile`; `PassBadge`)
   instead of a plain `Card` with chips. The Lista day card is `DayPass.tsx`.

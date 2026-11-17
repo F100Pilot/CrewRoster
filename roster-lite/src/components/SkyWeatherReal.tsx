@@ -17,10 +17,12 @@ const OVERCAST = new Set<Condition>(['cloudy', 'drizzle', 'rain', 'snow', 'thund
 // Sky gradient: zenith → middle → horizon.
 function skyColors(sky: Sky, c: Condition): [string, string, string] {
   if (c === 'thunder') return sky === 'night' ? ['#020409', '#0A0F18', '#151C27'] : ['#232A36', '#363E4C', '#525A68'];
-  if (c === 'fog') return sky === 'night' ? ['#0C121A', '#1A232E', '#2C3640'] : ['#5E6B78', '#7C8894', '#A2ACB5'];
+  if (c === 'fog') return sky === 'night' ? ['#0C121A', '#1A232E', '#2C3640'] : ['#8693A0', '#A9B3BD', '#D0D6DC'];
   if (OVERCAST.has(c)) {
     if (sky === 'night') return ['#04070D', '#0D1622', '#1A2633'];
-    if (sky === 'day') return ['#3F4E60', '#5D6C7E', '#8C98A6'];
+    // An overcast day is a bright silver-grey, not dusk (user, Nov 2026: "mesmo de dia, a imagem realista … está
+    // escura"); rain only a shade darker.
+    if (sky === 'day') return c === 'cloudy' ? ['#6C7F94', '#95A3B3', '#C8D0D8'] : ['#5D6E81', '#8494A5', '#B6C0CA'];
     return ['#2C2838', '#55485A', '#8E6E6A'];
   }
   switch (sky) {
@@ -38,7 +40,8 @@ function cloudTone(sky: Sky, c: Condition): CloudTone {
     : { top: '#56667C', base: '#26344A', shade: '#111926', opacity: 0.8 };
   if (c === 'thunder') return { top: '#6E7886', base: '#333B47', shade: '#1B2028', opacity: 0.97 };
   if (OVERCAST.has(c)) return sky === 'day'
-    ? { top: '#D6DCE3', base: '#8D98A5', shade: '#5D6875', opacity: 0.95 }
+    ? c === 'cloudy' ? { top: '#F5F7FA', base: '#C3CBD4', shade: '#929DAA', opacity: 0.95 }
+      : { top: '#E9EDF1', base: '#AAB4BF', shade: '#7A8693', opacity: 0.95 }
     : { top: '#C2A9A6', base: '#6E5C69', shade: '#40354A', opacity: 0.92 };
   if (sky === 'day') return { top: '#FFFFFF', base: '#C7D1DD', shade: '#8E9CAE', opacity: 0.97 };
   return { top: '#FFE0C8', base: '#B48B93', shade: '#5E4762', opacity: 0.95 };

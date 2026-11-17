@@ -23,15 +23,21 @@ export default function StandbyLimitCard({ duties }: { duties: ParsedDuty[] }) {
       <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
         <Box display="flex" alignItems="center" gap={1} mb={0.75}>
           <NotificationsActive fontSize="small" color="action" />
-          <Typography variant="subtitle2" sx={{ flexGrow: 1 }}>Assistências {year}</Typography>
+          <Typography variant="subtitle2" sx={{ flexGrow: 1 }}>Assistências e reservas</Typography>
           <ExperimentalChip />
         </Box>
         <Box display="flex" justifyContent="space-between" mb={0.25}>
-          <Typography variant="caption" color="text.secondary">Assistências e reservas planeadas (ano civil)</Typography>
+          <Typography variant="caption" color="text.secondary">Planeadas em {year} (ano civil)</Typography>
           <Typography variant="caption" fontWeight={600}>{days.length} / {STANDBY_YEAR_LIMIT}</Typography>
         </Box>
         <LinearProgress variant="determinate" color={level} value={Math.min(100, Math.round((days.length / STANDBY_YEAR_LIMIT) * 100))} />
-        <Typography variant="caption" color="text.secondary" display="block" mt={0.5}>
+        {/* The reserves apart, so it shows they count too (a tester, Nov 2026: "tens de contar as reservas também"). */}
+        <Box display="flex" gap={2} mt={0.75}>
+          {([['assistência', 'assistências', days.filter((d) => d.kind !== 'reserve').length], ['reserva (R24)', 'reservas (R24)', days.filter((d) => d.kind === 'reserve').length]] as const).map(([one, many, n]) => (
+            <Typography key={many} variant="body2"><Box component="span" fontWeight={700}>{n}</Box> {n === 1 ? one : many}</Typography>
+          ))}
+        </Box>
+        <Typography variant="caption" color="text.secondary" display="block" mt={0.25}>
           {days.length >= STANDBY_YEAR_LIMIT
             ? `Limite anual atingido${days.length > STANDBY_YEAR_LIMIT ? ` (+${days.length - STANDBY_YEAR_LIMIT})` : ''}.`
             : `Faltam ${STANDBY_YEAR_LIMIT - days.length} para o limite anual.`}
@@ -50,7 +56,7 @@ export default function StandbyLimitCard({ duties }: { duties: ParsedDuty[] }) {
                     {m.days.length}/{STANDBY_MONTH_LIMIT}
                   </Typography>
                   <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                    {m.days.map((d) => `${ddmm(d.date)} ${d.code}${d.used ? ' (usada)' : ''}`).join(' · ')}
+                    {m.days.map((d) => `${ddmm(d.date)} ${d.code}${d.kind === 'reserve' && !/^R24/i.test(d.code) ? ' (reserva)' : ''}${d.used ? ' (usada)' : ''}`).join(' · ')}
                   </Typography>
                 </Box>
               );

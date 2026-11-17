@@ -34,3 +34,15 @@ describe('standbys of the year (RUPT cl. 19.24 / 19.16)', () => {
     expect(standbyDays(out, '2026')).toHaveLength(1);
   });
 });
+
+describe('reserves count with the standbys (a tester: "tens de contar as reservas também")', () => {
+  it('reads the other spellings of the 24-hour reserve and counts them in the 24', async () => {
+    const { inferDutyType } = await import('../domain/dutyType');
+    for (const code of ['R24', 'RSV', 'RSV24', 'RES', 'RES24', 'R24H']) expect(inferDutyType(code)).toMatch(/Reserve|Standby Home/);
+    const days = standbyDays([
+      d('2026-12-01', 'H616', 'Standby Home'), d('2026-12-02', 'R24', 'Standby Home'),
+      d('2026-12-03', 'RSV24', inferDutyType('RSV24')), d('2026-12-04', 'W_OFF', 'Day Off'),
+    ], '2026');
+    expect(days.map((x) => x.kind)).toEqual(['home', 'reserve', 'reserve']);
+  });
+});
