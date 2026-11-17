@@ -63,24 +63,28 @@ export function dayStats(duties: ParsedDuty[]): DayStats | null {
 }
 
 // Days free of service, split the way crew count them (a tester, Nov 2026: "separar e mostrar o que é férias / folgas /
-// PLS"): a PLS_* (período livre de serviço) apart from the ordinary folgas (W_OFF, OFF, the requested ones, an X away from
-// base), and the holidays (F, PLIC, SLIC, RLIC, VAC). By distinct date; a day with any service on it counts as none.
-export type FreeDayKind = 'folga' | 'pls' | 'ferias';
+// PLS"): the folgas (W_OFF, OFF, the requested ones), a PLS_* (período livre de serviço), an X (a day off AWAY from base —
+// not a "dia de folga", which is taken at base, RUPT cl. 6.ª n.º 11; a tester: "dia x estão a contar como folga") and the
+// holidays (F, PLIC, SLIC, RLIC, VAC). By distinct date; a day with any service on it counts as none.
+export type FreeDayKind = 'folga' | 'x' | 'pls' | 'ferias';
+const FOLGA_CODE = /^(W_OFF|OFF|[A-Z]+_RQST)$/i;
 export function freeDayKind(day: ParsedDuty[]): FreeDayKind | null {
   if (!day.length) return null;
   if (day.some((d) => d.dutyType === 'Vacation')) return 'ferias';
   if (day.some((d) => d.dutyType !== 'Day Off')) return null;
-  return day.some((d) => /^PLS_/i.test(d.dutyCode)) ? 'pls' : 'folga';
+  if (day.some((d) => /^PLS_/i.test(d.dutyCode))) return 'pls';
+  if (day.some((d) => d.dutyCode.toUpperCase() === 'X') && !day.some((d) => FOLGA_CODE.test(d.dutyCode))) return 'x';
+  return 'folga';
 }
 
-export interface FreeDayCounts { folga: number; pls: number; ferias: number }
+export interface FreeDayCounts { folga: number; x: number; pls: number; ferias: number }
 export function freeDayCounts(duties: ParsedDuty[]): FreeDayCounts {
   const byDate = new Map<string, ParsedDuty[]>();
   for (const d of duties) {
     if (!byDate.has(d.date)) byDate.set(d.date, []);
     byDate.get(d.date)!.push(d);
   }
-  const out: FreeDayCounts = { folga: 0, pls: 0, ferias: 0 };
+  const out: FreeDayCounts = { folga: 0, x: 0, pls: 0, ferias: 0 };
   for (const day of byDate.values()) {
     const k = freeDayKind(day);
     if (k) out[k] += 1;
