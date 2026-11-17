@@ -27,6 +27,8 @@ produção, em vez de promover uma a uma.
 
 - **0.9.3.86** — Céu realista: nublado / chuva / nevoeiro de dia mais claros (cinzento prateado), a pedido do utilizador
   ("mesmo de dia, a imagem realista do weather está escura").
+- **0.9.3.87** — AE: «Assistências e reservas» com as reservas (R24) contadas à parte; RSV24 / RES / R24H lidos como
+  reserva (PARSE_VERSION 32). Um tester achou que as reservas não contavam.
 
 ---
 
