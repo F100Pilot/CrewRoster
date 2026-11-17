@@ -7,7 +7,7 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.9.3.87`
+- **Produção (`master`) está em:** `0.9.3.88`
 - **Próxima versão ao promover:** a da experimental (cada atualização sobe a 4.ª casa)
 
 ## Como promover tudo para produção (quando estiver pronto)
@@ -25,8 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **0.9.3.88** — Folgas / X / PLS / férias: o X (folga fora da base) à parte das folgas, nas Estatísticas (coluna X) e no
-  calendário («+N X» sob as folgas). Um tester: "dia x estão a contar como folga" (RUPT cl. 6.ª n.º 11).
+_(nada pendente)_
 
 ---
 
