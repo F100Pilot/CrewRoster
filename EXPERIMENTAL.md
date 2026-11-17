@@ -7,7 +7,7 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.9.3.83`
+- **Produção (`master`) está em:** `0.9.3.85`
 - **Próxima versão ao promover:** a da experimental (cada atualização sobe a 4.ª casa)
 
 ## Como promover tudo para produção (quando estiver pronto)
@@ -25,12 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **0.9.3.84** — Vencimento: IRS das horas a mais (Limite1/Limite2 DutyPay/BlockPay) retido à parte, a metade da taxa do
-  mês (CIRS art. 99.º-C n.º 8), sem entrar na base nem subir o escalão (sugestão de um tester; conferido ao euro com o
-  recibo de julho de 2026).
-- **0.9.3.85** — AE: cartão «Assistências» (24 por ano / 6 por mês, RUPT cl. 19.24 e 19.16, contadas pelo planeado — o
-  merge guarda a assistência substituída em `plannedStandby`, PARSE_VERSION 31) e verificação «Folgas no ano» (111, cl.
-  21.1). Estatísticas: quadro folgas / PLS / férias por mês e ano; calendário com os três separados (sugestões dos testers).
+_(nada pendente)_
 
 ---
 
