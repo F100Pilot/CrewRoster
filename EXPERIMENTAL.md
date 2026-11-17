@@ -25,7 +25,8 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(nada pendente)_
+- **0.9.3.86** — Céu realista: nublado / chuva / nevoeiro de dia mais claros (cinzento prateado), a pedido do utilizador
+  ("mesmo de dia, a imagem realista do weather está escura").
 
 ---
 

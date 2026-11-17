@@ -430,7 +430,8 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
   "Céu e meteorologia dos banners" = **Ilustrado** (the flat drawings, default) or **Realista** (`SkyWeatherReal.tsx`:
   photographic gradient, SVG fractal-noise clouds shaded underneath, sun bloom / textured moon, rain in two depths,
   scrims on the left and top so the white type reads); `state/skyStyle.ts` (`crewroster.skyStyle`, per device).
-  Clouds stay on the RIGHT — over the title they hid "2026" on the Lista hero.
+  Clouds stay on the RIGHT — over the title they hid "2026" on the Lista hero. An overcast DAY is a bright silver-grey
+  (0.9.3.86, user: "mesmo de dia … está escura"); only thunder stays dark by day.
   Cards follow the "Hoje" ones everywhere (since 0.8.31, user request): use `components/PassCard.tsx`
   (`PassCard` strip + overline + mono title + dashed `PassCells`; `TimelineRow`; `StatTile`; `PassBadge`)
   instead of a plain `Card` with chips. The Lista day card is `DayPass.tsx`.

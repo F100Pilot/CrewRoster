@@ -13,6 +13,13 @@ export interface ReleaseNote {
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.9.3.86',
+    date: '2026-11-17',
+    highlights: [
+      'Céu realista dos banners: com o céu nublado, de chuva ou de nevoeiro durante o dia, o fundo e as nuvens ficam num cinzento claro, como um dia encoberto, em vez de quase escuros.',
+    ],
+  },
+  {
     version: '0.9.3.85',
     date: '2026-11-17',
     thanks: 'Obrigado aos testers pelas sugestões desta versão.',
