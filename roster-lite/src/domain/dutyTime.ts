@@ -221,6 +221,12 @@ function dutyDay(date: string, all: ParsedDuty[], rules: DutyRules): DutyDay | n
   return { date, span, minutes: Math.round(minutes), partial: !w };
 }
 
+// The counted duty of one day, as the limits and the duty-pay take it — for the day page (Miguel, Nov 2026: an H9+ from
+// 09:00 used for a 12:30 flight showed only the 4h30 of work; the counted duty is 2h30 × 25% + 4h30 = 5h08).
+export function countedDayDuty(date: string, duties: ParsedDuty[], rules: DutyRules): DutyDay | null {
+  return dutyDay(date, duties, rules);
+}
+
 // Counted duty per day across the roster, in date order. Days without anything countable are
 // left out entirely, so the windows below only ever sum real duty.
 export function dutyDays(duties: ParsedDuty[], rules: DutyRules = EASA_RULES): DutyDay[] {

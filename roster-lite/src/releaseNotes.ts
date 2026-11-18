@@ -13,6 +13,21 @@ export interface ReleaseNote {
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.9.3.93',
+    date: '2026-11-18',
+    highlights: [
+      'Dia com assistência usada para um voo: o «Serviço» da página do dia passa a contar a assistência até à apresentação (25%) mais o trabalho — como os limites e o duty-pay (H9+ 09:00–11:30 e voo às 12:30: 5h08 planeado; com os tempos voados dá os 5h34 do DT da escala). Antes mostrava só o trabalho (4h30).',
+      'Já não aparece «Possível voo em falta» quando o dia começa na assistência e o voo vem depois dela.',
+    ],
+  },
+  {
+    version: '0.9.3.92',
+    date: '2026-11-18',
+    highlights: [
+      'Hoje: entre dois serviços o banner diz «Descanso» e não «Folga». «Folga» fica só para os dias de folga da escala (W_OFF, OFF, pedidas, X, PLS).',
+    ],
+  },
+  {
     version: '0.9.3.91',
     date: '2026-11-18',
     highlights: [

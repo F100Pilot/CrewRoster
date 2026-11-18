@@ -71,7 +71,9 @@ const DEST_ACCENT: Record<Exclude<Accent, 'base'>, { bright: string; deep: strin
 const MONO = PASS_MONO;
 const TYPE_LABEL = DUTY_TYPE_LABEL;
 const PHASE_LABEL: Record<Phase, string> = {
-  preflight: 'Antes do serviço', duty: 'Em serviço', standby: 'Assistência', layover: 'Estadia', off: 'Folga',
+  // Off with no rostered day off today = the rest between two duties, not a folga (a tester, Nov 2026: "tecnicamente não
+  // estou de folga… estou em período de descanso"; user: "entre serviços … descanso; fica a folga só para a folga").
+  preflight: 'Antes do serviço', duty: 'Em serviço', standby: 'Assistência', layover: 'Estadia', off: 'Descanso',
 };
 // Off duty, the pill names what today is: an absence or holidays aren't a day off.
 const OFF_LABEL = { dayoff: 'Folga', vacation: 'Férias', absence: 'Falta' } as const;
@@ -278,7 +280,7 @@ function headline(ctx: DayContext, base: string): { over: ReactNode; big: string
       // "Descansa." only on a day off: an absence (FAL…) or holidays say what they are.
       if (ctx.todayOff === 'absence') return { over: 'Hoje', big: 'Falta.', under: 'Sem serviços nos próximos dias.' };
       if (ctx.todayOff === 'vacation') return { over: 'Hoje', big: 'Férias.', under: 'Sem serviços nos próximos dias.' };
-      return { over: 'Folga', big: 'Descansa.', under: 'Sem serviços nos próximos dias.' };
+      return { over: ctx.todayOff === 'dayoff' ? 'Folga' : 'Descanso', big: 'Descansa.', under: 'Sem serviços nos próximos dias.' };
   }
 }
 
