@@ -74,13 +74,23 @@ describe('dutyDays', () => {
     expect(d.minutes).toBe(240 + 240 * HOME_STANDBY_FACTOR); // flight 11–15 in full + standby 06–10 at 25%
   });
 
-  it('does not count twice the part of a standby that overlaps the work', () => {
+  it('ends a standby used for the day\'s work at the report (RUPT cl. 19.4 b)', () => {
     const [d] = dutyDays([
       duty({ date: '2026-06-09', dutyType: 'Standby Home', departureTime: '06:00', arrivalTime: '16:00' }),
       duty({ date: '2026-06-09', dutyType: 'Flight Duty', departureTime: '11:00', arrivalTime: '15:00' }),
     ]);
-    // 06–11 and 15–16 as standby (6h at 25%); 11–15 once, as work.
-    expect(d.minutes).toBe(240 + 360 * HOME_STANDBY_FACTOR);
+    // 06–11 as standby (5h at 25%); 11–15 as work; nothing after it — the standby ended at the report.
+    expect(d.minutes).toBe(240 + 300 * HOME_STANDBY_FACTOR);
+  });
+
+  it('keeps an H9+ called out for a 12:30 flight to 09:00–11:30 (a real Crew Notification)', () => {
+    const [d] = dutyDays([
+      duty({ date: '2026-11-18', dutyType: 'Standby Home', dutyCode: 'H9+', departureAirport: 'LIS', reportingTime: '09:00' }),
+      duty({ date: '2026-11-18', dutyType: 'Flight Duty', departureAirport: 'LIS', arrivalAirport: 'OPO', reportingTime: '11:30', departureTime: '12:30', arrivalTime: '13:30' }),
+      duty({ date: '2026-11-18', dutyType: 'Flight Duty', departureAirport: 'OPO', arrivalAirport: 'LIS', departureTime: '14:30', arrivalTime: '15:30' }),
+    ], PGA_PILOT_RULES);
+    // 09:00–11:30 at 25% (37,5 min) + 11:30–16:00 (on-blocks + 30 min) in full.
+    expect(d.minutes).toBe(Math.round(150 * 0.25 + 270));
   });
 
   it('counts airport standby, simulator and training in full', () => {

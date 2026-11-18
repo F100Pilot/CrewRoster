@@ -554,7 +554,13 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
   RUPT 19.7 b — João: "estás ao serviço desde as 09h"); the hero says "Início do serviço … · H9+" and "Nova apresentação
   às" the flight's report (departure − 1 h) — in bold amber (`NewReport`, 0.9.3.90, user); during the standby, "H9+ · Nova
   apresentação às". Display only — duty maths unchanged. A real Crew Notification confirms it: the H9+ is cut to end at the new
-  report (LIS 0900–1130; RUPT 19.4 b).
+  report (LIS 0900–1130; RUPT 19.4 b). Since 0.9.3.91 (user-approved, "duty-pay e limites") the MATHS follows it too:
+  `dutyDay` ends a standby that starts before the day's work at the report — 25% from its start to the report, the work
+  in full, nothing of the standby window after it (it used to count 25% of the rest of the window); the holiday doubling
+  in `payEstimate.ts` cuts it the same way. **R24 = 0 h, confirmed** (RUPT 20.4; the RRRGS cl. 12 has no line for a
+  reserve; the tester, asked: "Não conta.. mas aparece na escala inicial com 6h. Depois é revertida em algo, anula essas 6h e
+  passa a contar o duty da assistência ou voo colocado") — the 6h printed under an R24 is never duty; what replaces it
+  counts by its own rule. Nothing to change.
 - **Report time = first departure − 1 h, always** (user rule, 0.9.3.31: "a apresentação vai ser sempre 1 hora antes.
   Mais tarde tratamos dos casos especiais que vão aparecendo"). 0.9.3.30 tried it from the printed [DT] (last arrival +
   30 min − DT) plus a typed override on the day page — withdrawn (reverted; PARSE_VERSION 27 re-reads). A user's audio
