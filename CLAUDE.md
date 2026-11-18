@@ -558,7 +558,9 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
   report (LIS 0900–1130; RUPT 19.4 b). Since 0.9.3.91 (user-approved, "duty-pay e limites") the MATHS follows it too:
   `dutyDay` ends a standby that starts before the day's work at the report — 25% from its start to the report, the work
   in full, nothing of the standby window after it (it used to count 25% of the rest of the window); the holiday doubling
-  in `payEstimate.ts` cuts it the same way. **R24 = 0 h, confirmed** (RUPT 20.4; the RRRGS cl. 12 has no line for a
+  in `payEstimate.ts` cuts it the same way. Since 0.9.3.93 the day page's "Serviço" shows that counted figure (`countedDayDuty`) on a day with a
+  standby — it showed the work alone (4h30); a real flown day (H9+ 0900–1130, flights 1241–1556) gives 5h34 = the printed
+  [DT] — and pgaGrid no longer warns "possível voo em falta" when the day opens on the standby (PARSE_VERSION 33). **R24 = 0 h, confirmed** (RUPT 20.4; the RRRGS cl. 12 has no line for a
   reserve; the tester, asked: "Não conta.. mas aparece na escala inicial com 6h. Depois é revertida em algo, anula essas 6h e
   passa a contar o duty da assistência ou voo colocado") — the 6h printed under an R24 is never duty; what replaces it
   counts by its own rule. Nothing to change.

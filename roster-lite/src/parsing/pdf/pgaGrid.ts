@@ -848,7 +848,10 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
     if (p.end && toMinutes(p.end) - lastArr > 20 && toMinutes(p.end) >= firstDep) {
       parts.push(`o dia termina às ${p.end}, mas o último voo lido chega às ${minToHHMM(lastArr)}`);
     }
-    if (p.start && firstDep - toMinutes(p.start) > 20) {
+    // A standby the day's flight came out of opens the plan's day (Miguel, Nov 2026: H9+ from 09:00, flight at 12:30) —
+    // no leg is missing then.
+    const fromStandby = arr.some((d) => /^(Standby|Reserve)/.test(d.dutyType));
+    if (p.start && firstDep - toMinutes(p.start) > 20 && !fromStandby) {
       parts.push(`o dia começa às ${p.start}, mas o primeiro voo lido parte às ${minToHHMM(firstDep)}`);
     }
     if (parts.length) {

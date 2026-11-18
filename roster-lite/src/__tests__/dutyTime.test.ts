@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  AE_DUTY_LIMITS, DUTY_LIMITS, HOME_STANDBY_FACTOR, PGA_PILOT_RULES, aeDutyTime, dutyDays, peakDutyTime,
+  AE_DUTY_LIMITS, DUTY_LIMITS, HOME_STANDBY_FACTOR, PGA_PILOT_RULES, aeDutyTime, countedDayDuty, dutyDays, peakDutyTime,
   peakDutyWindow,
 } from '../domain/dutyTime';
 import type { ParsedDuty } from '../domain/types';
@@ -91,6 +91,25 @@ describe('dutyDays', () => {
     ], PGA_PILOT_RULES);
     // 09:00–11:30 at 25% (37,5 min) + 11:30–16:00 (on-blocks + 30 min) in full.
     expect(d.minutes).toBe(Math.round(150 * 0.25 + 270));
+  });
+
+  it('gives the day page the same counted duty (5h08, not the 4h30 of work)', () => {
+    const day = [
+      duty({ date: '2026-11-18', dutyType: 'Standby Home', dutyCode: 'H9+', departureAirport: 'LIS', reportingTime: '09:00' }),
+      duty({ date: '2026-11-18', dutyType: 'Flight Duty', departureAirport: 'LIS', arrivalAirport: 'OPO', reportingTime: '11:30', departureTime: '12:30', arrivalTime: '15:30' }),
+    ];
+    expect(countedDayDuty('2026-11-18', day, PGA_PILOT_RULES)?.minutes).toBe(308);
+  });
+
+  it('matches the [DT] CrewLink printed once the day was flown (H9+ 0900–1130, DT 05:34, FDP 04:26)', () => {
+    const day = [
+      duty({ date: '2026-11-18', dutyType: 'Standby Home', dutyCode: 'H9+', departureAirport: 'LIS', departureTime: '09:00', arrivalTime: '11:30' }),
+      // The planned report (12:30 − 1 h) is kept on a flown day (rosterMerge).
+      duty({ date: '2026-11-18', dutyType: 'Flight Duty', departureAirport: 'LIS', arrivalAirport: 'OPO', reportingTime: '11:30', departureTime: '12:41', arrivalTime: '13:43' }),
+      duty({ date: '2026-11-18', dutyType: 'Flight Duty', departureAirport: 'OPO', arrivalAirport: 'LIS', departureTime: '14:49', arrivalTime: '15:56' }),
+    ];
+    // 09:00–11:30 at 25% (37,5) + 11:30–16:26 (on-blocks + 30 min) = 333,5 → 5h34, as printed.
+    expect(countedDayDuty('2026-11-18', day, PGA_PILOT_RULES)?.minutes).toBe(334);
   });
 
   it('counts airport standby, simulator and training in full', () => {

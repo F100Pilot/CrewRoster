@@ -10,7 +10,7 @@ import { toLocalTime, checkInTimeLabel } from '../utils/localTime';
 import { diffMinutes, formatDuration } from '../utils/duration';
 import { baseOf, dayStats } from '../domain/dutyStats';
 import { restBefore } from '../domain/restPeriods';
-import { countsAsDuty, workWindow, PGA_PILOT_RULES } from '../domain/dutyTime';
+import { countedDayDuty, countsAsDuty, workWindow, PGA_PILOT_RULES } from '../domain/dutyTime';
 import { fdpForDay, type FdpInfo } from '../domain/fdp';
 import { dutyTags, type DutyTag } from '../domain/aeCompliance';
 import { LATE_MINUTES } from '../domain/planVsFlown';
@@ -46,10 +46,12 @@ export default function DayDetailPage() {
   const pilot = (activeUser?.role ?? 'pilot') === 'pilot';
   const base = baseOf(activeUser);
   const rest = date ? restBefore(roster?.duties ?? [], date, pilot ? 'pilot' : 'cabin', base) : null;
-  // On duty until 30 min after the last on-blocks (RUPT cl. 6, def. 42) — the figure the limits use.
-  const dutyMinutes = stats && pilot && date
-    ? workWindow(date, duties.filter(countsAsDuty), PGA_PILOT_RULES)?.span ?? stats.dutyMinutes
-    : stats?.dutyMinutes;
+  // On duty until 30 min after the last on-blocks (RUPT cl. 6, def. 42) — the figure the limits use. A standby the day's
+  // work came out of adds its share up to the report (25% at home, RUPT cl. 19.7 b), as the limits and duty-pay count it.
+  const work = stats && pilot && date ? workWindow(date, duties.filter(countsAsDuty), PGA_PILOT_RULES) : null;
+  const counted = work && date && duties.some((d) => /^(Standby|Reserve)/.test(d.dutyType))
+    ? countedDayDuty(date, duties, PGA_PILOT_RULES)?.minutes : undefined;
+  const dutyMinutes = counted ?? work?.span ?? stats?.dutyMinutes;
   // S.EXT. isn't duty for the limits (no [DT] under it on the roster — dutyTime.ts).
   const notDuty = duties.length > 0 && !duties.some(countsAsDuty);
   const fdp = pilot && duties.length ? fdpForDay(duties, rest, base) : null;

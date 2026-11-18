@@ -25,6 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
+- **0.9.3.93** — Página do dia: «Serviço» conta a assistência até à apresentação (25%) + o trabalho (5h34 = DT da escala); sem o falso «Possível voo em falta» (PARSE_VERSION 33).
 - **0.9.3.92** — Hoje: «Descanso» entre serviços; «Folga» só num dia de folga da escala (tester + utilizador).
 
 ---
