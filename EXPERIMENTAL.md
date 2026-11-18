@@ -25,7 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(nada pendente)_
+- **0.9.3.92** — Hoje: «Descanso» entre serviços; «Folga» só num dia de folga da escala (tester + utilizador).
 
 ---
 

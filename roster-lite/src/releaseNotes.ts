@@ -13,6 +13,13 @@ export interface ReleaseNote {
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.9.3.92',
+    date: '2026-11-18',
+    highlights: [
+      'Hoje: entre dois serviços o banner diz «Descanso» e não «Folga». «Folga» fica só para os dias de folga da escala (W_OFF, OFF, pedidas, X, PLS).',
+    ],
+  },
+  {
     version: '0.9.3.91',
     date: '2026-11-18',
     highlights: [
