@@ -7,7 +7,7 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.9.3.88`
+- **Produção (`master`) está em:** `0.9.3.90`
 - **Próxima versão ao promover:** a da experimental (cada atualização sobe a 4.ª casa)
 
 ## Como promover tudo para produção (quando estiver pronto)
@@ -25,10 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **0.9.3.89** — Hoje: assistência com voo atribuído → «Início do serviço … às 09:00 · H9+» + «Nova apresentação às 11:30»;
-  durante a assistência, «H9+ · nova apresentação às 11:30» (testers; o duty conta desde o início da assistência).
-- **0.9.3.90** — «Nova apresentação» a negrito e a amarelo no banner (utilizador). Confirmado numa Crew Notification real:
-  a H9+ passa a acabar à nova apresentação (LIS 0900–1130), RUPT cl. 19.4 b.
+_(nada pendente)_
 
 ---
 
