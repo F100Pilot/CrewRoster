@@ -13,6 +13,13 @@ export interface ReleaseNote {
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.9.3.91',
+    date: '2026-11-18',
+    highlights: [
+      'Duty-pay e limites: quando uma assistência é usada para um voo, conta a 25% desde o início até à apresentação e depois o serviço segue contínuo. Deixa de contar a 25% o resto da assistência depois do voo, porque a assistência acaba à hora de apresentação (RUPT cl. 19.ª n.º 4 b). Confirmado com uma notificação real: H9+ das 09:00 às 11:30 para um voo às 12:30.',
+    ],
+  },
+  {
     version: '0.9.3.90',
     date: '2026-11-17',
     highlights: [

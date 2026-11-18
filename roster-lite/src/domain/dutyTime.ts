@@ -202,8 +202,15 @@ function dutyDay(date: string, all: ParsedDuty[], rules: DutyRules): DutyDay | n
     if (w && slot.start) {
       // Place the standby on the work window's line; a start "before" the window is negative.
       const s = ((toMinutes(slot.start) - w.open + 1440 + 720) % 1440) - 720;
-      const overlap = Math.max(0, Math.min(s + slot.minutes, w.span) - Math.max(s, 0));
-      own -= overlap;
+      if (s < 0) {
+        // Used for the day's work: the standby ends at the report (RUPT cl. 19.4 b — "à hora de apresentação, quando
+        // utilizada"; a real Crew Notification cuts an H9+ to 09:00–11:30 for a 12:30 flight). Nothing after the work
+        // counts as standby (user + testers, Nov 2026: "25% do começo a 1h do voo, depois segue contínuo").
+        own = Math.min(-s, slot.minutes);
+      } else {
+        const overlap = Math.max(0, Math.min(s + slot.minutes, w.span) - Math.max(s, 0));
+        own -= overlap;
+      }
     }
     anyStandby = true;
     span += own;

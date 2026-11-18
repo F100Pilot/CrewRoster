@@ -25,7 +25,9 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(nada pendente)_
+- **0.9.3.91** — Assistência usada para voar acaba à apresentação (RUPT 19.4 b): 25% do início à apresentação, depois
+  contínuo; o resto da janela depois do voo deixa de contar (duty-pay e limites; utilizador aprovou). `dutyDay` em
+  `dutyTime.ts` e o feriado em dobro em `payEstimate.ts`. R24 continua a 0 h — à espera da resposta dos especialistas.
 
 ---
 

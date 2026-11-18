@@ -541,7 +541,8 @@ export function payEstimate(
       const iv = standbyInterval(x);
       if (!iv) continue;
       const a = iv.start.getTime();
-      const b = iv.end.getTime();
+      // A standby used for the day's work ends at the report (RUPT cl. 19.4 b), as in dutyDay.
+      const b = w && a < w.start.getTime() ? Math.min(iv.end.getTime(), w.start.getTime()) : iv.end.getTime();
       let holiday = 0;
       for (const iso of [nextDate(d.date, -1), d.date, nextDate(d.date)]) {
         if (!holidays.has(iso)) continue;
