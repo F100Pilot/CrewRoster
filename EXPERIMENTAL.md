@@ -7,7 +7,7 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.9.3.90`
+- **Produção (`master`) está em:** `0.9.3.91`
 - **Próxima versão ao promover:** a da experimental (cada atualização sobe a 4.ª casa)
 
 ## Como promover tudo para produção (quando estiver pronto)
@@ -25,9 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **0.9.3.91** — Assistência usada para voar acaba à apresentação (RUPT 19.4 b): 25% do início à apresentação, depois
-  contínuo; o resto da janela depois do voo deixa de contar (duty-pay e limites; utilizador aprovou). `dutyDay` em
-  `dutyTime.ts` e o feriado em dobro em `payEstimate.ts`. R24 continua a 0 h — à espera da resposta dos especialistas.
+_(nada pendente)_
 
 ---
 
