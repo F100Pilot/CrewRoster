@@ -338,6 +338,10 @@ export const getOffDayMarks = offDayMarks.get;
 export const setOffDayMark = offDayMarks.set;
 export const getRestCutMarks = restCutMarks.get;
 export const setRestCutMark = restCutMarks.set;
+// A 9xxx flight's day flown as a ferry (true) or not (false), by date (domain/ferry.ts).
+const ferryMarks = dayMarks<boolean>('crewroster.ferry.');
+export const getFerryMarks = ferryMarks.get;
+export const setFerryMark = ferryMarks.set;
 // Meals the crew member marked on board or not (calendar 🍽 banner), by meal key ("lunch:2026-10-02").
 const mealMarks = dayMarks<boolean>('crewroster.mealOnboard.');
 export const getMealOnboardMarks = mealMarks.get;

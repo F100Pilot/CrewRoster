@@ -13,6 +13,15 @@ export interface ReleaseNote {
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.9.3.94',
+    date: '2026-11-19',
+    highlights: [
+      'Voo ferry conta a dobrar no duty-pay e no block-pay (RRRGS cl. 12.2 b ii). A escala não diz «ferry», por isso a app assume que os voos 9xxx o são; na página do dia há um interruptor «Voo ferry» para desligar quando não foi.',
+      'Táxi para o avião (GT-TAXI, por exemplo para Alverca): passa a ser lido e conta no serviço, e a apresentação fica uma hora antes do táxi — como a escala imprime (FDP e DT).',
+    ],
+    thanks: 'Obrigado aos colegas testers pelo exemplo.',
+  },
+  {
     version: '0.9.3.93',
     date: '2026-11-18',
     highlights: [

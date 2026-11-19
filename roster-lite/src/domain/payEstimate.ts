@@ -3,6 +3,7 @@ import { isPrevenirIO } from './irregularity';
 import { diffMinutes, toMinutes as toMin } from '../utils/duration';
 import { lisbonMidnightUtc } from './standbyWindows';
 import { baseHolidays, nationalHolidays } from './holidaysPT';
+import { ferrySectors } from './ferry';
 import { planVsFlown } from './planVsFlown';
 import { HOME_BASE } from './dutyStats';
 import { irsRetention, type IrsTable } from './irsWithholding';
@@ -253,6 +254,7 @@ export const COMPLEMENT_DAYS = 5;
 
 export interface Credit {
   credited: number; // minutes counted for pay (with the cl. 12 percentages)
+  ferry?: number; // of which the ferries' 100% (cl. 12.2 b ii)
   l1: number;
   l2: number;
   value: number; // € for the hours above the plafonds
@@ -493,6 +495,7 @@ export function payEstimate(
   const asCredited = (date: string, day: ParsedDuty[]) =>
     instructorSims.has(date) ? day.filter((x) => x.dutyType !== 'Simulator') : day;
   let dutyCredited = 0;
+  let dutyFerry = 0;
   for (const dd of dutyDays(duties, PGA_PILOT_RULES)) {
     if (!inMonth(dd.date) || offDayDates.has(dd.date)) continue;
     const all = days.get(dd.date) ?? [];
@@ -519,6 +522,16 @@ export function payEstimate(
     // nossos DHC quando não tivemos atividade anterior é 50%, quando a gente vem a seguir ao simulador é contínuo, é 100%").
     if (!positioningOnly) credit -= dhcBeforeSessionMinutes(day) * 0.5;
     const w = workWindow(d.date, day, PGA_PILOT_RULES);
+    // A ferry adds 100% of its duty (cl. 12.2 b ii; domain/ferry.ts): the whole work window when every sector of the day is
+    // one (the taxi to the aircraft included, e iv), else its sectors' block.
+    const ferry = ferrySectors(day);
+    if (ferry.length) {
+      const flights = day.filter((x) => x.dutyType === 'Flight Duty');
+      const extra = ferry.length === flights.length && w ? w.span
+        : ferry.reduce((a, x) => a + (x.departureTime && x.arrivalTime ? diffMinutes(x.departureTime, x.arrivalTime) : 0), 0);
+      credit += extra;
+      dutyFerry += extra;
+    }
     if (w) {
       const a = w.start.getTime();
       const b = w.end.getTime();
@@ -564,6 +577,7 @@ export function payEstimate(
   // experts ("as horas block em feriado … tem que dobrar") and the AE text say otherwise, so it is back (user, 0.9.3.72).
   // Those two payslips stay open.
   let blockCredited = 0;
+  let blockFerry = 0;
   for (const [date, all] of days) {
     if (!inMonth(date) || offDayDates.has(date)) continue;
     const day = asCredited(date, all);
@@ -572,6 +586,7 @@ export function payEstimate(
     // block a 100%", checked to the minute on the Feb and Jun 2026 maps: 037:30 and 038:15); alone or before the
     // session, at 50%. The instructor's session itself is dropped by asCredited.
     const operatedDay = day.some((x) => x.dutyType === 'Flight Duty');
+    const ferry = new Set(ferrySectors(day));
     for (const x of day) {
       if (!FLYING.has(x.dutyType) || !x.departureTime || !x.arrivalTime) continue;
       let min = diffMinutes(x.departureTime, x.arrivalTime);
@@ -584,6 +599,7 @@ export function payEstimate(
         if (holidays.has(iso)) holiday += overlap(off, on, lisbonMidnightUtc(iso), lisbonMidnightUtc(nextDate(iso)));
       }
       blockCredited += min + (holiday / MIN) * HOLIDAY_SHARE * share; // doubled: a DHC at 50% → 100% (0.9.3.76)
+      if (ferry.has(x)) { blockCredited += min; blockFerry += min; } // a ferry's flight time again (cl. 12.2 b ii)
     }
   }
 
@@ -603,8 +619,8 @@ export function payEstimate(
   const dutyL2 = cut(p.dutyL2, PLAFOND_CUT_PER_DAY.dutyL2);
   const blockL1 = cut(p.blockL1, PLAFOND_CUT_PER_DAY.blockL1);
   const blockL2 = cut(p.blockL2, PLAFOND_CUT_PER_DAY.blockL2);
-  const duty: Credit = { credited: Math.round(dutyCredited), l1: dutyL1, l2: dutyL2, value: overtimeValue(dutyCredited, dutyL1, dutyL2, s.vb) };
-  const block: Credit = { credited: Math.round(blockCredited), l1: blockL1, l2: blockL2, value: overtimeValue(blockCredited, blockL1, blockL2, s.vb) };
+  const duty: Credit = { credited: Math.round(dutyCredited), l1: dutyL1, l2: dutyL2, value: overtimeValue(dutyCredited, dutyL1, dutyL2, s.vb), ferry: Math.round(dutyFerry) };
+  const block: Credit = { credited: Math.round(blockCredited), l1: blockL1, l2: blockL2, value: overtimeValue(blockCredited, blockL1, blockL2, s.vb), ferry: Math.round(blockFerry) };
   const overtime = duty.value <= 0 && block.value <= 0 ? null : duty.value >= block.value ? 'duty' : 'block';
   const overtimeVal = Math.max(duty.value, block.value);
 

@@ -11,7 +11,7 @@ import {
 } from '../storage/rosterStore';
 import { mergeLogbook } from '../domain/logbook';
 import { regMap } from '../domain/aircraftRegs';
-import { getMealOnboardMarks, getOffDayMarks, getPrevenirMarks, getRestCutMarks, setCredentials, setMealOnboardMark, setOffDayMark, setPrevenirMark, setRestCutMark } from '../storage/settings';
+import { getFerryMarks, getMealOnboardMarks, getOffDayMarks, getPrevenirMarks, getRestCutMarks, setCredentials, setMealOnboardMark, setOffDayMark, setPrevenirMark, setRestCutMark, setFerryMark } from '../storage/settings';
 import { RosterContext, type RosterState, type RosterImportPreview } from './useRoster';
 
 // Re-parse a stored PDF roster from its saved PDF(s) with the current parser, so improvements
@@ -358,7 +358,9 @@ export function RosterProvider({ children }: { children: ReactNode }) {
   const [offDayMarks, setOffDayMarks] = useState<Record<string, 'paid' | 'kept' | 'none'>>({});
   const [restCutMarks, setRestCutMarks] = useState<Record<string, number>>({});
   const [mealMarks, setMealMarks] = useState<Record<string, boolean>>({});
+  const [ferryMarks, setFerryMarks] = useState<Record<string, boolean>>({});
   useEffect(() => {
+    setFerryMarks(activeUser ? getFerryMarks(activeUser.id) : {});
     setOffDayMarks(activeUser ? getOffDayMarks(activeUser.id) : {});
     setRestCutMarks(activeUser ? getRestCutMarks(activeUser.id) : {});
     setMealMarks(activeUser ? getMealOnboardMarks(activeUser.id) : {});
@@ -372,9 +374,12 @@ export function RosterProvider({ children }: { children: ReactNode }) {
   const setRestCut = useCallback((date: string, minutes: number | null) => {
     if (activeUser) setRestCutMarks(setRestCutMark(activeUser.id, date, minutes));
   }, [activeUser]);
+  const setFerry = useCallback((date: string, value: boolean | null) => {
+    if (activeUser) setFerryMarks(setFerryMark(activeUser.id, date, value));
+  }, [activeUser]);
   const shownRoster = useMemo<Roster | null>(() => {
     const meals = Object.keys(mealMarks).length > 0;
-    if (!roster || !(Object.keys(prevenirMarks).length || Object.keys(offDayMarks).length || Object.keys(restCutMarks).length || meals)) return roster;
+    if (!roster || !(Object.keys(prevenirMarks).length || Object.keys(offDayMarks).length || Object.keys(restCutMarks).length || Object.keys(ferryMarks).length || meals)) return roster;
     return {
       ...roster,
       duties: roster.duties.map((d) => {
@@ -382,11 +387,12 @@ export function RosterProvider({ children }: { children: ReactNode }) {
         if (d.dutyCode === 'IO' && d.date in prevenirMarks) x = { ...x, prevenir: prevenirMarks[d.date] };
         if (d.date in offDayMarks) x = { ...x, offDayPay: offDayMarks[d.date] };
         if (d.date in restCutMarks) x = { ...x, restCutMin: restCutMarks[d.date] };
+        if (d.date in ferryMarks) x = { ...x, ferry: ferryMarks[d.date] };
         if (meals && (d.dutyType === 'Flight Duty' || d.dutyType === 'Positioning')) x = { ...x, mealOnboard: mealMarks };
         return x;
       }),
     };
-  }, [roster, prevenirMarks, offDayMarks, restCutMarks, mealMarks]);
+  }, [roster, prevenirMarks, offDayMarks, restCutMarks, ferryMarks, mealMarks]);
 
   // Rebuild the roster from every PDF in the history, oldest first (user request). Resolves to how
   // many PDFs could be read (0: none was a readable roster), or null when the history is empty.
@@ -415,12 +421,12 @@ export function RosterProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo<RosterState>(
     () => ({
-      roster: shownRoster, setPrevenir, setOffDayPay, setRestCut, setMealOnboard, reloadFromPdfs, loading, importing, error, loadError, warnings, sessionToken,
+      roster: shownRoster, setPrevenir, setOffDayPay, setRestCut, setFerry, setMealOnboard, reloadFromPdfs, loading, importing, error, loadError, warnings, sessionToken,
       importFile, previewImport, applyImport, clear, dismissChanges, setSessionToken,
       users, activeUser,
       switchUser, createUser, renameUser, setUserBase, deleteUser: deleteUserFn,
     }),
-    [shownRoster, setPrevenir, setOffDayPay, setRestCut, setMealOnboard, reloadFromPdfs, loading, importing, error, loadError, warnings, sessionToken, setSessionToken,
+    [shownRoster, setPrevenir, setOffDayPay, setRestCut, setFerry, setMealOnboard, reloadFromPdfs, loading, importing, error, loadError, warnings, sessionToken, setSessionToken,
      importFile, previewImport, applyImport, clear, dismissChanges, users, activeUser, switchUser, createUser, renameUser, setUserBase, deleteUserFn]
   );
 

@@ -212,7 +212,7 @@ describe('payEstimate', () => {
     const sim2 = duty('2026-03-05', 'Simulator', { dutyCode: 'E90-FRA-1', departureAirport: 'FRA', departureTime: '10:00', arrivalTime: '14:00', observations: 'LPC' });
     const before = payEstimate([dhOut, sim2], '2026-03', S, '2026-03-31');
     expect(before.block.credited).toBe(240 + 180 * 0.5);
-    const full = payEstimate([{ ...dhOut, dutyType: 'Flight Duty' } as ParsedDuty, sim2], '2026-03', S, '2026-03-31');
+    const full = payEstimate([{ ...dhOut, dutyType: 'Flight Duty', flightNumber: 'TP1570' } as ParsedDuty, sim2], '2026-03', S, '2026-03-31');
     expect(full.duty.credited - before.duty.credited).toBeCloseTo(240 * 0.5, 0); // its 4 h (report → arrival) at half
   });
 
