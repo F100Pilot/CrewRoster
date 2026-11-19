@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useRoster } from '../state/useRoster';
 import { useColorMode } from '../state/colorMode';
 import {
-  accentFor, cityName, dayContext, dayDestination, legsOf, skyAt,
+  accentFor, cityName, dayContext, dayDestination, isNightStop, legsOf, skyAt,
   type Accent, type DayContext, type Leg, type Phase, type Sky,
 } from '../domain/dayPhase';
 import { baseOf } from '../domain/dutyStats';
@@ -77,7 +77,8 @@ const PHASE_LABEL: Record<Phase, string> = {
 };
 // Off duty, the pill names what today is: an absence or holidays aren't a day off.
 const OFF_LABEL = { dayoff: 'Folga', vacation: 'Férias', absence: 'Falta' } as const;
-const phaseLabel = (ctx: DayContext) => (ctx.phase === 'off' && ctx.todayOff ? OFF_LABEL[ctx.todayOff] : PHASE_LABEL[ctx.phase]);
+const phaseLabel = (ctx: DayContext) => (ctx.phase === 'off' && ctx.todayOff ? OFF_LABEL[ctx.todayOff]
+  : isNightStop(ctx) ? 'Night stop' : PHASE_LABEL[ctx.phase]);
 
 const DAY = 86_400_000;
 const isoOf = (d: Date) => d.toISOString().slice(0, 10);
@@ -268,7 +269,7 @@ function headline(ctx: DayContext, base: string): { over: ReactNode; big: string
     }
     case 'layover':
       return {
-        over: 'Estadia em',
+        over: isNightStop(ctx) ? 'Night stop em' : 'Estadia em',
         big: cityName(ctx.location),
         under: ctx.window ? `Apresentação ${dayWord(ctx.date!)} às ${localAt(ctx.window.start, ctx.location)} LT` : undefined,
       };

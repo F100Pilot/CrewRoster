@@ -416,7 +416,9 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
   rest minima) are pilots-only, like everywhere. The page follows the app's light/dark theme like every
   other page (user: a dark first page in light mode "não faz sentido"); the phase only tints the
   background and accent, and the sky header stays time-of-day. Off phase pill: "Descanso" between duties, "Folga" only on a
-  rostered day off (0.9.3.92, a tester: "tecnicamente não estou de folga… estou em período de descanso"). The list can also render as a departures board
+  rostered day off (0.9.3.92, a tester: "tecnicamente não estou de folga… estou em período de descanso"). A night away with the next report < 16 h after the last duty ended is a "Night stop", longer
+  ones "Estadia" (`isNightStop()` in `dayPhase.ts`, 0.9.3.95, a tester: "chamar estadia a 14h de descanso é ofensivo"; 16 h, not
+  24, since 0.9.3.96 — user: "24 horas é demasiado"). The list can also render as a departures board
   (`DepartureBoard.tsx`, view in localStorage `crewroster.listView`).
 - **One design language** (since 0.8.29.2): `theme.ts` carries the "Hoje" look for every page (navy
   AppBar, flat bordered cards, soft tinted Alerts). Display dates go through `utils/dates.ts`
