@@ -7,7 +7,7 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.9.3.93`
+- **Produção (`master`) está em:** `0.9.3.94`
 - **Próxima versão ao promover:** a da experimental (cada atualização sobe a 4.ª casa)
 
 ## Como promover tudo para produção (quando estiver pronto)
@@ -25,7 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **0.9.3.94** — Voo ferry a dobrar no duty/block (cl. 12.2 b ii; voos 9xxx, interruptor no dia); GT-TAXI lido, apresentação 1 h antes do táxi (PARSE_VERSION 34).
+_(vazio — 0.9.3.94 promovida para produção)_
 
 ---
 
