@@ -564,6 +564,14 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
   reserve; the tester, asked: "Não conta.. mas aparece na escala inicial com 6h. Depois é revertida em algo, anula essas 6h e
   passa a contar o duty da assistência ou voo colocado") — the 6h printed under an R24 is never duty; what replaces it
   counts by its own rule. Nothing to change.
+- **Ferry & ground transport** (since 0.9.3.94, testers + user): RRRGS cl. 12.2 b ii — a ferry adds 100% of its flight and
+  duty time (summed with alínea a: "conta a dobrar"). The roster never says "ferry": 9xxx flight numbers are the candidates,
+  but not all are ferries (user) — `domain/ferry.ts`, on by default for a 9xxx Flight Duty, a "Voo ferry" switch on the day
+  page (`ParsedDuty.ferry`, `crewroster.ferry.<user>`, false = not a ferry). Duty-pay: + the work window when every flight of
+  the day is a ferry, else + the ferry sectors' block; block-pay: + the ferry's block (`Credit.ferry`). Synthetic tests must
+  keep non-ferry Flight Duty numbers out of 9000–9999. `GT-TAXI` (ground transport, GT-*) is read timed with both airports
+  (dutyType Other, label "Táxi"), counts as work (cl. 12.2 e iv), and the report is an hour before it when it leads to the
+  first flight (real case: H9+ 0900–1300, GT-TAXI LIS 1400–1420 AVR, ferry AVR 1538–1557 LIS → FDP from 13:00, DT 4h27).
 - **Report time = first departure − 1 h, always** (user rule, 0.9.3.31: "a apresentação vai ser sempre 1 hora antes.
   Mais tarde tratamos dos casos especiais que vão aparecendo"). 0.9.3.30 tried it from the printed [DT] (last arrival +
   30 min − DT) plus a typed override on the day page — withdrawn (reverted; PARSE_VERSION 27 re-reads). A user's audio

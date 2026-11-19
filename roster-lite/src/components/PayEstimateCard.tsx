@@ -304,7 +304,7 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                   no recibo: o do mês só sobre o fixo, e o do mês anterior refeito com o variável que agora se paga (menos o
                   que já tinha sido retido); em janeiro, o variável de dezembro à parte. As horas a mais (excesso aos plafonds) não entram nessas contas nem sobem o escalão: são retidas à parte, a metade da taxa do mês. Não prevê outras correções de meses
                   passados. Noturno 23h–06h e feriados em hora de Lisboa, somados às outras
-                  alíneas da cl. 12.2 (o feriado a dobrar no duty-pay e no block-pay). Nos dias de formação ou de exames médicos com duas sessões desconta 1 h de almoço no duty-pay. O simulador dado como instrutor não conta no duty nem no block, e os DHC desse dia contam a 50%; como instruendo conta tudo. Cada dia de férias ou de gabinete reduz os plafonds. Subsídios sobre todos os fixos: férias = 42 dias (fixos ÷ 30 × 42), Natal = um mês (cl. 7 e
+                  alíneas da cl. 12.2 (o feriado a dobrar no duty-pay e no block-pay). Nos dias de formação ou de exames médicos com duas sessões desconta 1 h de almoço no duty-pay. Um voo ferry conta a dobrar, no duty e no block (cl. 12.2 b ii) — os voos 9xxx, salvo se o desligares na página do dia. O simulador dado como instrutor não conta no duty nem no block, e os DHC desse dia contam a 50%; como instruendo conta tudo. Cada dia de férias ou de gabinete reduz os plafonds. Subsídios sobre todos os fixos: férias = 42 dias (fixos ÷ 30 × 42), Natal = um mês (cl. 7 e
                   8), com IRS retido à parte, SS e fundo de pensões. Line checks: um por dia com voos W_INS, ou FAM_INS e LIFUS_INS juntos — corrige com − / + se
                   não bater. Voos em dia de folga (cl. 13) e reduções de repouso (cl. 2.8) contam quando marcados no dia. Não
                   inclui split-duty nem o acerto anual dos plafonds (março). Confirma sempre no recibo.
@@ -348,7 +348,7 @@ function CreditBar({ label, c, chosen, showValue }: { label: string; c: Credit; 
         )}
       </Box>
       <Typography variant="caption" color="text.secondary" display="block" sx={{ fontVariantNumeric: 'tabular-nums' }}>
-        {formatDuration(c.credited)} · Limite 1 {formatDuration(c.l1)} · Limite 2 {formatDuration(c.l2)}
+        {formatDuration(c.credited)}{c.ferry ? ` (ferry +${formatDuration(c.ferry)})` : ''} · Limite 1 {formatDuration(c.l1)} · Limite 2 {formatDuration(c.l2)}
       </Typography>
       <Box position="relative" height={12} mt={0.5} borderRadius="6px" overflow="hidden"
         sx={(t) => ({ background: depth(t.palette.mode).well, boxShadow: depth(t.palette.mode).wellShadow })}

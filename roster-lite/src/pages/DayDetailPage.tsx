@@ -33,6 +33,7 @@ import { briefLabel, ebtBriefing, ebtDutyMinutes } from '../domain/simSession';
 import { canCompareIO, isIO, isPrevenirIO } from '../domain/irregularity';
 import { autoRestCut, markedOffDay, markedRestCut, offDayChoice, typedRestCut } from '../domain/offDayWork';
 import type { RestInfo } from '../domain/restPeriods';
+import { ferryChoice, isFerryCandidate } from '../domain/ferry';
 
 export default function DayDetailPage() {
   const { date } = useParams<{ date: string }>();
@@ -270,6 +271,7 @@ export default function DayDetailPage() {
         </Card>
       ))}
 
+      {pilot && date && <FerrySwitch date={date} duties={duties} />}
       {pilot && date && <OffDayWork date={date} duties={duties} rest={rest} />}
       {date && <RaacoDayCard date={date} />}
     </Stack>
@@ -527,6 +529,31 @@ function daySummary(duties: ParsedDuty[]): string | undefined {
   const legs = duties.filter((d) => (d.dutyType === 'Flight Duty' || d.dutyType === 'Positioning') && d.departureAirport);
   if (legs.length) return `${[legs[0].departureAirport, ...legs.map((l) => l.arrivalAirport)].join(' → ')} · ${legs.length} ${legs.length === 1 ? 'setor' : 'setores'}`;
   return duties[0] ? `${dutyLabel(duties[0])} · ${duties[0].dutyCode}` : undefined;
+}
+
+// Pilots (AE): a 9xxx flight may be a ferry — +100% of its flight and duty time in the duty-pay and block-pay (RRRGS
+// cl. 12.2 b ii: "conta a dobrar", a tester). Not every 9xxx is one (user), so it is a switch, on by default.
+function FerrySwitch({ date, duties }: { date: string; duties: ParsedDuty[] }) {
+  const { setFerry } = useRoster();
+  const legs = duties.filter(isFerryCandidate);
+  if (!legs.length) return null;
+  const on = ferryChoice(duties) !== false;
+  return (
+    <Card>
+      <CardContent>
+        <Typography sx={passOverline}>Voo ferry · AE (experimental)</Typography>
+        <FormControlLabel sx={{ mt: 0.5 }}
+          control={<Switch checked={on} onChange={(e) => setFerry(date, e.target.checked ? null : false)} />}
+          label={<Typography variant="body2" fontWeight={700}>{legs.map((d) => d.flightNumber).join(', ')} {legs.length > 1 ? 'são ferries' : 'é um ferry'}</Typography>}
+        />
+        <Typography variant="caption" color="text.secondary" display="block">
+          {on
+            ? 'Conta a dobrar no duty-pay e no block-pay (RRRGS cl. 12.2 b ii). Nem todos os voos 9xxx são ferry: desliga se não foi.'
+            : 'Desligado: conta como um voo normal.'}
+        </Typography>
+      </CardContent>
+    </Card>
+  );
 }
 
 // An IO: was it the "prevenir" (called at the report for the alcohol test)? When an earlier download

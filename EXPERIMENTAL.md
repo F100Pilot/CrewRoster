@@ -25,7 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(vazio — 0.9.3.92 e 0.9.3.93 promovidas para produção)_
+- **0.9.3.94** — Voo ferry a dobrar no duty/block (cl. 12.2 b ii; voos 9xxx, interruptor no dia); GT-TAXI lido, apresentação 1 h antes do táxi (PARSE_VERSION 34).
 
 ---
 

@@ -42,6 +42,8 @@ export interface ParsedDuty {
   offDayPay?: 'paid' | 'kept' | 'none'; // 'none': the pilot switched it off, over the roster's "Voo em Off"
   /** Minutes of rest cut before this day, typed by the pilot (RRRGS cl. 2.8, max 120). */
   restCutMin?: number;
+  /** The pilot's switch on a 9xxx flight's day: flown as a ferry or not (RRRGS cl. 12.2 b ii; domain/ferry.ts). */
+  ferry?: boolean;
   /** Imported after its day had passed: the times are the flown ones, not a plan. */
   settled?: boolean;
   /** A settled sector whose plan the app saw (from a roster printed before the day) — `planned` is only kept when it

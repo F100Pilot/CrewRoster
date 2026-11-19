@@ -9,4 +9,9 @@ const dutyTypeLabel = (t: string): string => DUTY_TYPE_LABEL[t] ?? t;
 // A duty's own word where its code says more than its type: S.EXT. is filed as office duty (it pays
 // and counts like one) but it is an external service, not the office (user); IO is the irregularity.
 const CODE_LABEL: Record<string, string> = { 'S.EXT.': 'Serviço externo', IO: 'Irregularidade operacional' };
-export const dutyLabel = (d: { dutyType: string; dutyCode: string }): string => CODE_LABEL[d.dutyCode] ?? dutyTypeLabel(d.dutyType);
+export const dutyLabel = (d: { dutyType: string; dutyCode: string }): string =>
+  CODE_LABEL[d.dutyCode] ?? (isGroundTransport(d) ? (/TAXI/.test(d.dutyCode) ? 'Táxi' : 'Transporte terrestre') : dutyTypeLabel(d.dutyType));
+
+// A ground transport (GT-TAXI: a taxi to Alverca for a ferry, a tester's roster, Nov 2026) — duty in full (RRRGS cl. 12.2 e
+// iv: "deslocação através de meios de superfície – 100%"), never flight time.
+export const isGroundTransport = (d: { dutyCode: string }): boolean => /^GT(-[A-Z]+)?$/.test(d.dutyCode);

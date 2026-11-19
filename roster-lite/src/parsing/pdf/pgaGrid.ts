@@ -11,6 +11,7 @@ import { addDays, format, isValid, parse as parseDate } from 'date-fns';
 import type { ParsedDuty } from '../../domain/types';
 import type { PositionedToken } from './extractText';
 import { toMinutes } from '../../utils/duration';
+import { isGroundTransport } from '../../domain/dutyLabels';
 
 const DOW = /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\d{2}$/;
 const PERIOD = /(\d{2})([A-Za-z]{3})(\d{2})/; // 15Jun26 (may have surrounding text)
@@ -165,6 +166,9 @@ function classifyDuty(name: string): { dutyType: string; dutyCode: string } | nu
   if (/^(SBY|STBY)/.test(n)) return { dutyType: 'Standby Airport', dutyCode: 'SBY' };
   // APT = assistência no aeroporto (user, Nov 2026), printed with its start and end like an IO.
   if (n === 'APT') return { dutyType: 'Standby Airport', dutyCode: 'APT' };
+  // Ground transport, timed, from one airport to another: "GT-TAXI LIS 1400 1420 AVR" (a taxi to Alverca for a ferry, a
+  // tester's roster, Nov 2026). Work in full (RRRGS cl. 12.2 e iv), and the report is an hour before it.
+  if (/^GT(-[A-Z]+)?$/.test(n)) return { dutyType: 'Other', dutyCode: n };
   // Assistances (standby/reserve with a time window), for BOTH pilots and cabin crew.
   // H-codes/R24: H7+, H9+, H12+, H14+, H23+, H509, H616, R24. A-codes: A1, A2, A2+, A3,
   // A3++, A4, A4+, A5, A5+, A6, A8 (used across ranks, not cabin-only). The "+"/3-digit
@@ -376,7 +380,8 @@ export function parseSubColumn(
       // 08:30–12:00, S.EXT. 08:00–16:00); show it as Início/Fim. Without the end, the duty-time
       // limits had nothing to measure and those days never counted.
       const isTimed = named.dutyType === 'Training' || named.dutyType === 'Simulator' ||
-        named.dutyType === 'Medical' || named.dutyType === 'Office Duty' || named.dutyCode === 'IO' || named.dutyCode === 'APT';
+        named.dutyType === 'Medical' || named.dutyType === 'Office Duty' || named.dutyCode === 'IO' || named.dutyCode === 'APT' ||
+        isGroundTransport(named);
       const times = words.map(toTime).filter((t): t is string => !!t);
       duties.push({
         date,
@@ -387,7 +392,7 @@ export function parseSubColumn(
         arrivalTime: isTimed ? times[1] ?? null : null,
         flightNumber: null,
         departureAirport: isFree ? null : airports[0] ?? null,
-        arrivalAirport: null,
+        arrivalAirport: isGroundTransport(named) ? airports[1] ?? null : null,
         aircraftType: aircraft,
         observations: seg.notes.join(', ') || null,
         hotel: resolveHotel(seg),
@@ -820,7 +825,13 @@ export function interpretPgaGrid(tokens: PositionedToken[]): ParsedDuty[] {
       (d) => (d.dutyType === 'Flight Duty' || d.dutyType === 'Positioning') && d.departureTime
     );
     if (firstFlight) {
-      firstFlight.reportingTime = subtractHour(firstFlight.departureTime!);
+      // A ground transport to the aircraft before the first flight opens the duty: the report is an hour before IT (a
+      // tester's roster: GT-TAXI LIS 1400–1420 AVR, ferry AVR 1538 → FDP 02:5x from 13:00, as CrewLink printed).
+      const dep = toMinutes(firstFlight.departureTime!);
+      const gt = arr.find((d) => isGroundTransport(d) && d.departureTime
+        && toMinutes(d.departureTime) < dep && dep - toMinutes(d.departureTime) <= 180);
+      firstFlight.reportingTime = subtractHour(gt?.departureTime ?? firstFlight.departureTime!);
+      if (gt) gt.reportingTime = firstFlight.reportingTime;
     }
   }
 
