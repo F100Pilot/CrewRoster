@@ -7,7 +7,7 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.9.3.94`
+- **Produção (`master`) está em:** `0.9.3.96`
 - **Próxima versão ao promover:** a da experimental (cada atualização sobe a 4.ª casa)
 
 ## Como promover tudo para produção (quando estiver pronto)
@@ -25,8 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **0.9.3.96** — Night stop: menos de 16 h (eram 24 h) entre o fim do serviço e a apresentação seguinte (utilizador).
-- **0.9.3.95** — Hoje: «Night stop» em vez de «Estadia» quando a noite fora tem menos de 24 h até à apresentação seguinte (tester).
+_(vazio — 0.9.3.95 e 0.9.3.96 promovidas para produção)_
 
 ---
 
