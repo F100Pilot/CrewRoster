@@ -13,6 +13,14 @@ export interface ReleaseNote {
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.9.3.95',
+    date: '2026-11-19',
+    highlights: [
+      'Hoje: uma noite fora com menos de 24 h entre o fim do serviço e a apresentação seguinte passa a chamar-se «Night stop» no banner. «Estadia» fica para as estadias com um dia livre fora.',
+    ],
+    thanks: 'Obrigado aos colegas testers pela sugestão.',
+  },
+  {
     version: '0.9.3.94',
     date: '2026-11-19',
     highlights: [

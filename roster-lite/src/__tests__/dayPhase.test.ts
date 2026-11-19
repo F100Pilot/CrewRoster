@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { accentFor, dayContext, dayDestination, legsOf, skyAt, cityName } from '../domain/dayPhase';
+import { accentFor, dayContext, dayDestination, isNightStop, legsOf, skyAt, cityName } from '../domain/dayPhase';
 import type { ParsedDuty } from '../domain/types';
 
 const duty = (date: string, dutyType: string, extra: Partial<ParsedDuty> = {}): ParsedDuty => ({
@@ -47,6 +47,16 @@ describe('dayContext', () => {
     expect(c.location).toBe('FNC');
     expect(c.date).toBe('2026-11-12'); // the duty that brings the crew home
     expect(c.lastEnd).not.toBeNull();
+  });
+
+  it('calls a night away under 24 h a night stop; a longer one stays a stay (a tester, Nov 2026)', () => {
+    // Funchal: in at 18:45 (free 19:15), report 07:00 the next day — 11h45.
+    expect(isNightStop(dayContext(roster, at('2026-11-11T22:00:00Z'), 'LIS'))).toBe(true);
+    // A day free away in between: in 18:45 on the 11th, out on the 13th.
+    const long = [leg('2026-11-11', 'LIS', 'FNC', '17:00', '18:45', '16:00'), leg('2026-11-13', 'FNC', 'LIS', '08:00', '09:40', '07:00')];
+    const c = dayContext(long, at('2026-11-12T12:00:00Z'), 'LIS');
+    expect(c.phase).toBe('layover');
+    expect(isNightStop(c)).toBe(false);
   });
 
   it('is off on a free day far from the next report, and follows the profile\'s base', () => {

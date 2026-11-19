@@ -25,7 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(vazio — 0.9.3.94 promovida para produção)_
+- **0.9.3.95** — Hoje: «Night stop» em vez de «Estadia» quando a noite fora tem menos de 24 h até à apresentação seguinte (tester).
 
 ---
 
