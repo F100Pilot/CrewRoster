@@ -135,10 +135,10 @@ export function dayContext(all: ParsedDuty[], now: Date, base: string): DayConte
   return make('off', next?.date ?? null, next?.window ?? null);
 }
 
-// A night away that is only the rest between two duties — arrival, sleep, the next report under 24 h after the last one
+// A night away that is only the rest between two duties — arrival, sleep, the next report under 16 h after the last one
 // ended — is a "night stop", not a stay (a tester, Nov 2026: "chamar estadia a 14h de descanso é ofensivo"; RUPT cl. 36
-// "voos com night-stop"). A stay keeps a whole day free away.
-const NIGHT_STOP_MAX = DAY;
+// "voos com night-stop"). 16 h, not 24 (user, 0.9.3.96: "24 horas é demasiado").
+const NIGHT_STOP_MAX = 16 * 3_600_000;
 export function isNightStop(ctx: DayContext): boolean {
   return ctx.phase === 'layover' && !!ctx.lastEnd && !!ctx.window
     && ctx.window.start.getTime() - ctx.lastEnd.getTime() < NIGHT_STOP_MAX;
