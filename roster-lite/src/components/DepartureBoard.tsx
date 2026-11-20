@@ -1,3 +1,4 @@
+import { dutyLabel } from '../domain/dutyLabels';
 import { Box, Typography } from '@mui/material';
 import type { ChangeType, ParsedDuty } from '../domain/types';
 import { checkInTimeLabel } from '../utils/localTime';
@@ -26,7 +27,7 @@ function rowOf(date: string, duties: ParsedDuty[]) {
   const code = flights[0]?.flightNumber ?? first?.dutyCode ?? '—';
   const route = flights.length
     ? [flights[0].departureAirport, ...flights.map((f) => f.arrivalAirport)].join(' ')
-    : first?.dutyType === 'Day Off' ? 'Folga' : first?.dutyType === 'Vacation' ? 'Férias' : first?.dutyType ?? '';
+    : first?.dutyType === 'Day Off' ? dutyLabel(first) : first?.dutyType === 'Vacation' ? 'Férias' : first?.dutyType ?? '';
   const withReport = duties.find((d) => d.reportingTime);
   const report = withReport ? checkInTimeLabel(date, withReport.reportingTime!, withReport.departureAirport).replace(' LT', '') : '';
   return { code, route, report, off: duties.every((d) => OFF.has(d.dutyType)) };

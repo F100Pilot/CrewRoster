@@ -76,7 +76,7 @@ const PHASE_LABEL: Record<Phase, string> = {
   preflight: 'Antes do serviço', duty: 'Em serviço', standby: 'Assistência', layover: 'Estadia', off: 'Descanso',
 };
 // Off duty, the pill names what today is: an absence or holidays aren't a day off.
-const OFF_LABEL = { dayoff: 'Folga', vacation: 'Férias', absence: 'Falta' } as const;
+const OFF_LABEL = { dayoff: 'Folga', pls: 'Livre de serviço', vacation: 'Férias', absence: 'Falta' } as const;
 const phaseLabel = (ctx: DayContext) => (ctx.phase === 'off' && ctx.todayOff ? OFF_LABEL[ctx.todayOff]
   : isNightStop(ctx) ? 'Night stop' : PHASE_LABEL[ctx.phase]);
 
@@ -281,7 +281,7 @@ function headline(ctx: DayContext, base: string): { over: ReactNode; big: string
       // "Descansa." only on a day off: an absence (FAL…) or holidays say what they are.
       if (ctx.todayOff === 'absence') return { over: 'Hoje', big: 'Falta.', under: 'Sem serviços nos próximos dias.' };
       if (ctx.todayOff === 'vacation') return { over: 'Hoje', big: 'Férias.', under: 'Sem serviços nos próximos dias.' };
-      return { over: ctx.todayOff === 'dayoff' ? 'Folga' : 'Descanso', big: 'Descansa.', under: 'Sem serviços nos próximos dias.' };
+      return { over: ctx.todayOff === 'dayoff' ? 'Folga' : ctx.todayOff === 'pls' ? 'Livre de serviço' : 'Descanso', big: 'Descansa.', under: 'Sem serviços nos próximos dias.' };
   }
 }
 

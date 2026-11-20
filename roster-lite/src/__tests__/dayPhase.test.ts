@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { accentFor, dayContext, dayDestination, isNightStop, legsOf, skyAt, cityName } from '../domain/dayPhase';
 import type { ParsedDuty } from '../domain/types';
+import { dutyLabel } from '../domain/dutyLabels';
 
 const duty = (date: string, dutyType: string, extra: Partial<ParsedDuty> = {}): ParsedDuty => ({
   date, dutyType, dutyCode: dutyType === 'Day Off' ? 'FOL' : 'X',
@@ -88,6 +89,10 @@ describe('dayContext — what a day without work is', () => {
     expect(dayContext(days, at('2026-11-22T10:00:00Z'), 'LIS').todayOff).toBe('dayoff');
     expect(dayContext(days, at('2026-11-23T10:00:00Z'), 'LIS').todayOff).toBeNull();
     expect(dayContext(days, at('2026-11-25T10:00:00Z'), 'LIS').todayOff).toBeNull(); // not on the roster
+    // A PLS_… day is free of service, not a folga (RUPT cl. 6.ª n.º 13).
+    expect(dayContext([duty('2026-11-24', 'Day Off', { dutyCode: 'PLS_ROST' })], at('2026-11-24T10:00:00Z'), 'LIS').todayOff).toBe('pls');
+    expect(dutyLabel({ dutyType: 'Day Off', dutyCode: 'PLS_ROST' })).toBe('Livre de serviço');
+    expect(dutyLabel({ dutyType: 'Day Off', dutyCode: 'OFF' })).toBe('Folga');
   });
 });
 

@@ -13,6 +13,13 @@ export interface ReleaseNote {
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.9.3.99',
+    date: '2026-11-20',
+    highlights: [
+      'Os dias PLS (período livre de serviço — PLS_ROST, PLS_IRREG…) deixam de aparecer como «Folga»: os cartões da Lista e do dia, o painel de partidas, o Hoje e a partilha dizem «Livre de serviço». Um PLS não é folga (RUPT cl. 6.ª n.º 13); nas contas já estava à parte.',
+    ],
+  },
+  {
     version: '0.9.3.98',
     date: '2026-11-20',
     highlights: [

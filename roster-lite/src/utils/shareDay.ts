@@ -163,7 +163,7 @@ function dayKey(date: string, day: ParsedDuty[], base: string): { main: ParsedDu
     const t = first.departureTime ? (toLocalTime(date, first.departureTime, first.departureAirport) ?? `${first.departureTime}z`) : '';
     return { main, line1: dest, line2: t };
   }
-  const word = DAY_WORD[main.dutyType];
+  const word = /^PLS_/i.test(main.dutyCode) ? 'Livre de serviço' : DAY_WORD[main.dutyType];
   if (word) return { main, line1: word, line2: '' };
   const t = main.departureTime ? (toLocalTime(date, main.departureTime, main.departureAirport ?? base) ?? `${main.departureTime}z`) : '';
   return { main, line1: main.dutyCode.length > 7 ? main.dutyCode.slice(0, 7) : main.dutyCode, line2: t };
