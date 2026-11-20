@@ -1,5 +1,5 @@
 import { fdpForDay } from './fdp';
-import { restPeriods } from './restPeriods';
+import { restPeriods, type RestInfo } from './restPeriods';
 import { HOME_BASE } from './dutyStats';
 import type { ParsedDuty } from './types';
 import { toMinutes as toMin } from '../utils/duration';
@@ -73,16 +73,39 @@ function byDate(duties: ParsedDuty[]): Map<string, ParsedDuty[]> {
   return m;
 }
 
+// The month-independent views of the roster, built once per roster array and base (the pay estimate asks for every month
+// of the year on the annual plafond card — a tester, 0.9.3.99: "a app está lenta").
+interface RosterViews {
+  plan: ParsedDuty[];
+  flownByDate: Map<string, ParsedDuty[]>;
+  planByDate: Map<string, ParsedDuty[]>;
+  restFlown: Map<string, RestInfo>;
+  restPlan: Map<string, RestInfo>;
+  withPlan: Set<string>;
+}
+const viewsCache = new WeakMap<ParsedDuty[], Map<string, RosterViews>>();
+function rosterViews(duties: ParsedDuty[], base: string): RosterViews {
+  let byBase = viewsCache.get(duties);
+  if (!byBase) { byBase = new Map(); viewsCache.set(duties, byBase); }
+  let v = byBase.get(base);
+  if (!v) {
+    const plan = asPlanned(duties);
+    v = {
+      plan, flownByDate: byDate(duties), planByDate: byDate(plan),
+      restFlown: new Map(restPeriods(duties, 'pilot', base).map((r) => [r.date, r])),
+      restPlan: new Map(restPeriods(plan, 'pilot', base).map((r) => [r.date, r])),
+      withPlan: new Set(duties.filter((d) => d.planned).map((d) => d.date)),
+    };
+    byBase.set(base, v);
+  }
+  return v;
+}
+
 // `todayISO` bounds the analysis to days already flown (today included: a sync on the day can
 // carry the legs flown so far).
 export function planVsFlown(duties: ParsedDuty[], month: string, todayISO: string, base: string = HOME_BASE): PlanVsFlown {
   const flownDays = (d: { date: string }) => d.date.startsWith(month) && d.date <= todayISO;
-  const plan = asPlanned(duties);
-  const flownByDate = byDate(duties);
-  const planByDate = byDate(plan);
-  const restFlown = new Map(restPeriods(duties, 'pilot', base).map((r) => [r.date, r]));
-  const restPlan = new Map(restPeriods(plan, 'pilot', base).map((r) => [r.date, r]));
-  const withPlan = new Set(duties.filter((d) => d.planned).map((d) => d.date));
+  const { flownByDate, planByDate, restFlown, restPlan, withPlan } = rosterViews(duties, base);
 
   const sectors: SectorDelay[] = duties
     .filter((d) => d.planned && flownDays(d) && d.flightNumber && d.departureTime && d.arrivalTime

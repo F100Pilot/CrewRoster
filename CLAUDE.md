@@ -305,8 +305,14 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
 - **Annual plafonds** (since 0.9.3.98, a tester + user "avança"): RRRGS cl. 2.2 b / 2.4 — `domain/annualPlafond.ts`,
   `AnnualPlafondCard` on `/vencimento`: the year's credited duty / block (sum of each month's `payEstimate` with that month's
   figures) against 1136:40 / 624:00, the excess at 3% of the VB (the table has one limit; VB of the year's last month with
-  figures), less the months' own overtime → the March balance. Not modelled: parental leave, mid-year admission, reduced
-  activity. **Simulator at base pays the meal card** (ROV 4.5.9 n.º 1, same release): `mealTicketDays` counts a sim day at
+  figures), less the months' own overtime → the March balance. Since 0.9.3.100 the pilot types the cl. 2.2 c cuts on the
+  card ("Reduções do plafond", `annualLimits()`, `crewroster.annualCuts.<user>` by year): month of release (Tabela 2.3),
+  parental-leave days (Tabela 2.4: 3:37 / 2:00 a day), reduced activity %. Justified absences don't cut (c ii); unjustified
+  ones aren't in the AE — asked. **Performance** (a tester, 0.9.3.99: "a app está lenta"): the card computes only when
+  opened ("Ver"); `restPeriods()` and planVsFlown's roster views are cached per roster array (WeakMap) — rosters must
+  be replaced, never mutated in place. Since 0.9.3.101 (the tester, by audio: "6 segundos desde que carrego no vencimento")
+  `payEstimate()` works on `nearMonth()` — the duties from 45 days before the month to 7 after (cached per roster + month)
+  — and only `autoHolidayPayMonth` reads the whole roster; a 2-year roster at 4× CPU slowdown: 1,6 s → 0,6 s. **Simulator at base pays the meal card** (ROV 4.5.9 n.º 1, same release): `mealTicketDays` counts a sim day at
   base (not away, not beside a flight/DHC) — still to be checked on a payslip.
 - **Flight + ground training on one day: the gap doesn't count for duty-pay** (an expert, user-approved, 0.9.3.71: "a
   diferença entre os 30 minutos depois de calços e o início da formação não conta … é o que vem no mapa de horas"):

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ANNUAL_BLOCK_MIN, ANNUAL_DUTY_MIN, annualPlafond } from '../domain/annualPlafond';
+import { ANNUAL_BLOCK_MIN, ANNUAL_DUTY_MIN, annualLimits, annualPlafond } from '../domain/annualPlafond';
 import { DEFAULT_PAY_SETTINGS, payEstimate, RATE_L1, type PaySettings } from '../domain/payEstimate';
 import type { ParsedDuty } from '../domain/types';
 
@@ -31,6 +31,16 @@ describe('annual plafonds (RRRGS cl. 2.2 b / 2.4)', () => {
     const a = annualPlafond([flight('2026-03-10')], 2026, () => S, '2026-12-01', 'LIS');
     expect(a.months.map((m) => m.month)).toEqual(['2026-03']);
     expect([a.annualValue, a.balance, a.best]).toEqual([0, 0, null]);
+  });
+});
+
+describe('what cuts the yearly credits (RRRGS cl. 2.2 c)', () => {
+  it('follows Tabela 2.3 from the month of release, 3:37 / 2:00 a day of parental leave and the reduced activity', () => {
+    expect(annualLimits()).toEqual({ duty: ANNUAL_DUTY_MIN, block: ANNUAL_BLOCK_MIN });
+    expect(annualLimits({ fromMonth: 7 })).toEqual({ duty: 576 * 60 + 40, block: 316 * 60 + 21 }); // July: 6 months
+    expect(annualLimits({ fromMonth: 12 })).toEqual({ duty: 110 * 60, block: 60 * 60 });
+    expect(annualLimits({ parentalDays: 10 })).toEqual({ duty: ANNUAL_DUTY_MIN - 10 * 217, block: ANNUAL_BLOCK_MIN - 10 * 120 });
+    expect(annualLimits({ reducedPct: 50 })).toEqual({ duty: ANNUAL_DUTY_MIN / 2, block: ANNUAL_BLOCK_MIN / 2 });
   });
 });
 

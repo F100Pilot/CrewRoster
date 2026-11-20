@@ -634,7 +634,8 @@ function tileOf(date: string, day: ParsedDuty[], base: string): { code: string; 
   const legs = legsOf(date, day);
   if (legs.length) return { code: dayDestination(legs, base) ?? base, type: 'Flight Duty' };
   const d = day[0];
-  if (d.dutyType === 'Day Off') return { code: 'FOL', type: d.dutyType };
+  // A PLS_… day isn't a folga (RUPT cl. 6.ª n.º 13; user, 0.9.3.100: the strip said FOL).
+  if (d.dutyType === 'Day Off') return { code: /^PLS_/i.test(d.dutyCode) ? 'PLS' : 'FOL', type: d.dutyType };
   if (d.dutyType === 'Vacation') return { code: 'FÉR', type: d.dutyType };
   if (d.dutyType === 'Absence') return { code: 'FAL', type: d.dutyType }; // FAL(PD) would cut to "FAL("
   if (d.dutyType === 'Simulator') return { code: 'SIM', type: d.dutyType };

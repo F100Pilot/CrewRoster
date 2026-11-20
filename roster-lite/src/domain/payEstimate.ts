@@ -461,9 +461,34 @@ function trainingGapMinutes(date: string, day: ParsedDuty[]): number {
 
 export const TRAINING_TRIP_TAXED_UNTIL = '2026-03-31';
 
+// The duties from 45 days before the month to a week after it, the same array for the same roster and month (so the
+// per-array caches — rests, plan vs flown, abonos — hold across the card's calls).
+const NEAR_BEFORE_DAYS = 45;
+const NEAR_AFTER_DAYS = 7;
+const nearCache = new WeakMap<ParsedDuty[], Map<string, ParsedDuty[]>>();
+function nearMonth(duties: ParsedDuty[], month: string): ParsedDuty[] {
+  let byMonth = nearCache.get(duties);
+  if (!byMonth) { byMonth = new Map(); nearCache.set(duties, byMonth); }
+  let out = byMonth.get(month);
+  if (!out) {
+    const first = Date.parse(`${month}-01T00:00:00Z`);
+    const [y, m] = month.split('-').map(Number);
+    const last = Date.UTC(y, m, 0);
+    const from = new Date(first - NEAR_BEFORE_DAYS * 86_400_000).toISOString().slice(0, 10);
+    const to = new Date(last + NEAR_AFTER_DAYS * 86_400_000).toISOString().slice(0, 10);
+    out = duties.filter((d) => d.date >= from && d.date <= to);
+    byMonth.set(month, out);
+  }
+  return out;
+}
+
 export function payEstimate(
-  duties: ParsedDuty[], month: string, s: PaySettings, todayISO: string, base: string = HOME_BASE,
+  allDuties: ParsedDuty[], month: string, s: PaySettings, todayISO: string, base: string = HOME_BASE,
 ): PayEstimate {
+  // Only the weeks around the month matter (the rests, trips and checks before it; a duty running into the next month) —
+  // the whole roster, years of it, made the Vencimento page take seconds to open (a tester, 0.9.3.99: "6 segundos desde
+  // que carrego no vencimento"). The holiday subsidy's month still reads the whole year, below.
+  const duties = nearMonth(allDuties, month);
   const days = byDate(duties);
   const inMonth = (iso: string) => iso.startsWith(month);
   const holidays = new Set([
@@ -802,7 +827,7 @@ export function payEstimate(
   const paidMonth = Number(paidIn.slice(5, 7));
   const fixedPay = s.vb + s.ve + s.vs + s.extras - (s.pensionAuto ? 0 : s.nonTaxableFixed || 0);
   const ticked = s.holidayPay && s.holidayPay.year === paidYear ? s.holidayPay.month : null;
-  const holidayPayMonth = ticked ?? autoHolidayPayMonth(duties, paidYear);
+  const holidayPayMonth = ticked ?? autoHolidayPayMonth(allDuties, paidYear);
   const holidaySubsidy = holidayPayMonth === paidMonth ? cents((fixedPay / 30) * HOLIDAY_ENTITLEMENT_DAYS) : 0;
   const christmasSubsidy = paidMonth === CHRISTMAS_PAY_MONTH ? cents(fixedPay) : 0;
 

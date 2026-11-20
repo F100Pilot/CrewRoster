@@ -76,7 +76,20 @@ function aeRequiredRest(prev: Period, next: Period, base: string): { required: n
 
 // `role` selects the rule set: 'pilot' for the company agreement, anything else (cabin, or not
 // given) for the generic 12h heads-up. `base` is the pilot's home base (at base vs away).
+// Cached per roster array (rosters are replaced, never mutated in place — like raacoDays): the pay estimate, the plan-vs-
+// flown check and the day page all ask for the whole roster's rests, a dozen times over on the annual plafond card (a
+// tester, 0.9.3.99: "a app está lenta"). The result is shared: read it, never change it.
+const restCache = new WeakMap<ParsedDuty[], Map<string, RestInfo[]>>();
 export function restPeriods(duties: ParsedDuty[], role?: CrewRole, base: string = HOME_BASE): RestInfo[] {
+  let byKey = restCache.get(duties);
+  if (!byKey) { byKey = new Map(); restCache.set(duties, byKey); }
+  const key = `${role ?? ''}|${base}`;
+  let out = byKey.get(key);
+  if (!out) { out = computeRestPeriods(duties, role, base); byKey.set(key, out); }
+  return out;
+}
+
+function computeRestPeriods(duties: ParsedDuty[], role?: CrewRole, base: string = HOME_BASE): RestInfo[] {
   const pilot = role === 'pilot';
   const byDate = new Map<string, ParsedDuty[]>();
   for (const d of duties) {

@@ -1,3 +1,4 @@
+import type { AnnualCuts } from '../domain/annualPlafond';
 // App settings kept on this device only (localStorage). Currently just the AeroDataBox
 // API key used to look up live flight info (aircraft registration, gate/terminal). The
 // key is the user's own RapidAPI key; it stays in this browser and is sent to the proxy
@@ -338,6 +339,15 @@ export const getOffDayMarks = offDayMarks.get;
 export const setOffDayMark = offDayMarks.set;
 export const getRestCutMarks = restCutMarks.get;
 export const setRestCutMark = restCutMarks.set;
+// What cuts a year's annual plafonds (domain/annualPlafond.ts), by year, typed on the Vencimento page.
+export function getAnnualCuts(userId: string): Record<string, AnnualCuts> {
+  try { return JSON.parse(localStorage.getItem('crewroster.annualCuts.' + userId) ?? '{}') ?? {}; } catch { return {}; }
+}
+export function setAnnualCuts(userId: string, year: number, cuts: AnnualCuts): Record<string, AnnualCuts> {
+  const all = { ...getAnnualCuts(userId), [year]: cuts };
+  try { localStorage.setItem('crewroster.annualCuts.' + userId, JSON.stringify(all)); } catch { /* private mode */ }
+  return all;
+}
 // A 9xxx flight's day flown as a ferry (true) or not (false), by date (domain/ferry.ts).
 const ferryMarks = dayMarks<boolean>('crewroster.ferry.');
 export const getFerryMarks = ferryMarks.get;

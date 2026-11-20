@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Box, Card, CardContent, Divider, LinearProgress, Stack, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
-import { CalendarMonth } from '@mui/icons-material';
+import { Box, Button, Card, CardContent, Divider, LinearProgress, MenuItem, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
+import { CalendarMonth, ExpandLess, ExpandMore } from '@mui/icons-material';
 import { ExperimentalChip } from './AeDisclaimer';
 import InfoCollapse from './InfoCollapse';
-import { ANNUAL_BLOCK_MIN, ANNUAL_DUTY_MIN, annualPlafond } from '../domain/annualPlafond';
-import { getPaySettingsFor } from '../storage/settings';
+import { annualPlafond, type AnnualCuts } from '../domain/annualPlafond';
+import { getAnnualCuts, getPaySettingsFor, setAnnualCuts } from '../storage/settings';
 import { todayISO } from '../domain/rosterWindow';
 import { formatDuration } from '../utils/duration';
 import type { ParsedDuty } from '../domain/types';
@@ -21,17 +21,51 @@ export default function AnnualPlafondCard({ duties, base, userId }: { duties: Pa
   const [picked, setPicked] = useState<number | null>(null);
   const year = picked && years.includes(picked) ? picked : years.includes(thisYear) ? thisYear : years[0];
   const [rev, setRev] = useState(0);
+  // Worked out only when opened: twelve monthly estimates are too much for every visit to the page (a tester, 0.9.3.99:
+  // "a app está lenta após esta versão").
+  const [open, setOpen] = useState(false);
+  const [allCuts, setAllCuts] = useState<Record<string, AnnualCuts>>(() => getAnnualCuts(userId));
+  useEffect(() => { setAllCuts(getAnnualCuts(userId)); }, [userId]);
+  const [showCuts, setShowCuts] = useState(false);
+  const cuts: AnnualCuts = (year && allCuts[year]) || {};
+  const patchCuts = (p: AnnualCuts) => { if (year) setAllCuts(setAnnualCuts(userId, year, { ...cuts, ...p })); };
   useEffect(() => {
     const bump = () => setRev((v) => v + 1);
     window.addEventListener('pay-settings-updated', bump);
     return () => window.removeEventListener('pay-settings-updated', bump);
   }, []);
-  const a = useMemo(
-    () => (year ? annualPlafond(duties, year, (m) => getPaySettingsFor(userId, m), todayISO(), base) : null),
+  // Worked out after a paint, so "A calcular…" shows instead of the button freezing (twelve monthly estimates).
+  const [a, setA] = useState<ReturnType<typeof annualPlafond> | null>(null);
+  useEffect(() => {
+    if (!open || !year) { setA(null); return; }
+    const t = window.setTimeout(() => setA(annualPlafond(duties, year, (m) => getPaySettingsFor(userId, m), todayISO(), base, cuts)), 30);
+    return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [duties, year, userId, base, rev],
+  }, [open, duties, year, userId, base, rev, cuts.fromMonth, cuts.parentalDays, cuts.reducedPct]);
+  if (!year) return null;
+  const header = (
+    <Box display="flex" alignItems="center" gap={1}>
+      <CalendarMonth fontSize="small" color="action" />
+      <Typography variant="subtitle2" noWrap sx={{ flexGrow: 1, minWidth: 0 }}>Plafond anual</Typography>
+      <ExperimentalChip />
+      <Button size="small" sx={{ minWidth: 0, whiteSpace: 'nowrap' }} onClick={() => setOpen((v) => !v)} endIcon={open ? <ExpandLess /> : <ExpandMore />}>
+        {open ? 'Fechar' : 'Ver'}
+      </Button>
+    </Box>
   );
-  if (!a || !a.months.length) return null;
+  if (!open || !a || !a.months.length) {
+    return (
+      <Card>
+        <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
+          {header}
+          {open && !a && <Typography variant="caption" color="text.secondary" display="block" mt={1}>A calcular o ano…</Typography>}
+          {open && a && !a.months.length && (
+            <Typography variant="caption" color="text.secondary" display="block" mt={1}>Sem escala guardada em {year}.</Typography>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
 
   const bar = (label: string, credited: number, limit: number, chosen: boolean) => (
     <Box>
@@ -54,20 +88,35 @@ export default function AnnualPlafondCard({ duties, base, userId }: { duties: Pa
   return (
     <Card>
       <CardContent>
-        <Box display="flex" alignItems="center" gap={1} mb={1}>
-          <CalendarMonth fontSize="small" color="action" />
-          <Typography variant="subtitle2" sx={{ flexGrow: 1 }}>Plafond anual</Typography>
-          <ExperimentalChip />
-        </Box>
+        <Box mb={1}>{header}</Box>
         {years.length > 1 && (
           <ToggleButtonGroup size="small" exclusive value={year} onChange={(_, v) => v && setPicked(v)} sx={{ mb: 1 }}>
             {years.slice(0, 3).map((y) => <ToggleButton key={y} value={y} sx={{ py: 0.25, px: 1 }}>{y}</ToggleButton>)}
           </ToggleButtonGroup>
         )}
         <Stack spacing={1}>
-          {bar('Duty-pay', a.duty, ANNUAL_DUTY_MIN, a.best === 'duty')}
-          {bar('Block-pay', a.block, ANNUAL_BLOCK_MIN, a.best === 'block')}
+          {bar('Duty-pay', a.duty, a.limits.duty, a.best === 'duty')}
+          {bar('Block-pay', a.block, a.limits.block, a.best === 'block')}
         </Stack>
+        {/* What cuts the year's credits (cl. 2.2 c): admission year, parental leave, reduced activity — typed by the pilot. */}
+        <Button size="small" sx={{ mt: 0.5, px: 0 }} onClick={() => setShowCuts((v) => !v)} endIcon={showCuts ? <ExpandLess /> : <ExpandMore />}>
+          Reduções do plafond{cuts.fromMonth || cuts.parentalDays || cuts.reducedPct ? ' (aplicadas)' : ''}
+        </Button>
+        {showCuts && (
+          <Stack spacing={1.25} mt={1}>
+            <TextField select size="small" label="Mês de largada (ano de admissão)" value={cuts.fromMonth ?? ''}
+              onChange={(e) => patchCuts({ fromMonth: e.target.value === '' ? undefined : Number(e.target.value) })}>
+              <MenuItem value="">Ano todo</MenuItem>
+              {MONTHS.map((m, i) => <MenuItem key={m} value={i + 1}>{m}</MenuItem>)}
+            </TextField>
+            <TextField size="small" type="number" label="Licença parental (dias)" value={cuts.parentalDays ?? ''}
+              slotProps={{ htmlInput: { min: 0, inputMode: 'numeric' } }}
+              onChange={(e) => patchCuts({ parentalDays: e.target.value === '' ? undefined : Math.max(0, Math.round(Number(e.target.value))) })} />
+            <TextField size="small" type="number" label="Diminuição de atividade (%)" value={cuts.reducedPct ?? ''}
+              slotProps={{ htmlInput: { min: 0, max: 100, inputMode: 'decimal' } }}
+              onChange={(e) => patchCuts({ reducedPct: e.target.value === '' ? undefined : Math.min(100, Math.max(0, Number(e.target.value))) })} />
+          </Stack>
+        )}
         <Stack spacing={0.5} mt={1.5}>
           {row(`Acima do plafond anual (${a.best === 'block' ? 'block' : 'duty'}, 3% do VB)`, a.annualValue)}
           {row('Já pago nos meses', a.monthlyPaid)}
@@ -95,7 +144,7 @@ export default function AnnualPlafondCard({ duties, base, userId }: { duties: Pa
               favorável. As horas acima são pagas a 3% do VB (a tabela anual só tem um limite), com o VB do último mês com
               valores; tira-se o que os meses já pagaram acima dos seus plafonds e o saldo positivo vem com o vencimento de
               março. Só os meses com escala guardada; as férias não reduzem o plafond anual. As licenças parentais, a
-              admissão a meio do ano e a diminuição de atividade (que o reduzem) não estão contadas.
+              admissão a meio do ano (Tabela 2.3, a partir do mês de largada) e a diminuição de atividade reduzem-no — escreve-as em «Reduções do plafond» (licença parental: 3:37 de duty e 2:00 de block por dia, Tabela 2.4). As faltas justificadas não o reduzem (cl. 2.2 c ii).
             </Typography>
           </InfoCollapse>
         </Box>
