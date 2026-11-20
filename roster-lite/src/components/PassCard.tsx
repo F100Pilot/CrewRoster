@@ -135,10 +135,12 @@ export function StatTile({ label, value, note, children, center = false }: {
   return (
     <Box sx={{
       bgcolor: 'background.paper', backgroundImage: theme.palette.mode === 'light' ? 'linear-gradient(180deg, rgba(255,255,255,.7), rgba(15,27,45,.04))' : 'linear-gradient(180deg, rgba(255,255,255,.05), rgba(0,0,0,.08))',
-      borderRadius: '16px', boxShadow: d.low, px: 1.5, py: 1.25, minWidth: 0, textAlign: center ? 'center' : 'left',
+      borderRadius: '16px', boxShadow: d.low, px: center ? { xs: 0.75, sm: 1.5 } : 1.5, py: 1.25, minWidth: 0, textAlign: center ? 'center' : 'left',
     }}>
       <Typography noWrap sx={passOverline}>{label}</Typography>
-      <Typography noWrap sx={{ fontSize: '1.35rem', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{value}</Typography>
+      {/* A long value (a block of "123h45") steps down on a phone so it shows whole — four tiles to a row cut it to
+          "23h…" (user, 0.9.3.98). */}
+      <Typography noWrap sx={{ fontSize: value.length > 4 ? { xs: '1.05rem', sm: '1.35rem' } : '1.35rem', lineHeight: { xs: value.length > 4 ? 1.55 : 1.2, sm: 1.2 }, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{value}</Typography>
       {children}
       {note && <Typography noWrap sx={{ fontSize: '0.7rem', color: 'text.secondary' }}>{note}</Typography>}
     </Box>

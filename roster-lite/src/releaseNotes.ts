@@ -13,6 +13,16 @@ export interface ReleaseNote {
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.9.3.98',
+    date: '2026-11-20',
+    highlights: [
+      'Vencimento: novo cartão «Plafond anual» (RRRGS cl. 2.ª n.º 2 b e n.º 4) — as horas de duty e block do ano contra 1136:40 / 624:00, o valor acima a 3% do VB, menos o que os meses já pagaram, e o saldo previsto com o vencimento de março.',
+      'Vencimento: os dias de simulador na base passam a contar o subsídio de alimentação (cartão), como os dias em terra (ROV 4.5.9).',
+      'Calendário: os totais do mês (por exemplo o bloco «123h45») aparecem inteiros no telemóvel.',
+    ],
+    thanks: 'Obrigado aos colegas testers pelas sugestões.',
+  },
+  {
     version: '0.9.3.97',
     date: '2026-11-20',
     highlights: [
