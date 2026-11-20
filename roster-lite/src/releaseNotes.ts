@@ -13,6 +13,13 @@ export interface ReleaseNote {
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.9.3.97',
+    date: '2026-11-20',
+    highlights: [
+      'Simulador EBT: a página do dia passa a mostrar a hora de apresentação (início do briefing — por exemplo 08:30 para uma sessão às 09:00 no dia 1).',
+    ],
+  },
+  {
     version: '0.9.3.96',
     date: '2026-11-19',
     highlights: [

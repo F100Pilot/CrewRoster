@@ -25,7 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(vazio — 0.9.3.95 e 0.9.3.96 promovidas para produção)_
+- **0.9.3.97** — Simulador EBT: hora de apresentação (início do briefing) na página do dia (utilizador).
 
 ---
 
