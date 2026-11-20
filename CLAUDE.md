@@ -301,6 +301,12 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
   printed BEFORE the flights the app only has flown times (report = actual departure − 1 h); with it the planned report is
   kept (0.8.32.2) and the duty matches the [DT]. Since 0.9.3.70 the pay card warns "Falta a escala do início do mês" for
   flown days with no plan (settled && !planned && !planKnown — like RAACO's noPlan). ALWAYS ask the user before changing a pay rule.
+- **Annual plafonds** (since 0.9.3.98, a tester + user "avança"): RRRGS cl. 2.2 b / 2.4 — `domain/annualPlafond.ts`,
+  `AnnualPlafondCard` on `/vencimento`: the year's credited duty / block (sum of each month's `payEstimate` with that month's
+  figures) against 1136:40 / 624:00, the excess at 3% of the VB (the table has one limit; VB of the year's last month with
+  figures), less the months' own overtime → the March balance. Not modelled: parental leave, mid-year admission, reduced
+  activity. **Simulator at base pays the meal card** (ROV 4.5.9 n.º 1, same release): `mealTicketDays` counts a sim day at
+  base (not away, not beside a flight/DHC) — still to be checked on a payslip.
 - **Flight + ground training on one day: the gap doesn't count for duty-pay** (an expert, user-approved, 0.9.3.71: "a
   diferença entre os 30 minutos depois de calços e o início da formação não conta … é o que vem no mapa de horas"):
   `trainingGapMinutes()` in `payEstimate.ts` takes out the time between the flight duty's end (on-blocks + 30 min) and a

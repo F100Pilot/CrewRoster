@@ -634,7 +634,7 @@ export function payEstimate(
   let perDiemB = 0;
   const perDiemDates = { a: [] as string[], b: [] as string[] };
   let available = 0; // days not on holidays or absence, for the complementary payment
-  let mealTicketDays = 0; // ground duty at base: a meal ticket each (payslips: as many as the "B … T" days)
+  let mealTicketDays = 0; // ground duty or a simulator at base: a meal ticket each (payslips: as many as the "B … T" days)
   let perDiemTravelDays = 0; // days away — the part of the per diem partly exempt from tax
   let perDiemTravelValue = 0;
   const perDiemTravel: { date: string; value: number; abroad: boolean }[] = [];
@@ -697,6 +697,10 @@ export function payEstimate(
       perDiemA++;
       perDiemDates.a.push(date);
       // Away counts too: a simulator in Frankfurt during a stay is per diem A away, not "… T".
+      // A simulator at base pays the ground staff's meal subsidy (ROV 4.5.9 n.º 1: "formação profissional, instrução,
+      // simulador ou serviço de gabinete, na sua base" — a tester, Nov 2026, with sessions over lunch; user: "avança"):
+      // the meal card, as on the ground days. Not away (n.º 3), not beside a flight or a positioning.
+      if (!travelling && !awayAtStart && day.some((x) => x.dutyType === 'Simulator')) mealTicketDays++;
       if ((travelling || awayAtStart) && !trainingTripDates.has(date)) {
         perDiemTravelDays++; perDiemTravelValue += s.perDiemA;
         perDiemTravel.push({ date, value: s.perDiemA, abroad: abroadOn(day, awayAtStart ? whereAtStart : base) });

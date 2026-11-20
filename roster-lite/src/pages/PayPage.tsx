@@ -3,6 +3,7 @@ import { Alert, Box, Button, Stack } from '@mui/material';
 import { Science, Settings } from '@mui/icons-material';
 import { useRoster } from '../state/useRoster';
 import PayEstimateCard from '../components/PayEstimateCard';
+import AnnualPlafondCard from '../components/AnnualPlafondCard';
 import { baseOf } from '../domain/dutyStats';
 import { getPaySettings } from '../storage/settings';
 import { openSettings } from '../components/settingsEvents';
@@ -43,6 +44,7 @@ export default function PayPage() {
             Estimativa experimental pelo RRRGS do AE. Confirma sempre no recibo oficial.
           </Alert>
           <PayEstimateCard duties={roster.duties} base={baseOf(activeUser)} userId={activeUser.id} />
+          <AnnualPlafondCard duties={roster.duties} base={baseOf(activeUser)} userId={activeUser.id} />
           <Box>
             <Button size="small" startIcon={<Settings />} onClick={() => openSettings('vencimento')}>
               Alterar valores

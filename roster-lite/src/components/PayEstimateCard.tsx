@@ -237,7 +237,7 @@ export default function PayEstimateCard({ duties, base, userId }: { duties: Pars
                   />
                 )}
                 {r.mealTicketDays > 0 && (
-                  <Row label={`Subsídio de alimentação: ${r.mealTicketDays} ${r.mealTicketDays === 1 ? 'dia' : 'dias'} em terra na base (cartão)`} value={r.mealTicketValue} />
+                  <Row label={`Subsídio de alimentação: ${r.mealTicketDays} ${r.mealTicketDays === 1 ? 'dia' : 'dias'} em terra ou de simulador na base (cartão)`} value={r.mealTicketValue} />
                 )}
                 {r.reducedMinutes > 0 && <Row label={`Descansos reduzidos: ${formatDuration(r.reducedMinutes)}`} value={r.reductionValue} />}
                 {r.offDays > 0 && (

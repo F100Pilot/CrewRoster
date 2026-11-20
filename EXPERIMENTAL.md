@@ -25,7 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(vazio — 0.9.3.97 promovida para produção)_
+- **0.9.3.98** — Plafond anual (cl. 2.2 b / 2.4) no Vencimento; cartão-refeição nos dias de simulador na base (ROV 4.5.9); totais do calendário inteiros no telemóvel.
 
 ---
 
