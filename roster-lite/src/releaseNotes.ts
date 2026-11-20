@@ -13,6 +13,13 @@ export interface ReleaseNote {
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.9.3.101',
+    date: '2026-11-20',
+    highlights: [
+      'Vencimento ainda mais rápido: a estimativa do mês passa a ler só as semanas à volta desse mês, em vez da escala inteira — a página abre quase de imediato mesmo com anos de escala guardada. O «Plafond anual» mostra «A calcular o ano…» enquanto faz a conta.',
+    ],
+  },
+  {
     version: '0.9.3.100',
     date: '2026-11-20',
     highlights: [

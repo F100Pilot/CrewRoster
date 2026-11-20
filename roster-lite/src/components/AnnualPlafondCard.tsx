@@ -34,11 +34,14 @@ export default function AnnualPlafondCard({ duties, base, userId }: { duties: Pa
     window.addEventListener('pay-settings-updated', bump);
     return () => window.removeEventListener('pay-settings-updated', bump);
   }, []);
-  const a = useMemo(
-    () => (open && year ? annualPlafond(duties, year, (m) => getPaySettingsFor(userId, m), todayISO(), base, cuts) : null),
+  // Worked out after a paint, so "A calcular…" shows instead of the button freezing (twelve monthly estimates).
+  const [a, setA] = useState<ReturnType<typeof annualPlafond> | null>(null);
+  useEffect(() => {
+    if (!open || !year) { setA(null); return; }
+    const t = window.setTimeout(() => setA(annualPlafond(duties, year, (m) => getPaySettingsFor(userId, m), todayISO(), base, cuts)), 30);
+    return () => window.clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [open, duties, year, userId, base, rev, cuts.fromMonth, cuts.parentalDays, cuts.reducedPct],
-  );
+  }, [open, duties, year, userId, base, rev, cuts.fromMonth, cuts.parentalDays, cuts.reducedPct]);
   if (!year) return null;
   const header = (
     <Box display="flex" alignItems="center" gap={1}>
@@ -55,6 +58,7 @@ export default function AnnualPlafondCard({ duties, base, userId }: { duties: Pa
       <Card>
         <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
           {header}
+          {open && !a && <Typography variant="caption" color="text.secondary" display="block" mt={1}>A calcular o ano…</Typography>}
           {open && a && !a.months.length && (
             <Typography variant="caption" color="text.secondary" display="block" mt={1}>Sem escala guardada em {year}.</Typography>
           )}

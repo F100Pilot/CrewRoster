@@ -310,7 +310,9 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
   parental-leave days (Tabela 2.4: 3:37 / 2:00 a day), reduced activity %. Justified absences don't cut (c ii); unjustified
   ones aren't in the AE — asked. **Performance** (a tester, 0.9.3.99: "a app está lenta"): the card computes only when
   opened ("Ver"); `restPeriods()` and planVsFlown's roster views are cached per roster array (WeakMap) — rosters must
-  be replaced, never mutated in place. **Simulator at base pays the meal card** (ROV 4.5.9 n.º 1, same release): `mealTicketDays` counts a sim day at
+  be replaced, never mutated in place. Since 0.9.3.101 (the tester, by audio: "6 segundos desde que carrego no vencimento")
+  `payEstimate()` works on `nearMonth()` — the duties from 45 days before the month to 7 after (cached per roster + month)
+  — and only `autoHolidayPayMonth` reads the whole roster; a 2-year roster at 4× CPU slowdown: 1,6 s → 0,6 s. **Simulator at base pays the meal card** (ROV 4.5.9 n.º 1, same release): `mealTicketDays` counts a sim day at
   base (not away, not beside a flight/DHC) — still to be checked on a payslip.
 - **Flight + ground training on one day: the gap doesn't count for duty-pay** (an expert, user-approved, 0.9.3.71: "a
   diferença entre os 30 minutos depois de calços e o início da formação não conta … é o que vem no mapa de horas"):
