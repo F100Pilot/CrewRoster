@@ -5,16 +5,17 @@ import type { ParsedDuty } from '../domain/types';
 
 const S: PaySettings = { ...DEFAULT_PAY_SETTINGS, enabled: true, vb: 5000, ve: 0, vs: 0, extras: 0 };
 const iso = (d: Date) => d.toISOString().slice(0, 10);
-const flight = (date: string): ParsedDuty => ({
+const flight = (date: string, on = '14:00'): ParsedDuty => ({
   date, dutyType: 'Flight Duty', dutyCode: 'FLT', flightNumber: 'TP1234', departureAirport: 'LIS', arrivalAirport: 'OPO',
-  departureTime: '08:00', arrivalTime: '14:00', reportingTime: '07:00', aircraftType: 'E95', observations: null,
+  departureTime: '08:00', arrivalTime: on, reportingTime: '07:00', aircraftType: 'E95', observations: null,
 });
 
 describe('annual plafonds (RRRGS cl. 2.2 b / 2.4)', () => {
   it('sums the months, values the hours above 1136:40 / 624:00 at 3% of the VB and takes off what the months paid', () => {
-    // A synthetic year with a flight every day (far above both yearly credits).
+    // A synthetic year with a long sector every third day (far above both yearly credits) — few duties, so the twelve
+    // monthly estimates stay quick on the CI (a flight every day took 5 s there and timed out).
     const duties: ParsedDuty[] = [];
-    for (let d = new Date('2026-01-01T12:00:00Z'); d.getUTCFullYear() === 2026; d = new Date(d.getTime() + 86_400_000)) duties.push(flight(iso(d)));
+    for (let d = new Date('2026-01-01T12:00:00Z'); d.getUTCFullYear() === 2026; d = new Date(d.getTime() + 3 * 86_400_000)) duties.push(flight(iso(d), '20:00'));
     const a = annualPlafond(duties, 2026, () => S, '2027-01-15', 'LIS');
     expect(a.months).toHaveLength(12);
     const jan = payEstimate(duties, '2026-01', S, '2027-01-15', 'LIS');
@@ -24,7 +25,7 @@ describe('annual plafonds (RRRGS cl. 2.2 b / 2.4)', () => {
     const blockValue = ((a.block - ANNUAL_BLOCK_MIN) / 60) * RATE_L1 * 5000;
     expect(a.annualValue).toBeCloseTo(Math.max(dutyValue, blockValue), 1);
     expect(a.balance).toBeCloseTo(Math.max(0, a.annualValue - a.monthlyPaid), 1);
-  });
+  }, 20_000);
 
   it('pays nothing below the yearly credits and leaves out the months without a roster', () => {
     const a = annualPlafond([flight('2026-03-10')], 2026, () => S, '2026-12-01', 'LIS');
