@@ -697,13 +697,14 @@ function GroundTimes({ duty, date, place }: { duty: ParsedDuty; date: string; pl
         { label: 'DURAÇÃO', value: span !== null ? formatDuration(span) : '—' },
         { label: 'LOCAL', value: place },
       ]} />
-      {/* EBT: the briefing and debriefing around the session aren't in the roster (user rule). */}
+      {/* EBT: the briefing and debriefing around the session aren't in the roster (user rule). The report is the
+          briefing's start (user, 0.9.3.97: "falta a informação da hora de apresentação"). */}
       {ebt && (
         <PassCells cells={[
-          { label: 'EBT', value: `Dia ${ebt.day}` },
+          { label: 'APRES.', value: start ? localClock(new Date(start.getTime() - ebt.briefMin * 60000), place) : '—' },
           { label: 'BRIEFING', value: briefLabel(ebt.briefMin) },
-          { label: 'SESSÃO', value: span !== null ? formatDuration(span) : '—' },
           { label: 'DEBRIEFING', value: briefLabel(ebt.debriefMin) },
+          { label: 'EBT', value: `Dia ${ebt.day}` },
         ]} />
       )}
       {/* The duty the app counts — briefing + session + a 1-hour debriefing on both days (user, 0.9.3.25: the day-2

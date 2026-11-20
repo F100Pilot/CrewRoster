@@ -498,7 +498,8 @@ counts of Dec 2025–Sep 2026 match every payslip); "Pilot in Command, W_PNT" on
   para mudar no duty") the DUTY kept a 1-hour debriefing on both days — until 0.9.3.83: the company's Sep 2026 map gives
   05:30 for BOTH LIS-EBT-1 and LIS-EBT-2 (4h sessions), so `dutyDebriefMin` is now 30 min on day 2 too (user: "sim,
   5h30"); used by `asWorked`; the roster only prints the session (4h00/5h00).
-  Since 0.9.3.35 the counted duty is SHOWN (`ebtDutyMinutes`, "serviço 7h00" on the day card, Lista and "Hoje") — a user
+  Since 0.9.3.97 the day page shows the REPORT ("APRES." = session start − briefing; user: "falta a informação da hora de
+  apresentação"). Since 0.9.3.35 the counted duty is SHOWN (`ebtDutyMinutes`, "serviço 7h00" on the day card, Lista and "Hoje") — a user
   added up the cells (briefing 1 h · sessão · debriefing 30 min) and reported the duty as 30 min short. `domain/simSession.ts`; shown as
   information on the day, Lista card and "Hoje". The roster's times are the session only (user confirmed); since 0.8.37
   the DUTY counts briefing + session + debriefing (user: "o tempo de simulador conta o simulador mais o briefing e
