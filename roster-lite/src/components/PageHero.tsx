@@ -98,7 +98,7 @@ export default function PageHero({
             <ArrowBack />
           </IconButton>
         )}
-        <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', height: 24, px: 1.25, borderRadius: 12, ...pillKey(pill), color: '#0B1222', fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.06em' }}>
+        <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', height: 24, px: 1.25, borderRadius: 12, ...pillKey(pill), color: '#0B1222', fontSize: '0.68rem', fontWeight: 800, letterSpacing: '0.06em', whiteSpace: 'nowrap', maxWidth: '45vw', overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0 }}>
           {label.toUpperCase()}
         </Box>
         {wx && (

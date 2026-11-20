@@ -23,7 +23,7 @@ import FlightWeather from '../components/FlightWeather';
 import FlightInfo from '../components/FlightInfo';
 import FlicStand from '../components/FlicStand';
 import { dayLabel } from '../utils/dates';
-import { dutyLabel } from '../domain/dutyLabels';
+import { dutyLabel, isPls } from '../domain/dutyLabels';
 import PageHero from '../components/PageHero';
 import RaacoDayCard from '../components/RaacoDayCard';
 import { PASS_MONO, PassCells, passOverline } from '../components/PassCard';
@@ -108,7 +108,8 @@ export default function DayDetailPage() {
   return (
     <Stack spacing={2} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       <PageHero
-        back label={duties.length ? dutyLabel(duties[0]) : 'Dia'}
+        // The pill is short (user, 0.9.3.100: "Livre de serviço" broke over two lines there): a PLS day says PLS.
+        back label={duties.length ? (isPls(duties[0]) ? 'PLS' : dutyLabel(duties[0])) : 'Dia'}
         title={date ? dayLabel(date, true) : ''}
         subtitle={daySummary(duties)}
         stats={stats ? [

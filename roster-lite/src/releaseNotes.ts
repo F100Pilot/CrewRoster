@@ -13,6 +13,16 @@ export interface ReleaseNote {
 // Newest first.
 export const RELEASE_NOTES: ReleaseNote[] = [
   {
+    version: '0.9.3.100',
+    date: '2026-11-20',
+    highlights: [
+      'Mais rápido: a página Vencimento já não calcula o ano inteiro ao abrir — o «Plafond anual» faz a conta só quando carregas em «Ver», e os descansos e o planeado-vs-voado passaram a ser calculados uma vez só.',
+      'Plafond anual: «Reduções do plafond» — mês de largada no ano de admissão (Tabela 2.3), dias de licença parental (3:37 de duty e 2:00 de block por dia, Tabela 2.4) e diminuição de atividade em % (RRRGS cl. 2.ª n.º 2 c).',
+      'PLS: o rótulo do dia diz «PLS» (já não parte em duas linhas) e a faixa «Próximos dias» do Hoje mostra PLS em vez de FOL.',
+    ],
+    thanks: 'Obrigado aos colegas testers pelos avisos.',
+  },
+  {
     version: '0.9.3.99',
     date: '2026-11-20',
     highlights: [

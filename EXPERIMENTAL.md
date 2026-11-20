@@ -25,7 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(vazio — 0.9.3.99 promovida para produção)_
+- **0.9.3.100** — Desempenho do Vencimento (plafond anual só ao abrir; descansos e planeado-vs-voado em cache); reduções do plafond anual (admissão, licença parental, diminuição de atividade); PLS no rótulo do dia e na faixa do Hoje.
 
 ---
 
