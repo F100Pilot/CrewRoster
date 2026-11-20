@@ -7,7 +7,7 @@ promovido para `master`/produção** (<https://f100pilot.github.io/CrewRoster/>)
 Serve para **juntar várias alterações** e depois fazer **um único deploy** para
 produção, em vez de promover uma a uma.
 
-- **Produção (`master`) está em:** `0.9.3.99`
+- **Produção (`master`) está em:** `0.9.3.101`
 - **Próxima versão ao promover:** a da experimental (cada atualização sobe a 4.ª casa)
 
 ## Como promover tudo para produção (quando estiver pronto)
@@ -25,8 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-- **0.9.3.101** — Vencimento: estimativa só com as semanas à volta do mês (abre ~4× mais depressa); «A calcular o ano…» no plafond anual.
-- **0.9.3.100** — Desempenho do Vencimento (plafond anual só ao abrir; descansos e planeado-vs-voado em cache); reduções do plafond anual (admissão, licença parental, diminuição de atividade); PLS no rótulo do dia e na faixa do Hoje.
+_(vazio — 0.9.3.100 e 0.9.3.101 promovidas para produção)_
 
 ---
 
