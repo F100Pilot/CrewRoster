@@ -32,7 +32,7 @@ export interface DayContext {
   lastEnd: Date | null;
   // What today is when it isn't work: a day off, holidays or an absence (FAL…) — so the home screen names it right
   // (a tester, 0.9.3.66: a FAL day read "FOLGA · Descansa."). null on a working day or a day the roster doesn't have.
-  todayOff: 'dayoff' | 'vacation' | 'absence' | null;
+  todayOff: 'dayoff' | 'pls' | 'vacation' | 'absence' | null;
 }
 
 const FLIGHT = new Set(['Flight Duty', 'Positioning']);
@@ -106,7 +106,9 @@ export function dayContext(all: ParsedDuty[], now: Date, base: string): DayConte
   const todayDuties = days.get(today) ?? [];
   const todayOff: DayContext['todayOff'] = !todayDuties.length || todayDuties.some((d) => !NOT_WORK.has(d.dutyType)) ? null
     : todayDuties.some((d) => d.dutyType === 'Absence') ? 'absence'
-      : todayDuties.some((d) => d.dutyType === 'Vacation') ? 'vacation' : 'dayoff';
+      : todayDuties.some((d) => d.dutyType === 'Vacation') ? 'vacation'
+        // A PLS_… day is a day free of service, not a folga (RUPT cl. 6.ª n.º 13).
+        : todayDuties.every((d) => /^PLS_/i.test(d.dutyCode)) ? 'pls' : 'dayoff';
 
   const make = (phase: Phase, date: string | null, window: DutyWindow | null): DayContext => {
     const duties = date ? days.get(date) ?? [] : [];

@@ -25,7 +25,7 @@ produção, em vez de promover uma a uma.
 
 ## Pendente para a próxima versão
 
-_(vazio — 0.9.3.98 promovida para produção)_
+- **0.9.3.99** — PLS mostrado como «Livre de serviço» (não «Folga») nos cartões, painel de partidas, Hoje e partilha (utilizador).
 
 ---
 
